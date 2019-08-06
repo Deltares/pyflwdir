@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=numba-sheds
+set SPHINXPROJ=pyflwdir
 
 if "%1" == "" goto help
 

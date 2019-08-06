@@ -10,12 +10,12 @@ The project setup is documented in `a separate document <project_setup.rst>`_. F
 Installation
 ------------
 
-To install numba-sheds, do:
+To install pyflwdir, do:
 
 .. code-block:: console
 
-  git clone https://github.com/openstreams/numba-sheds.git
-  cd numba-sheds
+  git clone https://github.com/openstreams/pyflwdir.git
+  cd pyflwdir
   pip install .
 
 

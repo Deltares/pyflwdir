@@ -6,29 +6,29 @@ from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-# To update the package version number, edit numba-sheds/__version__.py
+# To update the package version number, edit pyflwdir/__version__.py
 version = {}
-with open(os.path.join(here, 'numba_sheds', '__version__.py')) as f:
+with open(os.path.join(here, 'pyflwdir', '__version__.py')) as f:
     exec(f.read(), version)
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
 setup(
-    name='numba_sheds',
+    name='pyflwdir',
     version=version['__version__'],
     description="Fast numba-based library with flow direction and watershed delineation operators in pure Python",
     long_description=readme + '\n\n',
     author="Dirk Eilander",
     author_email='dirk.eilander@deltares.nl',
-    url='https://github.com/openstreams/numba-sheds',
+    url='https://github.com/openstreams/pyflwdir',
     packages=[
-        'numba_sheds',
+        'pyflwdir',
     ],
     include_package_data=True,
     license="GNU General Public License v3 or later",
     zip_safe=False,
-    keywords='numba-sheds',
+    keywords='pyflwdir',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
