@@ -49,7 +49,7 @@ def calc_slope(dem, nodata, sizeinmetres, transform):
                     # EDIT: convert lat/lon to dy/dx in meters to calculate hypot
                     radlat = np.radians(transform[5] - 0.5*cellsize - r*cellsize)
                     dy, dx = lat_to_dy(radlat)[0], lat_to_dx(radlat)[0]
-                    slp = math.hypot(dzdx*latlen, dzdy*longlen)
+                    slp = math.hypot(dzdx*dx, dzdy*dy)
             else:
                 slp = nodata
             
