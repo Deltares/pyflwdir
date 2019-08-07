@@ -66,23 +66,21 @@ def setup_dd(flwdir_flat, idx_ds, shape):
 
 
 @njit
-def delineate_basins(rnodes, rnodes_up, basidx):
+def delineate_basins(rnodes, rnodes_up, basidx_flat):
     """"""
-    shape = basidx.shape
-    basidx = basidx.ravel() # map with zeros except for (sub)basin outlets
     for i in range(len(rnodes)):
         nn_ds = rnodes[-i-1]
         nn_us = rnodes_up[-i-1]
         for j in range(len(nn_ds)):
             idx_ds = nn_ds[j]
             idxs_us = nn_us[j,:] # NOTE: has nodata (-1) values
-            basidx_ds = basidx[idx_ds]
+            basidx_ds = basidx_flat[idx_ds]
             for idx_us in idxs_us:
                 #NOTE: only flowwing block is different from flux.propagate_upstream
                 if idx_us == -1: break
-                if basidx[idx_us] == 0: 
-                    basidx[idx_us] = basidx_ds
-    return basidx.reshape(shape)
+                if basidx_flat[idx_us] == 0: 
+                    basidx_flat[idx_us] = basidx_ds
+    return basidx_flat
 
 @njit
 def _main_upsteam(idxs_us, uparea_flat, upa_min):

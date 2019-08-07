@@ -119,9 +119,10 @@ class FlwdirRaster(object):
                 raise ValueError('all values should be larger than zero')
         if not idx.size == values.size and idx.ndim == 1:
             raise ValueError('idx and values should be 1d arrays of same size')
-        basidx = np.zeros(self.shape, dtype=dtype)
-        basidx.flat[idx] = values
-        return network.delineate_basins(self.rnodes, self.rnodes_up, basidx=basidx).astype(dtype)
+        basidx_flat = np.zeros(self.size, dtype=dtype)
+        basidx_flat[idx] = values
+        basidx_flat = network.delineate_basins(self.rnodes, self.rnodes_up, basidx_flat=basidx_flat)
+        return basidx_flat.reshape(self.shape)
 
     def basin_shape(self, basin_map=None, **kwargs):
         if basin_map is None:
