@@ -12,7 +12,6 @@ _nodata = fd._nodata
 _pits = fd._pits 
 _ds = fd._ds
 
-
 # @njit
 # def _vector_d8(flwdir, dx_matrix, dy_matrix):
 #     """returns a numpy array (int32) with indices of upstream neighbors on a d8 grid"""

@@ -8,7 +8,50 @@ import math
 import numpy as np
 import rasterio
 from rasterio.transform import Affine, array_bounds
+from rasterio import features
 import xarray as xr
+
+# convert to raster
+def rasterize(gdf, fn=None, col_name='index', # rasterize
+              transform=None, out_size=None,
+              fill=-9999, dtype=None, fapply=None, **kwargs):
+    """Rasterize the index value geopandas dataframe onto a raster defined
+    by either its lat/lon coordinates (1d arrays) or
+    transform (rasterio transform) and out_size (tuple).
+    """
+    sindex = gdf.sindex
+    nrow, ncol = out_size
+    bbox = array_bounds(nrow, ncol, transform)
+    idx = list(sindex.intersection(bbox))
+    geoms = gdf.iloc[idx,].geometry.values
+    values = gdf.iloc[idx,].reset_index()[col_name].values
+    dtype = values.dtype if dtype is None else dtype
+    if geoms.size > 0:
+        shapes = list(zip(geoms, values))
+        raster = features.rasterize(
+            shapes, out_shape=out_size, fill=fill, transform=transform, **kwargs
+        )
+    else:
+        return
+    if dtype is not None:
+        raster = np.array(raster).astype(dtype)
+    if fapply is not None:
+        raster = fapply(raster)
+    if fn is not None:
+        kwargs = dict(
+            driver='GTiff', 
+            height=raster.shape[0], 
+            width=raster.shape[1], 
+            count=1, 
+            dtype=raster.dtype, 
+            crs=getattr(gdf, 'crs', None), 
+            transform=transform,
+            nodata=fill
+        )
+        with rasterio.open(fn, 'w', **kwargs) as dst:
+            dst.write(raster, 1)
+    else:
+        return raster
 
 #NOTE: this assumes python Affine transfrom. should include check
 @njit
