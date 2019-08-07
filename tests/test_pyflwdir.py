@@ -129,12 +129,12 @@ def test_uparea():
     assert np.round(upa.max(),8) == 31610442.71200391
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
     # test_flwdir_repair()
     # test_setup_network()
     # test_basin_bounds()
     # test_uparea()
     # test_basin_delination()
     # test_stream_order()
-    # test_stream_order()
     # import pdb; pdb.set_trace()
+    pass
