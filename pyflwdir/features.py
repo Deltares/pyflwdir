@@ -40,6 +40,43 @@ _ds = fd._ds
 #         dy = np.ones(flwdir.shape, np.float32)
 #     return _vector_d8(flwdir, dx, dy)
 
+@njit
+def trace_riv_reach(idx_ds, stro_ds, flwdir_flat, stream_order_flat, shape):
+    idx0 = fd.ds_index(idx_ds, flwdir_flat, shape)
+    if idx0 >= 0 and idx0 != idx_ds:
+        nodes = list([idx0, idx_ds])
+    else:
+        nodes = list([idx_ds])
+    tribs = list()
+    while True:
+        idxs_us = fd.us_indices(idx_ds, flwdir_flat, shape)
+        for idx_us in idxs_us:
+            if stream_order_flat[idx_us] == stro_ds: #main stream
+                nodes.append(idx_us)
+            elif stream_order_flat[idx_us] > 0:
+                tribs.append(idx_us)
+        if nodes[-1] == idx_ds:
+            break
+        idx_ds = nodes[-1]
+    return np.array(nodes, np.int64), np.array(tribs, np.int64)
+
+@njit
+def river_nodes(idx_ds, flwdir_flat, stream_order_flat, shape):
+    idx_ds = np.asarray(idx_ds, np.int64)
+    rivs = list()
+    stro = list()
+    while True:
+        idx_next = list()
+        for idx in idx_ds:
+            stro0 = stream_order_flat[idx]
+            riv, tribs = trace_riv_reach(idx, stro0, flwdir_flat, stream_order_flat, shape)
+            rivs.append(riv)
+            stro.append(stro0)
+            idx_next.extend(tribs)
+        if len(idx_next) == 0:
+            break
+        idx_ds = np.array(idx_next, dtype=np.int64)
+    return rivs, stro
 
 @njit
 def _update_bbox(idx_ds, xmin, ymin, xmax, ymax, ncol):

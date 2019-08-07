@@ -6,10 +6,18 @@
 import pytest
 
 import numpy as np
+import rasterio
 from rasterio.transform import Affine
 
 import pyflwdir
 from pyflwdir import gridtools
+
+with rasterio.open(r'./tests/data/basins.tif', 'r') as src:
+    raster = src.read(1)
+    nodata = src.nodata
+    transform = src.transform
+    crs = src.crs
+    prof = src.profile
 
 
 def test_transform_conv():
@@ -42,7 +50,24 @@ def test_res_area():
     assert np.all(cellare.shape == shape)
     assert np.all(np.round(cellare[0,0],8)==0.5)
 
+def test_vectorize():
+    # TODO improve test
+    gridtools.vectorize(raster, nodata, transform, crs=crs)
+
+def test_idx_to_xy():
+    nrow, ncol = 2, 5
+    idx = np.arange(nrow*ncol, dtype=np.int64).reshape((nrow, ncol))
+    xs = np.arange(1,ncol+1, dtype=np.float64)
+    ys = np.arange(1,nrow+1, dtype=np.float64)
+    x, y = gridtools.idx_to_xy(idx, xs, ys, ncol)
+    assert np.all(x.shape == y.shape == (nrow, ncol))
+    assert np.all(x[0,:].ravel() == xs)
+    assert np.all(y[:,0].ravel() == ys)
+
 if __name__ == "__main__":
-    test_transform_conv()
-    test_res_area()
-    import pdb; pdb.set_trace()
+    # test_transform_conv()
+    # test_res_area()
+    # test_vectorize()
+    test_idx_to_xy()
+
+    pass

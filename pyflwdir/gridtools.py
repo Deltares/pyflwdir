@@ -3,15 +3,29 @@
 # August 2019
 
 from os.path import join
-from numba import njit, vectorize
+import numba
 import math
 import numpy as np
 import rasterio
 from rasterio.transform import Affine, array_bounds
 from rasterio import features
+import geopandas as gp
+from shapely.geometry import LineString
 import xarray as xr
 
-# convert to raster
+
+def nodes_to_ls(nodes, lats, lons, shape):
+    return LineString([(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, shape[1]))])
+
+# convert raster to GeoDataFrame
+def vectorize(data, nodata, transform, crs=None, connectivity=8):
+    feats_gen = features.shapes(data, mask=data!=nodata, transform=transform, connectivity=connectivity)
+    feats = [{'geometry': geom, 'properties': {'index': idx}} for geom, idx in list(feats_gen)]
+    gdf = gp.GeoDataFrame.from_features(feats).set_index('index')
+    gdf.index = gdf.index.astype(data.dtype)
+    return gdf
+
+# convert GeoDataFrame to raster
 def rasterize(gdf, fn=None, col_name='index', # rasterize
               transform=None, out_size=None,
               fill=-9999, dtype=None, fapply=None, **kwargs):
@@ -54,7 +68,7 @@ def rasterize(gdf, fn=None, col_name='index', # rasterize
         return raster
 
 #NOTE: this assumes python Affine transfrom. should include check
-@njit
+@numba.njit
 def calc_slope(dem, nodata, sizeinmetres, transform):
     
     slope = np.zeros(dem.shape,dtype=np.float64)    
@@ -100,7 +114,7 @@ def calc_slope(dem, nodata, sizeinmetres, transform):
         
     return slope
 
-@vectorize(["float64(float64)", "float32(float32)"])
+@numba.vectorize(["float64(float64)", "float32(float32)"])
 def lat_to_dy(radlat):
     """"
     Determines the length of one degree lat at a given latitude (in meter).
@@ -123,7 +137,7 @@ def lat_to_dy(radlat):
 
     return latlen
 
-@vectorize(["float64(float64)", "float32(float32)"])
+@numba.vectorize(["float64(float64)", "float32(float32)"])
 def lat_to_dx(radlat):
     """"
     Determines the length of one degree long at a given latitude (in meter).
@@ -185,6 +199,18 @@ def latlon_to_transform(lat, lon):
     trans = Affine.translation(lon[0] - resX/2., lat[0] - resY/2.)
     scale = Affine.scale(lon[1] - lon[0], lat[1] - lat[0])
     return trans * scale
+
+# @numba.guvectorize(
+#     ["void(int64, float64[:], float64[:], int64, float64[:])"],
+#     "(n),(m),(),()->(n)"
+#     )
+@numba.njit
+def idx_to_xy(idx, xs, ys, ncol):
+    shape = idx.shape
+    idx = idx.ravel()
+    y = ys[idx // ncol]
+    x = xs[idx %  ncol]
+    return x.reshape(shape), y.reshape(shape)
 
 if __name__ == "__main__":
     pass

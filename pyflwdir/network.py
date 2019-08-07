@@ -109,7 +109,7 @@ def main_upstream(rnodes, rnodes_up, uparea, upa_min=np.float32(0.)):
             idx_ds = rnodes[i][j]
             idxs_us = rnodes_up[i][j] # NOTE: has nodata (-1) values
             main_us[idx_ds] = _main_upsteam(idxs_us, uparea_flat, upa_min)
-    return main_up.reshape(shape)
+    return main_us.reshape(shape)
 
 @njit
 def _strahler_order(idxs_us, strord_flat):
@@ -135,14 +135,14 @@ def _strahler_order(idxs_us, strord_flat):
 
 @njit
 def stream_order(rnodes, rnodes_up, shape):
-    strord_flat = np.ones(shape, dtype=np.int8).ravel()*-9999
+    strord_flat = np.ones(shape, dtype=np.int16).ravel()*-9999
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
             idxs_us = rnodes_up[i][j] # NOTE: has nodata (-1) values
             ordi, idx_head = _strahler_order(idxs_us, strord_flat)
-            strord_flat[idx_ds] = np.int8(ordi) # update stream order downstream cells
+            strord_flat[idx_ds] = np.int16(ordi) # update stream order downstream cells
             if idx_head.size > 0: # update head cells
-                strord_flat[idx_head] = np.int8(1)
+                strord_flat[idx_head] = np.int16(1)
     return strord_flat.reshape(shape)
                 

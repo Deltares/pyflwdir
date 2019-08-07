@@ -15,24 +15,15 @@ from pyflwdir import FlwdirRaster
 from pyflwdir.core import fd
 from pyflwdir.utils import flwdir_check
 
-ds = xr.open_dataset(r'./tests/data/thur_test.nc')
-raster = ds['flwdir'].values
-nrow, ncol = raster.shape
-res = 1/120.
-w = np.round((ds['lon'].values.min()-res/2)/res)*res
-n = np.round((ds['lat'].values.max()+res/2)/res)*res
-idx0 = 864
 
-prof = dict(
-    crs={'init': 'epsg:4326'},
-    width=ncol,
-    height=nrow,
-    count=1,
-    transform = rasterio.transform.from_origin(w, n, res, res),
-    driver='GTiff',
-    dtype = np.int32,
-    nodata = -9999
-)
+with rasterio.open(r'./tests/data/flwdir.tif', 'r') as src:
+    raster = src.read(1)
+    transform = src.transform
+    nodata = src.nodata
+    crs = src.crs
+    prof = src.profile
+idx0 = 864
+prof.update(nodata=-9999, dtype=np.int32)
 
 # def test_something():
 #     assert True
@@ -100,34 +91,43 @@ def test_basin_delination():
         np.array([idx0])
         )
     )
-    basins2 = flwdir.basin_map(idx=idx, values=idx)
+    basins2 = flwdir.basin_map(idx=idx, values=idx, dtype=np.int32)
     assert np.sum(basins2!=0) == 3045
     assert np.unique(basins2).size == 20 # 19 subbasins + background zero
+    # with rasterio.open(r'./tests/data/basins.tif', 'w', **prof) as dst:
+    #     dst.write(basins2, 1)
 
 def test_stream_order():
     # 
     flwdir = FlwdirRaster(raster)
     flwdir.setup_network(idx0)
     stream_order = flwdir.stream_order()
+    assert stream_order.dtype == np.int16
     assert np.unique(stream_order).size == 7
     assert np.sum(stream_order>0) == 3045
     assert np.sum(stream_order==6) == 88
-    # with rasterio.open(r'../tests/data/stream_order.tif', 'w', **prof) as dst:
-    #     dst.write(stream_order.astype(np.int32), 1)
+    prof.update(dtype=stream_order.dtype)
+    # with rasterio.open(r'./tests/data/stream_order.tif', 'w', **prof) as dst:
+    #     dst.write(stream_order, 1)
 
 def test_uparea():
     # test as if metres with identity transform
-    flwdir = FlwdirRaster(raster, latlon=False)
+    flwdir = FlwdirRaster(raster, crs=28992) #RD New - Netherlands [metres]
     flwdir.setup_network(idx0)
     upa = flwdir.upstream_area()
     tot_n = np.sum([np.sum(n!=-1) for n in flwdir.rnodes_up]) + flwdir.rnodes[-1].size
     assert np.round(upa.max()*1e6,2) == tot_n == 3045
     # test in latlon with identity transform
-    flwdir = FlwdirRaster(raster, latlon=True)
+    flwdir = FlwdirRaster(raster)
     flwdir.setup_network(idx0)
     upa = flwdir.upstream_area()
     assert np.round(upa.max(),8) == 31610442.71200391
 
+def test_riv_shape():
+    flwdir = FlwdirRaster(raster, crs=crs, transform=transform)
+    flwdir.setup_network(idx0)
+    gdf = flwdir.stream_shape()
+    # gdf.to_file('./tests/data/rivers.shp')
 
 if __name__ == "__main__":
     # test_flwdir_repair()
@@ -136,5 +136,6 @@ if __name__ == "__main__":
     # test_uparea()
     # test_basin_delination()
     # test_stream_order()
+    # test_riv_shape()
     # import pdb; pdb.set_trace()
     pass
