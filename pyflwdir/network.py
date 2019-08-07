@@ -66,8 +66,10 @@ def setup_dd(flwdir_flat, idx_ds, shape):
 
 
 @njit
-def delineate_basins(rnodes, rnodes_up, basidx_flat):
+def delineate_basins(rnodes, rnodes_up, idx, values, shape):
     """"""
+    basidx_flat = np.zeros(shape, dtype=values.dtype).ravel()
+    basidx_flat[idx] = values
     for i in range(len(rnodes)):
         nn_ds = rnodes[-i-1]
         nn_us = rnodes_up[-i-1]
@@ -80,7 +82,7 @@ def delineate_basins(rnodes, rnodes_up, basidx_flat):
                 if idx_us == -1: break
                 if basidx_flat[idx_us] == 0: 
                     basidx_flat[idx_us] = basidx_ds
-    return basidx_flat
+    return basidx_flat.reshape(shape)
 
 @njit
 def _main_upsteam(idxs_us, uparea_flat, upa_min):
