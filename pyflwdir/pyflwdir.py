@@ -98,23 +98,23 @@ class FlwdirRaster(object):
             self.setup_network() # setup network based on pits
         return features.basin_bbox(self.rnodes, self.rnodes_up, self.rbasins, lats, lons, res)
 
-    def basin_map(self, idx=None, values=None):
+    def basin_map(self, idx=None, values=None, dtype=np.int64):
         if not hasattr(self, 'rnodes'):
             self.setup_network()    # setup network based on pits
         if idx is None:             # use outlet points if idx not given
             idx = self.idx0
         idx = np.atleast_1d(idx).astype(np.int64)
         if values is None:          # use range to number basins if not given
-            values = np.arange(idx.size, dtype=np.int64)+1
+            values = np.arange(idx.size, dtype=dtype)+1
         else:
-            values = np.atleast_1d(values).astype(np.int64)
+            values = np.atleast_1d(values).astype(dtype)
             if np.any(values<=0):
                 raise ValueError('all values should be larger than zero')
         if not idx.size == values.size and idx.ndim == 1:
             raise ValueError('idx and values should be 1d arrays of same size')
-        basidx = np.zeros(self.shape, dtype=np.int64)
+        basidx = np.zeros(self.shape, dtype=dtype)
         basidx.flat[idx] = values
-        return network.delineate_basins(self.rnodes, self.rnodes_up, basidx=basidx)
+        return network.delineate_basins(self.rnodes, self.rnodes_up, basidx=basidx).astype(dtype)
 
     def stream_order(self):
         if not hasattr(self, 'rnodes'):
