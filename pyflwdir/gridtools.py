@@ -173,7 +173,7 @@ def latlon_cellare_metres(transform, shape):
 
 def latlon_cellres_metres(transform, shape):
     """"""
-    lat, lon = transform_to_latlon(transform, shape)
+    lat, _ = transform_to_latlon(transform, shape)
     radlat = np.radians(lat)
     resx, resy = np.abs(transform[0]), np.abs(transform[4])
     dy_lat, dx_lat = lat_to_dy(radlat)*resy, lat_to_dx(radlat)*resx

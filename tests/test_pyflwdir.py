@@ -5,10 +5,13 @@
 """Tests for the pyflwdir module.
 """
 import pytest
+import numba
+import time
+rtsys = numba.runtime.rtsys
 
 import numpy as np
-import xarray as xr
 import rasterio 
+import xarray as xr
 
 import pyflwdir
 from pyflwdir import FlwdirRaster
@@ -40,11 +43,11 @@ prof.update(nodata=-9999, dtype=np.int32)
 
 # test object
 def test_object():
-    flwdir = FlwdirRaster(raster)
+    flwdir = FlwdirRaster(raster.copy())
     assert isinstance(flwdir, FlwdirRaster)
 
 def test_flwdir_repair():
-    flwdir = FlwdirRaster(raster)
+    flwdir = FlwdirRaster(raster.copy())
     assert flwdir.isvalid()
     lst, hasloops = flwdir_check(flwdir.data)
     assert len(lst) == 110 and not hasloops
@@ -55,31 +58,31 @@ def test_flwdir_repair():
     idx = 450 
     idx_us = fd.us_indices(idx, flwdir.data_flat, flwdir.shape)[0]
     flwdir[idx] = fd.idx_to_dd(idx, idx_us, flwdir.shape)
-    # import pdb; pdb.set_trace() 
     lst, hasloops = flwdir_check(flwdir.data)
-    assert len(lst) == 1 and lst[0] == idx and hasloops
+    assert hasloops
     flwdir.repair() # repair loop
     lst, hasloops = flwdir_check(flwdir.data)
     assert len(lst) == 0 and not hasloops
 
 def test_setup_network():
-    flwdir = FlwdirRaster(raster)
+    flwdir = FlwdirRaster(raster.copy())
     flwdir.repair()
     flwdir.setup_network()
+    assert len(flwdir.rnodes) == len(flwdir.rnodes_up) == 174
     tot_n = np.sum([np.sum(n!=-1) for n in flwdir.rnodes_up]) + flwdir.rnodes[-1].size
     assert tot_n == flwdir.size
 
-def test_basin_bounds():
-    flwdir = FlwdirRaster(raster)
-    flwdir.repair() # after repair the total bbox should be equal to flwdir.bbox
-    bounds = flwdir.basin_bounds()
-    xmin, ymin = bounds.min(axis=0)[[0,1]]
-    xmax, ymax = bounds.max(axis=0)[[2,3]]
-    assert np.all((xmin, ymin, xmax, ymax) == flwdir.bounds)
+# def test_basin_bounds():
+#     flwdir = FlwdirRaster(raster)
+#     flwdir.repair() # after repair the total bbox should be equal to flwdir.bbox
+#     bounds = flwdir.basin_bounds()
+#     xmin, ymin = bounds.min(axis=0)[[0,1]]
+#     xmax, ymax = bounds.max(axis=0)[[2,3]]
+#     assert np.all((xmin, ymin, xmax, ymax) == flwdir.bounds)
 
 def test_basin_delination():
     # test single basin
-    flwdir = FlwdirRaster(raster)
+    flwdir = FlwdirRaster(raster.copy())
     flwdir.setup_network(idx0)
     basins = flwdir.basin_map()
     assert np.all(np.unique(basins[basins!=0])==1) # single basin index
@@ -129,13 +132,67 @@ def test_riv_shape():
     gdf = flwdir.stream_shape()
     # gdf.to_file('./tests/data/rivers.shp')
 
-if __name__ == "__main__":
-    # test_flwdir_repair()
-    # test_setup_network()
-    # test_basin_bounds()
-    # test_uparea()
-    # test_basin_delination()
-    # test_stream_order()
-    # test_riv_shape()
+
+def check_memory_time():
+    raster = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
+    idx0 = 8640959
+    print(rtsys.get_allocation_stats())
+    
+    print('initialize')
+    flwdir = FlwdirRaster(raster, crs=crs, transform=transform)
+    print(rtsys.get_allocation_stats())
+    
+    # print('repair')
+    # flwdir.repair()
+    # print(rtsys.get_allocation_stats())
+    
+    print('setup network')
+    # for i in range(10):
+    # print(("%s" % i).center(50, '-'))
+    start = time.time()    
+    # flwdir.setup_network(idx0)
+    nn_ds, nn_us = pyflwdir.network.setup_dd2(np.asarray([idx0], dtype=np.int64), flwdir.data_flat, flwdir.shape)
+    # pyflwdir.network.setup_dd(flwdir.data_flat, np.asarray([idx0]), flwdir.shape)
+    end = time.time()
+    print(f"Elapsed (before compilation) = {(end - start):.6f} s")
+    print(rtsys.get_allocation_stats())
     # import pdb; pdb.set_trace()
+    for i in range(3):
+        start = time.time()
+        # flwdir.setup_network(idx0)
+        pyflwdir.network.setup_dd2(np.asarray([idx0]), flwdir.data_flat, flwdir.shape)
+        # pyflwdir.network.setup_dd(flwdir.data_flat, np.asarray([idx0]), flwdir.shape)
+        end = time.time()
+        print(f"Elapsed (after compilation) = {(end - start):.6f} s")
+        print(rtsys.get_allocation_stats())
+    
+    # print('basin delineation')
+    # basins = flwdir.basin_map()
+    # print(rtsys.get_allocation_stats())
+    
+    # print('basin bouhds')
+    # bounds = flwdir.basin_bounds()
+    # print(rtsys.get_allocation_stats())
+
+    # print('upastream area')
+    # upa = flwdir.upstream_area()
+    # print(rtsys.get_allocation_stats())
+
+    # print('stream oder')
+    # stro = flwdir.stream_order()
+    # print(rtsys.get_allocation_stats())
+
+
+if __name__ == "__main__":
+    # import pdb; pdb.set_trace()
+    # check_memory_time()
+    # print('finalize')
+    # print(rtsys.get_allocation_stats())
+    test_setup_network()
+    test_flwdir_repair()
+    test_basin_delination()
+    # test_basin_bounds()
+    test_uparea()
+    test_stream_order()
+    test_riv_shape()
     pass

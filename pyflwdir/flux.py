@@ -21,11 +21,10 @@ def propagate_upstream(rnodes, rnodes_up, material):
     shape = material.shape
     material = material.flatten()
     for i in range(len(rnodes)):
-        nn_ds = rnodes[-i-1]
-        nn_us = rnodes_up[-i-1]
-        for j in range(len(nn_ds)):
-            idx_ds = nn_ds[j]
-            idxs_us = nn_us[j,:] # NOTE: has nodata (-1) values
+        k = -i-1
+        for j in range(len(rnodes[k])):
+            idx_ds = rnodes[k][j]
+            idxs_us = rnodes_up[k][j] # NOTE: has nodata (-1) values
             v = material[idx_ds]
             for idx_us in idxs_us:
                 if idx_us == -1: break

@@ -51,6 +51,11 @@ class FlwdirRaster(object):
         self.data_flat = self.data.ravel() # flattened view of data
         if check_format and fd._check_format(self.data) == False: # simple check. isvalid includes more rigorous check
             raise ValueError('Unknown flow direction values found in data')
+        # set placeholder properties
+        self.idx0 = None            # most downstream indices in network
+        self.rnodes = None          # network ds nodes (n)
+        self.rnodes_up = None       # network us nodes (n,m); m <= 8 in d8
+        self.rbasins = None         # network ds basin id (n)
 
     def __getitem__(self, key):
         return self.data_flat[key]
@@ -80,16 +85,20 @@ class FlwdirRaster(object):
             idx0 = self.get_pits()
             if idx0.size == 0:
                 raise ValueError('no pits found in flow direction data')
+        self.idx0 = None            # most downstream indices in network
+        self.rnodes = None          # network ds nodes (n)
+        self.rnodes_up = None       # network us nodes (n,m); m <= 8 in d8
+        self.rbasins = None         # network ds basin id (n)            
         self.idx0 = np.atleast_1d(idx0) # basin outlets
-        self.rnodes, self.rnodes_up, self.rbasins = network.setup_dd(self.data_flat, self.idx0, self.shape)
+        self.rnodes, self.rnodes_up = network.setup_dd(self.idx0, self.data_flat, self.shape)
 
     def get_pits(self):
         return fd.pit_indices(self.data.flatten())
 
     def upstream_area(self, cell_area=None):
         """returns upstream area in km"""
-        if not hasattr(self, 'rnodes'):
-            self.setup_network() # setup network based on pits
+        if self.rnodes is None:
+            self.setup_network()    # setup network, with pits as most downstream indices
         if cell_area is None and self.latlon:
             cell_area = gridtools.latlon_cellare_metres(self.transform, self.shape)/1e6
         elif cell_area is None:
@@ -98,20 +107,20 @@ class FlwdirRaster(object):
             raise ValueError(f"cell_area shape {cell_area.shape} does not match flwdir shape {self.shape}")
         return flux.propagate_downstream(self.rnodes, self.rnodes_up, material=cell_area)
 
-    def basin_bounds(self):
-        res = self.transform[0]
-        xs, ys = self._xycoords()
-        if not hasattr(self, 'rnodes'):
-            self.setup_network() # setup network based on pits
-        return features.basin_bbox(self.rnodes, self.rnodes_up, self.rbasins, ys, xs, res)
+    # def basin_bounds(self):
+    #     res = self.transform[0]
+    #     xs, ys = self._xycoords()
+    #     if self.rnodes is None:
+    #         self.setup_network()    # setup network, with pits as most downstream indices
+    #     return features.basin_bbox(self.rnodes, self.rnodes_up, self.rbasins, ys, xs, res)
 
     def basin_map(self, idx=None, values=None, dtype=np.int64):
-        if not hasattr(self, 'rnodes'):
-            self.setup_network()    # setup network based on pits
-        if idx is None:             # use outlet points if idx not given
+        if self.rnodes is None:
+            self.setup_network()    # setup network, with pits as most downstream indices
+        if idx is None:             # use most downstream network indices if idx not given
             idx = self.idx0
         idx = np.atleast_1d(idx).astype(np.int64)
-        if values is None:          # use range to number basins if not given
+        if values is None:          # number basins using range, starting from 1
             values = np.arange(idx.size, dtype=dtype)+1
         else:
             values = np.atleast_1d(values).astype(dtype)
@@ -127,8 +136,8 @@ class FlwdirRaster(object):
         return gridtools.vectorize(basin_map, 0, self.transform, crs=self.crs)
 
     def stream_order(self):
-        if not hasattr(self, 'rnodes'):
-            self.setup_network() # setup network based on pits
+        if self.rnodes is None:
+            self.setup_network()    # setup network, with pits as most downstream indices
         return network.stream_order(self.rnodes, self.rnodes_up, self.shape).astype(np.int16)
 
     def stream_shape(self, stream_order=None, mask=None, min_order=3):
