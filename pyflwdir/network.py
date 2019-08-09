@@ -2,7 +2,7 @@
 # Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
 # August 2019
 
-from numba import njit, prange
+from numba import njit, prange, guvectorize
 from numba.errors import NumbaPendingDeprecationWarning
 import numpy as np
 import warnings
@@ -14,18 +14,65 @@ _nodata = fd._nodata
 _pits = fd._pits 
 _ds = fd._ds
 
-@njit() #, fastmath=True)
+# @guvectorize(
+#     ['void(int32, uint8[:], int32[:], int32[:], int32[:])'],
+#     '(n),(m),(j),(p)->(n,p)'
+#     )
+# def _us8(idx, flwdir_flat, shape, empty8, idxs_us8):
+#     # idxs_us8 = np.ones(8, dtype=np.int32)*-1
+#     idxs_us = fd.us_indices(idx, flwdir_flat, (shape[0], shape[1]))
+#     idxs_us8[:idxs_us.size] = idxs_us
+#     # return idxs_us8
+
+@njit #, fastmath=True)
+def _nbs_us2(idx_ds, flwdir_flat, shape):
+    nbs_us = np.ones((idx_ds.size, 8), dtype=np.int32)*-1
+    N = 1
+    for i in range(idx_ds.size):
+        idxs_us = fd.us_indices(idx_ds[i], flwdir_flat, shape)
+        n = idxs_us.size
+        nbs_us[i, :n] = idxs_us.astype(np.int32)
+        if n > N:
+            N = n
+    return nbs_us[:,:N]
+
+@njit
+def setup_dd2(idx_ds, flwdir_flat, shape):
+    """set drainage direction network from downstream to upstream
+    """
+    nodes = list()              # list of arrays (n) with downstream indices
+    nodes_up = list()           # list of arrays (n, m) with upstream indices; m <= 8
+    # move upstream
+    j = 0
+    while True:
+        nbs_us = _nbs_us2(idx_ds, flwdir_flat, shape)
+        # import pdb; pdb.set_trace()
+        if np.all(nbs_us[:,0] == -1):
+            break
+        elif j > 0:
+            idx_valid = np.where(nbs_us[:,0] != -1)[0]
+            idx_ds = idx_ds[idx_valid]
+            nbs_us = nbs_us[idx_valid,:]
+        nodes.append(idx_ds)
+        nodes_up.append(nbs_us)
+        # next iter
+        j += 1
+        idx_ds = nbs_us.ravel()
+        idx_ds = idx_ds[idx_ds!=-1]
+    return nodes[::-1], nodes_up[::-1]
+
+@njit
 def _nbs_us(idx_ds, flwdir_flat, shape):
     idx_lst = list()
     valid = list()
-    nbs_us = np.ones((idx_ds.size, 8), dtype=np.int64)*-1
+    nbs_us = np.ones((idx_ds.size, 8), dtype=np.int32)*-1
     for i in range(idx_ds.size):
         idxs_us = fd.us_indices(idx_ds[i], flwdir_flat, shape)
         if np.any(idxs_us):
             idx_lst.extend(idxs_us)
             nbs_us[i, :idxs_us.size] = idxs_us
             valid.append(i)
-    return nbs_us, np.array(idx_lst, dtype=np.int64), np.array(valid, dtype=np.int64)
+    return nbs_us, np.array(idx_lst, dtype=np.int32), np.array(valid, dtype=np.int32)
 
 @njit
 def setup_dd(idx_ds, flwdir_flat, shape):
@@ -33,7 +80,6 @@ def setup_dd(idx_ds, flwdir_flat, shape):
     """
     nodes = list()              # list of arrays (n) with downstream indices
     nodes_up = list()           # list of arrays (n, m) with upstream indices; m <= 8
-    idx_ds = np.asarray(idx_ds, np.int64)
     # move upstream
     j = 0
     while True:
@@ -56,8 +102,8 @@ def setup_dd(idx_ds, flwdir_flat, shape):
 #     nodes_up = list()           # list of arrays (n, 1<>8) with upstream indices
 #     basins = list()             # list of arrays (n) with basin no. for basin cells 
 #     # NOTE: size n varies for each iteration
-#     idx_ds = np.asarray(idx_ds, np.int64)
-#     basins_ds = np.arange(idx_ds.size).astype(np.int64)
+#     idx_ds = np.asarray(idx_ds, np.int32)
+#     basins_ds = np.arange(idx_ds.size).astype(np.int32)
     
 #     # create network moving upstream
 #     j = 0
@@ -66,7 +112,7 @@ def setup_dd(idx_ds, flwdir_flat, shape):
 #         basins_next = list()    # flattened list of upstream basin indices
 #         has_us = list()          # True if any upstream neighbor
 #         # find upstream cells
-#         nbs_up = np.ones((idx_ds.size, 8), dtype=np.int64)*-1
+#         nbs_up = np.ones((idx_ds.size, 8), dtype=np.int32)*-1
 #         N=0
 #         for i, idx in enumerate(idx_ds):
 #             idxs_us = fd.us_indices(idx, flwdir_flat, shape)
@@ -77,12 +123,12 @@ def setup_dd(idx_ds, flwdir_flat, shape):
 #                 if n_up > N:
 #                     N = n_up
 #                 idx_next.extend(idxs_us)
-#                 basins_next.extend(np.ones(idxs_us.size, dtype=np.int64)*ibas)
+#                 basins_next.extend(np.ones(idxs_us.size, dtype=np.int32)*ibas)
 #                 has_us.append(i)
 #         # append trimmed upstream nodes array
 #         if len(has_us) > 0:
 #             if j == 0: # include all in first iteration
-#                 idx_valid = np.arange(idx_ds.size).astype(np.int64)
+#                 idx_valid = np.arange(idx_ds.size).astype(np.int32)
 #             else:
 #                 idx_valid = np.asarray(has_us)
 #             nodes.append(np.atleast_1d(idx_ds[idx_valid]))
@@ -92,8 +138,8 @@ def setup_dd(idx_ds, flwdir_flat, shape):
 #         if len(idx_next) == 0:
 #             break
 #         # next iteration
-#         idx_ds = np.array(idx_next, dtype=np.int64)
-#         basins_ds = np.array(basins_next, dtype=np.int64)
+#         idx_ds = np.array(idx_next, dtype=np.int32)
+#         basins_ds = np.array(basins_next, dtype=np.int32)
 #         j += 1
             
 #     return nodes[::-1], nodes_up[::-1], basins[::-1]
@@ -119,7 +165,7 @@ def delineate_basins(rnodes, rnodes_up, idx, values, shape):
 @njit
 def _main_upsteam(idxs_us, uparea_flat, upa_min):
     upa_max = upa_min
-    idx_main_us = np.int64(-9999)
+    idx_main_us = np.int32(-9999)
     for i in range(idxs_us.size):
         idx_us = idxs_us[i]
         if idx_us != -1: break
@@ -135,7 +181,7 @@ def main_upstream(rnodes, rnodes_up, uparea, upa_min=np.float32(0.)):
     shape = uparea.shape
     uparea_flat = uparea.ravel()
     # output
-    main_us = np.ones(uparea_flat.size, dtype=np.int64)*-9999
+    main_us = np.ones(uparea_flat.size, dtype=np.int32)*-9999
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
@@ -163,7 +209,7 @@ def _strahler_order(idxs_us, strord_flat):
                 ord_cnt = 1
     if ord_cnt >= 2: # where two channels of order i join, a channel of order i+1 results
         ord_max += 1
-    return ord_max, np.array(head_lst, dtype=np.int64)
+    return ord_max, np.array(head_lst, dtype=np.int32)
 
 @njit
 def stream_order(rnodes, rnodes_up, shape):

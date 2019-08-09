@@ -44,6 +44,8 @@ class FlwdirRaster(object):
         self.shape = data.shape
         self.bounds = array_bounds(data.shape[0], data.shape[1], transform)
         self.size = data.size
+        if self.size > 2**31-1:
+            raise ValueError('Extent too large for int32 indices')
         if create_copy:
             self.data = data.copy()
         else:
@@ -84,13 +86,9 @@ class FlwdirRaster(object):
         if idx0 is None:
             idx0 = self.get_pits()
             if idx0.size == 0:
-                raise ValueError('no pits found in flow direction data')
-        self.idx0 = None            # most downstream indices in network
-        self.rnodes = None          # network ds nodes (n)
-        self.rnodes_up = None       # network us nodes (n,m); m <= 8 in d8
-        self.rbasins = None         # network ds basin id (n)            
-        self.idx0 = np.atleast_1d(idx0) # basin outlets
-        self.rnodes, self.rnodes_up = network.setup_dd(self.idx0, self.data_flat, self.shape)
+                raise ValueError('no pits found in flow direction data')       
+        self.idx0 = np.atleast_1d(idx0).astype(np.int32) # basin outlets
+        self.rnodes, self.rnodes_up = network.setup_dd2(self.idx0, self.data_flat, self.shape)
 
     def get_pits(self):
         return fd.pit_indices(self.data.flatten())
@@ -114,12 +112,12 @@ class FlwdirRaster(object):
     #         self.setup_network()    # setup network, with pits as most downstream indices
     #     return features.basin_bbox(self.rnodes, self.rnodes_up, self.rbasins, ys, xs, res)
 
-    def basin_map(self, idx=None, values=None, dtype=np.int64):
+    def basin_map(self, idx=None, values=None, dtype=np.int32):
         if self.rnodes is None:
             self.setup_network()    # setup network, with pits as most downstream indices
         if idx is None:             # use most downstream network indices if idx not given
             idx = self.idx0
-        idx = np.atleast_1d(idx).astype(np.int64)
+        idx = np.atleast_1d(idx).astype(np.int32)
         if values is None:          # number basins using range, starting from 1
             values = np.arange(idx.size, dtype=dtype)+1
         else:

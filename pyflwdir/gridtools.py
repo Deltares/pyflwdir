@@ -201,7 +201,7 @@ def latlon_to_transform(lat, lon):
     return trans * scale
 
 # @numba.guvectorize(
-#     ["void(int64, float64[:], float64[:], int64, float64[:])"],
+#     ["void(int32, float64[:], float64[:], int64, float64[:])"],
 #     "(n),(m),(),()->(n)"
 #     )
 @numba.njit

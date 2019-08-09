@@ -25,7 +25,7 @@ with rasterio.open(r'./tests/data/flwdir.tif', 'r') as src:
     nodata = src.nodata
     crs = src.crs
     prof = src.profile
-idx0 = 864
+idx0 = np.int32(864)
 prof.update(nodata=-9999, dtype=np.int32)
 
 # def test_something():
@@ -134,14 +134,16 @@ def test_riv_shape():
 
 
 def check_memory_time():
-    raster = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
-    idx0 = 8640959
+    # raster = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
+    raster = xr.open_dataset(r'/media/data/hydro_merit_1.0/03sec/test_sel_idx74.nc')['dir'].load().values
+    idx0 = np.int32(8640959)
     print(rtsys.get_allocation_stats())
     
     print('initialize')
-    flwdir = FlwdirRaster(raster, crs=crs, transform=transform)
+    flwdir = FlwdirRaster(raster)
     print(rtsys.get_allocation_stats())
-    
+    # print(pyflwdir.network._us8(idx0, flwdir.data_flat, flwdir.shape))
+    pyflwdir.network._nbs_us2(np.asarray([idx0]), flwdir.data_flat, flwdir.shape)
     # print('repair')
     # flwdir.repair()
     # print(rtsys.get_allocation_stats())
@@ -151,7 +153,8 @@ def check_memory_time():
     # print(("%s" % i).center(50, '-'))
     start = time.time()    
     # flwdir.setup_network(idx0)
-    nn_ds, nn_us = pyflwdir.network.setup_dd2(np.asarray([idx0], dtype=np.int64), flwdir.data_flat, flwdir.shape)
+    pyflwdir.network.setup_dd2(np.asarray([idx0], dtype=np.int32), flwdir.data_flat, flwdir.shape)
+    # pyflwdir.network.setup_dd.parallel_diagnostics(level=4)
     # pyflwdir.network.setup_dd(flwdir.data_flat, np.asarray([idx0]), flwdir.shape)
     end = time.time()
     print(f"Elapsed (before compilation) = {(end - start):.6f} s")
@@ -185,14 +188,14 @@ def check_memory_time():
 
 if __name__ == "__main__":
     # import pdb; pdb.set_trace()
-    # check_memory_time()
-    # print('finalize')
-    # print(rtsys.get_allocation_stats())
-    test_setup_network()
-    test_flwdir_repair()
-    test_basin_delination()
-    # test_basin_bounds()
-    test_uparea()
-    test_stream_order()
-    test_riv_shape()
+    check_memory_time()
+    print('finalize')
+    print(rtsys.get_allocation_stats())
+    # test_setup_network()
+    # test_flwdir_repair()
+    # test_basin_delination()
+    # # test_basin_bounds()
+    # test_uparea()
+    # test_stream_order()
+    # test_riv_shape()
     pass
