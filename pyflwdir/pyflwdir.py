@@ -87,7 +87,7 @@ class FlwdirRaster(object):
             idx0 = self.get_pits()
             if idx0.size == 0:
                 raise ValueError('no pits found in flow direction data')       
-        self.idx0 = np.atleast_1d(idx0).astype(np.int32) # basin outlets
+        self.idx0 = np.atleast_1d(np.asarray(idx0, dtype=np.int32)) # basin outlets
         self.rnodes, self.rnodes_up = network.setup_dd2(self.idx0, self.data_flat, self.shape)
 
     def get_pits(self):

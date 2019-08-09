@@ -31,10 +31,10 @@ def _nbs_us2(idx_ds, flwdir_flat, shape):
     for i in range(idx_ds.size):
         idxs_us = fd.us_indices(idx_ds[i], flwdir_flat, shape)
         n = idxs_us.size
-        nbs_us[i, :n] = idxs_us.astype(np.int32)
+        nbs_us[i, :n] = idxs_us
         if n > N:
             N = n
-    return nbs_us[:,:N]
+    return nbs_us[:,:N].astype(np.int32)
 
 @njit
 def setup_dd2(idx_ds, flwdir_flat, shape):
