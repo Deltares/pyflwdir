@@ -46,8 +46,8 @@ class FlwdirRaster(object):
         self.shape = data.shape
         self.bounds = array_bounds(data.shape[0], data.shape[1], transform)
         self.size = data.size
-        if self.size > 2**31-1:
-            raise ValueError('Extent too large for int32 indices')
+        if self.size > 2**32-2:
+            raise ValueError('Extent too large for uint32 indices')
         if create_copy:
             self._data = data.copy()
         else:
@@ -98,7 +98,7 @@ class FlwdirRaster(object):
             idx0 = self.get_pits()
             if idx0.size == 0:
                 raise ValueError('no pits found in flow direction data')       
-        self._idx0 = np.atleast_1d(np.asarray(idx0, dtype=np.int32)) # basin outlets
+        self._idx0 = np.atleast_1d(np.asarray(idx0, dtype=np.uint32)) # basin outlets
         self._rnodes, self._rnodes_up = network.setup_dd(self._idx0, self._data_flat, self.shape)
         return None
 
@@ -130,7 +130,7 @@ class FlwdirRaster(object):
             self.setup_network()    # setup network, with pits as most downstream indices
         if idx is None:             # use most downstream network indices if idx not given
             idx = self._idx0
-        idx = np.atleast_1d(idx).astype(np.int32)
+        idx = np.atleast_1d(idx).astype(np.uint32)
         return features.basin_bbox(self._rnodes, self._rnodes_up, idx, ys, xs, resy, resx)
 
     def basin_map(self, idx=None, values=None, dtype=np.int32):
@@ -138,7 +138,7 @@ class FlwdirRaster(object):
             self.setup_network()    # setup network, with pits as most downstream indices
         if idx is None:             # use most downstream network indices if idx not given
             idx = self._idx0
-        idx = np.atleast_1d(idx).astype(np.int32)
+        idx = np.atleast_1d(idx).astype(np.uint32)
         if values is None:          # number basins using range, starting from 1
             values = np.arange(idx.size, dtype=dtype)+1
         else:
@@ -156,7 +156,7 @@ class FlwdirRaster(object):
             uparea = self.upstream_area()
         subbasin_idx = d8_scaling.subbasin_outlets_grid(scale_ratio, self._data, uparea)
         subbasin_idx = subbasin_idx[subbasin_idx!=-9999]
-        return self.basin_map(idx=subbasin_idx, values=None, dtype=np.int32)
+        return self.basin_map(idx=subbasin_idx, values=None, dtype=np.uint32)
 
     def subbasin_map_pfaf(self):
         # TODO create pfafstetter subbasins

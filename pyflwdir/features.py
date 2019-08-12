@@ -14,7 +14,6 @@ _ds = fd._ds
 
 # @njit
 # def _vector_d8(flwdir, dx_matrix, dy_matrix):
-#     """returns a numpy array (int32) with indices of upstream neighbors on a d8 grid"""
 #     mag = np.zeros(flwdir.size, np.float32)
 #     angle = np.zeros(flwdir.size, np.float32)
 #     flwdir_flat = flwdir.flatten()
@@ -43,7 +42,7 @@ _ds = fd._ds
 @njit
 def trace_riv_reach(idx_ds, stro_ds, flwdir_flat, stream_order_flat, shape):
     idx0 = fd.ds_index(idx_ds, flwdir_flat, shape)
-    if idx0 >= 0 and idx0 != idx_ds:
+    if idx0 != np.uint32(-1) and idx0 != idx_ds:
         nodes = list([idx0, idx_ds])
     else:
         nodes = list([idx_ds])
@@ -58,11 +57,11 @@ def trace_riv_reach(idx_ds, stro_ds, flwdir_flat, stream_order_flat, shape):
         if nodes[-1] == idx_ds:
             break
         idx_ds = nodes[-1]
-    return np.array(nodes, np.int64), np.array(tribs, np.int64)
+    return np.array(nodes, np.uint32), np.array(tribs, np.uint32)
 
 @njit
 def river_nodes(idx_ds, flwdir_flat, stream_order_flat, shape):
-    idx_ds = np.asarray(idx_ds, np.int64)
+    idx_ds = np.asarray(idx_ds, np.uint32)
     rivs = list()
     stro = list()
     while True:
@@ -75,7 +74,7 @@ def river_nodes(idx_ds, flwdir_flat, stream_order_flat, shape):
             idx_next.extend(tribs)
         if len(idx_next) == 0:
             break
-        idx_ds = np.array(idx_next, dtype=np.int64)
+        idx_ds = np.array(idx_next, dtype=np.uint32)
     return rivs, stro
 
 @njit
@@ -90,33 +89,34 @@ def _update_bbox(idx_ds, xmin, ymin, xmax, ymax, ncol):
 def basin_bbox(rnodes, rnodes_up, idx, lats, lons, resy, resx):
     nrow, ncol = lats.size, lons.size
     # initialize arrays
-    basidx_flat = np.zeros(nrow*ncol, dtype=np.int32)
-    rcbboxs = np.ones((idx.size, 4), dtype=np.int32)*-1
+    basidx_flat = np.zeros(nrow*ncol, dtype=np.uint32)
+    rcbboxs = np.ones((idx.size, 4), dtype=np.uint32)*np.uint32(-1)
     bboxs = np.ones((idx.size, 4), dtype=lats.dtype)*-1
     
     # get bbox in row/col integers
     for ibas in range(idx.size):
         rcbboxs[ibas,:] = _update_bbox(idx[ibas], ncol, nrow, 0, 0, ncol)
-        basidx_flat[idx[ibas]] = np.int32(ibas+1)
+        basidx_flat[idx[ibas]] = np.uint32(ibas+1)
     for i in range(len(rnodes)):
         k = -i-1
         for j in range(len(rnodes[k])):
             idx_ds = rnodes[k][j]
             idxs_us = rnodes_up[k][j] # NOTE: has nodata (-1) values
-            ibas = basidx_flat[idx_ds]-1
-            if ibas < 0: continue
+            ibas = basidx_flat[idx_ds]
+            if ibas == 0: continue
+            ibas -= 1 # convert to zero based count
             for idx_us in idxs_us:
                 #NOTE: only flowwing block is different from flux.propagate_upstream
-                if idx_us == -1: break
+                if idx_us == np.uint32(-1): break
                 if basidx_flat[idx_us] == 0: 
-                    basidx_flat[idx_us] = np.int32(ibas+1)
+                    basidx_flat[idx_us] = np.uint32(ibas+1)
                     xmin, ymin, xmax, ymax = rcbboxs[ibas, :]
                     rcbboxs[ibas,:] = _update_bbox(idx_us, xmin, ymin, xmax, ymax, ncol)
 
     # convert to lat/lon bbox assuming lat/lon on ceter pixel
     for ibas in range(idx.size):
         xmin, ymin, xmax, ymax = rcbboxs[ibas, :]
-        if xmin < 0: continue
+        if xmin == np.uint32(-1): continue
         assert ymax < nrow
         west, east = lons[xmin]-resx/2., lons[xmax]+resx/2.
         if resy<0: # N -> S

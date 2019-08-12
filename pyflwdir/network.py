@@ -20,12 +20,12 @@ _ds = fd._ds
 # also not sure if the guvectorize layout argument is correct
 # @njit
 # def _us8(idx, flwdir_flat, shape):
-#     out = np.ones(8, dtype=np.int32)*-1
+#     out = np.ones(8, dtype=np.uint32)*np.uint32(-1)
 #     idxs_us = fd.us_indices(idx, flwdir_flat, (shape[0], shape[1]))
 #     out[:idxs_us.size] = idxs_us
 #     return out
 # @guvectorize(
-#     ['void(int32[:], uint8[:], int64[:], int32[:], int32[:,:])'],
+#     ['void(uint32[:], uint8[:], int64[:], uint32[:], uint32[:,:])'],
 #     '(n),(k),(j),(m)->(n,m)', target='parallel'
 #     )
 # def _us8_vec(idx_ds, flwdir_flat, shape, empty8, out):
@@ -33,7 +33,7 @@ _ds = fd._ds
 #         out[i,:] = _us8(idx_ds[i], flwdir_flat, shape)
 # @njit(parallel=True)
 # def _us8_vec(idx_ds, flwdir_flat, shape, emtpy8):
-#     out = np.zeros((idx_ds.size, 8), dtype=np.int32)
+#     out = np.zeros((idx_ds.size, 8), dtype=np.uint32)
 #     for i in prange(idx_ds.size):
 #         out[i,] = _us8(idx_ds[i], flwdir_flat, shape)
 #     return out
@@ -43,12 +43,12 @@ _ds = fd._ds
 #     """
 #     nodes = list()              # list of arrays (n) with downstream indices
 #     nodes_up = list()           # list of arrays (n, m) with upstream indices; m <= 8
-#     empty8 = np.ones(8, dtype=np.int32)
+#     empty8 = np.ones(8, dtype=np.uint32)
 #     # move upstream
 #     j = 0
 #     while True:
 #         nbs_us = _us8_vec(idx_ds, flwdir_flat, np.asarray(shape), empty8)
-#         idx_valid = np.where(nbs_us[:,0] != -1)[0]
+#         idx_valid = np.where(nbs_us[:,0] != np.uint32(-1))[0]
 #         if idx_valid.size==0:
 #             break
 #         elif j > 0:
@@ -59,13 +59,13 @@ _ds = fd._ds
 #         # next iter
 #         j += 1
 #         # NOTE 2d boolean indexing does not work currenlty in numba
-#         idx_ds = nbs_us.reshape(-1)[nbs_us.reshape(-1)!=-1].astype(np.int32)
+#         idx_ds = nbs_us.reshape(-1)[nbs_us.reshape(-1) != np.uint32(-1)].astype(np.uint32)
 #     return nodes[::-1], nodes_up[::-1]
 
 # This dask distributed method is super slow. only with huge load (kin wave?) this might work.
 # @dask.delayed
 # def _us8_dask(idx, flwdir_flat, shape):
-#     out = np.ones((1,8), dtype=np.int32)*-1
+#     out = np.ones((1,8), dtype=np.uint32)*-1
 #     idxs_us = fd.us_indices(idx, flwdir_flat, (shape[0], shape[1]))
 #     out[0,:idxs_us.size] = idxs_us
 #     return out
@@ -81,7 +81,7 @@ _ds = fd._ds
 #         for i in range(idx_ds.size):
 #             tasks.append(_us8_dask(idx_ds[i], flwdir_flat, shape))
 #         nbs_us = np.concatenate(dask.compute(*tasks, scheduler="processes"), axis=0)
-#         idx_valid = np.where(nbs_us[:,0] != -1)[0]
+#         idx_valid = np.where(nbs_us[:,0] != np.uint32(-1))[0]
 #         if idx_valid.size==0:
 #             break
 #         elif j > 0:
@@ -92,12 +92,12 @@ _ds = fd._ds
 #         # next iter
 #         j += 1
 #         # NOTE 2d boolean indexing does not work currenlty in numba
-#         idx_ds = nbs_us[nbs_us!=-1].astype(np.int32)
+#         idx_ds = nbs_us[nbs_us != np.uint32(-1)].astype(np.uint32)
 #     return nodes[::-1], nodes_up[::-1]
 
 @njit
 def _nbs_us(idx_ds, flwdir_flat, shape):
-    nbs_us = np.ones((idx_ds.size, 8), dtype=np.int32)*-1
+    nbs_us = np.ones((idx_ds.size, 8), dtype=np.uint32)*np.uint32(-1)
     valid = np.zeros(idx_ds.size, dtype=np.int8)
     N = 1
     for i in range(idx_ds.size):
@@ -109,7 +109,7 @@ def _nbs_us(idx_ds, flwdir_flat, shape):
             if n > N:
                 N = n
     nbs_us = nbs_us[:,:N]
-    return nbs_us.astype(np.int32), valid
+    return nbs_us.astype(np.uint32), valid
 
 @njit
 def setup_dd(idx_ds, flwdir_flat, shape):
@@ -132,7 +132,7 @@ def setup_dd(idx_ds, flwdir_flat, shape):
         # next iter
         j += 1
         # NOTE 2d boolean indexing does not work currenlty in numba
-        idx_ds = nbs_us.reshape(-1)[nbs_us.reshape(-1)!=-1].astype(np.int32)
+        idx_ds = nbs_us.reshape(-1)[nbs_us.reshape(-1) != np.uint32(-1)].astype(np.uint32)
     return nodes[::-1], nodes_up[::-1]
 
 @njit
@@ -148,7 +148,7 @@ def delineate_basins(rnodes, rnodes_up, idx, values, shape):
             basidx_ds = basidx_flat[idx_ds]
             for idx_us in idxs_us:
                 #NOTE: only flowwing block is different from flux.propagate_upstream
-                if idx_us == -1: break
+                if idx_us == np.uint32(-1): break
                 if basidx_flat[idx_us] == 0: 
                     basidx_flat[idx_us] = basidx_ds
     return basidx_flat.reshape(shape)
@@ -164,9 +164,9 @@ def upstream_area(rnodes, rnodes_up, cellare, shape):
             idxs_us = rnodes_up[i][j] # NOTE: has nodata (-1) values
             upa_ds = np.float32(cellare[idx_ds // ncol])
             for idx_us in idxs_us:
-                if idx_us == -1: break
+                if idx_us == np.uint32(-1): break
                 upa_us = upa[idx_us]
-                if upa_us <= 0:
+                if upa_us == -9999:
                     upa_us = np.float32(cellare[idx_us // ncol])
                     upa[idx_us] = upa_us
                 upa_ds += upa_us
@@ -176,10 +176,10 @@ def upstream_area(rnodes, rnodes_up, cellare, shape):
 @njit
 def _main_upsteam(idxs_us, uparea_flat, upa_min):
     upa_max = upa_min
-    idx_main_us = np.int32(-9999)
+    idx_main_us = np.uint32(-1)
     for i in range(idxs_us.size):
         idx_us = idxs_us[i]
-        if idx_us != -1: break
+        if idx_us != np.uint32(-1): break
         upa = uparea_flat[idx_us]
         if upa > upa_max:
             upa_max = upa
@@ -192,7 +192,7 @@ def main_upstream(rnodes, rnodes_up, uparea, upa_min=np.float32(0.)):
     shape = uparea.shape
     uparea_flat = uparea.reshape(-1)
     # output
-    main_us = np.ones(uparea_flat.size, dtype=np.int32)*-9999
+    main_us = np.ones(uparea_flat.size, dtype=np.uint32)*-9999
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
@@ -207,7 +207,7 @@ def _strahler_order(idxs_us, strord_flat):
     ord_cnt = 0
     for i in range(idxs_us.size):
         idx_us = idxs_us[i]
-        if idx_us == -1: break
+        if idx_us == np.uint32(-1): break
         ordi = strord_flat[idx_us]
         if ordi <= 0: # most upstream cells
             ordi = np.int8(1)
@@ -220,7 +220,7 @@ def _strahler_order(idxs_us, strord_flat):
                 ord_cnt = 1
     if ord_cnt >= 2: # where two channels of order i join, a channel of order i+1 results
         ord_max += 1
-    return ord_max, np.array(head_lst, dtype=np.int32)
+    return ord_max, np.array(head_lst, dtype=np.uint32)
 
 @njit
 def stream_order(rnodes, rnodes_up, shape):

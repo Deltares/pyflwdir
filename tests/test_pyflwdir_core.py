@@ -20,7 +20,7 @@ def test_ds():
     # test downstream > ds_idx out of range
     for idx0 in range(9):
         if idx0 != 4:
-            assert fd.ds_index(0, _ds_flat, shape) == -1
+            assert fd.ds_index(0, _ds_flat, shape) == np.uint32(-1)
 
 def test_us():
     _us_flat = fd._us.flatten()

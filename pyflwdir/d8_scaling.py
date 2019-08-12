@@ -17,23 +17,23 @@ def subidx_2_idx(subidx, sub_ncol, scale_ratio):
     ncol = int(sub_ncol/scale_ratio)
     r = (subidx // sub_ncol) // scale_ratio
     c = (subidx %  sub_ncol) // scale_ratio
-    return r * ncol + c 
+    return np.uint32(r * ncol + c)
 
 @njit
 def tilesubidx_2_subidx(tilesubidx, tileidx, sub_ncol, scale_ratio):
     ncol = int(sub_ncol/scale_ratio)
     r = tileidx // ncol * scale_ratio + tilesubidx // scale_ratio
     c = tileidx %  ncol * scale_ratio + tilesubidx %  scale_ratio
-    return r * sub_ncol + c
+    return np.uint32(r * sub_ncol + c)
 
 @njit
 def _rep_cell(idx0, flwdir_flat, uparea_flat, shape, scale_ratio):
     R = scale_ratio/2.
     rr = np.abs(np.arange(-R+0.5, R, 1.))
     sub_ncol = shape[1]
-    upa0 = 0 #
-    subidx0 = -1
-    idx = -1
+    upa0 = np.float32(0) #
+    subidx0 = np.uint32(-1)
+    idx = np.uint32(-1)
     repcells = []
     for i in rr:
         for j in rr:
@@ -60,7 +60,7 @@ def _rep_cell(idx0, flwdir_flat, uparea_flat, shape, scale_ratio):
 @njit
 def _outlet(idx0, subidx, flwdir_flat, shape, scale_ratio):
     sub_ncol = shape[1]
-    subidx_out = -1
+    subidx_out = np.uint32(-1)
     idx = idx0
     streamcells = [subidx]
     while True:
@@ -91,7 +91,7 @@ def _dd(idx0, subidx, flwdir_flat, effare_flat, shape, shape_lr, scale_ratio, ex
     i = 0
     while True:
         subidx_ds = fd.ds_index(subidx, flwdir_flat, shape) # move downstream
-        if subidx_ds == -1: # outside domain
+        if subidx_ds == np.uint32(-1): # outside domain
             break 
         idx_ds = subidx_2_idx(subidx_ds, sub_ncol, scale_ratio)
         # at pit/mouth
@@ -231,8 +231,8 @@ def d8_scaling(scale_ratio, flwdir, uparea, upa_min=0.5, extended=True):
     flwdir_flat = flwdir.reshape(-1)
     uparea_flat = uparea.reshape(-1)
     # output cells
-    outlet_lr_flat = np.ones(size_lr, dtype=np.int64)*-1
-    repcel_lr_flat = np.ones(size_lr, dtype=np.int64)*-1
+    outlet_lr_flat = np.ones(size_lr, dtype=np.uint32)*-1
+    repcel_lr_flat = np.ones(size_lr, dtype=np.uint32)*-1
     flwdir_lr_flat = np.zeros(size_lr, dtype=flwdir.dtype)
     effare_flat = np.zeros(flwdir.size, dtype=np.uint8)    
 

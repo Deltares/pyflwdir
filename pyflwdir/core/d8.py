@@ -2,7 +2,7 @@
 # Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
 # August 2019
 
-from numba import njit, int64, int32, uint8, int8, boolean, float32
+from numba import njit, int64, uint32, uint8, int8, boolean, float32
 from numba.types import Tuple
 import numpy as np
 from math import hypot
@@ -18,13 +18,13 @@ _us = np.array([
 _nodata = np.uint8(247)
 _pits = np.array([0, 255], dtype=np.uint8)
 
-@njit(int32[:](uint8[:]))
+@njit(uint32[:](uint8[:]))
 def pit_indices(flwdir_flat):
     idxs = []
     for idx0 in range(flwdir_flat.size):
         if np.any(flwdir_flat[idx0] == _pits):
             idxs.append(idx0)
-    return np.array(idxs, dtype=np.int32)
+    return np.array(idxs, dtype=np.uint32)
 
 @njit(boolean(uint8))
 def ispit(dd):
@@ -56,9 +56,9 @@ def dd_2_drdc(dd):
             dc = np.int8(dd)
     return dr, dc
 
-@njit(int32(int32, uint8[:], Tuple((int64, int64))))
+@njit(uint32(uint32, uint8[:], Tuple((int64, int64))))
 def ds_index(idx0, flwdir_flat, shape):
-    """returns numpy array (int32) with indices of donwstream neighbors on a D8 grid.
+    """returns numpy array (uint32) with indices of donwstream neighbors on a D8 grid.
     At a pit the current index is returned
     
     D8 format
@@ -70,54 +70,54 @@ def ds_index(idx0, flwdir_flat, shape):
     c0 = idx0 %  ncol
     dr, dc = dd_2_drdc(dd)
     if (r0 == 0 and dr == -1) or (c0 == 0 and dc == -1) or (r0 == nrow-1 and dr == 1) or (c0 == ncol-1 and dc == 1):
-        idx = np.int32(-1) # outside domain
+        idx = np.uint32(-1) # outside domain
     else:
-        idx = np.int32(idx0 + dc + dr*ncol)
+        idx = np.uint32(idx0 + dc + dr*ncol)
     return idx
 
-@njit(int32[:](int32, uint8[:], Tuple((int64, int64))))
+@njit(uint32[:](uint32, uint8[:], Tuple((int64, int64))))
 def us_indices(idx0, flwdir_flat, shape):
-    """returns a numpy array (int32) with indices of upstream neighbors on a D8 grid
+    """returns a numpy array (uint32) with indices of upstream neighbors on a D8 grid
     if it leaves the domain a negative D8 value indicating the side where it leaves the domain is returned"""
     nrow, ncol = shape
     # assume c-style row-major
-    r = idx0 // ncol
-    c = idx0 %  ncol
+    r = np.uint32(idx0 // ncol)
+    c = np.uint32(idx0 %  ncol)
     us_idxs = list()
     for dr in range(-1, 2):
-        row = r + dr
+        row = np.uint32(r + dr)
         for dc in range(-1, 2):
-            col = c + dc
+            col = np.uint32(c + dc)
             if dr == 0 and dc == 0: # skip pit -> return empty array
                 continue
-            elif row < 0 or row >= nrow or col < 0 or col >= ncol: # out of bounds
+            elif row >= nrow or col >= ncol: # out of bounds
                 pass
             else:
-                idx = row*ncol + col
+                idx = np.uint32(row*ncol + col)
                 if flwdir_flat[idx] == _us[dr+1, dc+1]:
-                    us_idxs.append(np.int32(idx))
-    return np.array(us_idxs, dtype=np.int32)
+                    us_idxs.append(np.uint32(idx))
+    return np.array(us_idxs, dtype=np.uint32)
 
-@njit(Tuple((int32, float32))(int32, uint8[:], uint8[:], Tuple((int64, int64)), float32))
+@njit(Tuple((uint32, float32))(uint32, uint8[:], uint8[:], Tuple((int64, int64)), float32))
 def us_main_index(idx0, flwdir_flat, uparea_flat, shape, upa_min):
-    """returns the index (int32) of the upstream cell with the largest uparea"""
+    """returns the index (uint32) of the upstream cell with the largest uparea"""
     nrow, ncol = shape
     # assume c-style row-major
-    r = idx0 // ncol
-    c = idx0 % ncol
-    us_idx = np.int32(idx0)
+    r = np.uint32(idx0 // ncol)
+    c = np.uint32(idx0 % ncol)
+    us_idx = np.uint32(-1)
     us_upa = uparea_flat[idx0]
     if us_upa > upa_min:
         us_upa = upa_min
         for dr in range(-1, 2):
-            row = r + dr
+            row = np.uint32(r + dr)
             for dc in range(-1, 2):
-                col = c + dc
+                col = np.uint32(c + dc)
                 if dr == 0 and dc == 0:
                     continue
-                elif row < 0 or row >= nrow or col < 0 or col >= ncol: # out of bounds
+                elif row >= nrow or col >= ncol: # out of bounds
                     pass
-                idx = row*ncol + col
+                idx = np.uint32(row*ncol + col)
                 if flwdir_flat[idx] == _us[dr+1, dc+1]:
                     upa = uparea_flat[idx]
                     if upa > us_upa:
@@ -125,12 +125,12 @@ def us_main_index(idx0, flwdir_flat, uparea_flat, shape, upa_min):
                         us_upa = upa
     return us_idx, us_upa
 
-@njit(uint8(int32, int32, Tuple((int64, int64)))) 
+@njit(uint8(uint32, uint32, Tuple((int64, int64)))) 
 def idx_to_dd(idx0, idx_ds, shape):
     """returns local D8 flow direction based on current and downstream index"""
     nrow, ncol = shape
     size = nrow * ncol
-    assert idx0 >= 0 and idx0 < size and idx_ds >= 0 and idx_ds < size
+    assert idx0 < size and idx_ds < size
     r = (idx_ds // ncol) - (idx0 // ncol) + 1
     c = (idx_ds %  ncol) - (idx0 %  ncol) + 1
     if r < 0 or r >= 3 or c < 0 or c >= 3:

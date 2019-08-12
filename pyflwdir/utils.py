@@ -14,7 +14,7 @@ _ds = fd._ds
 # TODO: check that all cells drain to an outlet.
 # On a tile level (with buffer) this could be done by checking 
 # that cells reach either the tile bounds or an outlet
-@njit() #(Tuple((uint8[:,:], string))Tuple((int64[:], boolean)))
+@njit() #(Tuple((uint8[:,:], string))Tuple((uint32[:], boolean)))
 def flwdir_check(data):
     shape = data.shape
     data_flat = data.ravel()
@@ -35,14 +35,14 @@ def flwdir_check(data):
         elif np.any(dd == _ds):
             # check downstream neighbor
             idx_ds = fd.ds_index(idx0, data_flat, shape)
-            if idx_ds == -1: # flows outside
+            if idx_ds == np.uint32(-1): # flows outside
                 idx_check.append(idx0)
                 idx_repair.append(idx0) # add to repair list
         else:
             raise ValueError('unknown flow direction value found')
 
     # loop over pits and mark upstream area
-    idxs_ds = np.array(idx_check, dtype=np.int64) # this list should always contain indices
+    idxs_ds = np.array(idx_check, dtype=np.uint32) # this list should always contain indices
     data_check[idxs_ds] = np.uint8(1) # mark pit as checked
     while True:
         idxs_next = []
@@ -50,12 +50,12 @@ def flwdir_check(data):
             idxs_us = fd.us_indices(idx_ds, data_flat, shape)
             # for i in range(idxs_us.size):
             for idx0 in idxs_us:
-                if idx0 >= 0 and idx0 < data.size:
+                if idx0 < data.size:
                     data_check[idx0] = np.uint8(1) # mark cells connected to pit as checked
                     idxs_next.append(idx0)
         if len(idxs_next) == 0:
             break
-        idxs_ds = np.array(idxs_next, dtype=np.int64) # next iter
+        idxs_ds = np.array(idxs_next, dtype=np.uint32) # next iter
     
     # check if all cells marked
     # hascyles = np.any(data_check == np.uint8(0))
@@ -71,4 +71,4 @@ def flwdir_check(data):
                 idx_ds = fd.ds_index(idx_us, data_flat, shape)
             idx_repair.append(idx_us) # add to repair list
 
-    return np.array(idx_repair, dtype=np.int64), hasloops
+    return np.array(idx_repair, dtype=np.uint32), hasloops

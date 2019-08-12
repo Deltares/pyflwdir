@@ -25,7 +25,7 @@ with rasterio.open(r'./tests/data/flwdir.tif', 'r') as src:
     nodata = src.nodata
     crs = src.crs
     prof = src.profile
-idx0 = np.int32(864)
+idx0 = np.uint32(864)
 prof.update(nodata=-9999, dtype=np.int32)
 
 # def test_something():
@@ -68,9 +68,9 @@ def test_setup_network():
     flwdir = FlwdirRaster(raster.copy())
     flwdir.repair()
     flwdir.setup_network()
-    assert flwdir._rnodes[0].dtype == np.int32
+    assert flwdir._rnodes[0].dtype == np.uint32
     assert len(flwdir._rnodes) == len(flwdir._rnodes_up) == 174
-    tot_n = np.sum([np.sum(n!=-1) for n in flwdir._rnodes_up]) + flwdir._rnodes[-1].size
+    tot_n = np.sum([np.sum(n != np.uint32(-1)) for n in flwdir._rnodes_up]) + flwdir._rnodes[-1].size
     assert tot_n == flwdir.size
 
 def test_basin_bounds():
@@ -125,7 +125,7 @@ def test_uparea():
     flwdir = FlwdirRaster(raster, crs=28992) #RD New - Netherlands [metres]
     flwdir.setup_network(idx0)
     upa = flwdir.upstream_area()
-    tot_n = np.sum([np.sum(n!=-1) for n in flwdir._rnodes_up]) + flwdir._rnodes[-1].size
+    tot_n = np.sum([np.sum(n != np.uint32(-1)) for n in flwdir._rnodes_up]) + flwdir._rnodes[-1].size
     assert np.round(upa.max()*1e6,2) == tot_n == 3045.00
     # test in latlon with identity transform
     flwdir = FlwdirRaster(raster)
@@ -143,7 +143,7 @@ def test_riv_shape():
 def check_memory_time():
     # raster = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
     raster = xr.open_dataset(r'/media/data/hydro_merit_1.0/03sec/test_sel_idx74.nc')['dir'].load().values
-    idx0 = np.int32(8640959)
+    idx0 = np.uint32(8640959)
     print(rtsys.get_allocation_stats())
     
     print('initialize')
@@ -152,13 +152,13 @@ def check_memory_time():
 
     print('setup network')
     start = time.time()    
-    pyflwdir.network.setup_dd(np.asarray([idx0], dtype=np.int32), flwdir._data_flat, flwdir.shape)
+    pyflwdir.network.setup_dd(np.asarray([idx0], dtype=np.uint32), flwdir._data_flat, flwdir.shape)
     end = time.time()
     print(f"Elapsed (before compilation) = {(end - start):.6f} s")
     print(rtsys.get_allocation_stats())
     for i in range(3):
         start = time.time()
-        pyflwdir.network.setup_dd(np.asarray([idx0], dtype=np.int32), flwdir._data_flat, flwdir.shape)
+        pyflwdir.network.setup_dd(np.asarray([idx0], dtype=np.uint32), flwdir._data_flat, flwdir.shape)
         end = time.time()
         print(f"Elapsed (after compilation) = {(end - start):.6f} s")
         print(rtsys.get_allocation_stats())
@@ -185,12 +185,11 @@ if __name__ == "__main__":
     # check_memory_time()
     # print('finalize')
     # print(rtsys.get_allocation_stats())
+    test_setup_network()
+    test_flwdir_repair()
+    test_basin_delination()
+    test_basin_bounds()
     test_uparea()
-    # test_setup_network()
-    # test_flwdir_repair()
-    # test_basin_delination()
-    # # test_basin_bounds()
-    # test_uparea()
-    # test_stream_order()
-    # test_riv_shape()
+    test_stream_order()
+    test_riv_shape()
     pass
