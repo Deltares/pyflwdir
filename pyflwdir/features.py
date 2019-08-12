@@ -87,39 +87,42 @@ def _update_bbox(idx_ds, xmin, ymin, xmax, ymax, ncol):
     return xmin, ymin, xmax, ymax
 
 @njit
-def basin_bbox(rnodes, rnodes_up, rbasins, lats, lons, res):
+def basin_bbox(rnodes, rnodes_up, idx, lats, lons, resy, resx):
     nrow, ncol = lats.size, lons.size
-    idxs_ds = rnodes[-1]
-    basins_ds = rbasins[-1]
-    rcbboxs = np.ones((basins_ds.max()+1, 4), dtype=np.int64)*-1
-    bboxs = np.ones((basins_ds.max()+1, 4), dtype=np.float32)*-9999
-    # initialize based on network starting points
-    for j in range(idxs_ds.size):
-        idx = idxs_ds[j]
-        ibas = basins_ds[j]
-        xmin, ymin, xmax, ymax = ncol, nrow, 0, 0
-        rcbboxs[ibas,:] = _update_bbox(idx, xmin, ymin, xmax, ymax, ncol)
-    # loop through network
+    # initialize arrays
+    basidx_flat = np.zeros(nrow*ncol, dtype=np.int32)
+    rcbboxs = np.ones((idx.size, 4), dtype=np.int32)*-1
+    bboxs = np.ones((idx.size, 4), dtype=lats.dtype)*-1
+    
+    # get bbox in row/col integers
+    for ibas in range(idx.size):
+        rcbboxs[ibas,:] = _update_bbox(idx[ibas], ncol, nrow, 0, 0, ncol)
+        basidx_flat[idx[ibas]] = np.int32(ibas+1)
     for i in range(len(rnodes)):
-        nn_us = rnodes_up[-i-1]
-        basins_ds = rbasins[-i-1]
-        for j in range(nn_us.shape[0]):
-            ibas = basins_ds[j]
-            idxs_us = nn_us[j,:] # NOTE: has nodata (-1) values
+        k = -i-1
+        for j in range(len(rnodes[k])):
+            idx_ds = rnodes[k][j]
+            idxs_us = rnodes_up[k][j] # NOTE: has nodata (-1) values
+            ibas = basidx_flat[idx_ds]-1
+            if ibas < 0: continue
             for idx_us in idxs_us:
-                if idx_us < 0: continue
-                xmin, ymin, xmax, ymax = rcbboxs[ibas, :]
-                rcbboxs[ibas,:] = _update_bbox(idx_us, xmin, ymin, xmax, ymax, ncol)
+                #NOTE: only flowwing block is different from flux.propagate_upstream
+                if idx_us == -1: break
+                if basidx_flat[idx_us] == 0: 
+                    basidx_flat[idx_us] = np.int32(ibas+1)
+                    xmin, ymin, xmax, ymax = rcbboxs[ibas, :]
+                    rcbboxs[ibas,:] = _update_bbox(idx_us, xmin, ymin, xmax, ymax, ncol)
+
     # convert to lat/lon bbox assuming lat/lon on ceter pixel
-    for ibas in range(rcbboxs.shape[0]):
+    for ibas in range(idx.size):
         xmin, ymin, xmax, ymax = rcbboxs[ibas, :]
         if xmin < 0: continue
         assert ymax < nrow
-        west, east = lons[xmin]-res/2., lons[xmax]+res/2.
-        if lats[0]>lats[1]: # N -> S
-            south, north = lats[ymax]-res/2., lats[ymin]+res/2.
+        west, east = lons[xmin]-resx/2., lons[xmax]+resx/2.
+        if resy<0: # N -> S
+            south, north = lats[ymax]+resy/2., lats[ymin]-resy/2.
         else:
-            south, north = lats[ymax]-res/2., lats[ymin]+res/2.
+            south, north = lats[ymax]-resy/2., lats[ymin]+resy/2.
         bboxs[ibas,:] = west, south, east, north
-    valid = np.where(bboxs[:,0]!=-9999)[0]
-    return bboxs[valid, :]
+
+    return bboxs
