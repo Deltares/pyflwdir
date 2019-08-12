@@ -21,7 +21,7 @@ def nodes_to_ls(nodes, lats, lons, shape):
 def vectorize(data, nodata, transform, crs=None, connectivity=8):
     feats_gen = features.shapes(data, mask=data!=nodata, transform=transform, connectivity=connectivity)
     feats = [{'geometry': geom, 'properties': {'index': idx}} for geom, idx in list(feats_gen)]
-    gdf = gp.GeoDataFrame.from_features(feats).set_index('index')
+    gdf = gp.GeoDataFrame.from_features(feats, crs=crs).set_index('index')
     gdf.index = gdf.index.astype(data.dtype)
     return gdf
 
@@ -71,7 +71,7 @@ def rasterize(gdf, fn=None, col_name='index', # rasterize
 @numba.njit
 def calc_slope(dem, nodata, sizeinmetres, transform):
     
-    slope = np.zeros(dem.shape,dtype=np.float64)    
+    slope = np.zeros(dem.shape,dtype=np.float32)    
     nrow, ncol = dem.shape
     cellsize = transform[0]
     
@@ -104,8 +104,8 @@ def calc_slope(dem, nodata, sizeinmetres, transform):
                     slp = math.hypot(dzdx, dzdy)
                 else:
                     # EDIT: convert lat/lon to dy/dx in meters to calculate hypot
-                    radlat = np.radians(transform[5] - 0.5*cellsize - r*cellsize)
-                    dy, dx = lat_to_dy(radlat)[0], lat_to_dx(radlat)[0]
+                    lat = transform[5] - 0.5*cellsize - r*cellsize
+                    dy, dx = lat_to_dy(lat), lat_to_dx(lat)
                     slp = math.hypot(dzdx*dx, dzdy*dy)
             else:
                 slp = nodata
@@ -115,7 +115,7 @@ def calc_slope(dem, nodata, sizeinmetres, transform):
     return slope
 
 @numba.vectorize(["float64(float64)", "float32(float32)"])
-def lat_to_dy(radlat):
+def lat_to_dy(lat):
     """"
     Determines the length of one degree lat at a given latitude (in meter).
     Input: array of lattitude values for each cell
@@ -127,7 +127,7 @@ def lat_to_dy(radlat):
     m3 = 1.175  # latitude calculation term 3
     m4 = -0.0023  # latitude calculation term 4
     # # Calculate the length of a degree of latitude and longitude in meters
-
+    radlat = math.radians(lat)
     latlen = (
         m1
         + (m2 * math.cos(2.0 * radlat))
@@ -138,7 +138,7 @@ def lat_to_dy(radlat):
     return latlen
 
 @numba.vectorize(["float64(float64)", "float32(float32)"])
-def lat_to_dx(radlat):
+def lat_to_dx(lat):
     """"
     Determines the length of one degree long at a given latitude (in meter).
     Input: array of lattitude values for each cell
@@ -149,7 +149,7 @@ def lat_to_dx(radlat):
     p2 = -93.5  # longitude calculation term 2
     p3 = 0.118  # longitude calculation term 3
     # # Calculate the length of a degree of latitude and longitude in meters
-
+    radlat = math.radians(lat)
     longlen = (
         (p1 * math.cos(radlat))
         + (p2 * math.cos(3.0 * radlat))
@@ -158,25 +158,23 @@ def lat_to_dx(radlat):
 
     return longlen
 
-# cell resolution
-def cellare_metres(transform, shape):
-    height, width = shape
-    resx, resy = transform[0], transform[4] 
-    dx = np.ones((1, width), dtype=np.float32)*np.abs(resx)
-    dy = np.ones((height, 1), dtype=np.float32)*np.abs(resy)
-    return dy * dx
+@numba.vectorize(["float64(float64)", "float32(float32)"])
+def lat_to_area(lat):
+    dx = lat_to_dx(lat)
+    dy = lat_to_dy(lat)
+    return dx*dy
 
 def latlon_cellare_metres(transform, shape):
-    dy_lat, dx_lat = latlon_cellres_metres(transform, shape)
-    are = dy_lat * dx_lat
-    return np.tile(are[:, None], (1, shape[1]))
+    lat, _ = transform_to_latlon(transform, shape)
+    resx, resy = np.abs(transform[0]), np.abs(transform[4])
+    are = lat_to_area(lat)*resx*resy
+    return are
 
 def latlon_cellres_metres(transform, shape):
     """"""
     lat, _ = transform_to_latlon(transform, shape)
-    radlat = np.radians(lat)
     resx, resy = np.abs(transform[0]), np.abs(transform[4])
-    dy_lat, dx_lat = lat_to_dy(radlat)*resy, lat_to_dx(radlat)*resx
+    dy_lat, dx_lat = lat_to_dy(lat)*resy, lat_to_dx(lat)*resx
     return  dy_lat, dx_lat
 
 # conversion
@@ -205,12 +203,23 @@ def latlon_to_transform(lat, lon):
 #     "(n),(m),(),()->(n)"
 #     )
 @numba.njit
-def idx_to_xy(idx, xs, ys, ncol):
+def idx_to_xy(idx, xcoords, ycoords, ncol):
     shape = idx.shape
     idx = idx.ravel()
-    y = ys[idx // ncol]
-    x = xs[idx %  ncol]
+    y = ycoords[idx // ncol]
+    x = xcoords[idx %  ncol]
     return x.reshape(shape), y.reshape(shape)
+
+def xy_to_idx(xs, ys, transform, shape):
+    r, c = rasterio.transform.rowcol(transform, xs, ys)
+    r, c = np.asarray(r, dtype=np.int32), np.asarray(c, dtype=np.int32)
+    if not np.all(np.logical_and(
+        np.logical_and(r>=0, r<shape[0]),
+        np.logical_and(c>=0, c<shape[1])
+    )):
+        raise ValueError('xy outside domain')
+    idx = r * shape[1] + c
+    return idx
 
 if __name__ == "__main__":
     pass
