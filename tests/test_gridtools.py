@@ -19,7 +19,6 @@ with rasterio.open(r'./tests/data/basins.tif', 'r') as src:
     crs = src.crs
     prof = src.profile
 
-
 def test_transform_conv():
     shape = (10, 20)
     transform = Affine(1, 0, 0, 0, -0.5, 5)
@@ -29,7 +28,6 @@ def test_transform_conv():
     transform2 = gridtools.latlon_to_transform(lat, lon)
     assert np.all(transform2 == transform)
 
-
 def test_res_area():
     res = 1/1200.
     shape = (3,4)
@@ -38,17 +36,12 @@ def test_res_area():
     assert np.all(dy.shape == dx.shape == (shape[0],))
     assert np.round(dy[0],6)==92.145227 and np.round(dx[0],6)==92.766215
     cellare = gridtools.latlon_cellare_metres(transform, shape)
-    assert np.all(cellare.shape == shape)
-    assert np.round(cellare[0,0], 8) == 8547.96396208
+    assert np.all(cellare.shape == (shape[0],))
+    assert np.round(cellare[0], 8) == 8547.96396208
     
     transform = Affine(res, 0, 0, 0, -res, 90)
     dy, dx = gridtools.latlon_cellres_metres(transform, (1, 1))
     assert np.all(np.round(dx,2)==0)
-
-    transform = Affine(1, 0, 0, 0, -0.5, 0)
-    cellare = gridtools.cellare_metres(transform, shape)
-    assert np.all(cellare.shape == shape)
-    assert np.all(np.round(cellare[0,0],8)==0.5)
 
 def test_vectorize():
     # TODO improve test
@@ -66,8 +59,7 @@ def test_idx_to_xy():
 
 if __name__ == "__main__":
     # test_transform_conv()
-    # test_res_area()
+    test_res_area()
     # test_vectorize()
-    test_idx_to_xy()
 
     pass
