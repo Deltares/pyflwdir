@@ -115,13 +115,14 @@ def _nbs_us(idx_ds, flwdir_flat, shape):
 def setup_dd(idx_ds, flwdir_flat, shape):
     """set drainage direction network from downstream to upstream
     """
+    size = np.uint(shape[0]*shape[1])
     nodes = list()              # list of arrays (n) with downstream indices
     nodes_up = list()           # list of arrays (n, m) with upstream indices; m <= 8
     # move upstream
     j = 0
     while True:
         nbs_us, valid = _nbs_us(idx_ds, flwdir_flat, shape)
-        idx_valid = np.where(valid == 1)[0]
+        idx_valid = np.where(valid == np.int8(1))[0]
         if idx_valid.size==0:
             break
         elif j > 0:
@@ -131,42 +132,108 @@ def setup_dd(idx_ds, flwdir_flat, shape):
         nodes_up.append(nbs_us)
         # next iter
         j += 1
-        # NOTE 2d boolean indexing does not work currenlty in numba
-        idx_ds = nbs_us.reshape(-1)[nbs_us.reshape(-1) != np.uint32(-1)].astype(np.uint32)
+        # NOTE 2d boolean indexing does not work currenlty in numba; flatten first
+        idx_ds = nbs_us.ravel().astype(np.uint32)
+        idx_ds = idx_ds[idx_ds < size]
     return nodes[::-1], nodes_up[::-1]
 
 @njit
-def delineate_basins(rnodes, rnodes_up, idx, values, shape):
+def basin_map(rnodes, rnodes_up, idx, values, shape):
     """"""
-    basidx_flat = np.zeros(shape, dtype=values.dtype).reshape(-1)
+    size = shape[0]*shape[1]
+    basidx_flat = np.zeros(size, dtype=values.dtype)
     basidx_flat[idx] = values
     for i in range(len(rnodes)):
         k = -i-1
         for j in range(len(rnodes[k])):
             idx_ds = rnodes[k][j]
-            idxs_us = rnodes_up[k][j] # NOTE: has nodata (-1) values
+            idxs_us = rnodes_up[k][j] # NOTE: has nodata np.uint32(-1) values
             basidx_ds = basidx_flat[idx_ds]
+            for idx_us in idxs_us:
+                #NOTE: only flowwing block is different from flux.propagate_upstream
+                if idx_us > size: break
+                if basidx_flat[idx_us] == 0: 
+                    basidx_flat[idx_us] = basidx_ds
+    return basidx_flat.reshape(shape)
+
+
+@njit
+def _update_bbox(idx_ds, xmin, ymin, xmax, ymax, ncol):
+    y = idx_ds // ncol
+    x = idx_ds %  ncol
+    ymax, ymin = np.maximum(y, ymax), np.minimum(y, ymin)
+    xmax, xmin = np.maximum(x, xmax), np.minimum(x, xmin)
+    return xmin, ymin, xmax, ymax
+
+@njit
+def delineate_basins(idxs_ds, flwdir_flat, shape, lats, lons, resy, resx):
+    nrow, ncol = shape
+    size = nrow*ncol
+    # initialize arrays
+    basidx_flat = np.zeros(size, dtype=np.uint32)
+    rcbboxs = np.zeros((idxs_ds.size, 4), dtype=np.int32)*-1
+    bboxs = np.ones((idxs_ds.size, 4), dtype=lats.dtype)*-1
+    
+    # get bbox in row/col integers
+    for ibas in range(idxs_ds.size):
+        rcbboxs[ibas,:] = _update_bbox(idxs_ds[ibas], ncol, nrow, 0, 0, ncol)
+        basidx_flat[idxs_ds[ibas]] = np.uint32(ibas+1)
+    
+    # loop through flwdir map
+    while True:
+        nbs_us, valid = _nbs_us(idxs_ds, flwdir_flat, shape)
+        idx_valid = np.where(valid == np.int8(1))[0]
+        if idx_valid.size==0:
+            break
+        # idxs_ds = idxs_ds[idx_valid]
+        # nbs_us = nbs_us[idx_valid,:]
+        for i in range(idxs_ds.size):
+            idx_ds = idxs_ds[i]
+            idxs_us = nbs_us[i,]
+            ibas = basidx_flat[idx_ds]
+            if ibas == 0: continue
+            ibas -= 1 # convert to zero based count
             for idx_us in idxs_us:
                 #NOTE: only flowwing block is different from flux.propagate_upstream
                 if idx_us == np.uint32(-1): break
                 if basidx_flat[idx_us] == 0: 
-                    basidx_flat[idx_us] = basidx_ds
-    return basidx_flat.reshape(shape)
+                    basidx_flat[idx_us] = np.uint32(ibas+1)
+                    xmin, ymin, xmax, ymax = rcbboxs[ibas, :]
+                    rcbboxs[ibas,:] = _update_bbox(idx_us, xmin, ymin, xmax, ymax, ncol)
+        # next iter
+        idxs_ds = nbs_us.ravel().astype(np.uint32)
+        idxs_ds = idxs_ds[idxs_ds < size]
+
+    # convert to lat/lon bbox assuming lat/lon on ceter pixel
+    for ibas in range(bboxs.shape[0]):
+        xmin, ymin, xmax, ymax = rcbboxs[ibas, :]
+        if xmin == -1: continue
+        assert ymax < nrow and xmax < ncol
+        west, east = lons[xmin]-resx/2., lons[xmax]+resx/2.
+        if resy<0: # N -> S
+            south, north = lats[ymax]+resy/2., lats[ymin]-resy/2.
+        else:
+            south, north = lats[ymax]-resy/2., lats[ymin]+resy/2.
+        bboxs[ibas,:] = west, south, east, north
+
+    return basidx_flat.reshape(shape), bboxs
+
 
 @njit
 def upstream_area(rnodes, rnodes_up, cellare, shape):
     nrow, ncol = shape
     assert cellare.size == nrow
-    upa = np.ones(nrow*ncol, dtype=np.float32)*-9999.
+    size = nrow*ncol
+    upa = np.ones(size, dtype=np.float32)*-9999.
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
-            idxs_us = rnodes_up[i][j] # NOTE: has nodata (-1) values
+            idxs_us = rnodes_up[i][j] # NOTE: has nodata np.uint32(-1) values
             upa_ds = np.float32(cellare[idx_ds // ncol])
             for idx_us in idxs_us:
-                if idx_us == np.uint32(-1): break
+                if idx_us > size: break
                 upa_us = upa[idx_us]
-                if upa_us == -9999:
+                if upa_us <= 0:
                     upa_us = np.float32(cellare[idx_us // ncol])
                     upa[idx_us] = upa_us
                 upa_ds += upa_us
@@ -175,11 +242,12 @@ def upstream_area(rnodes, rnodes_up, cellare, shape):
 
 @njit
 def _main_upsteam(idxs_us, uparea_flat, upa_min):
+    size = np.uint32(uparea_flat.size)
     upa_max = upa_min
     idx_main_us = np.uint32(-1)
     for i in range(idxs_us.size):
         idx_us = idxs_us[i]
-        if idx_us != np.uint32(-1): break
+        if idx_us >= size: break
         upa = uparea_flat[idx_us]
         if upa > upa_max:
             upa_max = upa
@@ -190,7 +258,7 @@ def _main_upsteam(idxs_us, uparea_flat, upa_min):
 def main_upstream(rnodes, rnodes_up, uparea, upa_min=np.float32(0.)):
     """return grid with main upstream cell index based on largest upstream area."""
     shape = uparea.shape
-    uparea_flat = uparea.reshape(-1)
+    uparea_flat = uparea.ravel()
     # output
     main_us = np.ones(uparea_flat.size, dtype=np.uint32)*-9999
     for i in range(len(rnodes)):
@@ -201,13 +269,13 @@ def main_upstream(rnodes, rnodes_up, uparea, upa_min=np.float32(0.)):
     return main_us.reshape(shape)
 
 @njit
-def _strahler_order(idxs_us, strord_flat):
+def _strahler_order(idxs_us, strord_flat, size):
     head_lst  = list()
     ord_max = np.int8(1)
     ord_cnt = 0
     for i in range(idxs_us.size):
         idx_us = idxs_us[i]
-        if idx_us == np.uint32(-1): break
+        if idx_us >= size: break
         ordi = strord_flat[idx_us]
         if ordi <= 0: # most upstream cells
             ordi = np.int8(1)
@@ -224,12 +292,13 @@ def _strahler_order(idxs_us, strord_flat):
 
 @njit
 def stream_order(rnodes, rnodes_up, shape):
-    strord_flat = np.ones(shape[0]*shape[1], dtype=np.int8)*np.int8(-1)
+    size = np.uint32(shape[0]*shape[1])
+    strord_flat = np.ones(size, dtype=np.int8)*np.int8(-1)
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
             idxs_us = rnodes_up[i][j]           # NOTE: has nodata (-1) values
-            ordi, idx_head = _strahler_order(idxs_us, strord_flat)
+            ordi, idx_head = _strahler_order(idxs_us, strord_flat, size)
             strord_flat[idx_ds] = np.int8(ordi) # update stream order downstream cells
             if idx_head.size > 0:               # update head cells
                 strord_flat[idx_head] = np.int8(1)

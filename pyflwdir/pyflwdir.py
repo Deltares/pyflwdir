@@ -66,12 +66,6 @@ class FlwdirRaster(object):
     def __setitem__(self, key, item):
         self._data_flat[key] = item
 
-    # def __del__(self):
-    #     del self._rnodes[:]
-    #     del self._rnodes
-    #     del self._rnodes_up[:]
-    #     del self._rnodes_up
-
     def _xycoords(self):
         resx, resy = self.res
         xmin, ymin, xmax, ymax = self.bounds
@@ -109,13 +103,6 @@ class FlwdirRaster(object):
         """returns upstream area in km"""
         if self._rnodes is None:
             self.setup_network()    # setup network, with pits as most downstream indices
-        # if cell_area is None and self.latlon:
-        #     cell_area = gridtools.latlon_cellare_metres(self.transform, self.shape)/1e6
-        # elif cell_area is None:
-        #     cell_area = gridtools.cellare_metres(self.transform, self.shape)/1e6
-        # if not (np.all(cell_area.shape == self.shape)):
-        #     raise ValueError(f"cell_area shape {cell_area.shape} does not match flwdir shape {self.shape}")
-        # return flux.propagate_downstream(self._rnodes, self._rnodes_up, material=cell_area)
         if self.latlon:
             _, ys = self._xycoords()
             cellare = gridtools.lat_to_area(ys)*self.cellare
@@ -123,22 +110,23 @@ class FlwdirRaster(object):
             cellare = np.ones(self.shape[0])*self.cellare
         return network.upstream_area(self._rnodes, self._rnodes_up, cellare/1e6, self.shape)
 
-    def basin_bounds(self, idx=None):
+    def delineate_basins(self, idx=None):
+        """Returns map and bounding boxes/ does not use network"""
+        if idx is None:
+            idx = self.get_pits()
+            if idx.size == 0:
+                raise ValueError('no pits found in flow direction data')   
+        idx = np.atleast_1d(idx).astype(np.uint32)
         resx, resy = self.res
         xs, ys = self._xycoords()
-        if self._rnodes is None:
-            self.setup_network()    # setup network, with pits as most downstream indices
-        if idx is None:             # use most downstream network indices if idx not given
-            idx = self._idx0
-        idx = np.atleast_1d(idx).astype(np.uint32)
-        return features.basin_bbox(self._rnodes, self._rnodes_up, idx, ys, xs, resy, resx)
+        return network.delineate_basins(idx, self._data_flat, self.shape, ys, xs, resy, resx)
 
     def basin_map(self, idx=None, values=None, dtype=np.int32):
         if self._rnodes is None:
             self.setup_network()    # setup network, with pits as most downstream indices
         if idx is None:             # use most downstream network indices if idx not given
             idx = self._idx0
-        idx = np.atleast_1d(idx).astype(np.uint32)
+        idx = np.atleast_1d(idx)
         if values is None:          # number basins using range, starting from 1
             values = np.arange(idx.size, dtype=dtype)+1
         else:
@@ -147,7 +135,7 @@ class FlwdirRaster(object):
                 raise ValueError('all values should be larger than zero')
         if not idx.size == values.size and idx.ndim == 1:
             raise ValueError('idx and values should be 1d arrays of same size')
-        return network.delineate_basins(self._rnodes, self._rnodes_up, idx, values, self.shape)
+        return network.basin_map(self._rnodes, self._rnodes_up, idx, values, self.shape)
 
     def subbasin_map_grid(self, scale_ratio, uparea=None):
         if not self.shape[0] % scale_ratio == self.shape[1] % scale_ratio == 0:

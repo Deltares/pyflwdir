@@ -79,7 +79,7 @@ def ds_index(idx0, flwdir_flat, shape):
 def us_indices(idx0, flwdir_flat, shape):
     """returns a numpy array (uint32) with indices of upstream neighbors on a D8 grid
     if it leaves the domain a negative D8 value indicating the side where it leaves the domain is returned"""
-    nrow, ncol = shape
+    nrow, ncol = np.uint32(shape[0]), np.uint32(shape[1])
     # assume c-style row-major
     r = np.uint32(idx0 // ncol)
     c = np.uint32(idx0 %  ncol)
@@ -95,7 +95,7 @@ def us_indices(idx0, flwdir_flat, shape):
             else:
                 idx = np.uint32(row*ncol + col)
                 if flwdir_flat[idx] == _us[dr+1, dc+1]:
-                    us_idxs.append(np.uint32(idx))
+                    us_idxs.append(idx)
     return np.array(us_idxs, dtype=np.uint32)
 
 @njit(Tuple((uint32, float32))(uint32, uint8[:], uint8[:], Tuple((int64, int64)), float32))

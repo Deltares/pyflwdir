@@ -73,20 +73,24 @@ def test_setup_network():
     tot_n = np.sum([np.sum(n != np.uint32(-1)) for n in flwdir._rnodes_up]) + flwdir._rnodes[-1].size
     assert tot_n == flwdir.size
 
-def test_basin_bounds():
+def test_delineate_basins():
     flwdir = FlwdirRaster(raster.copy())
     flwdir.repair() # after repair the total bbox should be equal to flwdir.bbox
-    bounds = flwdir.basin_bounds()
-    xmin, ymin = bounds.min(axis=0)[[0,1]]
-    xmax, ymax = bounds.max(axis=0)[[2,3]]
+    idx = flwdir.get_pits()
+    basins, bboxs = flwdir.delineate_basins()
+    xmin, ymin = bboxs.min(axis=0)[[0,1]]
+    xmax, ymax = bboxs.max(axis=0)[[2,3]]
     assert np.all((xmin, ymin, xmax, ymax) == flwdir.bounds)
-    assert bounds.shape[0] == flwdir._idx0.size
-    # check bounds of main basin
-    bounds = flwdir.basin_bounds(idx0)
-    assert bounds.shape[0] == 1
-    assert np.all(bounds[0] == flwdir.bounds)
+    assert bboxs.shape[0] == idx.size
+    assert np.all(np.unique(basins).size==idx.size) # single basin index
+    
+    # check bboxs of main basin
+    basins, bboxs = flwdir.delineate_basins(idx0)
+    assert np.all(bboxs[0] == flwdir.bounds)
+    assert np.all(np.unique(basins).size==1+1) # single basin index plus background value
+    assert np.sum(basins) == 3045
 
-def test_basin_delination():
+def test_basin_maps():
     # test single basin
     flwdir = FlwdirRaster(raster.copy())
     flwdir.setup_network(idx0)
@@ -168,7 +172,7 @@ def check_memory_time():
     # print(rtsys.get_allocation_stats())
     
     # print('basin bouhds')
-    # bounds = flwdir.basin_bounds()
+    # bounds = flwdir.delineate_basins()
     # print(rtsys.get_allocation_stats())
 
     # print('upastream area')
@@ -185,11 +189,11 @@ if __name__ == "__main__":
     # check_memory_time()
     # print('finalize')
     # print(rtsys.get_allocation_stats())
-    test_setup_network()
-    test_flwdir_repair()
-    test_basin_delination()
-    test_basin_bounds()
-    test_uparea()
-    test_stream_order()
-    test_riv_shape()
+    # test_setup_network()
+    # test_flwdir_repair()
+    test_delineate_basins()
+    # test_basin_maps()
+    # test_uparea()
+    # test_stream_order()
+    # test_riv_shape()
     pass
