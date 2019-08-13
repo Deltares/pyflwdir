@@ -7,6 +7,7 @@ import numpy as np
 from numba import njit, jitclass
 import rasterio
 from rasterio.transform import Affine, array_bounds
+from copy import deepcopy
 
 # local
 from .core import fd
@@ -28,7 +29,7 @@ class FlwdirRaster(object):
 
     def __init__(self, data, 
             transform=IDENTITY_NS, crs=4326,
-            check_format=False, create_copy=False):    
+            check_format=False, copy=False):    
         assert data.ndim == 2
         assert np.sign(transform[4]) == -1
         # flwdir format props
@@ -48,11 +49,11 @@ class FlwdirRaster(object):
         self.size = data.size
         if self.size > 2**32-2:
             raise ValueError('Extent too large for uint32 indices')
-        if create_copy:
+        if copy:
             self._data = data.copy()
         else:
             self._data = data.view() # view of data
-        self._data_flat = self._data.reshape(-1) # flattened view of data
+        self._data_flat = self._data.ravel() # flattened view of data
         if check_format and fd._check_format(self._data) == False: # simple check. isvalid includes more rigorous check
             raise ValueError('Unknown flow direction values found in data')
         # set placeholder properties
@@ -78,11 +79,11 @@ class FlwdirRaster(object):
 
     def isvalid(self):
         # check if all cells connect to pit / outflows at bounds
-        valid = utils.flwdir_check(self._data)[1] == False
+        valid = utils.flwdir_check(self._data_flat, self.shape)[1] == False
         return valid
 
     def repair(self):
-        repair_idx, _ = utils.flwdir_check(self._data)
+        repair_idx, _ = utils.flwdir_check(self._data_flat, self.shape)
         if repair_idx.size > 0:
             self._data_flat[repair_idx] = self._pits[-1] # set inland pit
         return None
@@ -169,6 +170,9 @@ class FlwdirRaster(object):
         else:
             stream_order[mask] = np.int16(-1)
         riv_nodes, riv_order = features.river_nodes(self._idx0, self._data_flat, stream_order.reshape(-1), self.shape)
+        valid = np.array([len(n) for n in riv_nodes]) > 1
+        riv_nodes = [n for n,v in zip(riv_nodes, valid) if v]
+        riv_order = riv_order[valid]
         xs, ys = self._xycoords()
         geoms = [gridtools.nodes_to_ls(nodes, ys, xs, self.shape) for nodes in riv_nodes]
         return gridtools.gp.GeoDataFrame(data=riv_order, columns=['stream_order'], geometry=geoms, crs=self.crs)
@@ -178,9 +182,12 @@ class FlwdirRaster(object):
             raise ValueError(f'the data shape should be an exact multiplicity of the scale_ratio')
         if uparea == None:
             uparea = self.upstream_area()
-        transform_lr = self.transform.copy()
-        transform_lr[0], transform_lr[4] = self.transform[0] * scale_ratio, self.transform[4] * scale_ratio
-        flwdir_lr, outlet_lr = d8_scaling(scale_ratio, self._data, uparea, upa_min=upa_min, extended=method=='extended')
+        transform_lr = Affine(
+            self.transform[0] * scale_ratio, self.transform[1], self.transform[2],
+            self.transform[3], self.transform[4] * scale_ratio, self.transform[5]
+        )
+        extended=method=='extended'
+        flwdir_lr, outlet_lr = d8_scaling.d8_scaling(scale_ratio, self._data, uparea, upa_min=upa_min, extended=extended)
         flwdir_lr = FlwdirRaster(flwdir_lr, transform=transform_lr, crs=self.crs)
         return flwdir_lr, outlet_lr
 

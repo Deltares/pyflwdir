@@ -6,6 +6,7 @@ from numba import njit
 import numpy as np
 
 # import flow direction definition
+from .utils import flwdir_check
 from .core import fd
 _nodata = fd._nodata
 _pits = fd._pits 
@@ -274,5 +275,5 @@ def d8_scaling(scale_ratio, flwdir, uparea, upa_min=0.5, extended=True):
                 flwdir_lr_flat[idx_us_main] = dd_new
                 outlet_lr_flat[idx0] = subidx_out_new
     assert outlet_lr_flat.size == np.unique(outlet_lr_flat).size
-    assert check_flwdir(flwdir_lr_flat, shape_lr).size==0
+    assert flwdir_check(flwdir_lr_flat, shape_lr)[1] == False # no loops
     return flwdir_lr_flat.reshape(shape_lr), outlet_lr_flat.reshape(shape_lr)

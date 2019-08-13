@@ -15,26 +15,24 @@ _ds = fd._ds
 # On a tile level (with buffer) this could be done by checking 
 # that cells reach either the tile bounds or an outlet
 @njit() #(Tuple((uint8[:,:], string))Tuple((uint32[:], boolean)))
-def flwdir_check(data):
-    shape = data.shape
-    data_flat = data.ravel()
+def flwdir_check(flwdir_flat, shape):
     # internal lists
     idx_check = []
     idx_repair = []
-    data_check = np.zeros(data_flat.size, dtype=np.uint8)
+    data_check = np.zeros(flwdir_flat.size, dtype=np.uint8)
 
     # check flwdir. save indices where 
     # - local flwdir is pit
     # - ds neighbor is nodata / outside domain -> set pit
-    for idx0 in range(data.size):
-        dd = data_flat[idx0]
+    for idx0 in range(flwdir_flat.size):
+        dd = flwdir_flat[idx0]
         if dd == _nodata:
             data_check[idx0] = np.uint8(1) # mark nodata cells as checked
         elif np.any(dd == _pits):
             idx_check.append(idx0)
         elif np.any(dd == _ds):
             # check downstream neighbor
-            idx_ds = fd.ds_index(idx0, data_flat, shape)
+            idx_ds = fd.ds_index(idx0, flwdir_flat, shape)
             if idx_ds == np.uint32(-1): # flows outside
                 idx_check.append(idx0)
                 idx_repair.append(idx0) # add to repair list
@@ -47,10 +45,10 @@ def flwdir_check(data):
     while True:
         idxs_next = []
         for idx_ds in idxs_ds:
-            idxs_us = fd.us_indices(idx_ds, data_flat, shape)
+            idxs_us = fd.us_indices(idx_ds, flwdir_flat, shape)
             # for i in range(idxs_us.size):
             for idx0 in idxs_us:
-                if idx0 < data.size:
+                if idx0 < flwdir_flat.size:
                     data_check[idx0] = np.uint8(1) # mark cells connected to pit as checked
                     idxs_next.append(idx0)
         if len(idxs_next) == 0:
@@ -68,7 +66,7 @@ def flwdir_check(data):
             while data_check[idx_ds] == np.uint8(0):
                 data_check[idx_ds] = np.uint8(1)
                 idx_us = idx_ds 
-                idx_ds = fd.ds_index(idx_us, data_flat, shape)
+                idx_ds = fd.ds_index(idx_us, flwdir_flat, shape)
             idx_repair.append(idx_us) # add to repair list
 
     return np.array(idx_repair, dtype=np.uint32), hasloops

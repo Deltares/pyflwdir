@@ -49,19 +49,19 @@ def test_object():
 def test_flwdir_repair():
     flwdir = FlwdirRaster(raster.copy())
     assert flwdir.isvalid()
-    lst, hasloops = flwdir_check(flwdir._data)
+    lst, hasloops = flwdir_check(flwdir._data_flat, flwdir.shape)
     assert len(lst) == 110 and not hasloops
     flwdir.repair() # repair edges
-    lst, hasloops = flwdir_check(flwdir._data)
+    lst, hasloops = flwdir_check(flwdir._data_flat, flwdir.shape)
     assert len(lst) == 0 and not hasloops
     # create loop
     idx = 450 
     idx_us = fd.us_indices(idx, flwdir._data_flat, flwdir.shape)[0]
     flwdir[idx] = fd.idx_to_dd(idx, idx_us, flwdir.shape)
-    lst, hasloops = flwdir_check(flwdir._data)
+    lst, hasloops = flwdir_check(flwdir._data_flat, flwdir.shape)
     assert hasloops
     flwdir.repair() # repair loop
-    lst, hasloops = flwdir_check(flwdir._data)
+    lst, hasloops = flwdir_check(flwdir._data_flat, flwdir.shape)
     assert len(lst) == 0 and not hasloops
 
 def test_setup_network():
@@ -112,7 +112,7 @@ def test_basin_maps():
 
 def test_stream_order():
     # 
-    flwdir = FlwdirRaster(raster)
+    flwdir = FlwdirRaster(raster.copy())
     flwdir.setup_network(idx0)
     stream_order = flwdir.stream_order()
     assert stream_order.dtype == np.int8
@@ -120,29 +120,56 @@ def test_stream_order():
     assert np.unique(stream_order).size == 7
     assert np.sum(stream_order>0) == 3045
     assert np.sum(stream_order==6) == 88
-    prof.update(dtype=stream_order.dtype)
+
+    # flwdir = FlwdirRaster(raster.copy())
+    # flwdir.repair()
+    # stream_order = flwdir.stream_order()
+    # prof.update(dtype=stream_order.dtype, nodata=-1)
     # with rasterio.open(r'./tests/data/stream_order.tif', 'w', **prof) as dst:
     #     dst.write(stream_order, 1)
 
 def test_uparea():
     # test as if metres with identity transform
-    flwdir = FlwdirRaster(raster, crs=28992) #RD New - Netherlands [metres]
+    flwdir = FlwdirRaster(raster.copy(), crs=28992) #RD New - Netherlands [metres]
     flwdir.setup_network(idx0)
     upa = flwdir.upstream_area()
     tot_n = np.sum([np.sum(n != np.uint32(-1)) for n in flwdir._rnodes_up]) + flwdir._rnodes[-1].size
     assert np.round(upa.max()*1e6,2) == tot_n == 3045.00
     # test in latlon with identity transform
-    flwdir = FlwdirRaster(raster)
+    flwdir = FlwdirRaster(raster.copy())
     flwdir.setup_network(idx0)
     upa = flwdir.upstream_area()
     assert np.round(upa.max(),2) == 31610442.85
 
 def test_riv_shape():
-    flwdir = FlwdirRaster(raster, crs=crs, transform=transform)
+    flwdir = FlwdirRaster(raster.copy(), crs=crs, transform=transform)
     flwdir.setup_network(idx0)
     gdf = flwdir.stream_shape()
-    # gdf.to_file('./tests/data/rivers.shp')
+    gdf.to_file('./tests/data/rivers.shp')
 
+def test_upscale():
+    with rasterio.open(r'./tests/data/flwdir2.tif', 'r') as src:
+        data2 = src.read(1)
+    flwdir = FlwdirRaster(raster, crs=crs, transform=transform, copy=True)
+    flwdir.repair()
+    flwdir2, outlets = flwdir.upscale(2)
+    assert flwdir2._data.size*4 == flwdir._data.size
+    assert np.all(flwdir2._data == data2)
+    # stream_order = flwdir2.stream_order()
+    # gdf = flwdir2.stream_shape()
+    # gdf.to_file('./tests/data/rivers2.shp')
+    # prof = dict(
+    #     driver='GTiff',
+    #     dtype=flwdir2._data.dtype,
+    #     height=flwdir2.shape[0],
+    #     width=flwdir2.shape[1],
+    #     transform=flwdir2.transform,
+    #     crs=flwdir2.crs,
+    #     nodata=247,
+    #     count=1,
+    # )
+    # with rasterio.open(r'./tests/data/flwdir2.tif', 'w', **prof) as dst:
+    #     dst.write(flwdir2._data, 1)
 
 def check_memory_time():
     # raster = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
@@ -191,9 +218,10 @@ if __name__ == "__main__":
     # print(rtsys.get_allocation_stats())
     # test_setup_network()
     # test_flwdir_repair()
-    test_delineate_basins()
+    # test_delineate_basins()
     # test_basin_maps()
     # test_uparea()
     # test_stream_order()
     # test_riv_shape()
+    test_upscale()
     pass
