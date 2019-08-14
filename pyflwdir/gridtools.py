@@ -212,7 +212,7 @@ def idx_to_xy(idx, xcoords, ycoords, ncol):
 
 def xy_to_idx(xs, ys, transform, shape):
     r, c = rasterio.transform.rowcol(transform, xs, ys)
-    r, c = np.asarray(r, dtype=np.int32), np.asarray(c, dtype=np.int32)
+    r, c = np.asarray(r, dtype=np.int64), np.asarray(c, dtype=np.int64)
     if not np.all(np.logical_and(
         np.logical_and(r>=0, r<shape[0]),
         np.logical_and(c>=0, c<shape[1])
