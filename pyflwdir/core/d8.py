@@ -17,6 +17,7 @@ _us = np.array([
     [128, 64, 32]], dtype=np.uint8)
 _nodata = np.uint8(247)
 _pits = np.array([0, 255], dtype=np.uint8)
+_format = 'd8'
 
 @njit
 def pit_indices(flwdir_flat):

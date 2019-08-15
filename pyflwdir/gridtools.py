@@ -156,7 +156,7 @@ def latlon_to_transform(lat, lon):
     scale = Affine.scale(lon[1] - lon[0], lat[1] - lat[0])
     return trans * scale
 
-@njit
+@numba.njit
 def idx_to_xy(idx, xcoords, ycoords, ncol):
     shape = idx.shape
     idx = idx.ravel()

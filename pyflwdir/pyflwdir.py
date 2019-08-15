@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
 # August 2019
+#
+# This script provides a python object with functions that basically wrap all numba functions
+# in accompaning scripts
 
 import logging
 import numpy as np
@@ -20,10 +23,6 @@ logger = logging.getLogger(__name__)
 
 # global variabels
 IDENTITY_NS = Affine(1, 0, 0, 0, -1, 0)
-_ds = fd._ds
-_us = fd._us 
-_nodata = fd._nodata 
-_pits = fd._pits
 
 class FlwdirRaster(object):
 
@@ -31,21 +30,10 @@ class FlwdirRaster(object):
             transform=IDENTITY_NS, crs=4326,
             check_format=False, copy=False):    
         assert data.ndim == 2
-        assert np.sign(transform[4]) == -1
-        # flwdir format props
-        self.d8format = 'd8'
-        self._ds = _ds 
-        self._us = _us
-        self._nodata = _nodata
-        self._pits = _pits
+        assert np.sign(transform[4]) == -1 # North to South orientation
+        self.d8format = fd._format
         # data
-        self.crs = rasterio.crs.CRS.from_user_input(crs)
-        self.latlon = self.crs.is_geographic # NOTE: we assume this is in latlon
-        self.transform = transform
-        self.res = transform[0], transform[4]
-        self.cellare = np.abs(transform[0]*transform[4])
         self.shape = data.shape
-        self.bounds = array_bounds(data.shape[0], data.shape[1], transform)
         self.size = data.size
         if self.size > 2**32-2:
             raise ValueError('Extent too large for uint32 network indices')
@@ -56,7 +44,14 @@ class FlwdirRaster(object):
         self._data_flat = self._data.ravel() # flattened view of data
         if check_format and fd._check_format(self._data) == False: # simple check. isvalid includes more rigorous check
             raise ValueError('Unknown flow direction values found in data')
-        # set placeholder properties
+        # spatial meta data
+        self.crs = rasterio.crs.CRS.from_user_input(crs)
+        self.latlon = self.crs.is_geographic # NOTE: we assume this is in latlon
+        self.transform = transform
+        self.res = transform[0], transform[4]
+        self.cellare = np.abs(transform[0]*transform[4])
+        self.bounds = array_bounds(data.shape[0], data.shape[1], transform)
+        # set placeholder properties for network
         self._idx0 = None            # most downstream indices in network
         self._rnodes = None          # network ds nodes (n)
         self._rnodes_up = None       # network us nodes (n,m); m <= 8 in d8
@@ -85,7 +80,7 @@ class FlwdirRaster(object):
     def repair(self):
         repair_idx, _ = utils.flwdir_check(self._data_flat, self.shape)
         if repair_idx.size > 0:
-            self._data_flat[repair_idx] = self._pits[-1] # set inland pit
+            self._data_flat[repair_idx] = fd._pits[-1] # set inland pit
         return None
 
     def setup_network(self, idx0=None):

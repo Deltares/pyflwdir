@@ -228,7 +228,7 @@ def check_memory_time():
     end = time.time()
     print(f"Elapsed (before compilation) = {(end - start):.6f} s")
     print(rtsys.get_allocation_stats())
-    for i in range(3):
+    for _ in range(3):
         start = time.time()
         pyflwdir.network.setup_dd(np.asarray([idx0], dtype=np.uint32), flwdir._data_flat, flwdir.shape)
         end = time.time()
