@@ -11,7 +11,7 @@ from copy import deepcopy
 
 # local
 from .core import fd
-from . import flux, utils, features, network, gridtools, d8_scaling
+from . import flux, utils, features, network, gridtools, d8_scaling, catchment
 # export
 __all__ = ['FlwdirRaster']
 
@@ -125,7 +125,7 @@ class FlwdirRaster(object):
         idx = np.atleast_1d(np.asarray(idx, dtype=np.uint32)) # basin outlets
         resx, resy = self.res
         xs, ys = self._xycoords()
-        return network.delineate_basins(idx, self._data_flat, self.shape, ys, xs, resy, resx)
+        return catchment.delineate_basins(idx, self._data_flat, self.shape, ys, xs, resy, resx)
 
     def basin_map(self, idx=None, values=None, dtype=np.int32):
         if self._rnodes is None:
@@ -151,10 +151,6 @@ class FlwdirRaster(object):
     #     subbasin_idx = d8_scaling.subbasin_outlets_grid(scale_ratio, self._data, uparea)
     #     subbasin_idx = subbasin_idx[subbasin_idx!=-9999]
     #     return self.basin_map(idx=subbasin_idx, values=None, dtype=np.uint32)
-
-    def subbasin_map_pfaf(self):
-        # TODO create pfafstetter subbasins
-        raise NotImplementedError()
 
     def basin_shape(self, basin_map=None, nodata=0, **kwargs):
         if basin_map is None:
