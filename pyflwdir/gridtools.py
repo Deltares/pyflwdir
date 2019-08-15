@@ -13,7 +13,7 @@ import geopandas as gp
 from shapely.geometry import LineString, Point
 import xarray as xr
 
-
+# vectorize
 def nodes_to_ls(nodes, lats, lons):
     ncol = lons.size
     return LineString([(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, ncol))])
@@ -22,8 +22,6 @@ def nodes_to_pnts(nodes, lats, lons):
     ncol = lons.size
     return [Point(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, ncol))]
 
-
-# convert raster to GeoDataFrame
 def vectorize(data, nodata, transform, crs=None, connectivity=8):
     feats_gen = features.shapes(data, mask=data!=nodata, transform=transform, connectivity=connectivity)
     feats = [{'geometry': geom, 'properties': {'index': idx}} for geom, idx in list(feats_gen)]
@@ -31,7 +29,7 @@ def vectorize(data, nodata, transform, crs=None, connectivity=8):
     gdf.index = gdf.index.astype(data.dtype)
     return gdf
 
-# convert GeoDataFrame to raster
+# rasterize
 def rasterize(gdf, fn=None, col_name='index', # rasterize
               transform=None, out_size=None,
               fill=-9999, dtype=None, fapply=None, **kwargs):
@@ -73,53 +71,7 @@ def rasterize(gdf, fn=None, col_name='index', # rasterize
     else:
         return raster
 
-#NOTE: this assumes python Affine transfrom. should include check
-@numba.njit
-def calc_slope(dem, nodata, sizeinmetres, transform):
-    
-    slope = np.zeros(dem.shape,dtype=np.float32)    
-    nrow, ncol = dem.shape
-    cellsize = transform[0]
-    
-    elev = np.zeros((3,3), dtype=dem.dtype)
-
-    for r in range(0,nrow):
-        for c in range(0,ncol):
-            
-            
-            if dem[r,c] != nodata:
-                # EDIT: start with matrix based on central value (inside loop)
-                elev[:,:] = dem[r,c]
-            
-                for dr in range(-1, 2):
-                    row = r + dr
-                    i = dr + 1
-                    if row >= 0 and row < nrow:
-                        for dc in range(-1, 2):
-                            col = c + dc
-                            j = dc + 1
-                            if col >= 0 and col < ncol:
-                                # EDIT: fill matrix with elevation, except when nodata
-                                if dem[row,col] != nodata:
-                                    elev[i,j] = dem[row,col]
-
-                dzdx = ((elev[0,0]+2*elev[1,0]+elev[2,0]) - (elev[0,2]+2*elev[1,2]+elev[2,2]))/ (8 * cellsize) 
-                dzdy = ((elev[0,0]+2*elev[0,1]+elev[0,2]) - (elev[2,0]+2*elev[2,1]+elev[2,2]))/ (8 * cellsize)
-
-                if sizeinmetres:
-                    slp = math.hypot(dzdx, dzdy)
-                else:
-                    # EDIT: convert lat/lon to dy/dx in meters to calculate hypot
-                    lat = transform[5] - 0.5*cellsize - r*cellsize
-                    dy, dx = lat_to_dy(lat), lat_to_dx(lat)
-                    slp = math.hypot(dzdx*dx, dzdy*dy)
-            else:
-                slp = nodata
-            
-            slope[r,c] = slp
-        
-    return slope
-
+# latlon to length conversion
 @numba.vectorize(["float64(float64)", "float32(float32)"])
 def lat_to_dy(lat):
     """"
@@ -183,7 +135,7 @@ def latlon_cellres_metres(transform, shape):
     dy_lat, dx_lat = lat_to_dy(lat)*resy, lat_to_dx(lat)*resx
     return  dy_lat, dx_lat
 
-# conversion
+# transform to latlon and vice versa
 def transform_to_latlon(transform, shape):
     height, width = shape
     xmin, ymin, xmax, ymax = array_bounds(height, width, transform)
@@ -204,11 +156,7 @@ def latlon_to_transform(lat, lon):
     scale = Affine.scale(lon[1] - lon[0], lat[1] - lat[0])
     return trans * scale
 
-# @numba.guvectorize(
-#     ["void(int32, float64[:], float64[:], int64, float64[:])"],
-#     "(n),(m),(),()->(n)"
-#     )
-@numba.njit
+@njit
 def idx_to_xy(idx, xcoords, ycoords, ncol):
     shape = idx.shape
     idx = idx.ravel()
@@ -226,6 +174,3 @@ def xy_to_idx(xs, ys, transform, shape):
         raise ValueError('xy outside domain')
     idx = r * shape[1] + c
     return idx
-
-if __name__ == "__main__":
-    pass
