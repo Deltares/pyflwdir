@@ -296,26 +296,3 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extend
     # assert outlet_lr_flat.size == np.unique(outlet_lr_flat).size
     # assert flwdir_check(flwdir_lr_flat, shape_lr)[1] == False # no loops
     return flwdir_lr_flat.reshape(shape_lr), outlet_lr_flat.reshape(shape_lr)
-
-
-# @njit
-# def subbasin_outlets_grid(scale_ratio, flwdir, uparea):
-#     sub_nrow, sub_ncol = uparea.shape
-#     lr_nrow, lr_ncol = int(sub_nrow/scale_ratio), int(sub_ncol/scale_ratio)
-#     shape_lr = lr_nrow, lr_ncol
-#     size_lr = lr_nrow * lr_ncol
-#     # subgrid input
-#     shape = flwdir.shape
-#     flwdir_flat = flwdir.ravel()
-#     uparea_flat = uparea.ravel()
-#     # output cells
-#     outlet_lr_flat = np.ones(size_lr, dtype=np.int64)*-1
-
-#     # get representative cells (largest uparea in effective area) on highres maps
-#     # trace to lowres cell boundary to find outlet cells
-#     for idx0 in range(outlet_lr_flat.size):
-#         subidx, _ = _rep_cell(idx0, flwdir_flat, uparea_flat, shape, scale_ratio)
-#         subidx_out, _ = _outlet(idx0, subidx, flwdir_flat, shape, scale_ratio)
-#         outlet_lr_flat[idx0] = subidx_out   # subgrid index of outlet point lowres grid cell
-
-#     return outlet_lr_flat.reshape(shape_lr)
