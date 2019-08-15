@@ -20,7 +20,7 @@ def test_ds():
     # test downstream > ds_idx out of range
     for idx0 in range(9):
         if idx0 != 4:
-            assert fd.ds_index(0, _ds_flat, shape) == np.uint32(-1)
+            assert fd.ds_index(0, _ds_flat, shape) == -1
 
 def test_us():
     _us_flat = fd._us.flatten()
@@ -39,7 +39,23 @@ def test_us():
     for idx0 in range(9):
         if idx0 != 4:
             assert fd.us_indices(0, _ds_flat, shape).size == 0
-        
+
+def test_main_us():
+    _us_flat = fd._us.flatten()
+    _ds_flat = fd._ds.flatten()
+    shape = fd._us.shape
+    # test upstream
+    for idx0 in range(9):
+        upa = np.zeros(9, dtype=np.float32)
+        upa[idx0] = 1.
+        if idx0 != 4:
+            assert np.all(fd.us_main_indices(4, _us_flat, upa, shape, 0)[0] == idx0)
+            assert fd.us_main_indices(4, _us_flat, upa, shape, 0)[1] == upa[idx0]
+        else:
+            assert fd.us_main_indices(4, _us_flat, upa, shape, 0)[0].size == 8 # all us are equally large
+            assert fd.us_main_indices(4, _us_flat, upa, shape, 1)[0].size == 0 # non above threshold
+
+                
 def test_idx_to_d8():
     _us_flat = fd._us.flatten()
     _ds_flat = fd._ds.flatten()
@@ -49,8 +65,9 @@ def test_idx_to_d8():
         assert fd.idx_to_dd(idx0, 4, (3,3)) == _us_flat[idx0]
 
 if __name__ == "__main__":
-    # Flwdir('d8')
     test_ds()
     test_us()
     test_idx_to_d8()
+    test_main_us()
+    print('success')
     pass
