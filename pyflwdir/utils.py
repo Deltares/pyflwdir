@@ -14,7 +14,7 @@ _ds = fd._ds
 # TODO: check that all cells drain to an outlet.
 # On a tile level (with buffer) this could be done by checking 
 # that cells reach either the tile bounds or an outlet
-@njit() #(Tuple((uint8[:,:], string))Tuple((uint32[:], boolean)))
+@njit()
 def flwdir_check(flwdir_flat, shape):
     # internal lists
     idx_check = []
@@ -33,14 +33,14 @@ def flwdir_check(flwdir_flat, shape):
         elif np.any(dd == _ds):
             # check downstream neighbor
             idx_ds = fd.ds_index(idx0, flwdir_flat, shape)
-            if idx_ds == np.uint32(-1): # flows outside
+            if idx_ds == -1: # flows outside
                 idx_check.append(idx0)
                 idx_repair.append(idx0) # add to repair list
         else:
             raise ValueError('unknown flow direction value found')
 
     # loop over pits and mark upstream area
-    idxs_ds = np.array(idx_check, dtype=np.uint32) # this list should always contain indices
+    idxs_ds = np.array(idx_check) # this list should always contain indices
     data_check[idxs_ds] = np.uint8(1) # mark pit as checked
     while True:
         idxs_next = []
@@ -53,7 +53,7 @@ def flwdir_check(flwdir_flat, shape):
                     idxs_next.append(idx0)
         if len(idxs_next) == 0:
             break
-        idxs_ds = np.array(idxs_next, dtype=np.uint32) # next iter
+        idxs_ds = np.array(idxs_next) # next iter
     
     # check if all cells marked
     # hascyles = np.any(data_check == np.uint8(0))

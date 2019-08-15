@@ -97,25 +97,28 @@ _ds = fd._ds
 
 @njit
 def _nbs_us(idx_ds, flwdir_flat, shape):
-    nbs_us = np.ones((idx_ds.size, 8), dtype=np.uint32)*np.uint32(-1)
+    nbs_us = np.ones((idx_ds.size, 8), dtype=np.uint32)*np.uint32(-1) # use uint32 to save memory as these networks get large!
     valid = np.zeros(idx_ds.size, dtype=np.int8)
     N = 1
     for i in range(idx_ds.size):
-        idxs_us = fd.us_indices(idx_ds[i], flwdir_flat, shape)
+        idxs_us = fd.us_indices(idx_ds[i], flwdir_flat, shape) # int64, but always positive
         n = idxs_us.size
         if n > 0:
             nbs_us[i, :n] = idxs_us
             valid[i] += 1
             if n > N:
                 N = n
-    nbs_us = nbs_us[:,:N]
-    return nbs_us.astype(np.uint32), valid
+    # the astype seems to be required, otherwise the following error is raised in a downstream function
+    # TypeError: can't unbox heterogeneous list: array(uint32, 2d, C) != array(uint32, 2d, A)
+    nbs_us = nbs_us[:,:N].astype(np.uint32) 
+    return nbs_us, valid
 
 @njit
 def setup_dd(idx_ds, flwdir_flat, shape):
     """set drainage direction network from downstream to upstream
     """
     size = np.uint(shape[0]*shape[1])
+    assert size < 2**32-2       # maximum size we can have with uint32 indices
     nodes = list()              # list of arrays (n) with downstream indices
     nodes_up = list()           # list of arrays (n, m) with upstream indices; m <= 8
     # move upstream
@@ -133,7 +136,7 @@ def setup_dd(idx_ds, flwdir_flat, shape):
         # next iter
         j += 1
         # NOTE 2d boolean indexing does not work currenlty in numba; flatten first
-        idx_ds = nbs_us.ravel().astype(np.uint32)
+        idx_ds = nbs_us.ravel() #.astype(np.uint32)
         idx_ds = idx_ds[idx_ds < size]
     return nodes[::-1], nodes_up[::-1]
 
@@ -169,6 +172,7 @@ def _update_bbox(idx_ds, xmin, ymin, xmax, ymax, ncol):
 def delineate_basins(idxs_ds, flwdir_flat, shape, lats, lons, resy, resx):
     nrow, ncol = shape
     size = nrow*ncol
+    assert size < 2**32-2       # maximum size we can have with uint32 indices
     # initialize arrays
     basidx_flat = np.zeros(size, dtype=np.uint32)
     rcbboxs = np.zeros((idxs_ds.size, 4), dtype=np.int32)*-1
@@ -195,13 +199,13 @@ def delineate_basins(idxs_ds, flwdir_flat, shape, lats, lons, resy, resx):
             ibas -= 1 # convert to zero based count
             for idx_us in idxs_us:
                 #NOTE: only flowwing block is different from flux.propagate_upstream
-                if idx_us == np.uint32(-1): break
+                if idx_us > size: break
                 if basidx_flat[idx_us] == 0: 
                     basidx_flat[idx_us] = np.uint32(ibas+1)
                     xmin, ymin, xmax, ymax = rcbboxs[ibas, :]
                     rcbboxs[ibas,:] = _update_bbox(idx_us, xmin, ymin, xmax, ymax, ncol)
         # next iter
-        idxs_ds = nbs_us.ravel().astype(np.uint32)
+        idxs_ds = nbs_us.ravel()
         idxs_ds = idxs_ds[idxs_ds < size]
 
     # convert to lat/lon bbox assuming lat/lon on ceter pixel
@@ -218,23 +222,22 @@ def delineate_basins(idxs_ds, flwdir_flat, shape, lats, lons, resy, resx):
 
     return basidx_flat.reshape(shape), bboxs
 
-
-@njit
+@njit()
 def upstream_area(rnodes, rnodes_up, cellare, shape):
     nrow, ncol = shape
-    assert cellare.size == nrow
     size = nrow*ncol
-    upa = np.ones(size, dtype=np.float32)*-9999.
+    assert cellare.size == nrow
+    upa = np.ones(size, dtype=cellare.dtype)*-9999.
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
             idxs_us = rnodes_up[i][j] # NOTE: has nodata np.uint32(-1) values
-            upa_ds = np.float32(cellare[idx_ds // ncol])
+            upa_ds = cellare[idx_ds // ncol]
             for idx_us in idxs_us:
-                if idx_us > size: break
+                if idx_us >= size: break
                 upa_us = upa[idx_us]
                 if upa_us <= 0:
-                    upa_us = np.float32(cellare[idx_us // ncol])
+                    upa_us = cellare[idx_us // ncol]
                     upa[idx_us] = upa_us
                 upa_ds += upa_us
             upa[idx_ds] = upa_ds
@@ -242,7 +245,7 @@ def upstream_area(rnodes, rnodes_up, cellare, shape):
 
 @njit
 def _main_upsteam(idxs_us, uparea_flat, upa_min):
-    size = np.uint32(uparea_flat.size)
+    size = uparea_flat.size
     upa_max = upa_min
     idx_main_us = np.uint32(-1)
     for i in range(idxs_us.size):
@@ -260,7 +263,7 @@ def main_upstream(rnodes, rnodes_up, uparea, upa_min=np.float32(0.)):
     shape = uparea.shape
     uparea_flat = uparea.ravel()
     # output
-    main_us = np.ones(uparea_flat.size, dtype=np.uint32)*-9999
+    main_us = np.ones(uparea_flat.size, dtype=np.uint32)*np.uint32(-1)
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
