@@ -20,11 +20,13 @@ from pyflwdir.utils import flwdir_check
 
 
 with rasterio.open(r'./tests/data/flwdir.tif', 'r') as src:
-    raster = src.read(1)
+    data = src.read(1)
     transform = src.transform
     nodata = src.nodata
     crs = src.crs
     prof = src.profile
+with rasterio.open(r'./tests/data/flwdir_repair.tif', 'r') as src:
+    data_repaired = src.read(1)
 idx0 = np.uint32(864)
 prof.update(nodata=-9999, dtype=np.int32)
 
@@ -43,17 +45,18 @@ prof.update(nodata=-9999, dtype=np.int32)
 
 # test object
 def test_object():
-    flwdir = FlwdirRaster(raster.copy())
+    flwdir = FlwdirRaster(data.copy())
     assert isinstance(flwdir, FlwdirRaster)
 
 def test_flwdir_repair():
-    flwdir = FlwdirRaster(raster.copy())
+    flwdir = FlwdirRaster(data.copy())
     assert flwdir.isvalid()
     lst, hasloops = flwdir_check(flwdir._data_flat, flwdir.shape)
     assert len(lst) == 110 and not hasloops
     flwdir.repair() # repair edges
     lst, hasloops = flwdir_check(flwdir._data_flat, flwdir.shape)
     assert len(lst) == 0 and not hasloops
+    assert np.all(flwdir._data == data_repaired)
     # create loop
     idx = 450 
     idx_us = fd.us_indices(idx, flwdir._data_flat, flwdir.shape)[0]
@@ -65,8 +68,7 @@ def test_flwdir_repair():
     assert len(lst) == 0 and not hasloops
 
 def test_setup_network():
-    flwdir = FlwdirRaster(raster.copy())
-    flwdir.repair()
+    flwdir = FlwdirRaster(data_repaired.copy())
     flwdir.setup_network()
     assert flwdir._rnodes[0].dtype == np.uint32
     assert len(flwdir._rnodes) == len(flwdir._rnodes_up) == 174
@@ -74,8 +76,7 @@ def test_setup_network():
     assert tot_n == flwdir.size
 
 def test_delineate_basins():
-    flwdir = FlwdirRaster(raster.copy())
-    flwdir.repair() # after repair the total bbox should be equal to flwdir.bbox
+    flwdir = FlwdirRaster(data_repaired.copy())
     idx = flwdir.get_pits()
     basins, bboxs = flwdir.delineate_basins()
     xmin, ymin = bboxs.min(axis=0)[[0,1]]
@@ -85,6 +86,7 @@ def test_delineate_basins():
     assert np.all(np.unique(basins).size==idx.size) # single basin index
     
     # check bboxs of main basin
+    flwdir = FlwdirRaster(data.copy())
     basins, bboxs = flwdir.delineate_basins(idx0)
     assert np.all(bboxs[0] == flwdir.bounds)
     assert np.all(np.unique(basins).size==1+1) # single basin index plus background value
@@ -92,7 +94,7 @@ def test_delineate_basins():
 
 def test_basin_maps():
     # test single basin
-    flwdir = FlwdirRaster(raster.copy())
+    flwdir = FlwdirRaster(data.copy())
     flwdir.setup_network(idx0)
     basins = flwdir.basin_map()
     assert np.all(np.unique(basins[basins!=0])==1) # single basin index
@@ -112,7 +114,7 @@ def test_basin_maps():
 
 def test_stream_order():
     # 
-    flwdir = FlwdirRaster(raster.copy())
+    flwdir = FlwdirRaster(data.copy())
     flwdir.setup_network(idx0)
     stream_order = flwdir.stream_order()
     assert stream_order.dtype == np.int8
@@ -121,7 +123,7 @@ def test_stream_order():
     assert np.sum(stream_order>0) == 3045
     assert np.sum(stream_order==6) == 88
 
-    # flwdir = FlwdirRaster(raster.copy())
+    # flwdir = FlwdirRaster(data.copy())
     # flwdir.repair()
     # stream_order = flwdir.stream_order()
     # prof.update(dtype=stream_order.dtype, nodata=-1)
@@ -130,55 +132,94 @@ def test_stream_order():
 
 def test_uparea():
     # test as if metres with identity transform
-    flwdir = FlwdirRaster(raster.copy(), crs=28992) #RD New - Netherlands [metres]
+    flwdir = FlwdirRaster(data.copy(), crs=28992) #RD New - Netherlands [metres]
     flwdir.setup_network(idx0)
     upa = flwdir.upstream_area()
+    assert upa.dtype == np.float64
     tot_n = np.sum([np.sum(n != np.uint32(-1)) for n in flwdir._rnodes_up]) + flwdir._rnodes[-1].size
+    # print(np.round(upa.max()*1e6,2))
     assert np.round(upa.max()*1e6,2) == tot_n == 3045.00
     # test in latlon with identity transform
-    flwdir = FlwdirRaster(raster.copy())
+    flwdir = FlwdirRaster(data.copy())
     flwdir.setup_network(idx0)
     upa = flwdir.upstream_area()
-    assert np.round(upa.max(),2) == 31610442.85
+    assert np.round(upa.max(),4) == 31610442.7120
+    # prof.update(dtype=upa.dtype, nodata=-9999)
+    # with rasterio.open(r'./tests/data/upa_numpy.tif', 'w', **prof) as dst:
+    #     dst.write(upa, 1)
 
 def test_riv_shape():
-    flwdir = FlwdirRaster(raster.copy(), crs=crs, transform=transform)
+    flwdir = FlwdirRaster(data.copy(), crs=crs, transform=transform)
     flwdir.setup_network(idx0)
-    gdf = flwdir.stream_shape()
-    gdf.to_file('./tests/data/rivers.shp')
+    gdf_riv, gdf_pits = flwdir.stream_shape()
+    assert np.all([g.is_valid for g in gdf_riv.geometry])
+    assert len(gdf_riv) == 61
+    assert len(gdf_pits) == 1
 
 def test_upscale():
+    with rasterio.open(r'./tests/data/uparea.tif', 'r') as src:
+        uparea = src.read(1)
+        transform = src.transform
+        crs = src.crs
     with rasterio.open(r'./tests/data/flwdir2.tif', 'r') as src:
         data2 = src.read(1)
-    flwdir = FlwdirRaster(raster, crs=crs, transform=transform, copy=True)
-    flwdir.repair()
-    flwdir2, outlets = flwdir.upscale(2)
-    assert flwdir2._data.size*4 == flwdir._data.size
+    flwdir = FlwdirRaster(data_repaired.copy(), crs=crs, transform=transform, copy=True)
+    flwdir[idx0] = np.uint8(0)
+    flwdir2, outlets = flwdir.upscale(2, uparea=uparea, upa_min=0.5)
     assert np.all(flwdir2._data == data2)
-    # stream_order = flwdir2.stream_order()
-    # gdf = flwdir2.stream_shape()
-    # gdf.to_file('./tests/data/rivers2.shp')
+    assert outlets.size == np.unique(outlets).size
+    
+    # # test with large data (local only)
+    # with rasterio.open(r'./tests/data/s05w050_dir.tif', 'r') as src:
+    #     data0 = src.read(1)
+    #     transform = src.transform
+    #     crs = src.crs
+    # with rasterio.open(r'./tests/data/s05w050_upa.tif', 'r') as src:
+    #     uparea = src.read(1)
+    # with rasterio.open(r'./tests/data/s05w050_dir_05min.tif', 'r') as src:
+    #     data2 = src.read(1)    
+    # flwdir = FlwdirRaster(data0, crs=crs, transform=transform)
+
+    # flwdir2, outlets = flwdir.upscale(100, uparea=uparea, upa_min=1.)
+    # assert np.all(flwdir2._data == data2)
+    # assert outlets.size == np.unique(outlets).size # make sure all outlets are unique
+
+    # xs, ys = flwdir._xycoords()
+    # gdf_riv, gdf_pits = flwdir2.stream_shape(min_order=1)
+    # gdf_riv.to_file('./tests/data/s05w050_rivers_05min_lr.shp')
+    # gdf_pits.to_file('./tests/data/s05w050_pits_05min_lr.shp')
+    # gdf_riv, gdf_pits = flwdir2.stream_shape(outlet_lr=outlets, xs=xs, ys=ys, min_order=1)
+    # gdf_riv.to_file('./tests/data/s05w050_rivers_05min.shp')
+    # gdf_pits.to_file('./tests/data/s05w050_pits_05min.shp')
+
+    # assert flwdir2._data.size*4 == flwdir._data.size
+    # # assert np.all(flwdir2._data == data2)
+    # # stream_order = flwdir2.stream_order()
+    # import pdb; pdb.set_trace()
+    # flwdir2 = flwdir
     # prof = dict(
     #     driver='GTiff',
     #     dtype=flwdir2._data.dtype,
+    #     # dtype=upa.dtype,
     #     height=flwdir2.shape[0],
     #     width=flwdir2.shape[1],
     #     transform=flwdir2.transform,
     #     crs=flwdir2.crs,
     #     nodata=247,
+    #     # nodata=-9999,
     #     count=1,
     # )
-    # with rasterio.open(r'./tests/data/flwdir2.tif', 'w', **prof) as dst:
+    # with rasterio.open(r'./tests/data/s05w050_dir_05min.tif', 'w', **prof) as dst:
     #     dst.write(flwdir2._data, 1)
 
 def check_memory_time():
-    # raster = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
-    raster = xr.open_dataset(r'/media/data/hydro_merit_1.0/03sec/test_sel_idx74.nc')['dir'].load().values
+    # data = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
+    data = xr.open_dataset(r'/media/data/hydro_merit_1.0/03sec/test_sel_idx74.nc')['dir'].load().values
     idx0 = np.uint32(8640959)
     print(rtsys.get_allocation_stats())
     
     print('initialize')
-    flwdir = FlwdirRaster(raster)
+    flwdir = FlwdirRaster(data)
     print(rtsys.get_allocation_stats())
 
     print('setup network')
@@ -212,16 +253,15 @@ def check_memory_time():
 
 
 if __name__ == "__main__":
-    # import pdb; pdb.set_trace()
     # check_memory_time()
     # print('finalize')
     # print(rtsys.get_allocation_stats())
-    # test_setup_network()
-    # test_flwdir_repair()
-    # test_delineate_basins()
-    # test_basin_maps()
-    # test_uparea()
-    # test_stream_order()
-    # test_riv_shape()
+    test_flwdir_repair()
+    test_setup_network()
+    test_delineate_basins()
+    test_basin_maps()
+    test_uparea()
+    test_stream_order()
+    test_riv_shape()
     test_upscale()
-    pass
+    print('success')

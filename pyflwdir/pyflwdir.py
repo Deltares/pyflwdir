@@ -48,7 +48,7 @@ class FlwdirRaster(object):
         self.bounds = array_bounds(data.shape[0], data.shape[1], transform)
         self.size = data.size
         if self.size > 2**32-2:
-            raise ValueError('Extent too large for uint32 indices')
+            raise ValueError('Extent too large for uint32 network indices')
         if copy:
             self._data = data.copy()
         else:
@@ -92,7 +92,9 @@ class FlwdirRaster(object):
         if idx0 is None:
             idx0 = self.get_pits()
             if idx0.size == 0:
-                raise ValueError('no pits found in flow direction data')       
+                raise ValueError('no pits found in flow direction data')   
+        elif not np.all(np.logical_and(idx0>=0, idx0<self.size)):
+            raise ValueError('idx0 indices outside domain')
         self._idx0 = np.atleast_1d(np.asarray(idx0, dtype=np.uint32)) # basin outlets
         self._rnodes, self._rnodes_up = network.setup_dd(self._idx0, self._data_flat, self.shape)
         return None
@@ -109,7 +111,8 @@ class FlwdirRaster(object):
             cellare = gridtools.lat_to_area(ys)*self.cellare
         else:
             cellare = np.ones(self.shape[0])*self.cellare
-        return network.upstream_area(self._rnodes, self._rnodes_up, cellare/1e6, self.shape)
+        cellare = (cellare/1e6) #.astype(np.float32) # km2
+        return network.upstream_area(self._rnodes, self._rnodes_up, cellare, self.shape)
 
     def delineate_basins(self, idx=None):
         """Returns map and bounding boxes/ does not use network"""
@@ -117,7 +120,9 @@ class FlwdirRaster(object):
             idx = self.get_pits()
             if idx.size == 0:
                 raise ValueError('no pits found in flow direction data')   
-        idx = np.atleast_1d(idx).astype(np.uint32)
+        elif not np.all(np.logical_and(idx>=0, idx<self.size)):
+            raise ValueError('idx0 indices outside domain')
+        idx = np.atleast_1d(np.asarray(idx, dtype=np.uint32)) # basin outlets
         resx, resy = self.res
         xs, ys = self._xycoords()
         return network.delineate_basins(idx, self._data_flat, self.shape, ys, xs, resy, resx)
@@ -138,14 +143,14 @@ class FlwdirRaster(object):
             raise ValueError('idx and values should be 1d arrays of same size')
         return network.basin_map(self._rnodes, self._rnodes_up, idx, values, self.shape)
 
-    def subbasin_map_grid(self, scale_ratio, uparea=None):
-        if not self.shape[0] % scale_ratio == self.shape[1] % scale_ratio == 0:
-            raise ValueError(f'the data shape should be an exact multiplicity of the scale_ratio')
-        if uparea == None:
-            uparea = self.upstream_area()
-        subbasin_idx = d8_scaling.subbasin_outlets_grid(scale_ratio, self._data, uparea)
-        subbasin_idx = subbasin_idx[subbasin_idx!=-9999]
-        return self.basin_map(idx=subbasin_idx, values=None, dtype=np.uint32)
+    # def subbasin_map_grid(self, scale_ratio, uparea=None):
+    #     if not self.shape[0] % scale_ratio == self.shape[1] % scale_ratio == 0:
+    #         raise ValueError(f'the data shape should be an exact multiplicity of the scale_ratio')
+    #     if uparea == None:
+    #         uparea = self.upstream_area()
+    #     subbasin_idx = d8_scaling.subbasin_outlets_grid(scale_ratio, self._data, uparea)
+    #     subbasin_idx = subbasin_idx[subbasin_idx!=-9999]
+    #     return self.basin_map(idx=subbasin_idx, values=None, dtype=np.uint32)
 
     def subbasin_map_pfaf(self):
         # TODO create pfafstetter subbasins
@@ -162,32 +167,46 @@ class FlwdirRaster(object):
             self.setup_network()    # setup network, with pits as most downstream indices
         return network.stream_order(self._rnodes, self._rnodes_up, self.shape)
 
-    def stream_shape(self, stream_order=None, mask=None, min_order=3):
+    def stream_shape(self, stream_order=None, mask=None, min_order=3, 
+                    outlet_lr=None, xs=None, ys=None):
         if stream_order is None:
             stream_order = self.stream_order()
         if mask is None:
             stream_order[stream_order < min_order] = np.int16(-1)
         else:
             stream_order[mask] = np.int16(-1)
-        riv_nodes, riv_order = features.river_nodes(self._idx0, self._data_flat, stream_order.reshape(-1), self.shape)
-        valid = np.array([len(n) for n in riv_nodes]) > 1
-        riv_nodes = [n for n,v in zip(riv_nodes, valid) if v]
-        riv_order = riv_order[valid]
-        xs, ys = self._xycoords()
-        geoms = [gridtools.nodes_to_ls(nodes, ys, xs, self.shape) for nodes in riv_nodes]
-        return gridtools.gp.GeoDataFrame(data=riv_order, columns=['stream_order'], geometry=geoms, crs=self.crs)
-        
+        idx0 = self.get_pits() if self._idx0 is None else self._idx0
+        # get lists of river nodes per stream order
+        riv_nodes, riv_order = features.river_nodes(idx0, self._data_flat, stream_order.reshape(-1), self.shape)
+        if outlet_lr is None or xs is None or ys is None:
+            xs, ys = self._xycoords()
+            pit_nodes = idx0
+        else: # translate to subgrid position if provided
+            outlet_lr_flat = outlet_lr.ravel()
+            pit_nodes = outlet_lr_flat[idx0]
+            riv_nodes = [outlet_lr_flat[n] for n in riv_nodes]
+        # create geometries
+        pit_pnts = gridtools.nodes_to_pnts(pit_nodes, ys, xs)
+        riv_ls = [gridtools.nodes_to_ls(nodes, ys, xs) for nodes in riv_nodes]
+        # make geopandas dataframe
+        gdf_riv = gridtools.gp.GeoDataFrame(data=riv_order, columns=['stream_order'], geometry=riv_ls, crs=self.crs)
+        gdf_pit = gridtools.gp.GeoDataFrame(data=idx0, columns=['idx'], geometry=pit_pnts, crs=self.crs)
+        return gdf_riv, gdf_pit
+
+
     def upscale(self, scale_ratio, uparea=None, upa_min=0.5, method='extended', return_outlets=False):
         if not self.shape[0] % scale_ratio == self.shape[1] % scale_ratio == 0:
             raise ValueError(f'the data shape should be an exact multiplicity of the scale_ratio')
-        if uparea == None:
+        if uparea is None:
             uparea = self.upstream_area()
         transform_lr = Affine(
             self.transform[0] * scale_ratio, self.transform[1], self.transform[2],
             self.transform[3], self.transform[4] * scale_ratio, self.transform[5]
         )
         extended=method=='extended'
-        flwdir_lr, outlet_lr = d8_scaling.d8_scaling(scale_ratio, self._data, uparea, upa_min=upa_min, extended=extended)
+        flwdir_lr, outlet_lr = d8_scaling.d8_scaling(
+            scale_ratio, self._data_flat, uparea.ravel(), self.shape, upa_min=upa_min, extended=extended
+        )
         flwdir_lr = FlwdirRaster(flwdir_lr, transform=transform_lr, crs=self.crs)
         return flwdir_lr, outlet_lr
 

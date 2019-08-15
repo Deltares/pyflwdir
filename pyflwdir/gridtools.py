@@ -10,12 +10,18 @@ import rasterio
 from rasterio.transform import Affine, array_bounds
 from rasterio import features
 import geopandas as gp
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Point
 import xarray as xr
 
 
-def nodes_to_ls(nodes, lats, lons, shape):
-    return LineString([(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, shape[1]))])
+def nodes_to_ls(nodes, lats, lons):
+    ncol = lons.size
+    return LineString([(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, ncol))])
+
+def nodes_to_pnts(nodes, lats, lons):
+    ncol = lons.size
+    return [Point(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, ncol))]
+
 
 # convert raster to GeoDataFrame
 def vectorize(data, nodata, transform, crs=None, connectivity=8):
