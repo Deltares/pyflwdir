@@ -42,7 +42,7 @@ _ds = fd._ds
 @njit
 def trace_riv_reach(idx_ds, stro_ds, flwdir_flat, stream_order_flat, shape):
     idx0 = fd.ds_index(idx_ds, flwdir_flat, shape)
-    if idx0 != np.uint32(-1) and idx0 != idx_ds:
+    if idx0 != -1 and idx0 != idx_ds:
         nodes = list([idx0, idx_ds])
     else:
         nodes = list([idx_ds])
@@ -57,11 +57,11 @@ def trace_riv_reach(idx_ds, stro_ds, flwdir_flat, stream_order_flat, shape):
         if nodes[-1] == idx_ds:
             break
         idx_ds = nodes[-1]
-    return np.array(nodes, np.uint32), np.array(tribs, np.uint32)
+    return np.array(nodes), np.array(tribs)
 
 @njit
 def river_nodes(idx_ds, flwdir_flat, stream_order_flat, shape):
-    idx_ds = np.asarray(idx_ds, np.uint32)
+    idx_ds = np.asarray(idx_ds) # make sure idx_ds is an array
     rivs = list()
     stro = list()
     while True:
@@ -69,10 +69,11 @@ def river_nodes(idx_ds, flwdir_flat, stream_order_flat, shape):
         for idx in idx_ds:
             stro0 = stream_order_flat[idx]
             riv, tribs = trace_riv_reach(idx, stro0, flwdir_flat, stream_order_flat, shape)
-            rivs.append(riv)
-            stro.append(stro0)
-            idx_next.extend(tribs)
+            if len(riv) > 1:
+                rivs.append(riv)
+                stro.append(stro0)
+                idx_next.extend(tribs)
         if len(idx_next) == 0:
             break
-        idx_ds = np.array(idx_next, dtype=np.uint32)
+        idx_ds = np.array(idx_next, idx_ds.dtype)
     return rivs, np.array(stro, dtype=stream_order_flat.dtype)
