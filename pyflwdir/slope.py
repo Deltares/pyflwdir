@@ -13,9 +13,9 @@ from .gridtools import lat_to_dx, lat_to_dy
 @njit
 def calc_slope(dem, nodata, sizeinmetres, transform):
     
+    resx, resy = transform[0], transform[4]
     slope = np.zeros(dem.shape,dtype=np.float32)    
     nrow, ncol = dem.shape
-    cellsize = transform[0]
     
     elev = np.zeros((3,3), dtype=dem.dtype)
 
@@ -39,16 +39,16 @@ def calc_slope(dem, nodata, sizeinmetres, transform):
                                 if dem[row,col] != nodata:
                                     elev[i,j] = dem[row,col]
 
-                dzdx = ((elev[0,0]+2*elev[1,0]+elev[2,0]) - (elev[0,2]+2*elev[1,2]+elev[2,2]))/ (8 * cellsize) 
-                dzdy = ((elev[0,0]+2*elev[0,1]+elev[0,2]) - (elev[2,0]+2*elev[2,1]+elev[2,2]))/ (8 * cellsize)
+                dzdx = ((elev[0,0]+2*elev[1,0]+elev[2,0]) - (elev[0,2]+2*elev[1,2]+elev[2,2]))/ (8 * resx) 
+                dzdy = ((elev[0,0]+2*elev[0,1]+elev[0,2]) - (elev[2,0]+2*elev[2,1]+elev[2,2]))/ (8 * np.abs(resy))
 
                 if sizeinmetres:
                     slp = math.hypot(dzdx, dzdy)
                 else:
                     # EDIT: convert lat/lon to dy/dx in meters to calculate hypot
-                    lat = transform[5] - 0.5*cellsize - r*cellsize
+                    lat = transform[5] + 0.5*resy + r*resy
                     dy, dx = lat_to_dy(lat), lat_to_dx(lat)
-                    slp = math.hypot(dzdx*dx, dzdy*dy)
+                    slp = math.hypot(dzdx/dx, dzdy/dy)
             else:
                 slp = nodata
             
