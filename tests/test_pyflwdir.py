@@ -165,7 +165,7 @@ def test_upscale():
         data2 = src.read(1)
     flwdir = FlwdirRaster(data_repaired.copy(), crs=crs, transform=transform, copy=True)
     flwdir[idx0] = np.uint8(0)
-    flwdir2, outlets = flwdir.upscale(2, uparea=uparea, upa_min=0.5)
+    flwdir2, outlets, cat_idx, riv_idx = flwdir.upscale(2, uparea=uparea, upa_min=0.5, return_subcatch_indices=True)
     assert np.all(flwdir2._data == data2)
     assert outlets.size == np.unique(outlets).size
     
@@ -212,6 +212,35 @@ def test_upscale():
     # with rasterio.open(r'./tests/data/s05w050_dir_05min.tif', 'w', **prof) as dst:
     #     dst.write(flwdir2._data, 1)
 
+def test_dem_adjust():
+    # option 1 fill
+    dem0 = np.array([8, 7, 6, 5, 5, 6, 5, 4])
+    dem1 = np.array([8, 7, 6, 5, 5, 5, 5, 4])
+    import pdb; pdb.set_trace()
+    assert np.all(pyflwdir.dem._fix_pits_streamline(dem0) ==  dem1)
+    # option 2 fill
+    dem0 = np.array([8, 7, 6, 5, 6, 6, 5, 4])
+    dem1 = np.array([8, 7, 6, 6, 6, 6, 5, 4])
+    assert np.all(pyflwdir.dem._fix_pits_streamline(dem0) ==  dem1)
+    # option 3 dig and fill
+    dem0 = np.array([8, 7, 6, 5, 6, 7, 5, 4])
+    dem1 = np.array([8, 7, 6, 6, 6, 6, 5, 4])
+    assert np.all(pyflwdir.dem._fix_pits_streamline(dem0) ==  dem1)
+    # test full scale
+    with rasterio.open(r'./tests/data/tmp/620000004_30sec/flwdir.tif', 'r') as src:
+        data = src.read(1)
+        transform = src.transform
+        crs = src.crs
+    with rasterio.open(r'./tests/data/tmp/620000004_30sec/outelv.tif', 'r') as src:
+        elevtn = src.read(1)
+        prof = src.profile
+    flwdir = FlwdirRaster(data, transform=transform, crs=crs)
+    elevtn_new = flwdir.adjust_elevation(elevtn)
+    with rasterio.open(r'./tests/data/tmp/620000004_30sec/elevtn.tif', 'w', **prof) as dst:
+        dst.write(elevtn_new, 1)
+    # TODO test subfunctions with synthetic data
+    import pdb; pdb.set_trace()
+
 def check_memory_time():
     # data = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
     data = xr.open_dataset(r'/media/data/hydro_merit_1.0/03sec/test_sel_idx74.nc')['dir'].load().values
@@ -256,12 +285,13 @@ if __name__ == "__main__":
     # check_memory_time()
     # print('finalize')
     # print(rtsys.get_allocation_stats())
-    test_flwdir_repair()
-    test_setup_network()
-    test_delineate_basins()
-    test_basin_maps()
-    test_uparea()
-    test_stream_order()
-    test_riv_shape()
-    test_upscale()
+    # test_flwdir_repair()
+    # test_setup_network()
+    # test_delineate_basins()
+    # test_basin_maps()
+    # test_uparea()
+    # test_stream_order()
+    # test_riv_shape()
+    # test_upscale()
+    test_dem_adjust()
     print('success')

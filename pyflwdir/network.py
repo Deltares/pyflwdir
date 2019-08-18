@@ -133,7 +133,7 @@ def setup_dd(idx_ds, flwdir_flat, shape):
         # next iter
         j += 1
         # NOTE 2d boolean indexing does not work currenlty in numba; flatten first
-        idx_ds = nbs_us.ravel() #.astype(np.uint32)
+        idx_ds = nbs_us.ravel()
         idx_ds = idx_ds[idx_ds < size]
     return nodes[::-1], nodes_up[::-1]
 

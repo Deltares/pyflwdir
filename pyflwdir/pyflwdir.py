@@ -14,7 +14,7 @@ from copy import deepcopy
 
 # local
 from .core import fd
-from . import flux, utils, features, network, gridtools, d8_scaling, catchment
+from . import flux, utils, features, network, gridtools, d8_scaling, catchment, dem
 # export
 __all__ = ['FlwdirRaster']
 
@@ -106,7 +106,7 @@ class FlwdirRaster(object):
             cellare = gridtools.lat_to_area(ys)*self.cellare
         else:
             cellare = np.ones(self.shape[0])*self.cellare
-        cellare = (cellare/1e6) #.astype(np.float32) # km2
+        cellare = (cellare/1e6) # km2
         return network.upstream_area(self._rnodes, self._rnodes_up, cellare, self.shape)
 
     def delineate_basins(self, idx=None):
@@ -162,10 +162,10 @@ class FlwdirRaster(object):
                     outlet_lr=None, xs=None, ys=None):
         if stream_order is None:
             stream_order = self.stream_order()
-        if mask is None:
-            stream_order[stream_order < min_order] = np.int16(-1)
+        if mask is not None:
+            stream_order[~mask] = -1
         else:
-            stream_order[mask] = np.int16(-1)
+            stream_order[stream_order < min_order] = -1
         idx0 = self.get_pits() if self._idx0 is None else self._idx0
         # get lists of river nodes per stream order
         riv_nodes, riv_order = features.river_nodes(idx0, self._data_flat, stream_order.reshape(-1), self.shape)
@@ -185,7 +185,7 @@ class FlwdirRaster(object):
         return gdf_riv, gdf_pit
 
 
-    def upscale(self, scale_ratio, uparea=None, upa_min=0.5, method='extended', return_outlets=False):
+    def upscale(self, scale_ratio, uparea=None, upa_min=0.5, method='extended', return_subcatch_indices=False):
         if not self.shape[0] % scale_ratio == self.shape[1] % scale_ratio == 0:
             raise ValueError(f'the data shape should be an exact multiplicity of the scale_ratio')
         if uparea is None:
@@ -195,11 +195,33 @@ class FlwdirRaster(object):
             self.transform[3], self.transform[4] * scale_ratio, self.transform[5]
         )
         extended=method=='extended'
+        uparea_flat = uparea.ravel()
         flwdir_lr, outlet_lr = d8_scaling.d8_scaling(
-            scale_ratio, self._data_flat, uparea.ravel(), self.shape, upa_min=upa_min, extended=extended
+            scale_ratio=scale_ratio, flwdir_flat=self._data_flat, uparea_flat=uparea_flat, 
+            shape=self.shape, upa_min=upa_min, extended=extended
         )
         flwdir_lr = FlwdirRaster(flwdir_lr, transform=transform_lr, crs=self.crs)
         return flwdir_lr, outlet_lr
 
+    def propagate_downstream(self, material):
+        if self._rnodes is None:
+            self.setup_network()    # setup network, with pits as most downstream indices
+        if not np.all(self.shape == material.shape):
+            raise ValueError(f'shape of material and flwdir do not match')
+        return flux.propagate_downstream(self._rnodes, self._rnodes_up, material.copy().ravel(), self.shape)
 
+    def propagate_upstream(self, material):
+        if self._rnodes is None:
+            self.setup_network()    # setup network, with pits as most downstream indices
+        if not np.all(self.shape == material.shape):
+            raise ValueError(f'shape of material and flwdir do not match')
+        return flux.propagate_upstream(self._rnodes, self._rnodes_up, material.copy().ravel(), self.shape)
 
+    def adjust_elevation(self, elevtn, copy=True):
+        if not np.all(self.shape == elevtn.shape):
+            raise ValueError(f'shape of elevtn and flwdir map do not match')
+        if copy:
+            elevtn_new = np.copy(elevtn).ravel()
+        else:
+            elevtn_new = elevtn.ravel()
+        return dem.hydrologically_adjust_elevation(self._data_flat, elevtn_new, self.shape)
