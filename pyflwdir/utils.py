@@ -70,39 +70,3 @@ def flwdir_check(flwdir_flat, shape):
             idx_repair.append(idx_us) # add to repair list
 
     return np.array(idx_repair, dtype=np.uint32), hasloops
-
-# general functions to apply stats of multiple groups (e.g. subbasins)
-@njit
-def group_count(groups, indices):
-    grpcnt = np.ones(groups.size, dtype=np.int32)
-    for idx in range(groups.size):
-        idxs = indices[idx]
-        grpcnt[idx] = idxs.size
-    return grpcnt
-
-@njit
-def group_sum(groups, indices, values):
-    values = values.ravel()
-    grpsum = np.ones(groups.size, dtype=values.dtype)*-9999
-    for idx in range(groups.size):
-        idxs = indices[idx]
-        grpsum[idx] = np.sum(values[idxs])
-    return grpsum
-
-@njit
-def group_mean(groups, indices, values):
-    values = values.ravel()    
-    grpmean = np.ones(groups.size, dtype=values.dtype)*-9999
-    for idx in range(groups.size):
-        idxs = indices[idx]
-        grpmean[idx] = np.mean(values[idxs])
-    return grpmean
-
-@njit
-def group_percentile(groups, indices, values, q):
-    grpqnt = np.ones((groups.size, q.size), dtype=values.dtype)*-9999
-    for idx in range(groups.size):
-        idxs = indices[idx]
-        vals = values[idxs]
-        grpqnt[idx,:] = np.percentile(vals, q)
-    return grpqnt
