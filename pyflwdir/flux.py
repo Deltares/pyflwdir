@@ -17,31 +17,29 @@ _pits = fd._pits
 _ds = fd._ds
 
 @njit
-def propagate_upstream(rnodes, rnodes_up, material):
-    shape = material.shape
-    material = material.flatten()
+def propagate_upstream(rnodes, rnodes_up, material, shape):
+    size = shape[0]*shape[1]
     for i in range(len(rnodes)):
         k = -i-1
         for j in range(len(rnodes[k])):
             idx_ds = rnodes[k][j]
-            idxs_us = rnodes_up[k][j] # NOTE: has nodata (-1) values
+            idxs_us = rnodes_up[k][j] # NOTE: has nodata uint32(-1) values
             v = material[idx_ds]
             for idx_us in idxs_us:
-                if idx_us == -1: break
+                if idx_us >= size: break
                 material[idx_us] += v
     return material.reshape(shape)
 
 @njit
-def propagate_downstream(rnodes, rnodes_up, material):
-    shape = material.shape
-    material = material.flatten()
+def propagate_downstream(rnodes, rnodes_up, material, shape):
+    size = shape[0]*shape[1]
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
-            idxs_us = rnodes_up[i][j] # NOTE: has nodata (-1) values
+            idxs_us = rnodes_up[i][j] # NOTE: has nodata uint32(-1) values
             v = 0
             for idx_us in idxs_us:
-                if idx_us == -1: break
+                if idx_us >= size: break
                 v += material[idx_us]
             material[idx_ds] += v
     return material.reshape(shape)
