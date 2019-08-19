@@ -21,7 +21,7 @@ def hydrologically_adjust_elevation(flwdir_flat, elevtn_flat, shape):
     idx_lst = []
     nn = []
     for idx in range(flwdir_flat.size):
-        if fd.us_indices(idx, flwdir_flat, shape).size == 0: # most upstream
+        if flwdir_flat[idx] != fd._nodata and fd.us_indices(idx, flwdir_flat, shape).size == 0: # most upstream
             idxs = _streamline(idx, flwdir_flat, shape)      # find all downstream
             nn.append(idxs.size)
             idx_lst.append(idxs)
@@ -97,7 +97,7 @@ def _fix_pits_streamline(elevtn):
                 elevtn[idxs] = zmod
                 zmin = zi
                 valid = True
-            elif zi > zmax: # between zmin and zmax (slope up)
+            elif zi >= zmax: # between zmin and zmax (slope up) # get last imax (!)
                 zmax = zi 
                 imax = i
     return elevtn
