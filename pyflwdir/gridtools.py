@@ -15,12 +15,20 @@ import xarray as xr
 
 # vectorize
 def nodes_to_ls(nodes, lats, lons):
-    ncol = lons.size
-    return LineString([(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, ncol))])
+    if lats.ndim == 1:
+        ncol = lons.size
+        return LineString([(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, ncol))])
+    else:
+        xs, ys = lons.flat[nodes], lats.flat[nodes]
+        return LineString([(x, y) for x, y in zip(xs, ys)])
 
 def nodes_to_pnts(nodes, lats, lons):
-    ncol = lons.size
-    return [Point(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, ncol))]
+    if lats.ndim == 1:
+        ncol = lons.size
+        return [Point(x,y) for x, y in zip(*idx_to_xy(nodes, lons, lats, ncol))]
+    else:
+        xs, ys = lons.flat[nodes], lats.flat[nodes]
+        return [Point(x,y) for x, y in zip(xs, ys)]
 
 def vectorize(data, nodata, transform, crs=None, connectivity=8):
     feats_gen = features.shapes(data, mask=data!=nodata, transform=transform, connectivity=connectivity)

@@ -158,8 +158,7 @@ class FlwdirRaster(object):
             self.setup_network()    # setup network, with pits as most downstream indices
         return network.stream_order(self._rnodes, self._rnodes_up, self.shape)
 
-    def stream_shape(self, stream_order=None, mask=None, min_order=3, 
-                    outlet_lr=None, xs=None, ys=None):
+    def stream_shape(self, stream_order=None, mask=None, min_order=3, xs=None, ys=None):
         if stream_order is None:
             stream_order = self.stream_order()
         if mask is not None:
@@ -169,15 +168,10 @@ class FlwdirRaster(object):
         idx0 = self.get_pits() if self._idx0 is None else self._idx0
         # get lists of river nodes per stream order
         riv_nodes, riv_order = features.river_nodes(idx0, self._data_flat, stream_order.reshape(-1), self.shape)
-        if outlet_lr is None or xs is None or ys is None:
+        if xs is None or ys is None:
             xs, ys = self._xycoords()
-            pit_nodes = idx0
-        else: # translate to subgrid position if provided
-            outlet_lr_flat = outlet_lr.ravel()
-            pit_nodes = outlet_lr_flat[idx0]
-            riv_nodes = [outlet_lr_flat[n] for n in riv_nodes]
         # create geometries
-        pit_pnts = gridtools.nodes_to_pnts(pit_nodes, ys, xs)
+        pit_pnts = gridtools.nodes_to_pnts(idx0, ys, xs)
         riv_ls = [gridtools.nodes_to_ls(nodes, ys, xs) for nodes in riv_nodes]
         # make geopandas dataframe
         gdf_riv = gridtools.gp.GeoDataFrame(data=riv_order, columns=['stream_order'], geometry=riv_ls, crs=self.crs)

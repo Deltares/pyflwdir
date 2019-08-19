@@ -155,6 +155,10 @@ def test_riv_shape():
     assert np.all([g.is_valid for g in gdf_riv.geometry])
     assert len(gdf_riv) == 61
     assert len(gdf_pits) == 1
+    # test with given coordinates
+    gdf_riv1, gdf_pit1 = flwdir.stream_shape(xs=np.ones(flwdir.shape), ys=np.ones(flwdir.shape))
+    assert np.all(gdf_riv1.total_bounds==1)
+    assert np.all(gdf_pit1.total_bounds==1)
 
 def test_upscale():
     with rasterio.open(r'./tests/data/uparea.tif', 'r') as src:
@@ -216,7 +220,6 @@ def test_dem_adjust():
     # option 1 fill
     dem0 = np.array([8, 7, 6, 5, 5, 6, 5, 4])
     dem1 = np.array([8, 7, 6, 5, 5, 5, 5, 4])
-    import pdb; pdb.set_trace()
     assert np.all(pyflwdir.dem._fix_pits_streamline(dem0) ==  dem1)
     # option 2 fill
     dem0 = np.array([8, 7, 6, 5, 6, 6, 5, 4])
@@ -226,7 +229,7 @@ def test_dem_adjust():
     dem0 = np.array([8, 7, 6, 5, 6, 7, 5, 4])
     dem1 = np.array([8, 7, 6, 6, 6, 6, 5, 4])
     assert np.all(pyflwdir.dem._fix_pits_streamline(dem0) ==  dem1)
-    # test full scale
+    # TODO test full scale with small data
     with rasterio.open(r'./tests/data/tmp/620000004_30sec/flwdir.tif', 'r') as src:
         data = src.read(1)
         transform = src.transform
@@ -235,11 +238,9 @@ def test_dem_adjust():
         elevtn = src.read(1)
         prof = src.profile
     flwdir = FlwdirRaster(data, transform=transform, crs=crs)
-    elevtn_new = flwdir.adjust_elevation(elevtn)
-    with rasterio.open(r'./tests/data/tmp/620000004_30sec/elevtn.tif', 'w', **prof) as dst:
-        dst.write(elevtn_new, 1)
-    # TODO test subfunctions with synthetic data
-    import pdb; pdb.set_trace()
+    elevtn_new = flwdir.adjust_elevation(elevtn, copy=True)
+    assert np.sum(elevtn!=elevtn_new) == 12
+
 
 def check_memory_time():
     # data = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
@@ -291,7 +292,7 @@ if __name__ == "__main__":
     # test_basin_maps()
     # test_uparea()
     # test_stream_order()
-    # test_riv_shape()
+    test_riv_shape()
     # test_upscale()
-    test_dem_adjust()
+    # test_dem_adjust()
     print('success')
