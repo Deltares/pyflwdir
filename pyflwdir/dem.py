@@ -7,9 +7,10 @@ from numba import njit
 
 # import flow direction definition
 from .core import fd
+from .network import _nbs_us
 
 @njit
-def hydrologically_adjust_elevation(flwdir_flat, elevtn_flat, shape):
+def hydrologically_adjust_elevation(idxs_ds, flwdir_flat, elevtn_flat, shape):
     """Given a flow direction map, remove pits in the elevation map.
     Algorithm based on Yamazaki et al. (2012)
     
@@ -18,22 +19,44 @@ def hydrologically_adjust_elevation(flwdir_flat, elevtn_flat, shape):
     modeling, J. Hydrol., 436-437, 81-91, doi:10.1016/j.jhydrol.2012.02.045,
     2012.
     """
-    # find streamlines 
-    idx_lst = []
-    nn = []
-    for idx in range(flwdir_flat.size):
-        if flwdir_flat[idx] != fd._nodata and fd.us_indices(idx, flwdir_flat, shape).size == 0: # most upstream
-            idxs = _streamline(idx, flwdir_flat, shape)
-            nn.append(idxs.size) # save streamline length
-            idx_lst.append(idx)
+    # get stream length to outlet at most upstream cells
+    idxs0, upds0 = _dist_to_outlet_at_divide(idxs_ds.astype(np.uint32), flwdir_flat, shape)
     # loop from longest to shortest streamline
-    seq = np.argsort(np.array(nn))[::-1]
-    # assert nn[seq[0]] > nn[seq[-1]]
+    seq = np.argsort(upds0)[::-1]
+    assert upds0[seq[0]] > upds0[seq[-1]]
     for i in seq:
-        # fix elevation for streamline
-        idxs = _streamline(idx_lst[i], flwdir_flat, shape) # recalc streamlines to save memoryspace ..
-        elevtn_flat[idxs] = _fix_pits_streamline(elevtn_flat[idxs])
+        idxs = _streamline(idxs0[i], flwdir_flat, shape)            # get streamlines
+        elevtn_flat[idxs] = _fix_pits_streamline(elevtn_flat[idxs]) # fix elevation
     return elevtn_flat.reshape(shape)
+
+@njit
+def _dist_to_outlet_at_divide(idxs_ds, flwdir_flat, shape):
+    """returns indices and distance (no of cell) to outlet at watershed divide"""
+    size = shape[0]*shape[1]
+    # intialize map
+    updist = np.zeros(size, dtype=np.int32)
+    idx_lst = []
+    upd_lst = []
+    # loop through flwdir map
+    while True:
+        nbs_us, valid = _nbs_us(idxs_ds, flwdir_flat, shape) # NOTE nbs_us has dtype uint32
+        if np.all(valid==np.int8(0)):
+            break
+        for i in range(idxs_ds.size):
+            idx_ds = idxs_ds[i]
+            d = updist[idx_ds]
+            if valid[i] == np.int8(0): # most upstream
+                idx_lst.append(idx_ds)
+                upd_lst.append(d)
+            else:
+                idxs_us = nbs_us[i,]
+                for idx_us in idxs_us:
+                    if idx_us >= size: break
+                    updist[idx_us] = d+1 # downstream length + 1
+        # next iter
+        idxs_ds = nbs_us.ravel()
+        idxs_ds = idxs_ds[idxs_ds < size]
+    return np.array(idx_lst), np.array(upd_lst)
 
 @njit
 def _streamline(idx_us, flwdir_flat, shape):

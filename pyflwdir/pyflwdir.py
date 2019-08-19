@@ -224,4 +224,5 @@ class FlwdirRaster(object):
             elevtn_new = np.copy(elevtn).ravel()
         else:
             elevtn_new = elevtn.ravel()
-        return dem.hydrologically_adjust_elevation(self._data_flat, elevtn_new, self.shape)
+        idxs_ds = self.get_pits()
+        return dem.hydrologically_adjust_elevation(idxs_ds, self._data_flat, elevtn_new, self.shape)

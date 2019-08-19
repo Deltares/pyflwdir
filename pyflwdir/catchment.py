@@ -27,8 +27,7 @@ def delineate_basins(idxs_ds, flwdir_flat, shape, lats, lons, resy, resx):
     # loop through flwdir map
     while True:
         nbs_us, valid = _nbs_us(idxs_ds, flwdir_flat, shape) # NOTE nbs_us has dtype uint32
-        idx_valid = np.where(valid == np.int8(1))[0]
-        if idx_valid.size==0:
+        if np.all(valid==np.int8(0)):
             break
         for i in range(idxs_ds.size):
             idx_ds = idxs_ds[i]
