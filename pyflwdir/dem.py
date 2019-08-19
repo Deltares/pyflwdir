@@ -8,6 +8,7 @@ from numba import njit
 # import flow direction definition
 from .core import fd
 
+@njit
 def hydrologically_adjust_elevation(flwdir_flat, elevtn_flat, shape):
     """Given a flow direction map, remove pits in the elevation map.
     Algorithm based on Yamazaki et al. (2012)
@@ -22,14 +23,15 @@ def hydrologically_adjust_elevation(flwdir_flat, elevtn_flat, shape):
     nn = []
     for idx in range(flwdir_flat.size):
         if flwdir_flat[idx] != fd._nodata and fd.us_indices(idx, flwdir_flat, shape).size == 0: # most upstream
-            idxs = _streamline(idx, flwdir_flat, shape)      # find all downstream
-            nn.append(idxs.size)
-            idx_lst.append(idxs)
+            idxs = _streamline(idx, flwdir_flat, shape)
+            nn.append(idxs.size) # save streamline length
+            idx_lst.append(idx)
     # loop from longest to shortest streamline
-    seq = np.argsort(np.array(nn))[::-1] 
+    seq = np.argsort(np.array(nn))[::-1]
+    # assert nn[seq[0]] > nn[seq[-1]]
     for i in seq:
         # fix elevation for streamline
-        idxs = idx_lst[i]
+        idxs = _streamline(idx_lst[i], flwdir_flat, shape) # recalc streamlines to save memoryspace ..
         elevtn_flat[idxs] = _fix_pits_streamline(elevtn_flat[idxs])
     return elevtn_flat.reshape(shape)
 
