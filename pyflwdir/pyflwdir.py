@@ -7,7 +7,7 @@
 
 import logging
 import numpy as np
-from numba import njit, jitclass
+from numba import njit
 import rasterio
 from rasterio.transform import Affine, array_bounds
 from copy import deepcopy
@@ -26,9 +26,21 @@ IDENTITY_NS = Affine(1, 0, 0, 0, -1, 0)
 
 class FlwdirRaster(object):
 
-    def __init__(self, data, 
-            transform=IDENTITY_NS, crs=4326,
-            check_format=False, copy=False):    
+    def __init__(self, data, transform=IDENTITY_NS, crs=4326, check_format=False, copy=False):
+        """Create an instance of a pyflwdir.FlwDirRaster object
+        
+        Arguments:
+            data {np.ndarray(unint8)} -- 2D flow direction array in D8 format
+        
+        Keyword Arguments:
+            transform {Fffine.Transform} -- The GeoTransform of the flow direction map (default: {IDENTITY_NS})
+            crs {int} -- The coordinate reference system if the flow direciton map, can be epsg code (default: {4326})
+            check_format {bool} -- If True: check if the flow direction map is of D8 format (default: {False})
+            copy {bool} -- If True: create a copy of the flow direciton map (default: {False})
+        
+        Raises:
+            ValueError: If the data is too large for uint32 indices or incorrect 
+        """
         assert data.ndim == 2
         assert np.sign(transform[4]) == -1 # North to South orientation
         self.d8format = fd._format
@@ -73,48 +85,83 @@ class FlwdirRaster(object):
         return xs, ys
 
     def isvalid(self):
+        """Returns True if the flow direction map is valid, meaning that all cells flow to a pit/outlet.
+        
+        Returns:
+            {boolean} -- valid
+        """
         # check if all cells connect to pit / outflows at bounds
         valid = utils.flwdir_check(self._data_flat, self.shape)[1] == False
         return valid
 
     def repair(self):
+        """Repair the flow direction map in order to have all cells flow to a pit."""
         repair_idx, _ = utils.flwdir_check(self._data_flat, self.shape)
         if repair_idx.size > 0:
             self._data_flat[repair_idx] = fd._pits[-1] # set inland pit
-        return None
 
     def setup_network(self, idx0=None):
+        """Setup all upstream - downstream connections based on the flow direcion map.
+        
+        Keyword Arguments:
+            idx0 {np.ndayy(int)} -- Array with 1D outlet indices. 
+                If none all pits in the flow direction map are used (default: {None})
+        
+        Raises:
+            ValueError: Outlet indices are outside the map domain
+        """
         if idx0 is None:
             idx0 = self.get_pits()
-            if idx0.size == 0:
-                raise ValueError('no pits found in flow direction data')   
         elif not np.all(np.logical_and(idx0>=0, idx0<self.size)):
-            raise ValueError('idx0 indices outside domain')
+            raise ValueError('Outlet indices are outside the map domain')
         self._idx0 = np.atleast_1d(np.asarray(idx0, dtype=np.uint32)) # basin outlets
         self._rnodes, self._rnodes_up = network.setup_dd(self._idx0, self._data_flat, self.shape)
-        return None
 
     def get_pits(self):
-        return fd.pit_indices(self._data.flatten())
+        """Return the indices of the pits/outlets in the flow direction map.
+        
+        Raises:
+            ValueError: The flow direction data is not valid: no pits/outlets are found.
+        
+        Returns:
+            np.ndarray(int) -- Indices of pits/outlets
+        """
+        idx0 = fd.pit_indices(self._data.flatten())
+        if idx0.size == 0:
+            raise ValueError('The flow direction data is not valid: no pits/outlets are found.')   
+        return idx0 
 
-    def upstream_area(self, cell_area=None):
-        """returns upstream area in km"""
+    def upstream_area(self):
+        """Returns the upstream area [km] based on the flow direction map. The cell area is 
+        converted to metres is the map's coordinate reference system is geopgraphic.
+        
+        Returns:
+            np.ndarray(float) -- Upstream area map
+        """
         if self._rnodes is None:
             self.setup_network()    # setup network, with pits as most downstream indices
         if self.latlon:
             _, ys = self._xycoords()
-            cellare = gridtools.lat_to_area(ys)*self.cellare
+            cellare = gridtools.lat_to_area(ys)*self.cellare/1e6
         else:
-            cellare = np.ones(self.shape[0])*self.cellare
-        cellare = (cellare/1e6) # km2
+            cellare = np.ones(self.shape[0])*self.cellare/1e6
         return network.upstream_area(self._rnodes, self._rnodes_up, cellare, self.shape)
 
     def delineate_basins(self, idx=None):
-        """Returns map and bounding boxes/ does not use network"""
+        """Returns a map with basin ids and corresponding bounding boxes. This function does not
+        use the up- downstream network but is directly derived from the flow direction map.
+        
+        Keyword Arguments:
+            idx {np.ndarray(int)} -- List with 1D outlet indices (default: {None})
+        
+        Raises:
+            ValueError: [description]
+        
+        Returns:
+            (np.ndarray(int), np.ndarray(float)) -- Basin map and 2D bboxs (y: basins, x: (w, s, e, n))
+        """
         if idx is None:
             idx = self.get_pits()
-            if idx.size == 0:
-                raise ValueError('no pits found in flow direction data')   
         elif not np.all(np.logical_and(idx>=0, idx<self.size)):
             raise ValueError('idx0 indices outside domain')
         idx = np.atleast_1d(np.asarray(idx, dtype=np.uint32)) # basin outlets
@@ -123,6 +170,20 @@ class FlwdirRaster(object):
         return catchment.delineate_basins(idx, self._data_flat, self.shape, ys, xs, resy, resx)
 
     def basin_map(self, idx=None, values=None, dtype=np.int32):
+        """Return a map with (sub)basins based on the up- downstream network.
+        
+        Keyword Arguments:
+            idx {np.ndarray(int)} -- List/Array with 1D outlet indices (default: {None})
+            values {np.ndarray(int)} -- List/Array with basin ids, should all be larger than zero (default: {None})
+            dtype {np.dtype} -- numpy datatype for output map (default: {np.int32})
+        
+        Raises:
+            ValueError: All values should be larger than zero
+            ValueError: Idx and values should be 1d arrays of same size
+        
+        Returns:
+            np.ndarray(float) -- (Sub)Basin map
+        """
         if self._rnodes is None:
             self.setup_network()    # setup network, with pits as most downstream indices
         if idx is None:             # use most downstream network indices if idx not given
@@ -133,16 +194,33 @@ class FlwdirRaster(object):
         else:
             values = np.atleast_1d(values).astype(dtype)
             if np.any(values<=0):
-                raise ValueError('all values should be larger than zero')
+                raise ValueError('All values should be larger than zero')
         if not idx.size == values.size and idx.ndim == 1:
-            raise ValueError('idx and values should be 1d arrays of same size')
+            raise ValueError('Idx and values should be 1d arrays of same size')
         return network.basin_map(self._rnodes, self._rnodes_up, idx, values, self.shape)
 
     def ucat_map(self, scale_ratio, uparea=None, upa_min=0.5):
+        """Returns the unit-subcatchment and outlets map, based on outlets, i.e. most downstream cells
+        of low resolution regular gridcells. The scale ratio determines the size of the regular grid
+        relative to the flow direction map resoltuion.
+        
+        Arguments:
+            scale_ratio {int} -- The upscaling ratio
+        
+        Keyword Arguments:
+            uparea {np.ndarray(float)} -- Upstream area map (default: {None})
+            upa_min {float} -- Minimum upstream area for rivers (default: {0.5})
+        
+        Raises:
+            ValueError: The shape of the uparea map does not match the flow direction data.
+        
+        Returns:
+            (np.ndarray(int), np.ndarray(int))  -- Unitcatchment subbasin, outlet map
+        """
         if uparea is None:
             uparea = self.upstream_area()
         elif not np.all(uparea.shape == self.shape):
-            raise ValueError("the shape of the uparea map does not match the flow direciton data")
+            raise ValueError("The shape of the uparea map does not match the flow direction data.")
         # get unit catchment outlets based on d8_scaling
         uparea_flat = uparea.ravel()
         idx = d8_scaling.d8_scaling(
@@ -157,27 +235,51 @@ class FlwdirRaster(object):
         outlet.flat[idx] = values
         return basins, outlet
 
-    # def subbasin_map_grid(self, scale_ratio, uparea=None):
-    #     if not self.shape[0] % scale_ratio == self.shape[1] % scale_ratio == 0:
-    #         raise ValueError(f'the data shape should be an exact multiplicity of the scale_ratio')
-    #     if uparea == None:
-    #         uparea = self.upstream_area()
-    #     subbasin_idx = d8_scaling.subbasin_outlets_grid(scale_ratio, self._data, uparea)
-    #     subbasin_idx = subbasin_idx[subbasin_idx!=-9999]
-    #     return self.basin_map(idx=subbasin_idx, values=None, dtype=np.uint32)
-
     def basin_shape(self, basin_map=None, nodata=0, **kwargs):
+        """Returns the vectorized basin boundary. In case no basin_map is given, it is calculated based on
+        the outlet/pits in the domain.
+        
+        Keyword Arguments:
+            basin_map {np.ndarray(int)} -- Basin map (default: {None})
+            nodata {int} -- The nodata value of the Basin map (default: {0})
+        
+        Returns:
+            geopandas.GeoDataFrame -- vectorized basin boundary
+        """
         if basin_map is None:
             basin_map = self.basin_map(**kwargs)
             nodata = 0 # overwrite nodata
         return gridtools.vectorize(basin_map, nodata, self.transform, crs=self.crs)
 
     def stream_order(self):
+        """Returns the Strahler Order map (TODO ref). 
+        The smallest streams, which are the cells with no upstream cells, get an order 1. 
+        Where two channels of order 1 join, a channel of order 2 results downstream. 
+        In general, where two channels of order i join, a channel of order i+1 results.
+        
+        Returns:
+            np.ndarray(int) -- Strahler Order map
+        """
         if self._rnodes is None:
             self.setup_network()    # setup network, with pits as most downstream indices
         return network.stream_order(self._rnodes, self._rnodes_up, self.shape)
 
     def stream_shape(self, stream_order=None, mask=None, min_order=3, xs=None, ys=None):
+        """Returns a GeoDataFrame with vectorized river segments. Segments are LineStrings 
+        connecting cell from down to upstream and are splitted based on strahler order. 
+        The coordinates of the nodes are based on the cell center, unless maps with x and y 
+        coordinates are given.
+        
+        Keyword Arguments:
+            stream_order {np.ndarray(int)} -- Strahler Order map (default: {None})
+            mask {np.ndarray(bool)} -- Mask of valid area (default: {None})
+            min_order {int} -- Minimum Strahler Order recognized as river (default: {3})
+            xs {np.ndarray(float)} -- Map with cell x coordinates (default: {None})
+            ys {np.ndarray(float)} -- Map with cell y coordinates (default: {None})
+        
+        Returns:
+            geopandas.GeoDataFrame -- vectorized river segments
+        """
         if stream_order is None:
             stream_order = self.stream_order()
         if mask is not None:
@@ -198,9 +300,25 @@ class FlwdirRaster(object):
         return gdf_riv, gdf_pit
 
 
-    def upscale(self, scale_ratio, uparea=None, upa_min=0.5, method='extended', return_subcatch_indices=False):
+    def upscale(self, scale_ratio, uparea=None, upa_min=0.5, method='extended'):
+        """Returns upscaled flow direction map using the extended effective area method (Eilander et al., 2019) 
+        
+        Arguments:
+            scale_ratio {int} -- The upscaling ratio
+        
+        Keyword Arguments:
+            uparea {np.ndarray(float)} -- Upstream area map (default: {None})
+            upa_min {float} -- Minimum upstream area for rivers (default: {0.5})
+            method {str} -- upscaling method (default: {'extended'})
+        
+        Raises:
+            ValueError: The data shape should be an exact multiplicity of the scale_ratio
+        
+        Returns:
+            (pyflwdir.FlwDirRaster, np.ndarray(int)) -- Upscaled flow direction map, outlet map
+        """
         if not self.shape[0] % scale_ratio == self.shape[1] % scale_ratio == 0:
-            raise ValueError(f'the data shape should be an exact multiplicity of the scale_ratio')
+            raise ValueError(f'The data shape should be an exact multiplicity of the scale_ratio')
         if uparea is None:
             uparea = self.upstream_area()
         transform_lr = Affine(
@@ -217,22 +335,63 @@ class FlwdirRaster(object):
         return flwdir_lr, outlet_lr
 
     def propagate_downstream(self, material):
+        """Returns a map with accumulated material from all upstream cells that 
+        flow into the neighboring downstream cell based on the flow direction map. 
+        
+        Arguments:
+            material {np.ndatray} -- Map with any material ammounts (i.e. state) to propagate
+        
+        Raises:
+            ValueError: The shape of the material and flow direction map do not match
+        
+        Returns:
+            np.ndarray -- Accumulated material map
+        """
         if self._rnodes is None:
             self.setup_network()    # setup network, with pits as most downstream indices
         if not np.all(self.shape == material.shape):
-            raise ValueError(f'shape of material and flwdir do not match')
+            raise ValueError(f'The shape of material and flow direction map do not match.')
         return flux.propagate_downstream(self._rnodes, self._rnodes_up, material.copy().ravel(), self.shape)
 
     def propagate_upstream(self, material):
+        """Returns a map with accumulated material from all downstream cells that 
+        flow into the neighboring upstream cell based on the flow direction map. 
+        
+        Arguments:
+            material {np.ndatray} -- Map with any material ammounts (i.e. state) to propagate
+        
+        Raises:
+            ValueError: The shape of the material and flow direction map do not match
+        
+        Returns:
+            np.ndarray -- Accumulated material map
+        """
         if self._rnodes is None:
             self.setup_network()    # setup network, with pits as most downstream indices
         if not np.all(self.shape == material.shape):
-            raise ValueError(f'shape of material and flwdir do not match')
+            raise ValueError(f'The shape of the material and flow direction map do not match.')
         return flux.propagate_upstream(self._rnodes, self._rnodes_up, material.copy().ravel(), self.shape)
 
     def adjust_elevation(self, elevtn, copy=True):
+        """Returns hydrologically adjusted elevation map which meet the criterium that
+        all cells have an equal or lower elevation than its upstream neighboring cell.
+        The function follows the algirithm by Yamazaki et al. (2012) to perform this 
+        conditioning with minimal changes to the original elevation map.
+        
+        Arguments:
+            elevtn {np.ndarray(float)} -- Elevation map
+        
+        Keyword Arguments:
+            copy {bool} -- If True: copy the input map (default: {True})
+        
+        Raises:
+            ValueError: The shape of the elevation and flow direction map do not match.
+        
+        Returns:
+            np.ndarray -- Hydrologically adjusted elevation map 
+        """
         if not np.all(self.shape == elevtn.shape):
-            raise ValueError(f'shape of elevtn and flwdir map do not match')
+            raise ValueError(f'The shape of the elevation and flow direction map do not match.')
         if copy:
             elevtn_new = np.copy(elevtn).ravel()
         else:
