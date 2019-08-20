@@ -6,7 +6,6 @@ from numba import njit, prange, guvectorize
 from numba.errors import NumbaPendingDeprecationWarning
 import numpy as np
 import warnings
-import dask
 warnings.simplefilter('ignore', category=NumbaPendingDeprecationWarning)
 
 # import flow direction definition
@@ -60,6 +59,7 @@ from .core import fd
 #     return nodes[::-1], nodes_up[::-1]
 
 # This dask distributed method is super slow. only with huge load (kin wave?) this might work.
+# import dask
 # @dask.delayed
 # def _us8_dask(idx, flwdir_flat, shape):
 #     out = np.ones((1,8), dtype=np.uint32)*-1
