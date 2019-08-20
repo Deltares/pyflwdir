@@ -296,20 +296,3 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extend
     # assert outlet_lr_flat.size == np.unique(outlet_lr_flat).size
     # assert flwdir_check(flwdir_lr_flat, shape_lr)[1] == False # no loops
     return flwdir_lr_flat.reshape(shape_lr), outlet_lr_flat.reshape(shape_lr)
-
-@njit
-def unitcatchment_outlets(scale_ratio, flwdir_flat, uparea_flat, shape):
-    sub_nrow, sub_ncol = shape
-    lr_nrow, lr_ncol = int(sub_nrow/scale_ratio), int(sub_ncol/scale_ratio)
-    shape_lr = lr_nrow, lr_ncol
-    size_lr = lr_nrow * lr_ncol
-    # output cells
-    outlet_idx = np.ones(size_lr, dtype=np.int64)*-1
-
-    # get representative cells (largest uparea in effective area) on highres maps
-    # trace to lowres cell boundary to find outlet cells
-    for idx0 in range(outlet_idx.size):
-        subidx_out = _outlet(idx0, flwdir_flat, uparea_flat, shape, scale_ratio)[0]
-        outlet_idx[idx0] = subidx_out   # subgrid index of outlet point lowres grid cell
-
-    return outlet_idx.reshape(shape_lr)
