@@ -230,11 +230,11 @@ def test_dem_adjust():
     dem1 = np.array([8, 7, 6, 6, 6, 6, 5, 4])
     assert np.all(pyflwdir.dem._fix_pits_streamline(dem0) ==  dem1)
     # TODO test full scale with small data
-    with rasterio.open(r'./tests/data/tmp/620000004_30sec/flwdir.tif', 'r') as src:
+    with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/flwdir.tif', 'r') as src:
         data = src.read(1)
         transform = src.transform
         crs = src.crs
-    with rasterio.open(r'./tests/data/tmp/620000004_30sec/outelv.tif', 'r') as src:
+    with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/outelv.tif', 'r') as src:
         elevtn = src.read(1)
         prof = src.profile
     flwdir = FlwdirRaster(data, transform=transform, crs=crs)
@@ -242,6 +242,17 @@ def test_dem_adjust():
     assert np.sum(elevtn!=elevtn_new) == 12
 
 
+def test_ucat_map():
+    with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/flwdir.tif', 'r') as src:
+        data = src.read(1)
+        transform = src.transform
+        crs = src.crs
+    with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/uparea.tif', 'r') as src:
+        uparea = src.read(1)
+    flwdir = FlwdirRaster(data, transform=transform, crs=crs)    
+    basin, outlet = flwdir.ucat_map(10, uparea=uparea, upa_min=0.5)
+    # TODO add test 
+    
 def check_memory_time():
     # data = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
     data = xr.open_dataset(r'/media/data/hydro_merit_1.0/03sec/test_sel_idx74.nc')['dir'].load().values
@@ -292,7 +303,8 @@ if __name__ == "__main__":
     # test_basin_maps()
     # test_uparea()
     # test_stream_order()
-    test_riv_shape()
+    # test_riv_shape()
     # test_upscale()
     # test_dem_adjust()
+    test_ucat_map()
     print('success')

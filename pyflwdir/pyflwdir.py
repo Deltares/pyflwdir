@@ -138,6 +138,25 @@ class FlwdirRaster(object):
             raise ValueError('idx and values should be 1d arrays of same size')
         return network.basin_map(self._rnodes, self._rnodes_up, idx, values, self.shape)
 
+    def ucat_map(self, scale_ratio, uparea=None, upa_min=0.5):
+        if uparea is None:
+            uparea = self.upstream_area()
+        elif not np.all(uparea.shape == self.shape):
+            raise ValueError("the shape of the uparea map does not match the flow direciton data")
+        # get unit catchment outlets based on d8_scaling
+        uparea_flat = uparea.ravel()
+        idx = d8_scaling.d8_scaling(
+            scale_ratio, self._data_flat, uparea_flat, self.shape, upa_min=upa_min, extended=False
+        )[1].ravel()
+        upa_idx = uparea_flat[idx]
+        idx = idx[upa_idx >= 0]
+        upa_idx = upa_idx[upa_idx >= 0]
+        values = (np.argsort(upa_idx)[::-1]+1).astype(np.int32) # number basins from large to small
+        basins = self.basin_map(idx=idx, values=values, dtype=np.int32)
+        outlet = np.zeros(self.shape, dtype=np.int32)
+        outlet.flat[idx] = values
+        return basins, outlet
+
     # def subbasin_map_grid(self, scale_ratio, uparea=None):
     #     if not self.shape[0] % scale_ratio == self.shape[1] % scale_ratio == 0:
     #         raise ValueError(f'the data shape should be an exact multiplicity of the scale_ratio')
