@@ -327,7 +327,7 @@ class FlwdirRaster(object):
         )
         extended=method=='extended'
         uparea_flat = uparea.ravel()
-        flwdir_lr, outlet_lr = d8_scaling.d8_scaling(
+        flwdir_lr, outlet_lr, _ = d8_scaling.d8_scaling(
             scale_ratio=scale_ratio, flwdir_flat=self._data_flat, uparea_flat=uparea_flat, 
             shape=self.shape, upa_min=upa_min, extended=extended
         )
