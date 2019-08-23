@@ -134,9 +134,9 @@ def us_main_indices(idx0, flwdir_flat, uparea_flat, shape, upa_min):
 @njit
 def idx_to_dd(idx0, idx_ds, shape):
     """returns local D8 flow direction based on current and downstream index"""
-    nrow, ncol = shape
-    size = nrow * ncol
-    assert idx0 < size and idx_ds < size
+    ncol = shape[1]
+    # size = nrow * ncol
+    # assert idx0 < size and idx_ds < size
     r = (idx_ds // ncol) - (idx0 // ncol) + 1
     c = (idx_ds %  ncol) - (idx0 %  ncol) + 1
     dd = _nodata
