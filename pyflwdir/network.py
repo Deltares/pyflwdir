@@ -161,7 +161,7 @@ def upstream_area(rnodes, rnodes_up, cellare, shape):
     nrow, ncol = shape
     size = nrow*ncol
     assert cellare.size == nrow
-    upa = np.ones(size, dtype=cellare.dtype)*-9999.
+    upa = np.ones(size, dtype=np.float32)*-9999.
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
@@ -172,9 +172,9 @@ def upstream_area(rnodes, rnodes_up, cellare, shape):
                 upa_us = upa[idx_us]
                 if upa_us <= 0:
                     upa_us = cellare[idx_us // ncol]
-                    upa[idx_us] = upa_us
+                    upa[idx_us] = np.float32(upa_us)
                 upa_ds += upa_us
-            upa[idx_ds] = upa_ds
+            upa[idx_ds] = np.float32(upa_ds)
     return upa.reshape(shape)
 
 @njit
