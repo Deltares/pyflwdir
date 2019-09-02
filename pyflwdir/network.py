@@ -156,22 +156,29 @@ def basin_map(rnodes, rnodes_up, idx, values, shape):
                     basidx_flat[idx_us] = basidx_ds
     return basidx_flat.reshape(shape)
 
-@njit()
+# @njit()
 def upstream_area(rnodes, rnodes_up, cellare, shape):
-    nrow, ncol = shape
+    nrow, ncol = np.uint32(shape[0]), np.uint32(shape[1])
     size = nrow*ncol
     assert cellare.size == nrow
+    # intialize with correct dtypes
+    idx_ds = np.uint32(0)
+    idxs_us = np.ones((2), dtype=np.uint32)
+    upa_ds, upa_us = np.float64(0), np.float64(0)
     upa = np.ones(size, dtype=np.float32)*-9999.
+    # loop over network from up- to downstream and calc upstream aree
     for i in range(len(rnodes)):
         for j in range(len(rnodes[i])):
             idx_ds = rnodes[i][j]
             idxs_us = rnodes_up[i][j] # NOTE: has nodata np.uint32(-1) values
-            upa_ds = cellare[idx_ds // ncol]
+            r = np.uint32(idx_ds // ncol)
+            upa_ds = np.float64(cellare[r])
             for idx_us in idxs_us:
                 if idx_us >= size: break
                 upa_us = upa[idx_us]
                 if upa_us <= 0:
-                    upa_us = cellare[idx_us // ncol]
+                    r = np.uint32(idx_us // ncol)
+                    upa_us = cellare[r]
                     upa[idx_us] = np.float32(upa_us)
                 upa_ds += upa_us
             upa[idx_ds] = np.float32(upa_ds)
