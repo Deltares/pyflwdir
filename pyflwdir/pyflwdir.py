@@ -327,12 +327,12 @@ class FlwdirRaster(object):
         )
         extended=method=='extended'
         uparea_flat = uparea.ravel()
-        flwdir_lr, outlet_lr, _ = d8_scaling.d8_scaling(
+        flwdir_lr, outlet_lr, changd_lr = d8_scaling.d8_scaling(
             scale_ratio=scale_ratio, flwdir_flat=self._data_flat, uparea_flat=uparea_flat, 
             shape=self.shape, upa_min=upa_min, extended=extended
         )
         flwdir_lr = FlwdirRaster(flwdir_lr, transform=transform_lr, crs=self.crs)
-        return flwdir_lr, outlet_lr
+        return flwdir_lr, outlet_lr, changd_lr
 
     def propagate_downstream(self, material):
         """Returns a map with accumulated material from all upstream cells that 
