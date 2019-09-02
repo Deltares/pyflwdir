@@ -144,184 +144,191 @@ def _dd(idx0, subidx, flwdir_flat, effare_flat, shape, shape_lr, scale_ratio, ex
     return dd, subidx_ds, idx_ds
 
 @njit
-def _ds_effare_then_outlet(subidx0, scale_ratio, flwdir_flat, effare_flat, shape):
-    """Returns the outlet subgrid cell downstream from the next downstream effective area.
+def _force_ds_outlet(idx0, subidx0, scale_ratio, flwdir_flat, effare_flat, shape, shape_lr, n=1):
+    """Returns the nth outlet subgrid cell downstream from the next downstream effective area.
     The <effare_flat> map should have zeros in all cells upstream from the effective area and 
     larger or equal to one inside and downstream of the effective area.
     """
     sub_ncol = shape[1]
-    subidx_out = -1
-    idx = -1
+    subidx1 = -1
+    idx_ds1 = -1
+    dd1 = fd._nodata
     # @ upstream point
     subidx = subidx0
+    path = [subidx]
     ea = np.uint8(0)
-    while ea == np.uint(0): # requires highres grid with effective area cell == 1
-        subidx_ds = fd.ds_index(subidx, flwdir_flat, shape) # move downstream
-        if subidx_ds == -1 or subidx_ds == subidx:
-            break 
-        ea = effare_flat[subidx_ds]
-        subidx = subidx_ds
+    i = 0
+    if n > 0:
+        while ea == np.uint8(0): # requires highres grid with effective area cell == 1
+            subidx_ds = fd.ds_index(subidx, flwdir_flat, shape) # move downstream
+            if subidx_ds == -1 or subidx_ds == subidx:
+                break 
+            ea = effare_flat[subidx_ds]
+            subidx = subidx_ds
+            path.append(subidx)
+        i += 1
+    else:
+        ea = np.uint8(1)
     # @ downstream effective area
+    # find nth downstream outlet from downstream eff area
     if ea != np.uint8(0):
-        idx_ds = subidx_2_idx(subidx, sub_ncol, scale_ratio) # calc lowres idx of subgrid cell
-        subidx_out = _outlet(idx_ds, subidx, flwdir_flat, shape, scale_ratio)[0] # move to outlet
-        # @ downstream outlet
-    return idx_ds, subidx_out
+        # @ move to next downstream outlet
+        j = 0
+        while j < 3:
+            idx_ds = subidx_2_idx(subidx, sub_ncol, scale_ratio)
+            subidx, path2 = _outlet(idx_ds, subidx, flwdir_flat, shape, scale_ratio)
+            dd = fd.idx_to_dd(idx0, idx_ds, shape_lr)
+            path.extend(path2)
+            if dd != _nodata and fd.ispit(dd) == False:
+                if i == n:
+                    idx_ds1 = idx_ds
+                    subidx1 = subidx
+                    dd1 = dd
+                    break
+                i += 1
+            else:
+                j += 1
+            subidx_ds = fd.ds_index(subidx, flwdir_flat, shape)
+            if subidx_ds == subidx or subidx_ds == -1:
+                break
+            subidx = subidx_ds
 
-@njit
-def _us_main_branch(subidx0, idx0, scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0):
-    """Returns the subgrid branch with the largest upstream area upstream from <subidx0> inside lowres cell <idx0> """
-    sub_ncol = shape[1]
-    subidx = subidx0
-    idx = idx0
-    upa_branch = upa_min
-    subidx_branch = -1
-    while idx == idx0: # break if main us in other lowres cell
-        subidxs_us = fd.us_indices(subidx, flwdir_flat, shape)
-        upa0 = upa_min
-        subidx0 = -1
-        for subidx_us in subidxs_us:
-            upa = uparea_flat[subidx_us]
-            # update next main upstream
-            if upa > upa0:
-                # update branch subidx if previous main us larger uparea and same lowres cell
-                if upa0 > upa_branch and subidx_2_idx(subidx0, sub_ncol, scale_ratio) == idx0:
-                    upa_branch = upa0
-                    subidx_branch = subidx0
-                upa0 = upa
-                subidx0 = subidx_us
-            # update branch subidx if larger uparea and same lowres cell
-            elif upa > upa_branch and subidx_2_idx(subidx_us, sub_ncol, scale_ratio) == idx0:
-                upa_branch = upa
-                subidx_branch = subidx_us
-        if subidxs_us.size == 0: 
-            break # no more upstream cells
-        subidx = subidx0
-        idx = subidx_2_idx(subidx0, sub_ncol, scale_ratio)
-    return subidx_branch
+    return idx_ds1, subidx1, dd1, path
 
 @njit
 def _ddext(idx0, flwdir_lr_flat, outlet_lr_flat, checkd_lr_flat, 
             flwdir_flat, uparea_flat, effare_flat, shape, shape_lr, scale_ratio):
-    """Returns lists with changes in drainage directon and subgrid indices by in order to create a properly
-    connected network. 
-
-    Two cells are properly connected on a subgrid level if the outlet of one cell connects to the outlet
-    of a downstream neighboring cell without passing other outlet cells.
-
-    First 
-    
-    It fails if not all requirements can be fullfilled.
-    """
-    # outputs
-    idx0_lst = []
-    dd0_lst = []
-    idx1_lst = []
-    out1_lst = []
-    # initialize
-    idx = idx0
-    subidx0 = outlet_lr_flat[idx0]
-    idx_ds0 = fd.ds_index(idx0, flwdir_lr_flat, shape_lr)
-    idx2_lst = [] # check upstream branches
-    idx3_lst = [] # avoid subidx "in between" outlets 
-    i = 0
+    """"""
+    n = 0
     success = False
-    # move downstream and connect main branch
-    while not success and i < 5:
-        # find next downstream outlet
-        # in a cell which is not already been modified
-        dsout = False
-        for _ in range(3):
-            subidx_out0 = outlet_lr_flat[idx_ds0] 
+    bottleneck = []
+    nb = 0
+    while True:
+        # outputs
+        idx0_lst = []
+        dd0_lst = []
+        idx1_lst = []
+        out1_lst = []
+        # initialize    
+        idx_path = [] 
+        path = []
+        i = 0
+        # force a new downstream outlet 
+        idx1 = idx0
+        subidx = outlet_lr_flat[idx1] 
+        idx_ds1, subidx1, dd1, path1 = _force_ds_outlet(
+            idx1, subidx, scale_ratio, flwdir_flat, effare_flat, shape, shape_lr, n
+        )
+        while not success and i < 5:
+            if idx_ds1 == -1 or fd.ispit(flwdir_lr_flat[idx_ds1]): break #  or checkd_lr_flat[idx_ds1] == 1
+            # get original ds outlet location
+            idx_ds0 = fd.ds_index(idx1, flwdir_lr_flat, shape_lr)
+            subidx0 = outlet_lr_flat[idx_ds0]
             if idx_ds0 in idx1_lst:
-                subidx_out0 = out1_lst[np.where(np.array(idx1_lst)==idx_ds0)[0][0]]
-            idx_ds, subidx_out = _ds_effare_then_outlet(subidx0, scale_ratio, flwdir_flat, effare_flat, shape)
-            if idx_ds not in idx0_lst and subidx_out0 not in idx3_lst and checkd_lr_flat[idx_ds] == 0:
-                dd = fd.idx_to_dd(idx, idx_ds, shape_lr)
-                if fd.ispit(dd) == False and dd != _nodata:
-                    dsout = True
-                    break
-            idx_ds0 = fd.ds_index(idx_ds, flwdir_lr_flat, shape_lr)
-            subidx0 = subidx_out
-            idx3_lst.append(subidx_out)
-        if not dsout: break # unsuccessfull
-        # append dd changes
-        idx0_lst.append(idx)
-        dd0_lst.append(dd)
-        # append upstream branches of new ds cell for later check
-        idxs_us0 = fd.us_indices(idx_ds, flwdir_lr_flat, shape_lr)
-        for idx_us in idxs_us0:
-            if idx_us != idx and idx_us not in idx2_lst:
-                idx2_lst.append(idx_us)
-        # # append upastream branches of original ds cell for later check
-        if idx_ds != idx_ds0:
-            idxs_us0 = fd.us_indices(idx_ds0, flwdir_lr_flat, shape_lr)
-            for idx_us in idxs_us0:
-                if idx_us != idx and idx_us not in idx2_lst:
-                    idx2_lst.append(idx_us)
-        # successfull changed main ds path if next outlet unchanged
-        if subidx_out0 == subidx_out: 
-            success = True
-            break
-        # append subidx changes
-        out1_lst.append(subidx_out)
-        idx1_lst.append(idx_ds)
-        # next iter
-        idx = idx_ds
-        subidx0 = subidx_out
-        idx_ds0 = fd.ds_index(idx, flwdir_lr_flat, shape_lr)
-        i += 1
+                subidx0 = out1_lst[np.where(np.array(idx1_lst)==idx_ds0)[0][0]]
+            # append dd
+            idx0_lst.append(idx1)
+            dd0_lst.append(dd1)
+            # append outlet changes
+            if outlet_lr_flat[idx_ds1] != subidx1:
+                out1_lst.append(subidx1)
+                idx1_lst.append(idx_ds1)
+            idx_path.append(idx_ds1)
+            # append stream path
+            path.extend(path1)
+            # success if new ds outlet at original ds outlet
+            if subidx1 == subidx0:
+                success = True
+                break
+            # find next downtstream cell which is not on streampath or previously modified cell or pit
+            idx1 = idx_ds1
+            subidx = subidx1
+            nn = 1
+            while idx_ds1 in idx_path + bottleneck or fd.ispit(flwdir_lr_flat[idx_ds1]): #  or checkd_lr_flat[idx_ds1] == 1
+                idx_ds1, subidx1, dd1, path1 = _force_ds_outlet(
+                    idx1, subidx, scale_ratio, flwdir_flat, effare_flat, shape, shape_lr, nn
+                )
+                if idx_ds1 == -1: break 
+                nn += 1
+                # subidx = subidx1
+            i += 1
 
-    # check upsteam branches
-    if success:
-        for idx in idx2_lst:
-            if idx in idx0_lst: continue
-            subidx0 = outlet_lr_flat[idx]
-            # replace outlet idx if changed
-            if idx in idx1_lst:
-                subidx0 = out1_lst[np.where(np.array(idx1_lst)==idx)[0][0]]
-                assert subidx0 not in idx3_lst
-            # find largest upstream subgrid branch
-            if subidx0 in idx3_lst:
-                subidx_branch = _us_main_branch(subidx0, idx, scale_ratio, flwdir_flat, uparea_flat, shape)    
-                out1_lst.append(subidx_branch)
-                idx1_lst.append(idx)            
-            # check if branch connects to next downstream outlet
-            else:
-                dsout = False
-                for _ in range(5):
-                    # move to outlet of next ds lowres cell
-                    idx_ds = idx
-                    while idx_ds == idx:
-                        subidx_ds = fd.ds_index(subidx0, flwdir_flat, shape)
-                        if subidx_ds == -1 or subidx_ds == subidx0: break
-                        subidx0 = subidx_ds
-                        idx_ds = subidx_2_idx(subidx_ds, shape[1], scale_ratio)
-                    if idx_ds == idx: break
-                    subidx_out = _outlet(idx_ds, subidx_ds, flwdir_flat, shape, scale_ratio)[0] # move to outlet
-                    # get the cell outlets
-                    if idx_ds not in idx1_lst:
-                        subidx_out0 = outlet_lr_flat[idx_ds]
-                    else: 
-                        subidx_out0 = out1_lst[np.where(np.array(idx1_lst)==idx_ds)[0][0]]
-                    # next ds outlet found if cell outlet == ds outlet
-                    if subidx_out0 == subidx_out:
-                        dsout = True
-                        break
-                    subidx0 = subidx_out
-                # check if connects in d8
-                if dsout:
-                    dd = fd.idx_to_dd(idx, idx_ds, shape_lr)
-                    if dd == _nodata: 
+        if success:
+            # if original outlets on stream path, move to largest upstream branch
+            branch = False
+            idx1 = -1
+            subidx1 = -1
+            path = path[::-1] # down- to upstream !
+            for i in range(len(path)):
+                subidx = path[i] 
+                idx = subidx_2_idx(subidx, shape[1], scale_ratio)
+                # check for original outlet on flowpath. move outlet to largest branch in cell
+                if idx != idx1:
+                    if branch and subidx1 != -1:
+                        out1_lst.append(subidx1)
+                        idx1_lst.append(idx1)
+                        idx_path.append(idx1)
+                        branch = False
+                    if idx in idx_path or fd.ispit(flwdir_lr_flat[idx_ds1]): #  or checkd_lr_flat[idx_ds1] == 1
+                        continue
+                    elif subidx == outlet_lr_flat[idx]: # if at original outlet -> move to branch
+                        upa0 = 0
+                        subidx1 = -1
+                        branch = True
+                    idx1 = idx
+                if branch:
+                    for subidx_us in fd.us_indices(subidx, flwdir_flat, shape):
+                        idx_us = subidx_2_idx(subidx_us, shape[1], scale_ratio)
+                        if idx_us == idx1 and subidx_us not in path and uparea_flat[subidx_us] > upa0:
+                            subidx1 = subidx_us 
+                            upa0 = uparea_flat[subidx_us]
+
+            for idx_ds in idx_path:
+                # check if all upstream cells connect
+                for idx_us in fd.us_indices(idx_ds, flwdir_lr_flat, shape_lr):
+                    if idx_us in idx0_lst: continue
+                    # outlet original upstream cell
+                    subidx_ds = outlet_lr_flat[idx_us]
+                    if idx_us in idx1_lst:
+                        subidx_ds = out1_lst[np.where(np.array(idx1_lst)==idx_us)[0][0]]
+                    subidx0 = -1
+                    idx1 = idx_us
+                    # move to next downstream outlet
+                    while subidx0 != subidx_ds:
+                        subidx = subidx_ds
+                        subidx_ds = fd.ds_index(subidx, flwdir_flat, shape)
+                        if subidx_ds == -1 or subidx_ds == subidx:
+                            break
+                        # lookup cells outlet
+                        idx = subidx_2_idx(subidx_ds, shape[1], scale_ratio)
+                        if idx != idx1:
+                            idx1 = idx
+                            subidx0 = outlet_lr_flat[idx1]
+                            if idx1 in idx1_lst:
+                                subidx0 = out1_lst[np.where(np.array(idx1_lst)==idx1)[0][0]]
+                    # check if still connects if
+                    dd1 = fd.idx_to_dd(idx_us, idx1, shape_lr)
+                    if dd1 == fd._nodata or fd.ispit(dd1):                
                         success = False
+                        if idx_ds not in bottleneck:
+                            bottleneck.append(idx_ds)
                         break
-                    elif dd != flwdir_lr_flat[idx]:
-                        idx0_lst.append(idx)
-                        dd0_lst.append(dd)
-                else:
-                    success = False
-                    break
-    return success, np.array(idx0_lst), np.array(dd0_lst), np.array(idx1_lst), np.array(out1_lst)
+                    elif idx1 != idx_ds:
+                        idx0_lst.append(idx_us)
+                        dd0_lst.append(dd1)
+
+        if success: break
+
+        if len(bottleneck) > nb:
+            nb = len(bottleneck)
+        else:
+            if n >= 2: 
+                break
+            n += 1
+
+        
+
+    return success, np.array(idx0_lst), np.array(dd0_lst), np.array(idx1_lst), np.array(out1_lst), np.array(bottleneck)
 
 
 
@@ -407,7 +414,7 @@ def _ddplus(idx0, flwdir_lr_flat, outlet_lr_flat, flwdir_flat, uparea_flat, effa
 
 @njit
 def _fix_pit_outlets(idx0, subidx0, subidx_pit, flwdir_flat, uparea_flat, effare_flat, 
-                    shape, shape_lr, scale_ratio, upa_min):
+                    shape, shape_lr, scale_ratio, upa_min=0.5):
     # deal with pits outside of lowres cells
     sub_ncol = shape[1]
     ncol = shape_lr[1]
@@ -452,7 +459,7 @@ def _fix_pit_outlets(idx0, subidx0, subidx_pit, flwdir_flat, uparea_flat, effare
     return dd, subidx0
 
 @njit
-def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=2.0, extended=True):
+def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extended=True):
     sub_nrow, sub_ncol = shape
     lr_nrow, lr_ncol = int(sub_nrow/scale_ratio), int(sub_ncol/scale_ratio)
     shape_lr = (lr_nrow, lr_ncol)
@@ -477,17 +484,18 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=2.0, extend
 
 
     for idx0 in range(flwdir_lr_flat.size):
-        subidx = outlet_lr_flat[idx0]
-        dd, subidx_out, idx_ds = _dd(idx0, subidx, flwdir_flat, effare_flat, shape, shape_lr, scale_ratio, extended=extended)
-        if subidx_out != -1 and fd.ispit(dd) and not fd.ispit(flwdir_flat[subidx]):  # fix pit outlets ouside lowres cell
+        subidx0 = outlet_lr_flat[idx0]
+        dd, subidx_out, idx_ds = _dd(idx0, subidx0, flwdir_flat, effare_flat, shape, shape_lr, scale_ratio, extended=extended)
+        if subidx_out != -1 and fd.ispit(dd) and not fd.ispit(flwdir_flat[subidx0]):  # fix pit outlets ouside lowres cell
             dd, subidx_out = _fix_pit_outlets(
-                idx0, subidx, subidx_out, flwdir_flat, uparea_flat, effare_flat, shape, shape_lr, scale_ratio, upa_min)
+                idx0, subidx0, subidx_out, flwdir_flat, uparea_flat, effare_flat, shape, shape_lr, scale_ratio)
             if fd.ispit(dd):
                 # assert fd.ispit(flwdir_flat[subidx_out])
                 outlet_lr_flat[idx0] = subidx_out # change outlet. NOTE the outlet lies outside the lowres cell
         elif dd != _nodata and effare_flat[subidx_out] <= np.uint(1): # subgrid outlets might not be connected
             # check if not connected
             ea = np.uint8(1)
+            subidx = subidx0
             while ea != np.uint8(3):
                 subidx_ds = fd.ds_index(subidx, flwdir_flat, shape)
                 if subidx_ds == -1 or subidx_ds == subidx: break
@@ -496,23 +504,32 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=2.0, extend
             idx_ds = subidx_2_idx(subidx, shape[1], scale_ratio)
             if  fd.idx_to_dd(idx0, idx_ds, shape_lr) != dd: # not connected
                 idx_check.append(idx0)
-                upa_check.append(uparea_flat[subidx])
+                upa_check.append(uparea_flat[subidx0])
                 changd_lr_flat[idx0] = np.uint(1)
         flwdir_lr_flat[idx0] = dd
 
-    assert flwdir_check(flwdir_lr_flat, shape_lr)[1] == False # no loops
-    
+
     # second iteration to check misconnected
     if extended:
+        loop = False
         seq = np.argsort(np.array(upa_check)) # from small to large
         for i in seq:
-        # for i in range(len(idx_check)):
+            upa0 = upa_check[i]
+            if upa0 < 1: continue
             idx0 = idx_check[i]
-            if checkd_lr_flat[idx0] == 1: continue
-            success, idxs_dd, dds, idxs_out, subidxs_out = _ddext(
+            success, idxs_dd, dds, idxs_out, subidxs_out, bottleneck = _ddext(
                 idx0, flwdir_lr_flat, outlet_lr_flat, checkd_lr_flat, 
                 flwdir_flat, uparea_flat, effare_flat, shape, shape_lr, scale_ratio
             )
+            # if idx0 in [5547763]: # congo
+            # if idx0 in [21020]: # acara
+            # if idx0 in [269869]: # rhine
+            # if idx0 in [7899809, 7860117, 6095370, 5135459]:
+            #     print(idx0, success) # loop
+            #     print(idxs_dd, dds) 
+            #     print(idxs_out, subidxs_out)
+            #     print(bottleneck)
+            #     checkd_lr_flat[idx0] = np.uint8(1)
             if success:
                 if idxs_dd.size > 0:
                     flwdir_lr_flat[idxs_dd] = dds
@@ -521,22 +538,39 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=2.0, extend
                     checkd_lr_flat[idxs_out] = np.uint8(1)
                 changd_lr_flat[idx0] = np.uint(2)
 
+            #     # test for loops
+            #     path = [idx0]
+            #     idx = idx0
+            #     while not fd.ispit(flwdir_lr_flat[idx]):
+            #         idx = fd.ds_index(idx, flwdir_lr_flat, shape_lr)
+            #         if idx in path:
+            #             # assert False   
+            #             changd_lr_flat[np.array(path)] = np.uint8(10)
+            #             print('loop')
+            #             print(idx0  )
+            #             print(idxs_dd, dds) 
+            #             print(idxs_out, subidxs_out)
+            #             loop = True
+            #             break              
+            #         path.append(idx)
+            # if loop: break
+
+
     # second dd iteration to change outlets if near tributary
     if extended:
         for idx0 in range(flwdir_lr_flat.size):
             if flwdir_lr_flat[idx0] == _nodata: continue
             idx_us_main, dd_new, subidx_out_new = _ddplus(
                 idx0, flwdir_lr_flat, outlet_lr_flat, flwdir_flat, uparea_flat, effare_flat, 
-                shape, shape_lr, scale_ratio, upa_min=upa_min
+                shape, shape_lr, scale_ratio, upa_min=4
             )
             if dd_new != _nodata:
                 flwdir_lr_flat[idx_us_main] = dd_new
                 outlet_lr_flat[idx0] = subidx_out_new
                 if changd_lr_flat[idx0] == 0: 
                     changd_lr_flat[idx0] = np.uint(3)
-
-
-    # assert outlet_lr_flat.size == np.unique(outlet_lr_flat).size
     assert flwdir_check(flwdir_lr_flat, shape_lr)[1] == False # no loops
+    
+    assert outlet_lr_flat.size == np.unique(outlet_lr_flat).size
     return flwdir_lr_flat.reshape(shape_lr), outlet_lr_flat.reshape(shape_lr), changd_lr_flat.reshape(shape_lr)
 
