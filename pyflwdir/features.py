@@ -46,7 +46,7 @@ def river_nodes(idx_ds, flwdir_flat, stream_order_flat, shape):
             if len(riv) > 1:
                 rivs.append(riv)
                 stro.append(stro0)
-                idx_next.extend(tribs)
+            idx_next.extend(tribs)
         if len(idx_next) == 0:
             break
         idx_ds = np.array(idx_next, idx_ds.dtype)
