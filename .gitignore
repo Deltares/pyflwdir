@@ -26,3 +26,5 @@ docs/apidocs
 
 # test
 tests/data/tmp/*
+scripts
+_pyflwdir

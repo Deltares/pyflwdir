@@ -1,0 +1,16 @@
+name: pyflwdir
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.6
+  - numba
+  - numpy
+  - xarray
+  - rasterio
+  - geopandas
+  - pytest
+  - pytest-cov
+  
+
