@@ -21,8 +21,8 @@ setup(
     long_description=readme + '\n\n',
     author="Dirk Eilander",
     author_email='dirk.eilander@deltares.nl',
-    url='https://github.com/openstreams/pyflwdir',
-    packages=find_packages(),
+    url='https://gitlab.com/deltares/wflow/pyflwdir/',
+    packages=find_packages(exclude=["tests"]),
     include_package_data=True,
     license="GNU General Public License v3 or later",
     zip_safe=False,
@@ -44,7 +44,7 @@ setup(
         'rasterio',
         'xarray',
         'geopandas'
-    ],  # FIXME: add your package's dependencies to this list
+    ],  
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',
