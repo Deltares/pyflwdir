@@ -58,7 +58,7 @@ def dd_2_drdc(dd):
     return dr, dc
 
 @njit
-def ds_index(idx0, flwdir_flat, shape):
+def ds_index(idx0, flwdir_flat, shape, dd=_nodata):
     """returns numpy array (int64) with indices of donwstream neighbors on a D8 grid.
     At a pit the current index is returned
     
@@ -66,7 +66,9 @@ def ds_index(idx0, flwdir_flat, shape):
     1:E 2:SE, 4:S, 8:SW, 16:W, 32:NW, 64:N, 128:NE, 0:mouth, -1/255: inland pit, -9/247: undefined (ocean)
     """
     nrow, ncol = shape
-    dd = flwdir_flat[idx0]
+    # FIXME: i don't like this extra if statement. can we do this differently?
+    if dd == _nodata:
+        dd = flwdir_flat[idx0]
     r0 = idx0 // ncol
     c0 = idx0 %  ncol
     dr, dc = dd_2_drdc(dd)
