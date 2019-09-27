@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -22,9 +22,7 @@ setup(
     author="Dirk Eilander",
     author_email='dirk.eilander@deltares.nl',
     url='https://github.com/openstreams/pyflwdir',
-    packages=[
-        'pyflwdir',
-    ],
+    packages=find_packages(),
     include_package_data=True,
     license="GNU General Public License v3 or later",
     zip_safe=False,
