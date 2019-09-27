@@ -10,7 +10,9 @@ from .utils import flwdir_check
 from .core import fd
 _nodata = fd._nodata
 _pits = fd._pits 
-_ds = fd._ds
+_ds = fd._ds.ravel()
+_us = fd._us.ravel()
+
 
 @njit
 def subidx_2_idx(subidx, sub_ncol, scale_ratio):
@@ -144,7 +146,7 @@ def _dd(idx0, subidx, flwdir_flat, effare_flat, shape, shape_lr, scale_ratio, ex
     return dd, subidx_ds, idx_ds
 
 @njit
-def _force_ds_outlet(idx0, subidx0, scale_ratio, flwdir_flat, effare_flat, shape, shape_lr, n=1):
+def _force_ds_outlet(idx0, subidx0, scale_ratio, flwdir_flat, effare_flat, shape, shape_lr, n):
     """Returns the nth outlet subgrid cell downstream from the next downstream effective area.
     The <effare_flat> map should have zeros in all cells upstream from the effective area and 
     larger or equal to one inside and downstream of the effective area.
@@ -158,8 +160,9 @@ def _force_ds_outlet(idx0, subidx0, scale_ratio, flwdir_flat, effare_flat, shape
     path = [subidx]
     ea = np.uint8(0)
     i = 0
+    idx_ds = -1
     if n > 0:
-        while ea == np.uint8(0): # requires highres grid with effective area cell == 1
+        while ea == np.uint8(0): # move to next effecitve area
             subidx_ds = fd.ds_index(subidx, flwdir_flat, shape) # move downstream
             if subidx_ds == -1 or subidx_ds == subidx:
                 break 
@@ -168,8 +171,12 @@ def _force_ds_outlet(idx0, subidx0, scale_ratio, flwdir_flat, effare_flat, shape
             path.append(subidx)
         i += 1
     else:
+        while idx_ds == idx0: # move out of current cell
+            subidx_ds = fd.ds_index(subidx, flwdir_flat, shape) # move downstream
+            idx_ds = subidx_2_idx(subidx, sub_ncol, scale_ratio)
+            subidx = subidx_ds
+            path.append(subidx)
         ea = np.uint8(1)
-    # @ downstream effective area
     # find nth downstream outlet from downstream eff area
     if ea != np.uint8(0):
         # @ move to next downstream outlet
@@ -199,7 +206,7 @@ def _force_ds_outlet(idx0, subidx0, scale_ratio, flwdir_flat, effare_flat, shape
 def _ddext(idx0, flwdir_lr_flat, outlet_lr_flat, checkd_lr_flat, 
             flwdir_flat, uparea_flat, effare_flat, shape, shape_lr, scale_ratio):
     """"""
-    n = 0
+    n = 1
     success = False
     bottleneck = []
     nb = 0
@@ -269,9 +276,13 @@ def _ddext(idx0, flwdir_lr_flat, outlet_lr_flat, checkd_lr_flat,
                         idx1_lst.append(idx1)
                         idx_path.append(idx1)
                         branch = False
+                    elif branch and subidx1 == -1: # no branch found
+                        success = False 
+                        break
+
                     if idx in idx_path or fd.ispit(flwdir_lr_flat[idx_ds1]): #  or checkd_lr_flat[idx_ds1] == 1
                         continue
-                    elif subidx == outlet_lr_flat[idx]: # if at original outlet -> move to branch
+                    elif subidx == outlet_lr_flat[idx]: # if original outlet -> try moving it to a branch
                         upa0 = 0
                         subidx1 = -1
                         branch = True
@@ -283,6 +294,7 @@ def _ddext(idx0, flwdir_lr_flat, outlet_lr_flat, checkd_lr_flat,
                             subidx1 = subidx_us 
                             upa0 = uparea_flat[subidx_us]
 
+        if success:
             for idx_ds in idx_path:
                 # check if all upstream cells connect
                 for idx_us in fd.us_indices(idx_ds, flwdir_lr_flat, shape_lr):
@@ -308,7 +320,7 @@ def _ddext(idx0, flwdir_lr_flat, outlet_lr_flat, checkd_lr_flat,
                                 subidx0 = out1_lst[np.where(np.array(idx1_lst)==idx1)[0][0]]
                     # check if still connects if
                     dd1 = fd.idx_to_dd(idx_us, idx1, shape_lr)
-                    if dd1 == fd._nodata or fd.ispit(dd1):                
+                    if dd1 == fd._nodata or fd.ispit(dd1):           
                         success = False
                         if idx_ds not in bottleneck:
                             bottleneck.append(idx_ds)
@@ -317,16 +329,31 @@ def _ddext(idx0, flwdir_lr_flat, outlet_lr_flat, checkd_lr_flat,
                         idx0_lst.append(idx_us)
                         dd0_lst.append(dd1)
 
-        if success: break
+        if success: 
+            idx1 = idx0
+            loop = False
+            check_loop = []
+            while loop == False:
+                if idx1 in idx0_lst:
+                    dd1 = dd0_lst[np.where(np.array(idx0_lst)==idx1)[0][0]]
+                    idx_ds1 = fd.ds_index(idx1, flwdir_lr_flat, shape_lr, dd=dd1)
+                else:
+                    idx_ds1 = fd.ds_index(idx1, flwdir_lr_flat, shape_lr)
+                if idx_ds1 == idx1 or idx_ds1 == -1: break
+                loop = idx_ds1 in check_loop
+                check_loop.append(idx_ds1)
+                idx1 = idx_ds1
+            success = loop == False
+            if success: break
 
         if len(bottleneck) > nb:
             nb = len(bottleneck)
-        else:
-            if n >= 2: 
-                break
+        elif n != 0:
             n += 1
-
-        
+            if n >= 3:
+                n = 0
+        else:
+            break
 
     return success, np.array(idx0_lst), np.array(dd0_lst), np.array(idx1_lst), np.array(out1_lst), np.array(bottleneck)
 
@@ -412,51 +439,6 @@ def _ddplus(idx0, flwdir_lr_flat, outlet_lr_flat, flwdir_flat, uparea_flat, effa
         
     return idx_us_main, dd_new, subidx_out_new
 
-@njit
-def _fix_pit_outlets(idx0, subidx0, subidx_pit, flwdir_flat, uparea_flat, effare_flat, 
-                    shape, shape_lr, scale_ratio, upa_min=0.5):
-    # deal with pits outside of lowres cells
-    sub_ncol = shape[1]
-    ncol = shape_lr[1]
-    idx_pit = subidx_2_idx(subidx_pit, sub_ncol, scale_ratio) # low res index of pit
-    assert idx0 != idx_pit
-    dd = fd.idx_to_dd(idx0, idx_pit, shape_lr)
-    # check if subidx0 on main river upstream from subidx_pit
-    main = True
-    subidx = subidx0
-    upa = uparea_flat[subidx]
-    while True:
-        subidx_ds = fd.ds_index(subidx, flwdir_flat, shape) # move downstream
-        upa_ds = uparea_flat[subidx_ds]
-        main = (upa_ds / upa) < 2 # if larger than 2 we encounter a larger stream
-        if subidx_ds == subidx_pit or main == False:
-            break
-        # next iter
-        subidx = subidx_ds
-        upa = upa_ds
-    # if on main river move outlet, dd is pit
-    if main:
-        dd = flwdir_flat[subidx_pit]
-        subidx0 = subidx_pit # NOTE: outlet outside of lowres cell!
-    # else try to connect to main upstream outlet from pit
-    else:
-        subidx = subidx_ds
-        while True:
-            subidxs_us_main = fd.us_main_indices(subidx, flwdir_flat, uparea_flat, shape, upa_min=upa_min)[0]
-            if subidxs_us_main.size == 0: # no outlet found
-                break
-            subidx_us_main = subidxs_us_main[0]
-            assert subidx_us_main != subidx
-            idx_us = subidx_2_idx(subidx_us_main, sub_ncol, scale_ratio)
-            if abs(idx_us-idx0) > 1 and abs(idx_us-idx0-ncol) > 1 and abs(idx_us-idx0+ncol) > 1: 
-                break
-            elif effare_flat[subidx_us_main] == 3 and idx_us != idx0:  # 3 outlet
-                dd = fd.idx_to_dd(idx0, idx_us, shape_lr) # change dd
-                break
-            # next iter
-            subidx = subidx_us_main
-
-    return dd, subidx0
 
 @njit
 def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extended=True):
@@ -472,6 +454,8 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extend
     effare_flat = np.zeros(flwdir_flat.size, dtype=np.uint8)   
     idx_check = []
     upa_check = []
+    idxs_pit = []
+    subidxs_pit = []
     # find outlet cells and save to highres and lowres grids
     for idx0 in range(outlet_lr_flat.size):
         subidx, subidxs_ea = _rep_cell(idx0, flwdir_flat, uparea_flat, shape, scale_ratio)
@@ -486,13 +470,7 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extend
     for idx0 in range(flwdir_lr_flat.size):
         subidx0 = outlet_lr_flat[idx0]
         dd, subidx_out, idx_ds = _dd(idx0, subidx0, flwdir_flat, effare_flat, shape, shape_lr, scale_ratio, extended=extended)
-        if subidx_out != -1 and fd.ispit(dd) and not fd.ispit(flwdir_flat[subidx0]):  # fix pit outlets ouside lowres cell
-            dd, subidx_out = _fix_pit_outlets(
-                idx0, subidx0, subidx_out, flwdir_flat, uparea_flat, effare_flat, shape, shape_lr, scale_ratio)
-            if fd.ispit(dd):
-                # assert fd.ispit(flwdir_flat[subidx_out])
-                outlet_lr_flat[idx0] = subidx_out # change outlet. NOTE the outlet lies outside the lowres cell
-        elif dd != _nodata and effare_flat[subidx_out] <= np.uint(1): # subgrid outlets might not be connected
+        if dd != _nodata and effare_flat[subidx_out] <= np.uint(1): # subgrid outlets might not be connected
             # check if not connected
             ea = np.uint8(1)
             subidx = subidx0
@@ -506,8 +484,11 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extend
                 idx_check.append(idx0)
                 upa_check.append(uparea_flat[subidx0])
                 changd_lr_flat[idx0] = np.uint(1)
+        if subidx_out != -1 and fd.ispit(dd) and fd.ispit(flwdir_flat[subidx0]) == False: # keep list of cells with outlet == pits outside own cell
+            assert fd.ispit(flwdir_flat[subidx_out])
+            idxs_pit.append(idx0)
+            subidxs_pit.append(subidx_out)
         flwdir_lr_flat[idx0] = dd
-
 
     # second iteration to check misconnected
     if extended:
@@ -515,21 +496,12 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extend
         seq = np.argsort(np.array(upa_check)) # from small to large
         for i in seq:
             upa0 = upa_check[i]
-            if upa0 < 1: continue
+            # if upa0 < 1: continue
             idx0 = idx_check[i]
-            success, idxs_dd, dds, idxs_out, subidxs_out, bottleneck = _ddext(
+            success, idxs_dd, dds, idxs_out, subidxs_out, _ = _ddext(
                 idx0, flwdir_lr_flat, outlet_lr_flat, checkd_lr_flat, 
                 flwdir_flat, uparea_flat, effare_flat, shape, shape_lr, scale_ratio
             )
-            # if idx0 in [5547763]: # congo
-            # if idx0 in [21020]: # acara
-            # if idx0 in [269869]: # rhine
-            # if idx0 in [7899809, 7860117, 6095370, 5135459]:
-            #     print(idx0, success) # loop
-            #     print(idxs_dd, dds) 
-            #     print(idxs_out, subidxs_out)
-            #     print(bottleneck)
-            #     checkd_lr_flat[idx0] = np.uint8(1)
             if success:
                 if idxs_dd.size > 0:
                     flwdir_lr_flat[idxs_dd] = dds
@@ -538,25 +510,46 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extend
                     checkd_lr_flat[idxs_out] = np.uint8(1)
                 changd_lr_flat[idx0] = np.uint(2)
 
-            #     # test for loops
-            #     path = [idx0]
-            #     idx = idx0
-            #     while not fd.ispit(flwdir_lr_flat[idx]):
-            #         idx = fd.ds_index(idx, flwdir_lr_flat, shape_lr)
-            #         if idx in path:
-            #             # assert False   
-            #             changd_lr_flat[np.array(path)] = np.uint8(10)
-            #             print('loop')
-            #             print(idx0  )
-            #             print(idxs_dd, dds) 
-            #             print(idxs_out, subidxs_out)
-            #             loop = True
-            #             break              
-            #         path.append(idx)
-            # if loop: break
+    # fix double outlets -> assign to largest upstream cell
+    if len(idxs_pit) == 1:
+         outlet_lr_flat[idxs_pit[0]] = subidxs_pit[0]
+    elif len(idxs_pit) > 1:
+        idxs = np.array(idxs_pit)
+        subidxs = np.array(subidxs_pit)
+        isort = np.argsort(subidxs) # sort pits to find doubles
+        subidxs_sort =  subidxs[isort]
+        idxs_sort = idxs[isort]
+        # print(idxs_sort)
+        # print(subidxs_sort)
+        j = 0
+        for i, subidx in enumerate(subidxs_sort[1:]):
+            if i >= j and subidxs_sort[i] == subidx: # if new double pit
+                idxs_lst = []
+                j = i
+                while subidxs_sort[j] == subidx: # find all subsequent double pit
+                    idxs_lst.append(idxs_sort[j])
+                    j += 1
+                idxs0 = np.array(idxs_lst)
+                # print(idxs0)
+                subidxs = outlet_lr_flat[idxs0] # get original outlet
+                imax = np.argmax(uparea_flat[subidxs]) # find outlet with largest uparea
+                idx_out0 = subidx_2_idx(subidx, shape[1], scale_ratio)
+                for k in range(idxs0.size):
+                    idx = idxs0[k]
+                    if k == imax: # set pit to cell with largest upstream area
+                        outlet_lr_flat[idx] = subidx #NOTE this pit is located outside cell idx
+                    else: # set flowdir in other cells to drain to pit cell
+                        dd = fd.idx_to_dd(idx, idx_out0, shape_lr)
+                        assert dd != fd._nodata # make sure cells connect in d8
+                        flwdir_lr_flat[idx] = dd
+            elif i >= j:
+                outlet_lr_flat[idxs_sort[i]] = subidxs_sort[i]
+                if i+2 == idxs.size: # also set outlet index for final idx
+                    outlet_lr_flat[idxs_sort[i+1]] = subidxs_sort[i+1]
 
+            
 
-    # second dd iteration to change outlets if near tributary
+    # # second dd iteration to change outlets if near tributary
     if extended:
         for idx0 in range(flwdir_lr_flat.size):
             if flwdir_lr_flat[idx0] == _nodata: continue
@@ -569,8 +562,7 @@ def d8_scaling(scale_ratio, flwdir_flat, uparea_flat, shape, upa_min=0.5, extend
                 outlet_lr_flat[idx0] = subidx_out_new
                 if changd_lr_flat[idx0] == 0: 
                     changd_lr_flat[idx0] = np.uint(3)
-    assert flwdir_check(flwdir_lr_flat, shape_lr)[1] == False # no loops
     
-    assert outlet_lr_flat.size == np.unique(outlet_lr_flat).size
+    # assert outlet_lr_flat.size == np.unique(outlet_lr_flat).size
+    # assert flwdir_check(flwdir_lr_flat, shape_lr)[1] == False # no loops
     return flwdir_lr_flat.reshape(shape_lr), outlet_lr_flat.reshape(shape_lr), changd_lr_flat.reshape(shape_lr)
-
