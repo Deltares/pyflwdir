@@ -3,6 +3,9 @@ name: pyflwdir
 channels:
   - conda-forge
 
+# note that these are the developer dependencies,
+# if you only want the user dependencies, see
+# install_requires in setup.py
 dependencies:
   - python=3.6
   - numba
@@ -12,5 +15,8 @@ dependencies:
   - geopandas
   - pytest
   - pytest-cov
+  - pytest-benchmark
+  - sphinx
+  - sphinx_rtd_theme
   
 
