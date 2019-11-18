@@ -10,7 +10,9 @@ from .core import fd
 from .network import _nbs_us
 
 @njit
-def delineate_basins(idxs_ds, flwdir_flat, shape, lats, lons, resy, resx):
+def delineate_basins(flwdir, idxs_ds, lats, lons, resy, resx):
+    flwdir_flat = flwdir.ravel()
+    shape = flwdir.shape
     nrow, ncol = shape
     size = nrow*ncol
     assert size < 2**32-2       # maximum size we can have with uint32 indices

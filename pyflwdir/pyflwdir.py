@@ -26,7 +26,14 @@ IDENTITY_NS = Affine(1, 0, 0, 0, -1, 0)
 
 class FlwdirRaster(object):
 
-    def __init__(self, data, transform=IDENTITY_NS, crs=4326, check_format=False, copy=False):
+    def __init__(
+        self, 
+        data, 
+        transform=IDENTITY_NS, 
+        crs=4326, 
+        check_format=False, 
+        copy=False
+    ):
         """Create an instance of a pyflwdir.FlwDirRaster object
         
         Arguments:
@@ -167,7 +174,7 @@ class FlwdirRaster(object):
         idx = np.atleast_1d(np.asarray(idx, dtype=np.uint32)) # basin outlets
         resx, resy = self.res
         xs, ys = self._xycoords()
-        return catchment.delineate_basins(idx, self._data_flat, self.shape, ys, xs, resy, resx)
+        return catchment.delineate_basins(self._data, idx, ys, xs, resy, resx)
 
     def basin_map(self, idx=None, values=None, dtype=np.int32):
         """Return a map with (sub)basins based on the up- downstream network.
