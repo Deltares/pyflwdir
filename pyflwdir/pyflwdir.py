@@ -57,9 +57,11 @@ class FlwdirRaster(object):
                     )
             size = data[0].size
             shape = data[0].shape
+            self._max_depth = 20
         else:
             size = data.size 
             shape = data.shape
+            self._max_depth = 8
         
         # set network
         if size > 2**32-2:       # maximum size we can have with uint32 indices
@@ -103,7 +105,7 @@ class FlwdirRaster(object):
         """Setup network with upstream - downstream connections"""
         if idx is not None:
             self.set_pits(idx=idx)
-        self._network = network.setup_network(self._idxs, self.pits)
+        self._network = network.setup_network(self._idxs, self.pits, self._max_depth)
 
     def isvalid(self):
         """Returns True if the flow direction map is valid"""

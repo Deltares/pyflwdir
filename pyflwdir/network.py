@@ -13,11 +13,10 @@ from pyflwdir import gis_utils
 
 __all__ = ['fillnodata_upstream', 'accuflux', 'upstream_area', 'stream_order', 'setup_network']
 
-
 @njit
-def _nbs_us(idxs_ds, idxs):
+def _nbs_us(idxs_ds, idxs, _max_depth=8):
     """get n x 8 array filled with upstream neighbors of n downstream nodes"""
-    nbs_us = np.ones((idxs_ds.size, 8), dtype=np.uint32)*_mv # use uint32 to save memory as these networks get large!
+    nbs_us = np.ones((idxs_ds.size, _max_depth), dtype=np.uint32)*_mv # use uint32 to save memory as these networks get large!
     valid = np.zeros(idxs_ds.size, dtype=np.int8)
     N = 1
     for i in range(idxs_ds.size):
@@ -34,7 +33,7 @@ def _nbs_us(idxs_ds, idxs):
     return nbs_us, valid
 
 @njit
-def setup_network(idxs, idxs_ds):
+def setup_network(idxs, idxs_ds, _max_depth=8):
     """set drainage direction network tree from downstream to upstream"""
     size = idxs.size
     nodes = List()              # list of arrays (n) with downstream indices
@@ -42,7 +41,7 @@ def setup_network(idxs, idxs_ds):
     # move upstream
     j = 0
     while True:
-        nbs_us, valid = _nbs_us(idxs_ds, idxs)
+        nbs_us, valid = _nbs_us(idxs_ds, idxs, _max_depth=_max_depth)
         idx_valid = np.where(valid == np.int8(1))[0]
         if idx_valid.size==0:
             break
