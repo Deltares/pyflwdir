@@ -5,15 +5,12 @@
 from numba import njit
 import numpy as np
 import math
+from pyflwdir import gis_utils
 
-# import flow direction definition
-from .gridtools import lat_to_dx, lat_to_dy
-
-#NOTE: this assumes python Affine transfrom. should include check
 @njit
-def calc_slope(dem, nodata, sizeinmetres, transform):
+def slope(dem, nodata, latlon=False, affine=gis_utils.IDENTITY):
     
-    resx, resy = transform[0], transform[4]
+    xres, yres, north = affine[0], affine[4], affine[5]
     slope = np.zeros(dem.shape,dtype=np.float32)    
     nrow, ncol = dem.shape
     
@@ -21,10 +18,8 @@ def calc_slope(dem, nodata, sizeinmetres, transform):
 
     for r in range(0,nrow):
         for c in range(0,ncol):
-            
-            
             if dem[r,c] != nodata:
-                # EDIT: start with matrix based on central value (inside loop)
+                # start with matrix based on central value (inside loop)
                 elev[:,:] = dem[r,c]
             
                 for dr in range(-1, 2):
@@ -35,20 +30,20 @@ def calc_slope(dem, nodata, sizeinmetres, transform):
                             col = c + dc
                             j = dc + 1
                             if col >= 0 and col < ncol:
-                                # EDIT: fill matrix with elevation, except when nodata
+                                # fill matrix with elevation, except when nodata
                                 if dem[row,col] != nodata:
                                     elev[i,j] = dem[row,col]
 
-                dzdx = ((elev[0,0]+2*elev[1,0]+elev[2,0]) - (elev[0,2]+2*elev[1,2]+elev[2,2]))/ (8 * resx) 
-                dzdy = ((elev[0,0]+2*elev[0,1]+elev[0,2]) - (elev[2,0]+2*elev[2,1]+elev[2,2]))/ (8 * np.abs(resy))
+                dzdx = ((elev[0,0]+2*elev[1,0]+elev[2,0]) - (elev[0,2]+2*elev[1,2]+elev[2,2]))/ (8 * xres) 
+                dzdy = ((elev[0,0]+2*elev[0,1]+elev[0,2]) - (elev[2,0]+2*elev[2,1]+elev[2,2]))/ (8 * np.abs(yres))
 
-                if sizeinmetres:
-                    slp = math.hypot(dzdx, dzdy)
+                if latlon:
+                    lat = north + (r+0.5)*yres
+                    deg_y = gis_utils.degree_metres_y(lat)
+                    deg_x = gis_utils.degree_metres_x(lat)
+                    slp = math.hypot(dzdx/deg_x, dzdy/deg_y)
                 else:
-                    # EDIT: convert lat/lon to dy/dx in meters to calculate hypot
-                    lat = transform[5] + 0.5*resy + r*resy
-                    dy, dx = lat_to_dy(lat), lat_to_dx(lat)
-                    slp = math.hypot(dzdx/dx, dzdy/dy)
+                    slp = math.hypot(dzdx, dzdy)
             else:
                 slp = nodata
             

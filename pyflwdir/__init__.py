@@ -11,4 +11,7 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 __author__ = "Dirk Eilander"
 __email__ = 'dirk.eilander@deltares.nl'
 
-from .pyflwdir import *
+from pyflwdir.pyflwdir import *
+from pyflwdir.upscale_d8 import *
+from pyflwdir.slope import *
+from pyflwdir.basins import *
