@@ -24,40 +24,41 @@ def _is_flow(flwdir):
             np.all(np.logical_and(nys>0, nys<=size)))
 
 @njit
-def flow_to_idxs(nextx, nexty):
-    idxs = np.ones(nextx.size, dtype=np.uint32)*core._mv
-    nrow, ncol = nextx.shape
+def parse_flow(nextx, nexty, _max_depth = 35):
     size = nextx.size
-    idx0 = np.uint32(0)
-    for r0 in range(nrow):
-        for c0 in range(ncol):
-            c = nextx[r0,c0]
-            r = nexty[r0,c0]
-            if r != _mv:
-                if r == _pv:
-                    r, c = r0, c0
-                else:
-                    r, c = r-1, c-1
-                idx_ds = c + r*ncol
-                if idx_ds >=0 and idx_ds < size:
-                    idxs[idx0] = idx_ds
-            idx0 += 1
-    return idxs
-
-@njit
-def idxs_to_flow(idxs, shape):
-    nextx = np.ones(shape, dtype=np.int32)*_mv
-    nexty = np.ones(shape, dtype=np.int32)*_mv
-    nrow, ncol = shape
-    idx0 = np.uint32(0)
-    for r0 in range(nrow):
-        for c0 in range(ncol):
-            idx_ds = idxs[idx0]
-            if idx_ds == idx0:
-                nextx[r0, c0] = _pv
-                nexty[r0, c0] = _pv
-            elif idx_ds != core._mv:
-                nextx[r0, c0] = idx_ds %  ncol + 1
-                nexty[r0, c0] = idx_ds // ncol + 1
-            idx0 += 1
-    return nextx, nexty
+    ncol = nextx.shape[1]
+    nextx_flat = nextx.ravel()
+    nexty_flat = nexty.ravel()
+    # keep valid indices only
+    idxs_valid = np.where(nextx.ravel()!=_mv)[0].astype(np.uint32)
+    n = idxs_valid.size
+    idxs_inv = np.ones(size, np.uint32)*core._mv
+    idxs_inv[idxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
+    # allocate output arrays
+    pits_lst = []
+    idxs_ds = np.ones(n, dtype=np.uint32)*core._mv
+    idxs_us = np.ones((n, _max_depth), dtype=np.uint32)*core._mv
+    _max_us = 0
+    i = np.uint32(0)
+    for i in range(n):
+        idx0 = idxs_valid[i]
+        c = nextx_flat[idx0]
+        r = nexty_flat[idx0]
+        if r == _pv:
+            idxs_ds[i] = i
+            pits_lst.append(np.uint32(i))
+        else:
+            r, c = r-1, c-1
+            idx_ds = c + r*ncol
+            ids = idxs_inv[idx_ds]
+            idxs_ds[i] = ids
+            for ii in range(_max_depth):
+                if idxs_us[ids,ii] == core._mv:
+                    idxs_us[ids,ii] = i
+                    break
+            if ii >  _max_us:
+                _max_us = ii
+            if ii == _max_depth-1:
+                raise ValueError('increase max depth')
+    idxs_us = idxs_us[:, :_max_depth]
+    return idxs_valid, idxs_ds, idxs_us, np.array(pits_lst)

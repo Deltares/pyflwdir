@@ -5,15 +5,6 @@ import numpy as np
 from numba import njit
 
 from pyflwdir import gis_utils
-from pyflwdir.network import fillnodata_upstream
-
-@njit
-def basins(rnodes, rnodes_up, shape):
-    """label basins using network tree"""
-    idxs_ds = rnodes[-1]
-    basidx_flat = np.zeros(np.multiply(*shape), dtype=np.int32)
-    basidx_flat[idxs_ds] = np.arange(idxs_ds.size).astype(np.int32) + 1
-    return fillnodata_upstream(rnodes, rnodes_up, data=basidx_flat, nodata=np.int32(0)).reshape(shape)
 
 def basin_sum(data, basins):
     lbs = np.unique(basins[basins>0])

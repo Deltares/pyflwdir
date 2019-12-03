@@ -14,4 +14,4 @@ __email__ = 'dirk.eilander@deltares.nl'
 from pyflwdir.pyflwdir import *
 from pyflwdir.upscale_d8 import *
 from pyflwdir.slope import *
-from pyflwdir.basins import *
+from pyflwdir.basin_utils import *

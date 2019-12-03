@@ -22,40 +22,40 @@ _d8_ = np.unique(np.concatenate([_pv, np.array([_mv]), _ds.flatten()]))
 
 # convert between 1D ds index and 2D D8 network
 @njit
-def d8_to_idxs(flwdir):
-    """returns downstream index based on local D8 flow direction"""
-    idxs = np.ones(flwdir.size, dtype=np.uint32)*core._mv
-    nrow, ncol = flwdir.shape
+def parse_d8(flwdir, _max_depth = 8):
     size = flwdir.size
-    idx0 = np.uint32(0)
-    for r0 in range(nrow):
-        for c0 in range(ncol):
-            dd = flwdir[r0,c0]
-            if dd != _mv:
-                dr, dc = drdc(dd)
-                idx_ds = idx0 + dc + dr*ncol
-                if idx_ds >=0 and idx_ds < size:
-                    idxs[idx0] = idx_ds
-            idx0 += 1
-    return idxs
-    
-@njit
-def idxs_to_d8(idxs, shape):
-    """returns local D8 flow direction based on downstream index"""
-    flwdir = np.ones(shape, dtype=np.int8)*_mv
-    nrow, ncol = shape
-    idx0 = np.uint32(0)
-    for r0 in range(nrow):
-        for c0 in range(ncol):
-            idx_ds = idxs[idx0]
-            if idx_ds != core._mv:
-                dr = (idx_ds // ncol) - (idx0 // ncol) + 1
-                dc = (idx_ds %  ncol) - (idx0 %  ncol) + 1
-                if dr < 0 or dr >= 3 or dc < 0 or dc >= 3:
-                    raise ValueError("downstream neibgbor outside D8 window") 
-                flwdir[r0, c0] = _ds[dr, dc]
-            idx0 += 1
-    return flwdir
+    ncol = flwdir.shape[1]
+    flwdir_flat = flwdir.ravel()
+    # keep valid indices only
+    idxs_valid = np.where(flwdir.ravel()!=_mv)[0].astype(np.uint32)
+    n = idxs_valid.size
+    idxs_inv = np.ones(size, np.uint32)*core._mv
+    idxs_inv[idxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
+    # allocate output arrays
+    pits_lst = []
+    idxs_ds = np.ones(n, dtype=np.uint32)*core._mv
+    idxs_us = np.ones((n, _max_depth), dtype=np.uint32)*core._mv
+    _max_us = 0
+    i = np.uint32(0)
+    for i in range(n):
+        idx0 = idxs_valid[i]
+        dd = flwdir_flat[idx0]
+        dr, dc = drdc(dd)
+        if dr==0 and dc==0:
+            idxs_ds[i] = i
+            pits_lst.append(np.uint32(i))
+        else:
+            idx_ds = idx0 + dc + dr*ncol
+            ids = idxs_inv[idx_ds]
+            idxs_ds[i] = ids
+            for ii in range(_max_depth):
+                if idxs_us[ids,ii] == core._mv:
+                    idxs_us[ids,ii] = i
+                    break
+            if ii >  _max_us:
+                _max_us = ii
+    idxs_us = idxs_us[:, :_max_depth]
+    return idxs_valid, idxs_ds, idxs_us, np.array(pits_lst)
 
 
 # core d8 functions 

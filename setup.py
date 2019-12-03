@@ -41,9 +41,6 @@ setup(
     install_requires=[
         'numpy',
         'numba',
-        'rasterio',
-        'xarray',
-        'geopandas'
     ],  
     setup_requires=[
         # dependency for `python setup.py test`
