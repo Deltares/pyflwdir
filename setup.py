@@ -39,8 +39,10 @@ setup(
     ],
     test_suite='tests',
     install_requires=[
-        'numpy',
         'numba',
+        'numpy',
+        'scipy',
+        'affine',
     ],  
     setup_requires=[
         # dependency for `python setup.py test`

@@ -14,6 +14,12 @@ def _interal_idx(idx0, idxs_valid, size):
     return idxs_inv[idx0]
 
 @njit
+def _reshape(data, idxs_valid, shape, nodata=-9999):
+    data_out = np.ones(shape[0]*shape[1], dtype=data.dtype)*nodata
+    data_out[idxs_valid] = data
+    return data_out.reshape(shape)
+
+@njit
 def us_indices(idx0, idxs_us):
     """returns a numpy array with indices of upstream idx0"""
     idxs_us0 = idxs_us[idx0, :].ravel()

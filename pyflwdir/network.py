@@ -29,10 +29,10 @@ def setup_network(idxs_pits, idxs_ds, idxs_us):
     return tree                  # down- to upstream
 
 @njit
-def accuflux(tree, idxs_us, idxs_valid, material, nodata):
+def accuflux(tree, idxs_us, material_flat, nodata):
     """accumulate 'material' in downstream direction using network tree"""
-    material_flat = material.ravel()[idxs_valid]
-    accu_flat = np.ones(idxs_valid.size, dtype=material.dtype)*nodata
+    size = idxs_us.shape[0]
+    accu_flat = np.ones(size, dtype=material_flat.dtype)*nodata
     for i in range(len(tree)):
         idxs_ds0 = tree[-i-1] # from up- to downstream
         for idx_ds in idxs_ds0:
@@ -46,20 +46,19 @@ def accuflux(tree, idxs_us, idxs_valid, material, nodata):
                     v0 = material_flat[idx_us]
                     accu_flat[idx_us] = v0
                 accu_flat[idx_ds] += v0
-    accu_out = np.ones(material.size, dtype=material.dtype)*nodata
-    accu_out[idxs_valid] = accu_flat
-    return accu_out.reshape(material.shape)
+    return accu_flat
 
 @njit()
-def upstream_area(tree, idxs_us, idxs_valid, shape, latlon=False, affine=gis_utils.IDENTITY):
+def upstream_area(tree, idxs_us, shape, latlon=False, affine=gis_utils.IDENTITY):
     """accumulated upstream area using network tree and grid affine transform; nodata = -9999"""
     # NOTE same as accuflux but works with transform to calculate area
-    nrow, ncol = np.uint32(shape[0]), np.uint32(shape[1])
+    ncol = np.uint32(shape[1])
     xres, yres, north = affine[0], affine[4], affine[5]
     area0 = abs(xres*yres)
+    size = idxs_us.shape[0]
     # intialize with correct dtypes
     upa_ds, upa_us = np.float64(0.), np.float64(0.)
-    upa = np.ones(idxs_valid.size, dtype=np.float32)*-9999. 
+    upa = np.ones(size, dtype=np.float32)*-9999. 
     # loop over network from up- to downstream and calc upstream area
     for i in range(len(tree)):
         idxs_ds0 = tree[-i-1] # from up- to downstream
@@ -83,15 +82,11 @@ def upstream_area(tree, idxs_us, idxs_valid, shape, latlon=False, affine=gis_uti
                     upa[idx_us] = np.float32(upa_us)
                 upa_ds += upa_us
             upa[idx_ds] = np.float32(upa_ds)
-    upa_out = np.ones(nrow*ncol, dtype=upa.dtype)*-9999
-    upa_out[idxs_valid] = upa
-    return upa_out.reshape(shape)
+    return upa
 
 @njit
-def fillnodata_upstream(tree, idxs_us, idxs_valid, data, nodata):
+def fillnodata_upstream(tree, idxs_us, data_flat, nodata):
     """label basins using network tree"""
-    shape = data.shape
-    data_flat = data.ravel()[idxs_valid]
     for i in range(len(tree)):
         idxs_ds0 = tree[i] # from down- to upstream
         for idx_ds in idxs_ds0:
@@ -101,17 +96,16 @@ def fillnodata_upstream(tree, idxs_us, idxs_valid, data, nodata):
                     break
                 elif data_flat[idx_us] == nodata: 
                     data_flat[idx_us] = data_flat[idx_ds]
-    data_out = np.ones(shape, dtype=data.dtype)*-9999
-    data_out[idxs_valid] = data_flat
-    return data_out.reshape(shape)
+    return data_flat
 
 @njit
-def basins(tree, idxs_us, idxs_valid, shape):
+def basins(tree, idxs_us):
     """label basins using network tree"""
-    idxs_pits = tree[0]
-    basidx_flat = np.zeros(np.multiply(*shape), dtype=np.int32)
-    basidx_flat[idxs_valid[idxs_pits]] = np.arange(idxs_pits.size).astype(np.int32) + 1
-    return fillnodata_upstream(tree, idxs_us, idxs_valid, data=basidx_flat, nodata=np.int32(0)).reshape(shape)
+    size = idxs_us.shape[0]
+    idxs_pit = tree[0]
+    basins = np.zeros(size, dtype=np.int32)
+    basins[idxs_pit] = np.arange(idxs_pit.size).astype(np.int32) + 1
+    return fillnodata_upstream(tree, idxs_us, data_flat=basins, nodata=np.int32(0))
 
 @njit
 def _strahler_order(idxs_us, strord_flat):
@@ -138,9 +132,10 @@ def _strahler_order(idxs_us, strord_flat):
     return ord_max, np.array(head_lst, dtype=np.uint32)
 
 @njit
-def stream_order(tree, idxs_us, idxs_valid, shape):
+def stream_order(tree, idxs_us):
     """"determine stream order using network tree; nodata = -1"""
-    strord_flat = np.ones(idxs_valid.size, dtype=np.int8)*np.int8(-1)
+    size = idxs_us.shape[0]
+    strord_flat = np.ones(size, dtype=np.int8)*np.int8(-1)
     for i in range(len(tree)):
         idxs_ds0 = tree[-i-1] # from up- to downstream
         for idx_ds in idxs_ds0:
@@ -149,6 +144,4 @@ def stream_order(tree, idxs_us, idxs_valid, shape):
             strord_flat[idx_ds] = np.int8(ordi) # update stream order downstream cells
             if idx_head.size > 0:               # update head cells
                 strord_flat[idx_head] = np.int8(1)
-    strord = np.ones(shape[0]*shape[1], dtype=strord_flat.dtype)**np.int8(-1)
-    strord[idxs_valid] = strord_flat
-    return strord.reshape(shape)
+    return strord_flat

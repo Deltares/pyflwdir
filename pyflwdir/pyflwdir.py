@@ -9,7 +9,7 @@ from copy import deepcopy
 
 # local
 from pyflwdir import (
-    core, core_d8, core_flow, core_ldd, network, basin_utils, gis_utils
+    core, core_d8, core_flow, core_ldd, network, basin_utils, gis_utils, basin_descriptors
 )
 # export
 __all__ = ['FlwdirRaster']
@@ -89,7 +89,10 @@ class FlwdirRaster(object):
     def network(self):
         if self._tree is None:
             self.set_network()    # setup network, with pits as most downstream indices
-        return self._tree, self._idxs_us, self._idxs_valid
+        return self._tree, self._idxs_us
+
+    def _reshape(self, data, nodata):
+        return core._reshape(data, self._idxs_valid, self.shape, nodata=nodata)
 
     def set_pits(self, idx=None, streams=None):
         if idx is None:
@@ -124,7 +127,8 @@ class FlwdirRaster(object):
 
     def upstream_area(self, latlon=False, affine=gis_utils.IDENTITY):
         """Returns the upstream area based on the flow direction map. """
-        return network.upstream_area(*self.network, self.shape, latlon=latlon, affine=affine)
+        upa_flat = network.upstream_area(*self.network, self.shape, latlon=latlon, affine=affine)
+        return self._reshape(upa_flat, nodata=-9999.)
 
     def stream_order(self):
         """Returns the Strahler Order map (TODO ref). 
@@ -132,14 +136,24 @@ class FlwdirRaster(object):
         Where two channels of order 1 join, a channel of order 2 results downstream. 
         In general, where two channels of order i join, a channel of order i+1 results.
         """
-        return network.stream_order(*self.network, self.shape)
+        return self._reshape(network.stream_order(*self.network), nodata=np.int8(-1))
 
     def accuflux(self, material, nodata=-9999):
         """Return the accumulated"""
         if not np.all(material.shape == self.shape):
             raise ValueError("'Material' shape does not match with flow direction shape")
-        return network.accuflux(*self.network, material, nodata)
+        accu_flat = network.accuflux(*self.network, material.flat[self._idxs_valid], nodata)
+        return self._reshape(accu_flat, nodata=nodata)
 
     def basins(self):
         """Returns a 2d array with a unique id for every basin"""
-        return network.basins(*self.network, self.shape)
+        return self._reshape(network.basins(*self.network), nodata=np.uint32(0))
+
+    def drainage_path_stats(self, rivlen, elevtn):
+        if not np.all(rivlen.shape == self.shape):
+            raise ValueError("'rivlen' shape does not match with flow direction shape")
+        if not np.all(elevtn.shape == self.shape):
+            raise ValueError("'elevtn' shape does not match with flow direction shape")
+        df_out = basin_descriptors.mean_drainage_path_stats(*self.network, 
+            rivlen.flat[self._idxs_valid], elevtn.flat[self._idxs_valid])
+        return df_out
