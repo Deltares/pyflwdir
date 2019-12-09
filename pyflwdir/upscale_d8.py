@@ -38,6 +38,8 @@ def upscale_d8(scale_ratio, flwdir, uparea, upa_min=0.5, method='extended'):
     """
     if not flwdir.shape[0] % scale_ratio == flwdir.shape[1] % scale_ratio == 0:
         raise ValueError('The data shape should be an exact multiplicity of the scale_ratio.')
+    if np.any([s//scale_ratio <= 1 for s in flwdir.shape]):
+        raise ValueError('Output flow direction raster too small (length or width equal to one)')
     if not np.all(flwdir.shape == uparea.shape):
         raise ValueError('The flow direction and upstream area map should have identical shape.')
 

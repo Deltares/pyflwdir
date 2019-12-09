@@ -8,11 +8,10 @@ channels:
 # install_requires in setup.py
 dependencies:
   - python=3.6
+  - affine
   - numba
   - numpy
-  - xarray
-  - rasterio
-  - geopandas
+  - scipy
   - pytest
   - pytest-cov
   - pytest-benchmark

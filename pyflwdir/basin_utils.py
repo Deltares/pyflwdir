@@ -6,6 +6,8 @@ from numba import njit
 
 from pyflwdir import gis_utils
 
+#TODO check if basin in valid labeled array
+
 def basin_sum(data, basins):
     lbs = np.unique(basins[basins>0])
     df_sum = pd.DataFrame(
@@ -26,10 +28,9 @@ def basin_area(basins, affine):
 def basin_slices(basins):
     lbs = np.unique(basins[basins>0])
     slices = ndimage.find_objects(basins)
-    slices = [s for s in slices if s is not None]
     df_slices = pd.DataFrame(
         index = lbs,
-        data = slices,
+        data = [s for s in slices if s is not None],
         columns = ['yslice', 'xslice']
     )
     return df_slices
@@ -39,15 +40,18 @@ def basin_bounds(basins, affine=gis_utils.IDENTITY):
     height, width = basins.shape
     lons, lats = gis_utils.affine_to_coords(affine, width, height)
     xres, yres = affine[0], affine[4]
-    if yres < 0:
-        lats = lats[::-1]
-        yres = -yres
     bboxs = np.zeros((df_slices.index.size, 4), dtype=np.float64)
-    for i in range(bboxs.shape[0]):
-        yslice, xslice = df_slices.iloc[i,:] 
-        xmin, xmax = lons[xslice][[0,-1]]
-        ymin, ymax = lats[yslice][[0,-1]]
-        bboxs[i,:] = xmin-xres/2., ymin-yres/2., xmax+xres/2., ymax+yres/2.
+    for i, idx in enumerate(df_slices.index):
+        yslice, xslice = df_slices.loc[idx,['yslice', 'xslice']] 
+        if xres < 0:
+            xmax, xmin = lons[xslice][[0,-1]]
+        else:
+            xmin, xmax = lons[xslice][[0,-1]]
+        if yres < 0:
+            ymax, ymin = lats[yslice][[0,-1]]
+        else:
+            ymin, ymax = lats[yslice][[0,-1]]
+    bboxs[i,:] = xmin-abs(xres)/2., ymin-abs(yres)/2., xmax+abs(xres)/2., ymax+abs(yres)/2.
     df_bounds = pd.DataFrame(
         index = df_slices.index,
         data = bboxs,

@@ -21,7 +21,7 @@ _pv = np.array([0, 255], dtype=np.uint8)
 _d8_ = np.unique(np.concatenate([_pv, np.array([_mv]), _ds.flatten()]))
 
 # convert between 1D ds index and 2D D8 network
-@njit
+@njit()
 def parse_d8(flwdir, _max_depth = 8):
     size = flwdir.size
     ncol = flwdir.shape[1]
@@ -47,6 +47,8 @@ def parse_d8(flwdir, _max_depth = 8):
         else:
             idx_ds = idx0 + dc + dr*ncol
             ids = idxs_inv[idx_ds]
+            if ids == core._mv:
+                raise ValueError('d8 not valid')
             idxs_ds[i] = ids
             for ii in range(_max_depth):
                 if idxs_us[ids,ii] == core._mv:

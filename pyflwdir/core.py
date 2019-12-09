@@ -7,11 +7,21 @@ import numpy as np
 
 _mv = np.uint32(-1)
 
-@njit
-def _interal_idx(idx0, idxs_valid, size):
-    idxs_inv = np.ones(size, np.uint32)*_mv
-    idxs_inv[idxs_valid] = np.array([i for i in range(idxs_valid.size)], dtype=np.uint32)
-    return idxs_inv[idx0]
+@njit(['uint32(uint32, uint32[:])', 'uint32(int64, uint32[:])', 'uint32(int32, uint32[:])'])
+def _internal_idx(idx0, idxs_valid):
+    idxs = np.where(idxs_valid==idx0)[0]
+    if idxs.size == 0:
+        raise ValueError('index outside domain')
+    else:
+        idx_out = np.uint32(idxs[0])
+    return idx_out
+
+@njit(['uint32[:](uint32[:], uint32[:])', 'uint32[:](int64[:], uint32[:])', 'uint32[:](int32[:], uint32[:])'])
+def internal_idx(idxs, idxs_valid):
+    idxs_out = np.ones(idxs.size, dtype=np.uint32)
+    for i in range(idxs.size):
+        idxs_out[i] = _internal_idx(idxs[i], idxs_valid)
+    return idxs_out
 
 @njit
 def _reshape(data, idxs_valid, shape, nodata=-9999):
@@ -35,14 +45,14 @@ def us_indices(idx0, idxs_us):
 #         idx_us = _mv
 #     return idx_us
 
-# @njit
-# def pit_indices(idxs):
-#     """returns the indices of pits"""
-#     idx_lst = []
-#     for idx0 in range(idxs.size):
-#         if idx0 == idxs[idx0]:
-#             idx_lst.append(idx0)
-#     return np.array(idx_lst, dtype=np.uint32)
+@njit
+def pit_indices(idxs):
+    """returns the indices of pits"""
+    idx_lst = []
+    for idx0 in range(idxs.size):
+        if idx0 == idxs[idx0]:
+            idx_lst.append(idx0)
+    return np.array(idx_lst, dtype=np.uint32)
 
 @njit
 def error_indices(pits, idxs_ds, idxs_us):
@@ -73,10 +83,9 @@ def _ds_stream(idx0, idxs_ds, stream_flat):
     return idx0
 
 @njit
-def ds_stream(idxs0, idxs_ds, idxs_valid, stream):
+def ds_stream(idxs0, idxs_ds, stream_flat):
     """return index of nearest downstream stream"""
     idx_out = np.zeros(idxs0.size, dtype=np.uint32)
-    stream_flat = stream.ravel()[idxs_valid]
     for i in range(idxs0.size):
         idx_out[i] = _ds_stream(np.uint32(idxs0[i]), idxs_ds, stream_flat)
     return idx_out
