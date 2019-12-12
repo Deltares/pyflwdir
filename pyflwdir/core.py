@@ -7,21 +7,11 @@ import numpy as np
 
 _mv = np.uint32(-1)
 
-@njit(['uint32(uint32, uint32[:])', 'uint32(int64, uint32[:])', 'uint32(int32, uint32[:])'])
-def _internal_idx(idx0, idxs_valid):
-    idxs = np.where(idxs_valid==idx0)[0]
-    if idxs.size == 0:
-        raise ValueError('index outside domain')
-    else:
-        idx_out = np.uint32(idxs[0])
-    return idx_out
-
-@njit(['uint32[:](uint32[:], uint32[:])', 'uint32[:](int64[:], uint32[:])', 'uint32[:](int32[:], uint32[:])'])
-def internal_idx(idxs, idxs_valid):
-    idxs_out = np.ones(idxs.size, dtype=np.uint32)
-    for i in range(idxs.size):
-        idxs_out[i] = _internal_idx(idxs[i], idxs_valid)
-    return idxs_out
+@njit
+def internal_idx(idxs, idxs_valid, size):
+    idxs_inv = np.ones(size, np.uint32)*_mv
+    idxs_inv[idxs_valid] = np.array([i for i in range(idxs_valid.size)], dtype=np.uint32)
+    return idxs_inv[idxs]
 
 @njit
 def _reshape(data, idxs_valid, shape, nodata=-9999):

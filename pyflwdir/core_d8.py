@@ -4,7 +4,6 @@
 
 from numba import njit, vectorize
 import numpy as np
-
 from pyflwdir import core
 
 # D8 type
@@ -39,23 +38,26 @@ def parse_d8(flwdir, _max_depth = 8):
     i = np.uint32(0)
     for i in range(n):
         idx0 = idxs_valid[i]
-        dd = flwdir_flat[idx0]
-        dr, dc = drdc(dd)
-        if dr==0 and dc==0:
+        dr, dc = drdc(flwdir_flat[idx0])
+        if dr==0 and dc==0: # pit
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
         else:
             idx_ds = idx0 + dc + dr*ncol
-            ids = idxs_inv[idx_ds]
-            if ids == core._mv:
-                raise ValueError('d8 not valid')
-            idxs_ds[i] = ids
-            for ii in range(_max_depth):
-                if idxs_us[ids,ii] == core._mv:
-                    idxs_us[ids,ii] = i
-                    break
-            if ii >  _max_us:
-                _max_us = ii
+            if idx_ds >= size or idxs_inv[idx_ds] == core._mv: # ds cell is out of bounds / invalid
+                # raise ValueError('d8 not valid')
+                # set pit
+                idxs_ds[i] = i
+                pits_lst.append(np.uint32(i))
+            else:
+                ids = idxs_inv[idx_ds]
+                idxs_ds[i] = ids
+                for ii in range(_max_depth):
+                    if idxs_us[ids,ii] == core._mv:
+                        idxs_us[ids,ii] = i
+                        break
+                if ii >  _max_us:
+                    _max_us = ii
     idxs_us = idxs_us[:, :_max_depth]
     return idxs_valid, idxs_ds, idxs_us, np.array(pits_lst)
 

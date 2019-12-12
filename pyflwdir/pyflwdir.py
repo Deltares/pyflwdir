@@ -119,7 +119,7 @@ class FlwdirRaster(object):
 
     def _internal_idx(self, idx):
         """return interal index based on flattened (1D) raster index"""
-        return core.internal_idx(idx, self._idxs_valid)
+        return core.internal_idx(idx, self._idxs_valid, self.size)
 
     def set_pits(self, idx, streams=None):
         """Set pits for usage in downstream funtions"""
