@@ -4,9 +4,6 @@
 
 """"""
 import numpy as np
-from numba import njit
-from copy import deepcopy
-
 # local
 import pyflwdir
 from pyflwdir import (
@@ -19,30 +16,27 @@ from pyflwdir import (
     basin_utils, 
     basin_descriptors
 )
+ftypes = {'d8':core_d8, 'ldd':core_ldd, 'flow':core_flow}
+
 # export
 __all__ = ['FlwdirRaster']
 
 # import logging
 # logger = logging.getLogger(__name__)
-def flwdir_to_idxs(flwdir, ftype='d8', check_ftype=True, **kwargs):
-    if ftype == 'd8':
-        if check_ftype and not core_d8._is_d8(flwdir):
-            raise ValueError('The flow direction type is not recognized as "d8".')
-        return core_d8.parse_d8(flwdir)
-    elif ftype == 'flow':
-        if check_ftype and not core_flow._is_flow(flwdir):
-            raise ValueError('The flow direction type is not recognized as "flow".')
-        return core_flow.parse_flow(*flwdir, **kwargs)
+def flwdir_to_idxs(flwdir, ftype='d8', check_ftype=True):
+    fd = ftypes[ftype]
+    if check_ftype and not fd.isvalid(flwdir):
+        raise ValueError(f'The flow direction type is not recognized as "{ftype}".')
+    return fd.from_flwdir(flwdir)
 
 def infer_ftype(flwdir):
     """infer flowdir type from data"""
-    if core_d8._is_d8(flwdir):
-        ftype = 'd8'
-    elif core_flow._is_flow(flwdir):
-        ftype = 'flow'
-    elif core_ldd._is_ldd(flwdir):
-        ftype = 'ldd'
-    else:
+    ftype = None
+    for fd in ftypes:
+        if fd.isvalid(flwdir):
+            ftype = fd._ftype
+            break
+    if ftype is None:
         raise ValueError('The flow direction type not recognized.')
     return ftype
 
@@ -53,19 +47,19 @@ class FlwdirRaster(object):
         data, 
         ftype='d8',
         check_ftype=True,
-        _max_depth=None,
+        # _max_depth=None,
     ):
         """Create an instance of a pyflwdir.FlwDirRaster object"""
         if ftype == 'infer':
             ftype = infer_ftype(data)
         if ftype == 'flow':
-            if not isinstance(data, tuple) and not (data.ndim == 3 and data.shape[0] == 2):
-                raise ValueError(
-                    'Data should be a tuple(nextx,nexty) or array with shape(2,height,width) for the "flow" flow direction type.'
-                    )
+            # if not isinstance(data, tuple) and not (data.ndim == 3 and data.shape[0] == 2):
+            #     raise ValueError(
+            #         'Data should be a tuple(nextx,nexty) or array with shape(2,height,width) for the "flow" flow direction type.'
+            #         )
             self.size = data[0].size
             self.shape = data[0].shape
-            _max_depth = 35 if _max_depth is None else _max_depth
+            # _max_depth = 35 if _max_depth is None else _max_depth
         else:
             self.size = data.size 
             self.shape = data.shape
@@ -74,7 +68,7 @@ class FlwdirRaster(object):
         if len(self.shape) != 2:
             raise ValueError("Flow direction array should be 2 dimensional")
         self.ftype = ftype
-        self._core = getattr(pyflwdir, f'core_{ftype}')
+        self._core = ftypes[ftype]
 
         # initialize
         # convert to internal indices
@@ -82,7 +76,7 @@ class FlwdirRaster(object):
             data, 
             ftype=ftype, 
             check_ftype=check_ftype, 
-            _max_depth=_max_depth
+            # _max_depth=_max_depth
         )
         if np.any([s <= 1 for s in self.shape]) or self._idxs_valid.size <= 1:
             raise ValueError('Invalid flow direction raster: too small (length or width equal to one)')
