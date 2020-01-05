@@ -27,7 +27,7 @@ _us[:,1,1] = _pv
 _max_depth = 35
 
 def from_flwdir(flwdir):
-    assert isvalid(flwdir)
+    assert isvalid(flwdir) # required to throw meaningfull errors is data is not valid
     nextx, nexty = flwdir # convert [2,:,:] OR ([:,:], [:,:]) to [:,:], [:,:]
     return _from_flwdir(nextx, nexty)
 
@@ -69,6 +69,8 @@ def _from_flwdir(nextx, nexty):
             else:
                 idx_ds = c + r*ncol
                 ids = idxs_inv[idx_ds]
+                if ids >= n:
+                    raise ValueError('invalid flwdir raster')
                 idxs_ds[i] = ids
                 for ii in range(_max_depth):
                     if idxs_us[ids,ii] == core._mv:
@@ -90,7 +92,7 @@ def _to_flwdir(idxs_valid, idxs_ds, shape):
     nexty = np.ones(shape, dtype=np.int32).ravel()*_mv
     for i in range(n):
         idx0 = idxs_valid[i]
-        idx_ds = idxs_ds[i]
+        idx_ds = idxs_valid[idxs_ds[i]]
         if i != idx_ds:
             # convert idx_ds to one-based row / col indices
             nextx[idx0] = idx_ds %  ncol + 1

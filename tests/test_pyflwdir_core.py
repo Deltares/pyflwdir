@@ -9,17 +9,20 @@ import pytest
 import numpy as np
 
 from pyflwdir import (
-    core
+    core, core_d8, core_flow, core_ldd
 )
-from pyflwdir import core_d8 as d8
-from pyflwdir import core_ldd as ldd
-from pyflwdir import core_flow as flow
+from pyflwdir.core_conversion import ldd_to_d8, d8_to_ldd
+
+_shape = (2, 678, 776)
+_ldd = np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8).reshape(_shape[1:])
+_d8 = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8).reshape(_shape[1:])
+_nextxy = np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32).reshape(_shape)
 
 def test_core_simple():
-    for fd in [flow, d8, ldd]:
+    for fd in [core_flow, core_d8, core_ldd]:
         _invalid = np.array([[2,4,8],[10,0,-1]], dtype=np.uint8)
         _shape = fd._us.shape
-        if fd == flow:
+        if fd == core_flow:
             _invalid = np.stack([_invalid, _invalid])
             _shape = fd._us.shape[1:]
         # test isvalid
@@ -48,10 +51,19 @@ def test_core_simple():
         assert (np.all(idxs_valid == idx_pits) and 
                 np.all(idxs_us == core._mv)), "test all pits with _ds data failed"
 
+def test_core_realdata():
+    _d8_ = core_d8.from_flwdir(_d8)
+    fdict = dict(
+        flow = core_flow.from_flwdir(_nextxy),
+        ldd = core_ldd.from_flwdir(_ldd),
+    )
+    for ftype, _fd_ in fdict.items():
+        for i in range(len(_d8_)):
+            assert np.all(_d8_[i] == _fd_[i]), f"disagreement between 'd8' and '{ftype}'' output {i}"
 
 def test_d8_dsus():
     """test d8_upstream and d8_upstream functions"""
-    fd = d8
+    fd = core_d8
     _us_flat = fd._us.flatten()
     _ds_flat = fd._ds.flatten()
     shape = fd._us.shape
@@ -76,6 +88,14 @@ def test_d8_dsus():
     for idx0 in range(9):
         assert fd.idx_to_dd(idx0, 4, (3,3)) == _us_flat[idx0]
 
+
+def test_conversion():
+    assert np.all(d8_to_ldd(ldd_to_d8(core_ldd._ds)) == core_ldd._ds)
+    assert np.all(ldd_to_d8(d8_to_ldd(core_d8._ds)) == core_d8._ds)
+
+
 if __name__ == "__main__":
     test_core_simple()
     test_d8_dsus()
+    test_conversion()
+    test_core_realdata

@@ -91,7 +91,7 @@ def from_flwdir(flwdir):
                     break
             if ii >  _max_us:
                 _max_us = ii
-    idxs_us = idxs_us[:, :_max_depth]
+    idxs_us = idxs_us[:, :_max_us+1]
     return idxs_valid, idxs_ds, idxs_us, np.array(pits_lst)
 
 @njit("u1[:,:](u4[:], u4[:], Tuple((u8, u8)))")
@@ -101,7 +101,8 @@ def to_flwdir(idxs_valid, idxs_ds, shape):
     flwdir = np.ones(shape, dtype=np.uint8).ravel()*_mv
     for i in range(n):
         idx0 = idxs_valid[i]
-        flwdir[idx0] = idx_to_dd(idx0, idxs_ds[i], shape)
+        idx_ds = idxs_valid[idxs_ds[i]]
+        flwdir[idx0] = idx_to_dd(idx0, idx_ds, shape)
     return flwdir.reshape(shape)
 
 # core d8 functions 
