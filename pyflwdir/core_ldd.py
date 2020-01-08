@@ -69,18 +69,16 @@ def from_flwdir(flwdir):
         idx0 = idxs_valid[i]
         dr, dc = drdc(flwdir_flat[idx0])
         r, c = idx0//ncol+dr, idx0%ncol+dc
-        if dr==0 and dc==0: 
-            # pit
-            idxs_ds[i] = i
-            pits_lst.append(np.uint32(i))
-        elif r >= nrow or c >= ncol or r<0 or c<0 or flwdir_flat[idx0] == _mv: 
-            # ds cell is out of bounds / invalid -> set pit - flag somehow ??
+        if (dr==0 and dc==0) or r >= nrow or c >= ncol or r<0 or c<0 or flwdir_flat[idx0] == _mv: 
+            # pit or ds cell is out of bounds / invalid -> set pit
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
         else:
             # valid ds cell
             idx_ds = idx0 + dc + dr*ncol
             ids = idxs_inv[idx_ds]
+            if ids == core._mv or ids == i:
+                raise ValueError('invalid flwdir data')
             idxs_ds[i] = ids
             for ii in range(_max_depth):
                 if idxs_us[ids,ii] == core._mv:

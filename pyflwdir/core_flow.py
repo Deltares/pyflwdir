@@ -56,26 +56,23 @@ def _from_flwdir(nextx, nexty):
         idx0 = idxs_valid[i]
         c = nextx_flat[idx0]
         r = nexty_flat[idx0]
-        if r == _pv or r == _mv:
-            # pit // mv
+        if r == _pv or r > nrow or c > ncol or r<1 or c<1 or r == _mv:
+            # pit or ds cell is out of bounds / invalid -> set pit
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
         else:
             r, c = r-1, c-1 # convert from to zero-based index
             idx_ds = c + r*ncol
             ids = idxs_inv[idx_ds]
-            if r >= nrow or c >= ncol or r<0 or c<0 or ids == core._mv: 
-                # ds cell is out of bounds / invalid -> set pit - flag somehow ??
-                idxs_ds[i] = i
-                pits_lst.append(np.uint32(i))
-            else:
-                idxs_ds[i] = ids
-                for ii in range(_max_depth):
-                    if idxs_us[ids,ii] == core._mv:
-                        idxs_us[ids,ii] = i
-                        break
-                if ii >  _max_us:
-                    _max_us = ii
+            if ids == core._mv or ids == i:
+                raise ValueError('invalid flwdir data')
+            idxs_ds[i] = ids
+            for ii in range(_max_depth):
+                if idxs_us[ids,ii] == core._mv:
+                    idxs_us[ids,ii] = i
+                    break
+            if ii >  _max_us:
+                _max_us = ii
                 if ii == _max_depth-1:
                     raise ValueError('increase max depth')
     idxs_us = idxs_us[:, :_max_us+1]
@@ -91,7 +88,7 @@ def _to_flwdir(idxs_valid, idxs_ds, shape):
     for i in range(n):
         idx0 = idxs_valid[i]
         idx_ds = idxs_valid[idxs_ds[i]]
-        if i != idx_ds:
+        if idx0 != idx_ds:
             # convert idx_ds to one-based row / col indices
             nextx[idx0] = idx_ds %  ncol + 1
             nexty[idx0] = idx_ds // ncol + 1
