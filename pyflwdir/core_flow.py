@@ -62,15 +62,13 @@ def _from_flwdir(nextx, nexty):
             pits_lst.append(np.uint32(i))
         else:
             r, c = r-1, c-1 # convert from to zero-based index
-            if r >= nrow or c >= ncol or r<0 or c<0: 
-                # ds cell is out of bounds -> set pit - flag somehow ??
+            idx_ds = c + r*ncol
+            ids = idxs_inv[idx_ds]
+            if r >= nrow or c >= ncol or r<0 or c<0 or ids == core._mv: 
+                # ds cell is out of bounds / invalid -> set pit - flag somehow ??
                 idxs_ds[i] = i
                 pits_lst.append(np.uint32(i))
             else:
-                idx_ds = c + r*ncol
-                ids = idxs_inv[idx_ds]
-                if ids >= n:
-                    raise ValueError('invalid flwdir raster')
                 idxs_ds[i] = ids
                 for ii in range(_max_depth):
                     if idxs_us[ids,ii] == core._mv:
