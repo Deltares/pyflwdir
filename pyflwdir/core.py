@@ -2,55 +2,153 @@
 # Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
 # August 2019
 
+"""Core upstream / downstream functionality based on parsed indices from core_xxx.py submules"""
+
 from numba import njit, prange
 import numpy as np
 
 _mv = np.uint32(-1)
 
 @njit
-def internal_idx(idxs, idxs_valid, size):
-    idxs_inv = np.ones(size, np.uint32)*_mv
-    idxs_inv[idxs_valid] = np.array([i for i in range(idxs_valid.size)], dtype=np.uint32)
+def _internal_idx(idxs, idxs_valid, size):
+    """Convert 1D index to internal 1D index (valid cells only).
+    
+    Parameters
+    ----------
+    idxs : ndarray of int
+        1D flwdir raster index
+    idxs_valid : ndarray of int
+        1D flwdir raster indices of valid cells
+    size : int
+        size of flwdir raster
+
+    Returns
+    -------
+    1D internal index : ndarray of int    
+    """
+    idxs_inv = np.ones(size, idxs_valid.dtype)*_mv
+    idxs_inv[idxs_valid] = np.array([i for i in range(idxs_valid.size)], dtype=idxs_valid.dtype)
     return idxs_inv[idxs]
 
 @njit
 def _reshape(data, idxs_valid, shape, nodata=-9999):
+    """Reshape 1D data with same size as internal index to a 2D raster
+    with the data placed at the internal index.
+    
+    Parameters
+    ----------
+    data : ndarray
+        1D data
+    idxs_valid : ndarray of int
+        1D flwdir raster indices of valid cells
+    shape : tuple of int
+        shape of output raster
+
+    Returns
+    -------
+    2D raster data : ndarray    
+    """
+    if idxs_valid.size != data.size:
+        raise ValueError('data has invalid size')
     data_out = np.ones(shape[0]*shape[1], dtype=data.dtype)*nodata
     data_out[idxs_valid] = data
     return data_out.reshape(shape)
 
 @njit
 def us_indices(idx0, idxs_us):
-    """returns a numpy array with indices of upstream idx0"""
+    """Returns the internal upstream indices.
+    
+    Parameters
+    ----------
+    idx0 : array_like of int
+        index of local cell(s)
+    idxs_us : ndarray of int
+        internal indices of upstream cells
+
+    Returns
+    -------
+    1D array of internal upstream indices : ndarray of int  
+    """
     idxs_us0 = idxs_us[idx0, :].ravel()
     return idxs_us0[idxs_us0 != _mv]
 
-# @njit
-# def us_index_main(idx0, idxs, uparea, upa_min):
-#     """returns the index of the upstream cell with the largest uparea"""
-#     idxs_us = us_indices(idx0, idxs)
-#     if idxs_us.size > 0:
-#         idx_us = idxs_us[np.argmax(idxs_us)]
-#     else:
-#         idx_us = _mv
-#     return idx_us
+@njit
+def _us_index_main(idx0, idxs_us, uparea_flat, upa_min = 0):
+    """Returns the index of the upstream cell with the largest uparea"""
+    idx_us0 = _mv
+    upa0 = upa_min
+    for idx_us in us_indices(idx0, idxs_us):
+        if uparea_flat[idx_us] > upa0:
+            idx_us0 = idx_us
+            upa0 = uparea_flat[idx_us]
+    return idx_us0
 
 @njit
-def pit_indices(idxs):
-    """returns the indices of pits"""
+def us_index_main(idxs, idxs_us, uparea_flat, upa_min = 0):
+    """Returns the index of the upstream cell with the largest uparea
+    
+    Parameters
+    ----------
+    idxs : ndarray of int
+        internal indices of local cells
+    idxs_us : ndarray of int
+        internal indices of upstream cells
+    uparea_flat : ndarray
+        1D array with upstream area values
+    upa_min : float, optional 
+        minimum upstream area for upstream cell to be considered
+    
+
+    Returns
+    -------
+    1D array of internal upstream indices : ndarray of int  
+    """
+    if idxs_us.shape[0] != uparea_flat.size:
+        raise ValueError('uparea_flat has invalid size')
+    idxs_us_main = np.ones(idxs.size, dtype=idxs_us.dtype)*_mv
+    for i in range(idxs.size):
+        idxs_us_main[i] = _us_index_main(idxs[i], idxs_us, uparea_flat, upa_min = upa_min)
+    return idxs_us_main
+
+@njit
+def pit_indices(idxs_ds):
+    """Returns the internal pit indices, i.e. where the 
+    downstream cell is equal to the local cell.
+    
+    Parameters
+    ----------
+    idxs_ds : ndarray of int
+        internal indices of downstream cells
+
+    Returns
+    -------
+    1D array of internal downstream indices : ndarray of int  
+    """
     idx_lst = []
-    for idx0 in range(idxs.size):
-        if idx0 == idxs[idx0]:
+    for idx0 in range(idxs_ds.size):
+        if idx0 == idxs_ds[idx0]:
             idx_lst.append(idx0)
-    return np.array(idx_lst, dtype=np.uint32)
+    return np.array(idx_lst, dtype=idxs_ds.dtype)
 
 @njit
-def error_indices(pits, idxs_ds, idxs_us):
-    """returns the indices erroneous cells which do not have a pit at its downstream end"""
+def loop_indices(idxs_ds, idxs_us):
+    """Returns the internal loop indices, i.e. for cells
+    which do not have a pit at its most downstream end.
+    
+    Parameters
+    ----------
+    idxs_pit, idxs_ds, idxs_us : ndarray of int
+        internal indices of pit, downstream, upstream cells
+
+    Returns
+    -------
+    1D array of internal loop indices : array_like  
+    """
     # internal lists
     no_loop = idxs_ds == _mv
-    idxs_ds0 = pits
-    no_loop[idxs_ds0] = True 
+    idxs_ds0 = pit_indices(idxs_ds)
+    if idxs_ds0.size > 0: # no valid cells!
+        no_loop[idxs_ds0] = True 
     # loop over pits and mark upstream area
     while True:
         idxs_us0 = us_indices(idxs_ds0, idxs_us)
@@ -62,7 +160,7 @@ def error_indices(pits, idxs_ds, idxs_us):
 
 @njit
 def _ds_stream(idx0, idxs_ds, stream_flat):
-    """return index of nearest downstream stream"""
+    """Return index of nearest downstream stream for single cell"""
     at_stream = stream_flat[idx0]
     while not at_stream:
         idx_ds = idxs_ds[idx0]
@@ -74,10 +172,24 @@ def _ds_stream(idx0, idxs_ds, stream_flat):
 
 @njit
 def ds_stream(idxs0, idxs_ds, stream_flat):
-    """return index of nearest downstream stream"""
+    """Returns the next downstream index which is located on 
+    a stream.
+    
+    Parameters
+    ----------
+    idxs0 : ndarray of in
+        index of local cell(s)
+    idxs_ds : ndarray of int
+        internal indices of upstream cells
+    data : ndarray of bool
+        True if stream cell
+
+    Returns
+    -------
+    1D array of internal downstream stream indices : ndarray of int  
+    """
+    
     idx_out = np.zeros(idxs0.size, dtype=np.uint32)
     for i in range(idxs0.size):
         idx_out[i] = _ds_stream(np.uint32(idxs0[i]), idxs_ds, stream_flat)
     return idx_out
-
-
