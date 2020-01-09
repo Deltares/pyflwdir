@@ -86,17 +86,17 @@ def test_core_d8():
         flwdir_flat[idx0] = np.uint8(1)
         flwdir_flat *= _us_flat
         if idx0 != 4:
-            assert np.all(fd.us_indices(4, flwdir_flat, shape) == idx0), 'd8_upstream failed'
+            assert np.all(fd.upstream(4, flwdir_flat, shape) == idx0), 'd8_upstream failed'
         else:
-            assert fd.us_indices(4, flwdir_flat, shape).size == 0, 'd8_upstream failed'
+            assert fd.upstream(4, flwdir_flat, shape).size == 0, 'd8_upstream failed'
     # test downstream
     for idx0 in range(9):
         if idx0 != 4:
-            assert fd.ds_index(idx0, _ds_flat, shape) == -1, 'd8_downstream failed'
+            assert fd.downstream(idx0, _ds_flat, shape) == -1, 'd8_downstream failed'
         else:
-            assert fd.ds_index(idx0, _ds_flat, shape) == 4, 'd8_downstream failed'
-        assert fd.ds_index(idx0, _us_flat, shape, dd= _us_flat[idx0]) == 4, 'd8_downstream failed'
-        assert fd.ds_index(idx0, _us_flat, shape) == 4, 'd8_downstream failed'
+            assert fd.downstream(idx0, _ds_flat, shape) == 4, 'd8_downstream failed'
+        assert fd.downstream(idx0, _us_flat, shape, dd= _us_flat[idx0]) == 4, 'd8_downstream failed'
+        assert fd.downstream(idx0, _us_flat, shape) == 4, 'd8_downstream failed'
     # test idx_to_dd
     for idx0 in range(9):
         assert fd.idx_to_dd(idx0, 4, (3,3)) == _us_flat[idx0]
@@ -108,41 +108,44 @@ def test_ftype_conversion():
 
 def test_core_realdata():
     """test core.py submodule with actual flwdir data"""
-    assert core._us_index_main(np.uint32(0),
-        np.arange(3).astype(np.uint32)[None,:], 
-        np.arange(3), upa_min=0) == 2
-
-    # test with real data
+    # test parsing real data
     try:
         idxs_valid, idxs_ds, idxs_us, idxs_pit = core_d8.from_flwdir(_d8)
     except:
         pytest.fail('d8 parsing failed')
     assert idxs_us[idxs_us!=core._mv].size + idxs_pit.size == idxs_ds.size
+    # test network tree
+    try:
+        tree = core.network_tree(idxs_pit, idxs_us)
+    except:
+        pytest.fail('tree network failed')
+    assert np.array([leave.size for leave in tree]).sum() == idxs_ds.size, 'tree network invalid'
+    # test internal data reshaping / reindexing functions
     assert np.all(core._internal_idx(idxs_valid, idxs_valid, _d8.size) == np.arange(idxs_valid.size))
     assert np.all(core._reshape(_d8.flat[idxs_valid], idxs_valid, _d8.shape, nodata = core_d8._mv) == _d8)
     with pytest.raises(ValueError):
         core._reshape(_d8.flat[idxs_valid[:-1]], idxs_valid, _d8.shape, nodata = core_d8._mv)
+    # test upstream functions
     for idx0 in [idxs_pit[0], idxs_pit]:
-        assert np.all(core.us_indices(idx0, idxs_us) == idxs_us[idx0,:][idxs_us[idx0,:]!=core._mv])
-
+        assert np.all(core.upstream(idx0, idxs_us) == idxs_us[idx0,:][idxs_us[idx0,:]!=core._mv])
     try:
         idxs = np.arange(idxs_ds.size, dtype=np.uint32)
-        idxs_us_main = core.us_index_main(idxs, idxs_us, np.ones(idxs.size))
+        idxs_us_main = core.main_upstream(idxs, idxs_us, np.ones(idxs.size))
     except:
         pytest.fail('main upstream index failed')
     assert np.all(idxs_us_main == idxs_us[:,0]), 'main upstream index failed'
+    # test downstream_river with only stream cell at pit
+    river_flat = np.zeros(idxs_ds.size, dtype=np.bool)
+    river_flat[idxs_pit] = True
+    idxs_ds_stream = core.downstream_river(np.arange(3, dtype=np.uint32), idxs_ds, river_flat)
+    assert np.all(idxs_ds_stream == idxs_pit), 'downstream stream index failed'
+    # test pit / loop indices
     assert np.all(core.pit_indices(idxs_ds) == idxs_pit), 'pit index failed'
-    assert core.loop_indices(idxs_ds, idxs_us).size == 0
-    # remove pit and check all cells are invalid
+    assert core.loop_indices(idxs_ds, idxs_us).size == 0, 'loop index failed'
+    # test2 loop indices remove pit and check all cells are invalid
     idxs_ds_loop = idxs_ds.copy()
     idxs_ds_loop[idxs_pit] = idxs_valid[0]
-    assert core.loop_indices(idxs_ds_loop, idxs_us).size == idxs_ds.size
-    # test ds_stream with only stream cell at pit
-    stream_flat = np.zeros(idxs_ds.size, dtype=np.bool)
-    stream_flat[idxs_pit] = True
-    idxs_ds_stream = core.ds_stream(np.arange(3, dtype=np.uint32), idxs_ds, stream_flat)
-    assert np.all(idxs_ds_stream == idxs_pit)
-
+    assert core.loop_indices(idxs_ds_loop, idxs_us).size == idxs_ds.size, 'loop index invalid'
 
 if __name__ == "__main__":
     test_core_xxx_simple()

@@ -124,7 +124,7 @@ def isnodata(dd):
 # # NOTE functions below are used in upscale d8 only 
 
 @njit
-def ds_index(idx0, flwdir_flat, shape, dd=_mv):
+def downstream(idx0, flwdir_flat, shape, dd=_mv):
     """returns numpy array (int64) with indices of donwstream neighbors on a D8 grid.
     At a pit the current index is returned
     
@@ -145,7 +145,7 @@ def ds_index(idx0, flwdir_flat, shape, dd=_mv):
     return idx
 
 @njit
-def us_indices(idx0, flwdir_flat, shape):
+def upstream(idx0, flwdir_flat, shape):
     """returns a numpy array (int64) with indices of upstream neighbors on a D8 grid
     if it leaves the domain a negative D8 value indicating the side where it leaves the domain is returned"""
     nrow, ncol = shape

@@ -10,24 +10,6 @@ import numpy as np
 from pyflwdir import core
 from pyflwdir import gis_utils
 
-__all__ = ['fillnodata_upstream', 'accuflux', 'upstream_area', 'stream_order', 'setup_network']
-
-@njit
-def setup_network(idxs_pits, idxs_ds, idxs_us):
-    """set drainage direction network tree from downstream to upstream"""
-    tree = List()
-    tree.append(idxs_pits)
-    idxs = idxs_pits
-    # move upstream
-    while True:
-        nbs_us = idxs_us[idxs,:] # has _mv values
-        idxs = nbs_us.ravel()    # keep valid
-        idxs = idxs[idxs != core._mv]
-        if idxs.size == 0:       # break if no more upstream
-            break
-        tree.append(idxs)        # append next leave to tree
-    return tree                  # down- to upstream
-
 @njit
 def accuflux(tree, idxs_us, material_flat, nodata):
     """accumulate 'material' in downstream direction using network tree"""
