@@ -123,6 +123,8 @@ def stream_order(tree, idxs_us):
         for idx_ds in idxs_ds0:
             idxs_us0 = idxs_us[idx_ds,:] # NOTE: contains _mv values
             ordi, idx_head = _strahler_order(idxs_us0, strord_flat)
+            if ordi > 127:
+                raise TypeError('maximum stream order is 127')
             strord_flat[idx_ds] = np.int8(ordi) # update stream order downstream cells
             if idx_head.size > 0:               # update head cells
                 strord_flat[idx_head] = np.int8(1)

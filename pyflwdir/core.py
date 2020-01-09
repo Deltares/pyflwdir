@@ -13,8 +13,8 @@ _mv = np.uint32(-1)
 #### NETWORK TREE ####
 @njit
 def network_tree(idxs_pits, idxs_us):
-    """Set drainage direction network tree ordering cells from 
-    downstream to upstream
+    """Return network tree, a list of arrays ordered from down to upstream.
+
     
     Parameters
     ----------
