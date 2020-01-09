@@ -12,6 +12,7 @@ dependencies:
   - numba
   - numpy
   - scipy
+  - pandas
   - pytest
   - pytest-cov
   - pytest-benchmark
