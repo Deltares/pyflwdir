@@ -102,7 +102,8 @@ def to_flwdir(idxs_valid, idxs_ds, shape):
 
 def isvalid(flwdir):
     """True if 2D LDD raster is valid"""
-    return (flwdir.dtype == 'uint8' and 
+    return (isinstance(flwdir, np.ndarray) and
+            flwdir.dtype == 'uint8' and 
             flwdir.ndim == 2 and
             np.all([v in _ldd_ for v in np.unique(flwdir)]))
 

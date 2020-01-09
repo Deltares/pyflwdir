@@ -8,21 +8,34 @@ import pytest
 import numpy as np
 
 from pyflwdir import (
-    core, core_d8, core_flow, core_ldd
+    core, core_d8, core_nextxy, core_ldd
 )
 from pyflwdir.core_conversion import ldd_to_d8, d8_to_ldd
+from pyflwdir.core import _mv
 
-_shape = (2, 678, 776)
-_d8 = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8).reshape(_shape[1:])
-_ldd = np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8).reshape(_shape[1:])
-_nextxy = np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32).reshape(_shape)
+# read and parse data
+@pytest.fixture
+def _d8():
+    return np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8).reshape((678, 776))
+@pytest.fixture
+def d8_parsed(_d8):
+    return core_d8.from_flwdir(_d8)
+@pytest.fixture
+def ldd_parsed():
+    _ldd = np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8).reshape((678, 776))
+    return core_ldd.from_flwdir(_ldd)
+@pytest.fixture
+def nextxy_parsed():
+    _nextxy = np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32).reshape((2, 678, 776))
+    return core_nextxy.from_flwdir(_nextxy)
+
 
 def test_core_xxx_simple():
     """test core_xxx.py submodules based on _us and _ds definitions"""
-    for fd in [core_flow, core_d8, core_ldd]:
+    for fd in [core_nextxy, core_d8, core_ldd]:
         _invalid = np.array([[2,4,8],[10,0,-1]], dtype=np.uint8)
         _shape = fd._us.shape
-        if fd == core_flow:
+        if fd._ftype == 'nextxy':
             _invalid = np.stack([_invalid, _invalid])
             _shape = fd._us.shape[1:]
         # test isvalid
@@ -43,31 +56,19 @@ def test_core_xxx_simple():
         assert (np.all(idx_pits == 4) and 
                 idx_pits.size == 1), "pit idx test with _us data failed"
         assert (np.all(idxs_us[4,:]==np.array([0, 1, 2, 3, 5, 6, 7, 8])) and
-                np.all(idxs_us[:4, :]==core._mv) and 
-                np.all(idxs_us[5:, :]==core._mv)), "upstream idx test with _us data failed"
+                np.all(idxs_us[:4, :]==_mv) and 
+                np.all(idxs_us[5:, :]==_mv)), "upstream idx test with _us data failed"
         assert np.all(fd.to_flwdir(idxs_valid, idxs_ds, _shape) == fd._us), "convert back with _us data failed"
         # test all invalid/pit with _ds data
         idxs_valid, idxs_ds, idxs_us, idx_pits = fd.from_flwdir(fd._ds)
         assert (np.all(idxs_valid == idx_pits) and 
-                np.all(idxs_us == core._mv)), "test all pits with _ds data failed"
+                np.all(idxs_us == _mv)), "test all pits with _ds data failed"
 
-def test_core_xxx_realdata():
+def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed):
     """test core_xxx.py submodules with actual flwdir data"""
-    # parse data
-    try:
-        _d8_ = core_d8.from_flwdir(_d8)
-    except:
-        pytest.fail('d8 parsing failed')
-    try:
-        _flow_ = core_flow.from_flwdir(_nextxy)
-    except:
-        pytest.fail('flow parsing failed')
-    try:
-        _ldd_ = core_ldd.from_flwdir(_ldd)
-    except:
-        pytest.fail('ldd parsing failed')
+    _d8_ = d8_parsed
     fdict = dict(
-        ldd = _ldd_, flow = _flow_
+        ldd = ldd_parsed, nextxy = nextxy_parsed
     )
     # test conistent results
     for ftype, _fd_ in fdict.items():
@@ -106,14 +107,11 @@ def test_ftype_conversion():
     assert np.all(d8_to_ldd(ldd_to_d8(core_ldd._ds)) == core_ldd._ds), 'conversion of ldd failed'
     assert np.all(ldd_to_d8(d8_to_ldd(core_d8._ds)) == core_d8._ds), 'conversion of d8 failed'
 
-def test_core_realdata():
+def test_core_realdata(_d8, d8_parsed):
     """test core.py submodule with actual flwdir data"""
     # test parsing real data
-    try:
-        idxs_valid, idxs_ds, idxs_us, idxs_pit = core_d8.from_flwdir(_d8)
-    except:
-        pytest.fail('d8 parsing failed')
-    assert idxs_us[idxs_us!=core._mv].size + idxs_pit.size == idxs_ds.size
+    idxs_valid, idxs_ds, idxs_us, idxs_pit = d8_parsed
+    assert idxs_us[idxs_us!=_mv].size + idxs_pit.size == idxs_ds.size
     # test network tree
     try:
         tree = core.network_tree(idxs_pit, idxs_us)
@@ -127,7 +125,7 @@ def test_core_realdata():
         core._reshape(_d8.flat[idxs_valid[:-1]], idxs_valid, _d8.shape, nodata = core_d8._mv)
     # test upstream functions
     for idx0 in [idxs_pit[0], idxs_pit]:
-        assert np.all(core.upstream(idx0, idxs_us) == idxs_us[idx0,:][idxs_us[idx0,:]!=core._mv])
+        assert np.all(core.upstream(idx0, idxs_us) == idxs_us[idx0,:][idxs_us[idx0,:]!=_mv])
     try:
         idxs = np.arange(idxs_ds.size, dtype=np.uint32)
         idxs_us_main = core.main_upstream(idxs, idxs_us, np.ones(idxs.size))
@@ -146,10 +144,3 @@ def test_core_realdata():
     idxs_ds_loop = idxs_ds.copy()
     idxs_ds_loop[idxs_pit] = idxs_valid[0]
     assert core.loop_indices(idxs_ds_loop, idxs_us).size == idxs_ds.size, 'loop index invalid'
-
-if __name__ == "__main__":
-    test_core_xxx_simple()
-    test_core_xxx_realdata()
-    test_core_d8()
-    test_ftype_conversion()
-    test_core_realdata()

@@ -6,8 +6,8 @@ from numba import njit, vectorize
 import numpy as np
 from pyflwdir import core
 
-# FLOW type
-_ftype = 'flow'
+# NEXTXY type
+_ftype = 'nextxy'
 _mv = np.int32(-9999)
 _pv = np.int32(-9)
 # NOTE: data below for consistency with LDD / D8 types and testing
@@ -27,7 +27,11 @@ _us[:,1,1] = _pv
 _max_depth = 35
 
 def from_flwdir(flwdir):
-    assert isvalid(flwdir) # required to throw meaningfull errors is data is not valid
+    if not (
+        (isinstance(flwdir, tuple) and len(flwdir) == 2) or
+        (isinstance(flwdir, np.ndarray) and flwdir.ndim==3 and flwdir.shape[0]==2)
+        ):
+        raise TypeError('NEXTXT flwdir data not understood')
     nextx, nexty = flwdir # convert [2,:,:] OR ([:,:], [:,:]) to [:,:], [:,:]
     return _from_flwdir(nextx, nexty)
 
@@ -80,7 +84,7 @@ def _from_flwdir(nextx, nexty):
 
 @njit("Tuple((i4[:,:], i4[:,:]))(u4[:], u4[:], Tuple((u8, u8)))")
 def _to_flwdir(idxs_valid, idxs_ds, shape):
-    """convert 1D index to 3D FLOW raster"""
+    """convert 1D index to 3D NEXTXY raster"""
     n = idxs_valid.size
     ncol = shape[1]
     nextx = np.ones(shape, dtype=np.int32).ravel()*_mv
@@ -104,7 +108,7 @@ def isvalid(flwdir):
         (isinstance(flwdir, tuple) and len(flwdir) == 2) or
         (isinstance(flwdir, np.ndarray) and flwdir.ndim==3 and flwdir.shape[0]==2)
         ):
-        raise TypeError("Flow data type and/or dimensions not understood")
+        return False
     nextx, nexty = flwdir # should work for [2,:,:] and ([:,:], [:,:])
     mask = np.logical_or(nextx==_mv, nextx==_pv)
     return (nexty.dtype == 'int32' and nextx.dtype == 'int32' and
@@ -114,10 +118,10 @@ def isvalid(flwdir):
 
 @vectorize(["b1(i4)", "b1(i8)"])
 def ispit(dd):
-    """True if FLOW pit"""
+    """True if NEXTXY pit"""
     return dd == _pv
 
 @vectorize(["b1(i4)", "b1(i8)"])
 def isnodata(dd):
-    """True if FLOW nodata"""
+    """True if NEXTXY nodata"""
     return dd == _mv

@@ -106,7 +106,8 @@ def to_flwdir(idxs_valid, idxs_ds, shape):
 # core d8 functions 
 def isvalid(flwdir):
     """True if 2D D8 raster is valid"""
-    return (flwdir.dtype == 'uint8' and 
+    return (isinstance(flwdir, np.ndarray) and
+            flwdir.dtype == 'uint8' and 
             flwdir.ndim == 2 and
             np.all([v in _d8_ for v in np.unique(flwdir)]))
 
