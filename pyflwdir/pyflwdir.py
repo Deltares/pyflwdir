@@ -119,7 +119,7 @@ class FlwdirRaster(object):
             # _max_depth=_max_depth
         )
         if self._idxs_valid.size <= 1:
-            raise ValueError('Invalid flow direction raster: size equal')
+            raise ValueError('Invalid flow direction raster: size equal or smaller to 1')
         elif self._idx0.size == 0:
             raise ValueError('Invalid flow direction raster: no pits found')
         self.ncells = self._idxs_valid.size
@@ -242,6 +242,46 @@ class FlwdirRaster(object):
             raise ValueError("'Material' shape does not match with flow direction shape.")
         accu_flat = basin.accuflux(self.tree, self._idxs_us, self._flatten(material), nodata)
         return self._reshape(accu_flat, nodata=nodata)
+
+    def vector(self, min_order=1, xs=None, ys=None, affine=gis_utils.IDENTITY, crs=None):
+        """Returns a GeoDataFrame with river segments. Segments are LineStrings 
+        connecting cell from down to upstream and are splitted based on strahler order. 
+        
+        The coordinates of the nodes are based on the cell center as calculated using the
+        affine transform, unless maps with x and y coordinates are provided.
+        
+        Parameters
+        ----------
+        min_order : int
+            Minimum Strahler Order recognized as river 
+            (the default is 1)
+        xs, ys : ndarray of float
+            Raster with cell x, y coordinates 
+            (the default is None, taking the cell center coordinates)
+        affine : affine transform
+            Two dimensional affine transform for 2D linear mapping
+            (the default is an identity transform)
+        crs : coordinate reference system
+
+        
+        Returns
+        -------
+        river segments : geopandas.GeoDataFrame
+        """
+        try:
+            import geopandas as gp 
+            import shapely
+        except ImportError:
+            raise ImportError("The `vector` method requies the shapely and geopandas packages")
+        # get geoms and make geopandas dataframe
+        if xs is None or ys is None:
+            xs, ys = gis_utils.idxs_to_coords(self._idxs_valid, affine, self.shape)
+        geoms = gis_utils.idxs_to_geoms(self._idxs_ds, xs, ys)
+        gdf = gp.GeoDataFrame(geometry=geoms, crs=crs)
+        # get additional data
+        gdf['stream_order'] = self.stream_order().flat[self._idxs_valid]
+        gdf['pit'] = self._idxs_ds == np.arange(self.ncells)
+        return gdf
 
     def drainage_path_stats(self, rivlen, elevtn):
         if not np.all(rivlen.shape == self.shape):

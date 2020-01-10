@@ -7,6 +7,7 @@
 import pytest
 import numba
 import time
+from affine import Affine
 rtsys = numba.runtime.rtsys
 
 import numpy as np
@@ -85,6 +86,16 @@ def test_basins(d8):
     assert basins.dtype == np.uint32 
     assert np.all(basins.shape == d8.shape)
 
+def test_vector(d8):
+    affine = Affine(
+        1/120., 0.0, 5+50/120.,
+        0.0, -1/120, 51+117/120.
+        )
+    try:
+        gdf = d8.vector(affine=affine)
+    except:
+        pytest.fail('basins failed')
+    assert gdf.index.size == d8.ncells
 
 # def test_flwdir_repair():
 #     flwdir = FlwdirRaster(data.copy())
