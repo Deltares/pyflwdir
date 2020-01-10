@@ -9,6 +9,7 @@ import numpy as np
 # import flow direction definition
 from pyflwdir import core
 from pyflwdir import gis_utils
+_mv = core._mv
 
 @njit
 def accuflux(tree, idxs_us, material_flat, nodata):
@@ -16,18 +17,17 @@ def accuflux(tree, idxs_us, material_flat, nodata):
     size = idxs_us.shape[0]
     accu_flat = np.ones(size, dtype=material_flat.dtype)*nodata
     for i in range(len(tree)):
-        idxs_ds0 = tree[-i-1] # from up- to downstream
-        for idx_ds in idxs_ds0:
-            idxs_us0 = idxs_us[idx_ds,:] # NOTE: contains _mv values
-            accu_flat[idx_ds] = material_flat[idx_ds] # ds
-            for idx_us in idxs_us0:
-                if idx_us == core._mv:
+        idxs = tree[-i-1] # from up- to downstream
+        for idx0 in idxs:
+            accu_flat[idx0] = material_flat[idx0] # current cell
+            for idx_us in idxs_us[idx0,:]:
+                if idx_us == _mv:
                     break
                 v0 = accu_flat[idx_us]
                 if v0 == nodata:
                     v0 = material_flat[idx_us]
                     accu_flat[idx_us] = v0
-                accu_flat[idx_ds] += v0
+                accu_flat[idx0] += v0 # accumulate material
     return accu_flat
 
 @njit()
@@ -43,16 +43,15 @@ def upstream_area(tree, idxs_us, shape, latlon=False, affine=gis_utils.IDENTITY)
     upa = np.ones(size, dtype=np.float32)*-9999. 
     # loop over network from up- to downstream and calc upstream area
     for i in range(len(tree)):
-        idxs_ds0 = tree[-i-1] # from up- to downstream
-        for idx_ds in idxs_ds0:
-            idxs_us0 = idxs_us[idx_ds,:] # NOTE: contains _mv values
+        idxs = tree[-i-1] # from up- to downstream
+        for idx0 in idxs:
             if latlon:
-                r = np.uint32(idx_ds // ncol)
+                r = np.uint32(idx0 // ncol)
                 lat = north + (r+0.5)*yres
                 area0 = gis_utils.cellarea(lat, xres, yres)
             upa_ds = area0
-            for idx_us in idxs_us0:
-                if idx_us == core._mv:
+            for idx_us in idxs_us[idx0,:]:
+                if idx_us == _mv:
                     break
                 upa_us = upa[idx_us]
                 if upa_us <= 0:
@@ -63,7 +62,7 @@ def upstream_area(tree, idxs_us, shape, latlon=False, affine=gis_utils.IDENTITY)
                     upa_us = area0
                     upa[idx_us] = np.float32(upa_us)
                 upa_ds += upa_us
-            upa[idx_ds] = np.float32(upa_ds)
+            upa[idx0] = np.float32(upa_ds)
     return upa
 
 @njit
@@ -72,16 +71,17 @@ def fillnodata_upstream(tree, idxs_us, data, nodata):
     for i in range(len(tree)):
         idxs = tree[i] # from down- to upstream
         for idx0 in idxs:
-            for idx_us in core.upstream(idx0, idxs_us):
+            for idx_us in idxs_us[idx0,:]:
+                if idx_us == _mv:
+                    break
                 if data[idx_us] == nodata: 
                     data[idx_us] = data[idx0]
     return data
 
 @njit
-def basins(tree, idxs_us):
+def basins(tree, idxs_us, idxs_pit):
     """label basins using network tree"""
     size = idxs_us.shape[0]
-    idxs_pit = tree[0]
     basins = np.zeros(size, dtype=np.uint32)
     basins[idxs_pit] = np.arange(idxs_pit.size).astype(np.uint32) + 1
     return fillnodata_upstream(tree, idxs_us, data=basins, nodata=np.uint32(0))
@@ -94,7 +94,7 @@ def _strahler_order(idxs_us, strord_flat):
     ord_cnt = 0
     for i in range(idxs_us.size):
         idx_us = idxs_us[i]
-        if idx_us == core._mv: 
+        if idx_us == _mv:
             break
         ordi = strord_flat[idx_us]
         if ordi <= 0: # most upstream cells
@@ -116,13 +116,13 @@ def stream_order(tree, idxs_us):
     size = idxs_us.shape[0]
     strord_flat = np.ones(size, dtype=np.int8)*np.int8(-1)
     for i in range(len(tree)):
-        idxs_ds0 = tree[-i-1] # from up- to downstream
-        for idx_ds in idxs_ds0:
-            idxs_us0 = idxs_us[idx_ds,:] # NOTE: contains _mv values
+        idxs = tree[-i-1] # from up- to downstream
+        for idx0 in idxs:
+            idxs_us0 = idxs_us[idx0,:]
             ordi, idx_head = _strahler_order(idxs_us0, strord_flat)
             if ordi > 127:
                 raise TypeError('maximum stream order is 127')
-            strord_flat[idx_ds] = np.int8(ordi) # update stream order downstream cells
+            strord_flat[idx0] = np.int8(ordi) # update stream order downstream cells
             if idx_head.size > 0:               # update head cells
                 strord_flat[idx_head] = np.int8(1)
     return strord_flat
