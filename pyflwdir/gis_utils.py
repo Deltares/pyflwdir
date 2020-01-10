@@ -4,25 +4,41 @@ import numpy as np
 import math
 from affine import identity as IDENTITY
 
-def affine_to_coords(affine, width, height):
-    """Generate 1d pixel centered coordinates from affine.
-
-    Based on code from the xarray rasterio backend.
+def idxs_to_coords(idxs_valid, affine, shape):
+    """Returs centered coordinates of idxs raster indices based affine.
 
     Parameters
     ----------
-    affine: :obj:`affine.Affine`
-        The affine of the grid.
-    width: int
-        The width of the grid.
-    height: int
-        The height of the grid.
+    affine : affine transform
+        Two dimensional affine transform for 2D linear mapping
+    shape : tuple of int
+        The height, width  of the raster.
 
     Returns
     -------
-    tuple: x and y coordinate arrays.
-
+    x, y coordinate arrays : tuple of ndarray of float
     """
+    ncol = shape[1]
+    r = idxs_valid // ncol
+    c = idxs_valid % ncol 
+    x, y = affine * (c+0.5, r+0.5)
+    return x, y
+
+def affine_to_coords(affine, shape):
+    """Returs a raster axis with pixel center coordinates based on the affine.
+
+    Parameters
+    ----------
+    affine : affine transform
+        Two dimensional affine transform for 2D linear mapping
+    shape : tuple of int
+        The height, width  of the raster.
+
+    Returns
+    -------
+    x, y coordinate arrays : tuple of ndarray of float
+    """
+    height, width = shape
     x_coords, _ = affine * (np.arange(width) + 0.5, np.zeros(width) + 0.5)
     _, y_coords = affine * (np.zeros(height) + 0.5, np.arange(height) + 0.5)
     return x_coords, y_coords
