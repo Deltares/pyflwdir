@@ -60,12 +60,13 @@ def from_flwdir(flwdir):
     # keep valid indices only
     idxs_valid = np.where(flwdir.ravel()!=_mv)[0].astype(np.uint32)
     n = idxs_valid.size
-    idxs_inv = np.ones(size, np.uint32)*core._mv
-    idxs_inv[idxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
-    # allocate output arrays
+    idxs_internal = np.ones(size, np.uint32)*core._mv
+    idxs_internal[idxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
+    # allocate output list / arrays
     pits_lst = []
     idxs_ds = np.ones(n, dtype=np.uint32)*core._mv
     idxs_us = np.ones((n, _max_depth), dtype=np.uint32)*core._mv
+    # loop over valid cells
     _max_us = 0
     i = np.uint32(0)
     for i in range(n):
@@ -79,7 +80,7 @@ def from_flwdir(flwdir):
         else:
             # valid ds cell
             idx_ds = idx0 + dc + dr*ncol
-            ids = idxs_inv[idx_ds]
+            ids = idxs_internal[idx_ds]
             if ids == core._mv or ids == i:
                 raise ValueError('invalid flwdir data')
             idxs_ds[i] = ids

@@ -213,6 +213,8 @@ def _internal_idx(idxs, idxs_valid, size):
     -------
     1D internal index : ndarray of int    
     """
+    if np.any(idxs<0) or np.any(idxs>=size):
+        raise ValueError('Index out of bounds')
     idxs_inv = np.ones(size, idxs_valid.dtype)*_mv
     idxs_inv[idxs_valid] = np.array([i for i in range(idxs_valid.size)], dtype=idxs_valid.dtype)
     return idxs_inv[idxs]
