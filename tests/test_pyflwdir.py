@@ -59,7 +59,7 @@ def test_stream_order(d8):
     except:
         pytest.fail('stream order failed')
     assert strord.min() == -1
-    assert strord.max() == 9
+    assert strord.max() == 9 # NOTE specific to data
     assert strord.dtype == np.int8 
     assert np.all(strord.shape == d8.shape)
 
@@ -67,12 +67,23 @@ def test_upstream_area(d8):
     try:
         uparea = d8.upstream_area()
     except:
-        pytest.fail('upastream area failed')
+        pytest.fail('upstream area failed')
     assert uparea.min() == -9999
     assert uparea[uparea!=-9999].min() == 1
-    assert uparea.max() == d8.ncells
+    assert uparea.max() == d8.ncells # NOTE specific to data with single basin
     assert uparea.dtype == np.float64 
     assert np.all(uparea.shape == d8.shape)
+
+def test_basins(d8):
+    try:
+        basins = d8.basins()
+    except:
+        pytest.fail('basins failed')
+    assert basins.min() == 0
+    assert basins.max() == 1 # NOTE specific to data with single basin
+    assert basins.sum() == d8.ncells # NOTE specific to data with single basin
+    assert basins.dtype == np.uint32 
+    assert np.all(basins.shape == d8.shape)
 
 
 # def test_flwdir_repair():

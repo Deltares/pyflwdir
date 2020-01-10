@@ -67,27 +67,24 @@ def upstream_area(tree, idxs_us, shape, latlon=False, affine=gis_utils.IDENTITY)
     return upa
 
 @njit
-def fillnodata_upstream(tree, idxs_us, data_flat, nodata):
+def fillnodata_upstream(tree, idxs_us, data, nodata):
     """label basins using network tree"""
     for i in range(len(tree)):
-        idxs_ds0 = tree[i] # from down- to upstream
-        for idx_ds in idxs_ds0:
-            idxs_us0 = idxs_us[idx_ds,:] # NOTE: contains _mv values
-            for idx_us in idxs_us0:
-                if idx_us == core._mv:
-                    break
-                elif data_flat[idx_us] == nodata: 
-                    data_flat[idx_us] = data_flat[idx_ds]
-    return data_flat
+        idxs = tree[i] # from down- to upstream
+        for idx0 in idxs:
+            for idx_us in core.upstream(idx0, idxs_us):
+                if data[idx_us] == nodata: 
+                    data[idx_us] = data[idx0]
+    return data
 
 @njit
 def basins(tree, idxs_us):
     """label basins using network tree"""
     size = idxs_us.shape[0]
     idxs_pit = tree[0]
-    basins = np.zeros(size, dtype=np.int32)
-    basins[idxs_pit] = np.arange(idxs_pit.size).astype(np.int32) + 1
-    return fillnodata_upstream(tree, idxs_us, data_flat=basins, nodata=np.int32(0))
+    basins = np.zeros(size, dtype=np.uint32)
+    basins[idxs_pit] = np.arange(idxs_pit.size).astype(np.uint32) + 1
+    return fillnodata_upstream(tree, idxs_us, data=basins, nodata=np.uint32(0))
 
 @njit
 def _strahler_order(idxs_us, strord_flat):
