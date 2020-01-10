@@ -4,8 +4,22 @@ import numpy as np
 import math
 from affine import identity as IDENTITY
 
-def idxs_to_coords(idxs_valid, affine, shape):
-    """Returs centered coordinates of idxs raster indices based affine.
+def idxs_to_geoms(idxs_ds, xs, ys):
+    """Returns a list of LineString for each up- downstream connection"""
+    from shapely.geometry import LineString
+    geoms = list()
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        geoms.append(
+            LineString([
+                (xs[idx0], ys[idx0]), 
+                (xs[idx_ds], ys[idx_ds]), 
+                ])
+        )
+    return geoms
+
+def idxs_to_coords(idxs, affine, shape):
+    """Returns centered coordinates of idxs raster indices based affine.
 
     Parameters
     ----------
@@ -19,8 +33,8 @@ def idxs_to_coords(idxs_valid, affine, shape):
     x, y coordinate arrays : tuple of ndarray of float
     """
     ncol = shape[1]
-    r = idxs_valid // ncol
-    c = idxs_valid % ncol 
+    r = idxs // ncol
+    c = idxs % ncol 
     x, y = affine * (c+0.5, r+0.5)
     return x, y
 

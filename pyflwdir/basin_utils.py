@@ -10,20 +10,12 @@ from pyflwdir import gis_utils
 
 def basin_sum(data, basins):
     lbs = np.unique(basins[basins>0])
-    df_sum = pd.DataFrame(
-        index = lbs,
-        data = ndimage.sum(data, basins, index=lbs),
-        columns = ['sum']
-    )
-    return df_sum
+    return ndimage.sum(data, basins, index=lbs)
 
 def basin_area(basins, affine):
-    height, width = basins.shape
-    lon, lat = gis_utils.affine_to_coords(affine, width, height)
+    lon, lat = gis_utils.affine_to_coords(affine, basins.shape)
     area = gis_utils.reggrid_area(lat, lon)
-    df_area = basin_sum(area, basins)
-    df_area.columns = ['area']
-    return df_area
+    return basin_sum(area, basins)
 
 def basin_slices(basins):
     lbs = np.unique(basins[basins>0])
@@ -37,8 +29,7 @@ def basin_slices(basins):
 
 def basin_bounds(basins, affine=gis_utils.IDENTITY):
     df_slices = basin_slices(basins)
-    height, width = basins.shape
-    lons, lats = gis_utils.affine_to_coords(affine, width, height)
+    lons, lats = gis_utils.affine_to_coords(affine, basins.shape)
     xres, yres = affine[0], affine[4]
     bboxs = np.zeros((df_slices.index.size, 4), dtype=np.float64)
     for i, idx in enumerate(df_slices.index):
