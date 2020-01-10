@@ -183,7 +183,11 @@ class FlwdirRaster(object):
 
     def basins(self):
         """Returns a basin map with a unique id (starting from 1) for every basin"""
-        return self._reshape(basin.basins(self.tree, self._idxs_us), nodata=np.uint32(0))
+        return self._reshape(basin.basins(self.tree, self._idxs_us, self.tree[0]), nodata=np.uint32(0))
+
+    def subbasins(self, idxs):
+        """Returns a subbasin map with a unique id (starting from 1) for every subbasin"""
+        return self._reshape(basin.basins(self.tree, self._idxs_us, self._internal_idx(idxs)), nodata=np.uint32(0))
 
     def upstream_area(self, latlon=False, affine=gis_utils.IDENTITY, nodata=-9999.):
         """Returns the upstream area map based on the flow direction map. 
@@ -276,6 +280,8 @@ class FlwdirRaster(object):
         # get geoms and make geopandas dataframe
         if xs is None or ys is None:
             xs, ys = gis_utils.idxs_to_coords(self._idxs_valid, affine, self.shape)
+        else:
+            xs, ys = xs.ravel()[self._idxs_valid], ys.ravel()[self._idxs_valid]
         geoms = gis_utils.idxs_to_geoms(self._idxs_ds, xs, ys)
         gdf = gp.GeoDataFrame(geometry=geoms, crs=crs)
         # get additional data
