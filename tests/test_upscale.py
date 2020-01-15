@@ -35,32 +35,40 @@ def d8_data():
 def d8(d8_data):
     return FlwdirRaster(d8_data, ftype = 'd8', check_ftype = False)
 
-def test_eam(d8):
+scores = { #NSE    relbias10 upadiffmax upadiffavg
+    'eam': [0.9937, 12.3994, 4868.9605, 1.8828],
+    'eeam': [0.9755, 7.3857, 10323.6950, 2.4419], # TODO check why and where largest errors occur
+}
+
+def test_upscale_scores(d8):
     res = 1/1200.
     cellsize = 10
     affine = Affine(res, 0.0, -10.5, 0.0, -res, 55.5)
     uparea = d8.upstream_area(affine=affine, latlon=True).ravel()
-    nextidx, subidxs_out, shape = upscale.eam_upscale(d8._idxs_ds, d8._idxs_valid, uparea, d8.shape, cellsize)
-    flwdir = core_conversion.nextidx_to_d8(nextidx, shape)
-    d8_lr = FlwdirRaster(flwdir, ftype = 'd8', check_ftype = True)
-    assert np.unique(nextidx[d8_lr.pits]).size == nextidx[d8_lr.pits].size
-    assert d8_lr.isvalid
-    # check quality
-    valid = nextidx != _mv
-    subbasins = d8.subbasins(subidxs_out[valid])
-    subare = np.ones(shape)*-9999.
-    subare.flat[valid] = basin_area(subbasins, affine=affine)
-    uparea_lr = d8_lr.accuflux(subare).ravel()[valid]
-    uparea_out = uparea[subidxs_out[valid]]
-    nse = _nse(uparea_lr, uparea_out) 
-    upadiff = np.abs(uparea_lr - uparea_out)
-    relbias10 = np.sum(upadiff/uparea_out>0.1)/uparea_out.size*100
-    assert np.round(nse, 4) == 0.9937, f'NSE: {nse:.4f} (0.9937)'
-    assert np.round(relbias10, 4) == 12.3994, f'%cells with error rel. bias > 10%: {upadiff.max():.4f} (12.3994)'
-    assert np.round(upadiff.max()/1e6,4) == 4868.9605, f'max abs. diff [km2]: {upadiff.max()/1e6:.4f} (4868.9605)'
-    assert np.round(upadiff.mean()/1e6,4) == 1.8828, f'mean abs. diff [km2]: {upadiff.mean()/1e6:.4f} (1.8828)'
+    for method in ['eeam', 'eam'][:1]:
+        ms = scores[method]
+        fupscale = getattr(upscale, method)
+        nextidx, subidxs_out, shape = fupscale(d8._idxs_ds, d8._idxs_valid, uparea, d8.shape, cellsize)
+        flwdir = core_conversion.nextidx_to_d8(nextidx, shape)
+        d8_lr = FlwdirRaster(flwdir, ftype = 'd8', check_ftype = True)
+        assert np.unique(nextidx[d8_lr.pits]).size == nextidx[d8_lr.pits].size
+        assert d8_lr.isvalid
+        # check quality
+        valid = nextidx != _mv
+        subbasins = d8.subbasins(subidxs_out[valid])
+        subare = np.ones(shape)*-9999.
+        subare.flat[valid] = basin_area(subbasins, affine=affine)
+        uparea_lr = d8_lr.accuflux(subare).ravel()[valid]
+        uparea_out = uparea[subidxs_out[valid]]
+        nse = _nse(uparea_lr, uparea_out) 
+        upadiff = np.abs(uparea_lr - uparea_out)
+        relbias10 = np.sum(upadiff/uparea_out>0.1)/uparea_out.size*100
+        s = [nse, relbias10, upadiff.max()/1e6, upadiff.mean()/1e6]
+        msg = f'NSE: {s[0]:.4f} ({ms[0]:.4f}); %cells rel. bias > 10%: {s[1]:.4f} ({ms[1]:.4f});' +\
+        f'max abs. diff [km2]: {s[2]:.4f} ({ms[2]:.4f}); mean abs. diff [km2]: {s[3]:.4f} ({ms[3]:.4f})'
+        assert np.all([np.round(s[i], 4) == ms[i] for i in range(len(s))]), msg
     
-    # # write fils for visual check
+    # # write files for visual check
     # import rasterio
     # xs, ys = np.ones(nextidx.size)*np.nan, np.ones(nextidx.size)*np.nan
     # xs[valid], ys[valid] = gis_utils.idxs_to_coords(subidxs_out[valid], affine, d8.shape)
