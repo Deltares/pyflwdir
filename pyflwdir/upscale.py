@@ -33,6 +33,12 @@ def ii_2_subidx(ii, idx, subncol, cellsize, ncol):
     return r * subncol + c
 
 @njit
+def not_d8(idx0, subidx, subncol, cellsize, ncol):
+    """Returns True if outside 3x3 (current and 8 neighboring) cells"""
+    idx_ds = subidx_2_idx(subidx, subncol, cellsize, ncol)
+    return abs(idx_ds-idx0) > 1 and abs(idx_ds-idx0-ncol) > 1 and abs(idx_ds-idx0+ncol) > 1
+
+@njit
 def cell_edge(subidx, subncol, cellsize):
     """Returns True if highress cell <subidx> is on edge of lowres cell"""
     ri = (subidx // subncol) % cellsize
@@ -40,10 +46,30 @@ def cell_edge(subidx, subncol, cellsize):
     return ri == 0 or ci == 0 or ri+1 == cellsize or ci+1 == cellsize # desribes edge
 
 @njit
-def not_d8(idx0, subidx, subncol, cellsize, ncol):
-    """Returns True if outside 3x3 (current and 8 neighboring) cells"""
-    idx_ds = subidx_2_idx(subidx, subncol, cellsize, ncol)
-    return abs(idx_ds-idx0) > 1 and abs(idx_ds-idx0-ncol) > 1 and abs(idx_ds-idx0+ncol) > 1
+def map_celledge(subidxs_ds, subidxs_valid, subshape, cellsize):
+    surbnrow, subncol = subshape
+    # allocate output and internal array
+    edges = np.ones(surbnrow*subncol, dtype=np.int8)*-1
+    # loop over valid indices
+    for subidx in subidxs_valid:
+        if cell_edge(subidx, subncol, cellsize):
+            edges[subidx] = np.int8(1)
+        else:
+            edges[subidx] = np.int8(0)
+    return edges.reshape(subshape)
+
+@njit
+def map_effare(subidxs_ds, subidxs_valid, subshape, cellsize):
+    surbnrow, subncol = subshape
+    # allocate output and internal array
+    effare = np.ones(surbnrow*subncol, dtype=np.int8)*-1
+    # loop over valid indices
+    for subidx in subidxs_valid:
+        if effective_area(subidx, subncol, cellsize):
+            effare[subidx] = np.int8(1)
+        else:
+            effare[subidx] = np.int8(0)
+    return effare.reshape(subshape)
 
 #### EFFECTIVE AREA METHOD ####
 
@@ -51,8 +77,9 @@ def not_d8(idx0, subidx, subncol, cellsize, ncol):
 def effective_area(subidx, subncol, cellsize):
     """Returns True if highress cell <subidx> is inside the effective area"""
     R = cellsize / 2.
-    ri = (subidx // subncol) % cellsize
-    ci = (subidx %  subncol) % cellsize
+    offset = R-0.5 # lowres center at cellsize/2 - 0.5
+    ri = abs((subidx // subncol) % cellsize - offset)
+    ci = abs((subidx %  subncol) % cellsize - offset)
     return (ri**0.5 + ci**0.5 <= R**0.5) or (ri <= 0.5) or (ci <= 0.5) # describes effective area
 
 @njit
@@ -140,10 +167,13 @@ def eam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsiz
         subidx = subidxs_rep[idx0]
         if subidx == _mv: 
             continue
-        while not cell_edge(subidx, subncol, cellsize):
+        while True:
             # next downstream subgrid cell index; complicated because of use internal indices 
-            subidx1 = subidxs_valid[subidxs_ds[idxs_internal[subidx]]] 
-            if subidx1 == subidx: # pit
+            subidx1 = subidxs_valid[subidxs_ds[idxs_internal[subidx]]] # next subgrid cell
+            # at outlet if next subgrid cell is in next lowres cell
+            outlet = idx0 != subidx_2_idx(subidx1, subncol, cellsize, ncol) 
+            pit = subidx1 == subidx
+            if outlet or pit: 
                 break
             subidx = subidx1 # next iter
         subidxs_out[idx0] = subidx
@@ -237,14 +267,9 @@ def eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsi
     # loop over outlet cell indices
     for idx0 in range(subidxs_out.size):
         subidx = subidxs_out[idx0]
-        if subidx == _mv: 
+        subidx_ds = _mv
+        if subidx == _mv:
             continue
-        # move one subgrid cell downstream into next lowres cell
-        subidx = subidxs_valid[subidxs_ds[idxs_internal[subidx]]]
-        if effective_area(subidx, subncol, cellsize):
-            subidx_ds = subidx 
-        else:
-            subidx_ds = _mv
         while True:
             # next downstream subgrid cell index; complicated because of use internal indices 
             subidx1 = subidxs_valid[subidxs_ds[idxs_internal[subidx]]]
@@ -325,5 +350,5 @@ def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
     subidxs_out = eam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
     # get next downstream lowres index
     nextidx, i_no_ds = eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     return nextidx, subidxs_out, shape
