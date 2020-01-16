@@ -12,13 +12,15 @@ from pyflwdir import (
     core, 
     core_d8, 
     core_nextxy, 
+    core_nextidx,
     core_ldd, 
     gis_utils, 
 )
 ftypes = {
     core_d8._ftype: core_d8, 
     core_ldd._ftype: core_ldd, 
-    core_nextxy._ftype: core_nextxy
+    core_nextxy._ftype: core_nextxy,
+    core_nextidx._ftype: core_nextidx
     }
 
 # export

@@ -11,20 +11,8 @@ _ftype = 'nextxy'
 _mv = np.int32(-9999)
 _pv = np.int32(-9)
 # NOTE: data below for consistency with LDD / D8 types and testing
-_ds = np.array([
-    [ 
-        [0, 2, 4],
-        [0, _pv, 4],
-        [0, 2, 4]
-    ],[ 
-        [0, 0, 0],
-        [2, _pv, 2],
-        [4, 4, 4]
-    ]
-], dtype=np.int32)
 _us = np.ones((2,3,3), dtype=np.int32)*2
 _us[:,1,1] = _pv
-_max_depth = 35
 
 def from_flwdir(flwdir):
     if not (
@@ -50,17 +38,30 @@ def _from_flwdir(nextx, nexty):
     n = idxs_valid.size
     idxs_inv = np.ones(size, np.uint32)*core._mv
     idxs_inv[idxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
+    # max number of upstream cells unkonwn -> calculate max depth
+    n_up = np.zeros(n, dtype=np.uint8)
+    for i in range(n):
+        idx0 = idxs_valid[i]    
+        c = nextx_flat[idx0]
+        r = nexty_flat[idx0]
+        if r != _pv and r <= nrow and c <= ncol and r>=1 and c>=1:
+            r, c = r-1, c-1 # convert from to zero-based index
+            idx_ds = c + r*ncol
+            ids = idxs_inv[idx_ds] # internal idx_ds
+            if ids == core._mv or ids == i:
+                raise ValueError('invalid flwdir data')
+            n_up[ids] += 1
+    _max_depth = np.int64(np.max(n_up))
     # allocate output arrays
     pits_lst = []
     idxs_ds = np.ones(n, dtype=np.uint32)*core._mv
     idxs_us = np.ones((n, _max_depth), dtype=np.uint32)*core._mv
-    _max_us = 0
     i = np.uint32(0)
     for i in range(n):
         idx0 = idxs_valid[i]
         c = nextx_flat[idx0]
         r = nexty_flat[idx0]
-        if r == _pv or r > nrow or c > ncol or r<1 or c<1 or r == _mv:
+        if r == _pv or r > nrow or c > ncol or r<1 or c<1:
             # pit or ds cell is out of bounds / invalid -> set pit
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
@@ -75,11 +76,6 @@ def _from_flwdir(nextx, nexty):
                 if idxs_us[ids,ii] == core._mv:
                     idxs_us[ids,ii] = i
                     break
-            if ii >  _max_us:
-                _max_us = ii
-                if ii == _max_depth-1:
-                    raise ValueError('increase max depth')
-    idxs_us = idxs_us[:, :_max_us+1]
     return idxs_valid, idxs_ds, idxs_us, np.array(pits_lst)
 
 @njit("Tuple((i4[:,:], i4[:,:]))(u4[:], u4[:], Tuple((u8, u8)))")

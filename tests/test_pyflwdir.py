@@ -27,6 +27,9 @@ def ldd_data():
 def nextxy_data():
     return np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32).reshape((2, 678, 776))
 @pytest.fixture
+def nextidx_data():
+    return np.fromfile(r'./tests/data/nextidx.bin', dtype=np.uint32).reshape((678, 776))
+@pytest.fixture
 def d8(d8_data):
     return FlwdirRaster(d8_data, ftype = 'infer', check_ftype = True)
 @pytest.fixture
@@ -35,10 +38,13 @@ def ldd(ldd_data):
 @pytest.fixture
 def nextxy(nextxy_data):
     return FlwdirRaster(nextxy_data, ftype = 'infer', check_ftype = True)
+@pytest.fixture
+def nextidx(nextidx_data):
+    return FlwdirRaster(nextidx_data, ftype = 'infer', check_ftype = True)
 
 # test object
-def test_object(d8, ldd, nextxy, d8_data, ldd_data):
-    ftypes = {'d8': d8, 'ldd': ldd, 'nextxy': nextxy}
+def test_object(d8, ldd, nextxy, nextidx, ldd_data):
+    ftypes = {'d8': d8, 'ldd': ldd, 'nextxy': nextxy, 'nextidx': nextidx}
     for name, fd in ftypes.items():
         assert fd.ftype == name
         assert fd.size == 678*776
