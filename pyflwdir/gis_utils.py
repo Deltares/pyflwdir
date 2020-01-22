@@ -84,7 +84,7 @@ def cellarea(lat, xres, yres):
     _R = 6371e3 # Radius of earth in m. Use 3956e3 for miles
     l1 = math.radians(lat-abs(yres)/2.)
     l2 = math.radians(lat+abs(yres)/2.)
-    dx = math.radians(xres)
+    dx = math.radians(abs(xres))
     return _R**2*dx*(math.sin(l2) - math.sin(l1))
 
 @vectorize([
