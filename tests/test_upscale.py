@@ -36,46 +36,49 @@ def d8(d8_data):
     return FlwdirRaster(d8_data, ftype = 'd8', check_ftype = False)
 
 scores = { #NSE    relbias10 upadiffmax upadiffavg
-    'eam': [0.9179, 10.9575, 11251.5110, 4.9972],
-    'eeam': [0.9982, 3.0755, 3691.9201, 1.2531], 
+    'eam': [0.9191, 4.0601, 22491.2400, 7.5579],
+    'eeam': [0.9988, 0.3510, 5550.5100, 0.0341], # unit 100 cells 
 }
 
 def test_upscale_scores(d8):
     res = 1/1200.
     cellsize = 10
     affine = Affine(res, 0.0, -10.5, 0.0, -res, 55.5)
-    uparea = d8.upstream_area(affine=affine, latlon=True).ravel()
-    basins = d8.basins()
-    for method in ['eeam', 'eam'][1:]:
+    # uparea = d8.upstream_area(affine=affine, latlon=True).ravel()
+    uparea = d8.upstream_area(latlon=False).ravel()
+    uparea = np.where(uparea!=-9999., uparea/1e2, -9999.)
+    basins = d8.basins().ravel()
+    for method in ['eeam', 'eam'][:1]:
         ms = scores[method]
         fupscale = getattr(upscale, method)
-        nextidx, subidxs_out, shape = fupscale(d8._idxs_ds, d8._idxs_valid, uparea, d8.shape, cellsize)
-        flwdir = core_conversion.nextidx_to_d8(nextidx, shape)
-        d8_lr = FlwdirRaster(flwdir, ftype = 'd8', check_ftype = True)
-        pitbas = basins[subidxs_out[d8_lr.pits]]
-        assert np.unique(nextidx[d8_lr.pits]).size == nextidx[d8_lr.pits].size
+        nextidx, subidxs_out, _ = fupscale(d8._idxs_ds, d8._idxs_valid, uparea, d8.shape, cellsize)
+        dir_lr = FlwdirRaster(nextidx, ftype = 'nextidx', check_ftype = True)
+        assert dir_lr.isvalid
+        assert np.unique(nextidx.flat[dir_lr.pits]).size == nextidx.flat[dir_lr.pits].size
+        pitbas = basins[subidxs_out[dir_lr.pits]]
         assert np.unique(pitbas).size == pitbas.size
-        assert d8_lr.isvalid
         # check quality
-        valid = nextidx != _mv
+        valid = nextidx.ravel() != _mv
         subbasins = d8.subbasins(subidxs_out[valid])
-        subare = np.ones(shape)*-9999.
-        subare.flat[valid] = basin_area(subbasins, affine=affine)
-        uparea_lr = d8_lr.accuflux(subare, nodata=-9999.).ravel()
-        uparea_out = np.ones(shape).ravel()*-9999.
+        subare = np.ones(dir_lr.shape)*-9999.
+        # subare.flat[valid] = basin_area(subbasins, affine=affine, latlon=True)
+        subare.flat[valid] = basin_area(subbasins, latlon=False)
+        uparea_lr = dir_lr.accuflux(subare, nodata=-9999.).ravel()
+        uparea_lr = np.where(uparea_lr!=-9999., uparea_lr/1e2, -9999.)
+        uparea_out = np.ones(dir_lr.shape).ravel()*-9999.
         uparea_out[valid] = uparea[subidxs_out[valid]]
         nse = _nse(uparea_lr[valid], uparea_out[valid]) 
-        upadiff = np.abs(uparea_lr[valid] - uparea_out[valid])
-        relbias10 = np.sum(upadiff/uparea_out[valid]>0.1)/upadiff.size*100
-        s = [nse, relbias10, upadiff.max()/1e6, upadiff.mean()/1e6]
+        upadiff = np.where(uparea_lr!=-9999, (uparea_out - uparea_lr), -9999)
+        relbias10 = np.sum(upadiff[valid]/uparea_out[valid]>0.1)/upadiff.size*100
+        s = [nse, relbias10, upadiff[valid].max(), upadiff[valid].mean()]
+        
         # write files for visual check
         import rasterio
         xs, ys = np.ones(nextidx.size)*np.nan, np.ones(nextidx.size)*np.nan
         xs[valid], ys[valid] = gis_utils.idxs_to_coords(subidxs_out[valid], affine, d8.shape)
-        d8_lr.vector(xs=xs, ys=ys).to_file(f'./tests/data/ireland{cellsize}_{method}.gpkg', layer='rivers', driver="GPKG")
-        
+        dir_lr.vector(xs=xs, ys=ys).to_file(f'./tests/data/ireland{cellsize}_{method}.gpkg', layer='rivers', driver="GPKG")
         nodata = -9999.
-        data = np.where(uparea_lr!=nodata, (uparea_out - uparea_lr)/1e6, nodata).reshape(shape)
+        data = upadiff.reshape(dir_lr.shape)
         name = f'upadiff_{method}'
         transform = Affine(res*cellsize, 0.0, -10.5, 0.0, -res*cellsize, 55.5)
         # data = d8.subbasins(subidxs_out[valid])
@@ -101,25 +104,25 @@ def test_upscale_scores(d8):
         f'max abs. diff [km2]: {s[2]:.4f} ({ms[2]:.4f}); mean abs. diff [km2]: {s[3]:.4f} ({ms[3]:.4f})'
         assert np.all([np.round(s[i], 4) == ms[i] for i in range(len(s))]), msg
     
-def test_convf(d8):
-    import rasterio
-    res = 1/1200.
-    cellsize = 10
-    affine = Affine(res, 0.0, -10.5, 0.0, -res, 55.5)
-    celledge = upscale.map_celledge(d8._idxs_ds, d8._idxs_valid, d8.shape, cellsize).astype(np.uint8)
-    effare = upscale.map_effare(d8._idxs_ds, d8._idxs_valid, d8.shape, cellsize).astype(np.uint8)
-    nodata = 255
-    prof = dict(
-        driver = 'GTiff',
-        height = d8.shape[0], 
-        width = d8.shape[1],
-        transform = affine,
-        count = 1,
-        dtype = effare.dtype,
-        nodata = nodata
-        )
+# def test_convf(d8):
+#     import rasterio
+#     res = 1/1200.
+#     cellsize = 10
+#     affine = Affine(res, 0.0, -10.5, 0.0, -res, 55.5)
+#     celledge = upscale.map_celledge(d8._idxs_ds, d8._idxs_valid, d8.shape, cellsize).astype(np.uint8)
+#     effare = upscale.map_effare(d8._idxs_ds, d8._idxs_valid, d8.shape, cellsize).astype(np.uint8)
+#     nodata = 255
+#     prof = dict(
+#         driver = 'GTiff',
+#         height = d8.shape[0], 
+#         width = d8.shape[1],
+#         transform = affine,
+#         count = 1,
+#         dtype = effare.dtype,
+#         nodata = nodata
+#         )
     
-    with rasterio.open(f'./tests/data/ireland{cellsize}_effare.tif', 'w', **prof) as src:
-        src.write(effare, 1)
-    with rasterio.open(f'./tests/data/ireland{cellsize}_celledge.tif', 'w', **prof) as src:
-        src.write(celledge, 1)
+#     with rasterio.open(f'./tests/data/ireland{cellsize}_effare.tif', 'w', **prof) as src:
+#         src.write(effare, 1)
+#     with rasterio.open(f'./tests/data/ireland{cellsize}_celledge.tif', 'w', **prof) as src:
+#         src.write(celledge, 1)
