@@ -191,7 +191,7 @@ class FlwdirRaster(object):
         """Returns a subbasin map with a unique id (starting from 1) for every subbasin"""
         return self._reshape(basin.basins(self.tree, self._idxs_us, self._internal_idx(idxs)), nodata=np.uint32(0))
 
-    def upstream_area(self, latlon=False, affine=gis_utils.IDENTITY, nodata=-9999.):
+    def upstream_area(self, affine=gis_utils.IDENTITY, latlon=False, nodata=-9999.):
         """Returns the upstream area map based on the flow direction map. 
 
 
@@ -210,7 +210,7 @@ class FlwdirRaster(object):
         -------
         upstream area map: 2D array
         """
-        upa_flat = basin.upstream_area(self.tree, self._idxs_us, self.shape, latlon=latlon, affine=affine)
+        upa_flat = basin.upstream_area(self.tree, self._idxs_us, self.shape, affine=affine, latlon=latlon)
         return self._reshape(upa_flat, nodata=nodata)
 
     def stream_order(self):

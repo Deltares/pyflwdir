@@ -12,9 +12,12 @@ def basin_sum(data, basins):
     lbs = np.unique(basins[basins>0])
     return ndimage.sum(data, basins, index=lbs)
 
-def basin_area(basins, affine):
-    lon, lat = gis_utils.affine_to_coords(affine, basins.shape)
-    area = gis_utils.reggrid_area(lat, lon)
+def basin_area(basins, affine=gis_utils.IDENTITY, latlon=False):
+    if latlon:
+        lon, lat = gis_utils.affine_to_coords(affine, basins.shape)
+        area = gis_utils.reggrid_area(lat, lon)
+    else:
+        area = np.ones(basins.shape, dtype=np.float32)*abs(affine[0]*affine[4])
     return basin_sum(area, basins)
 
 def basin_slices(basins):
