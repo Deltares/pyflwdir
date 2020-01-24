@@ -10,7 +10,6 @@ import numpy as np
 from pyflwdir import core, core_nextidx
 _mv = core._mv
 
-#### GENERIC CONVENIENCE FUNCTIONS #### 
 # naming convention
 # row,  col,    index,  width
 # ----------------------------------------------
@@ -18,6 +17,7 @@ _mv = core._mv
 # subr, subc,   subidx, subncol  -> subgrid/highres cells
 # ri,   ci,     ii,     cellsize -> location within lowres cell 
 
+#### GENERIC CONVENIENCE FUNCTIONS #### 
 @njit
 def subidx_2_idx(subidx, subncol, cellsize, ncol):
     """Returns the lowres index <idx> of subgrid cell index <subidx>"""
@@ -32,18 +32,10 @@ def ii_2_subidx(ii, idx, subncol, cellsize, ncol):
     c = idx %  ncol * cellsize + ii %  cellsize
     return r * subncol + c
 
-# @njit
-# def not_d8(idx0, subidx, subncol, cellsize, ncol):
-#     """Returns True if outside 3x3 (current and 8 neighboring) cells"""
-#     idx_ds = subidx_2_idx(subidx, subncol, cellsize, ncol)
-#     return not in_d8(idx0, idx_ds, ncol)
-
 @njit
 def in_d8(idx0, idx_ds, ncol):
     """Returns True if inside 3x3 (current and 8 neighboring) cells"""
     return abs(idx_ds-idx0) <= 1 or abs(idx_ds-idx0-ncol) <= 1 or abs(idx_ds-idx0+ncol) <= 1
-
-
 
 @njit
 def next_suboutlet(subidx, idx0, subidxs_internal, subidxs_ds, subidxs_valid, subncol, cellsize, ncol):
@@ -63,13 +55,14 @@ def next_suboutlet(subidx, idx0, subidxs_internal, subidxs_ds, subidxs_valid, su
 
 @njit
 def cell_edge(subidx, subncol, cellsize):
-    """Returns True if highress cell <subidx> is on edge of lowres cell"""
+    """Returns True if highres cell <subidx> is on edge of lowres cell"""
     ri = (subidx // subncol) % cellsize
     ci = (subidx %  subncol) % cellsize
     return ri == 0 or ci == 0 or ri+1 == cellsize or ci+1 == cellsize # desribes edge
 
 @njit
 def map_celledge(subidxs_ds, subidxs_valid, subshape, cellsize):
+    """Returns a map with ones on subgrid cells of lowres cell edges"""
     surbnrow, subncol = subshape
     # allocate output and internal array
     edges = np.ones(surbnrow*subncol, dtype=np.int8)*-1
@@ -83,6 +76,7 @@ def map_celledge(subidxs_ds, subidxs_valid, subshape, cellsize):
 
 @njit
 def map_effare(subidxs_ds, subidxs_valid, subshape, cellsize):
+    """Returns a map with ones on subgrid cells of lowres effective area"""
     surbnrow, subncol = subshape
     # allocate output and internal array
     effare = np.ones(surbnrow*subncol, dtype=np.int8)*-1
@@ -127,7 +121,7 @@ def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
 
     Returns
     -------
-    raster with subgrid outlet indices : ndarray with size shape[0]*shape[1]
+    raster with subgrid representative cell indices : ndarray with size shape[0]*shape[1]
     """
     subncol = subshape[1]
     nrow, ncol = shape
@@ -174,7 +168,7 @@ def eam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsiz
 
     Returns
     -------
-    raster with subgrid outlet indices : ndarray    
+    lowres indices of next downstream cell : ndarray    
     """
     subnrow, subncol = subshape
     nrow, ncol = shape
@@ -203,7 +197,8 @@ def eam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsiz
     return idxs_ds
 
 def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
-    """Returns the upscaled flow direction network based on the effective area method
+    """Returns the upscaled next downstream index based on the 
+    effective area method.
     
     Parameters
     ----------
@@ -220,7 +215,7 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
 
     Returns
     -------
-    raster with subgrid outlet indices : ndarray with size shape[0]*shape[1]
+    lowres indices of next downstream and subgrid indices of reprecentative cells : Tuple of ndarray
     """
     # calculate new size
     subnrow, subncol = subshape
@@ -235,10 +230,13 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
 #### EXTENDED EFFECTIVE AREA METHOD ####
 @njit
 def eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, 
-                    subshape, shape, cellsize, min_stream_len=1):
+                    subshape, shape, cellsize, min_stream_len=0):
     """Returns subgrid outlet cell indices of lowres cells which are located
     at the edge of the lowres cell downstream of the representative cell
     according to the double effective area method. 
+
+    NOTE: If <min_stream_len> is larger than zero, the outlet does not have to be
+    the the lowres cells edge.
     
     Parameters
     ----------
@@ -306,8 +304,9 @@ def eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea,
 
 @njit
 def eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
-    """Returns next downstream lowres index by tracing a representative cell to the 
-    next downstream effective area according to the EXTENDED effective area method. 
+    """Returns next downstream lowres index according to EXTENDED effective area method. 
+    Every outlet subgrid cell is traced to the next downstream subgrid outlet cell. If 
+    this lays outside d8, we fallback to the next downstream effective area.
     
     Parameters
     ----------
@@ -326,7 +325,7 @@ def eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsi
 
     Returns
     -------
-    raster with subgrid outlet indices : ndarray    
+    lowres indices of next downstream and disconnected cells : Tuple of ndarray    
     """
     subnrow, subncol = subshape
     nrow, ncol = shape
@@ -335,7 +334,7 @@ def eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsi
     subidxs_internal = np.ones(subnrow*subncol, np.uint32)*_mv
     subidxs_internal[subidxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
     # allocate output 
-    idxs_ds = np.ones(nrow*ncol, dtype=subidxs_ds.dtype)*_mv
+    nextidx = np.ones(nrow*ncol, dtype=subidxs_ds.dtype)*_mv
     idxs_fix_lst = list()
     # loop over outlet cell indices
     for idx0 in range(subidxs_out.size):
@@ -360,26 +359,33 @@ def eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsi
             # next iter
             subidx = subidx1 
         # assert subidx_ds != _mv
-        idxs_ds[idx0] = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
-    return idxs_ds, np.array(idxs_fix_lst, dtype=np.uint32)
+        nextidx[idx0] = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
+    return nextidx, np.array(idxs_fix_lst, dtype=np.uint32)
 
 @njit
 def eeam_nextidx_iter2(
-        nextidx, subidxs_out, idxs_fix,       # 
-        subidxs_ds, subidxs_valid,            # subgrid high res flwdir arrays
+        nextidx, subidxs_out, idxs_fix,
+        subidxs_ds, subidxs_valid,
         subuparea, subshape, shape, cellsize):
     """
     
     Parameters
     ----------
+    nextidx : ndarray of int
+        raster with next downstream lowres indices
     subidxs_out : ndarray of int
-        highres indices of outlet cells with size shape[0]*shape[1]
+        subgrid indices of outlet cells with size shape[0]*shape[1]
+    idxs_fix : ndarray of int
+        lowres indices of cells which are disconnected in subgrid
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        internal subgrid indices of downstream cells
+        NOTE these are internal indices for valid cells only
     subidxs_valid : ndarray of int
-        highres raster indices of vaild cells
+        subgrid raster indices of vaild cells
+    subuparea : ndarray of int
+        highres flattened upstream area array
     subshape : tuple of int
-        highres raster shape
+        subgrid (highres) raster shape
     shape : tuple of int
         lowres raster shape
     cellsize : int
@@ -641,9 +647,11 @@ def eeam_nextidx_iter2(
 
     return nextidx1, subidxs_out1, np.array(idxs_fix_lst, dtype=np.uint32)
 
-def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, iter2=True, min_stream_len=1):
-    """Returns the upscaled flow direction network based on the EXTENDED effective area method
-    
+def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, 
+            iter2=True, min_stream_len=1):
+    """Returns the upscaled next downstream index based on the 
+    EXTENDED effective area method.
+
     Parameters
     ----------
     subidxs_ds : ndarray of int
@@ -664,7 +672,7 @@ def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, iter2=True, m
 
     Returns
     -------
-    raster with subgrid outlet indices : ndarray with size shape[0]*shape[1]
+    lowres indices of next downstream and subgrid indices of outlet cells : Tuple of ndarray
     """
     # calculate new size
     subnrow, subncol = subshape
@@ -682,8 +690,8 @@ def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, iter2=True, m
     if iter2:
         # idxs_fix = np.array([4263], dtype=np.uint32)
         nextidx, subidxs_out, idxs_fix = eeam_nextidx_iter2(
-                nextidx, subidxs_out, idxs_fix,       # 
-                subidxs_ds, subidxs_valid,            # subgrid high res flwdir arrays
+                nextidx, subidxs_out, idxs_fix,
+                subidxs_ds, subidxs_valid,
                 subuparea, subshape, shape, cellsize)
         print(idxs_fix.size)
 
