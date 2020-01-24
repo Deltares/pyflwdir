@@ -9,7 +9,7 @@ from pyflwdir import core
 # NEXTIDX type
 # 
 _ftype = 'nextidx'
-_mv = np.uint32(-1)
+_mv = np.uint32(-1) # NOTE same as core _mv
 _pv = None # NOTE a pit is defined by a ds index refering to itself 
 # data below for consistency with LDD / D8 types and testing
 _us = np.ones((3,3), dtype=np.uint32)*np.uint32(4)
