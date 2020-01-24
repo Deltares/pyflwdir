@@ -395,6 +395,8 @@ def eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsi
                     idxs_fix_lst.append(np.uint32(idx0)) # flag index, use first pass ea
                 else:
                     subidx_ds = subidx1
+                    if subidxs_out[idx1] != subidx1: # incorrect ds connection where pit
+                        idxs_fix_lst.append(np.uint32(idx0)) # flag index
                 break
             if subidx_ds == _mv and effective_area(subidx1, subncol, cellsize):
                 subidx_ds = subidx1 # first pass effective area
