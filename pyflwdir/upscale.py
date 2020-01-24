@@ -152,57 +152,6 @@ def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
                 subidxs_rep[idx] = subidx
     return subidxs_rep
 
-# NOTE search until out of D8 -> does not seem to improve results !
-@njit
-def eam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
-    """Returns subgrid outlet cell indices of lowres cells which are located
-    at the edge of the lowres cell downstream of the representative cell
-    according to the double effective area method. 
-    
-    Parameters
-    ----------
-    subidxs_rep : ndarray of int
-        highres indices of representative cells with size shape[0]*shape[1]
-    subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
-        highres raster indices of vaild cells
-    subshape : tuple of int
-        highres raster shape
-    shape : tuple of int
-        lowres raster shape
-    cellsize : int
-        size of lowres cell measured in higres cells
-
-    Returns
-    -------
-    raster with subgrid outlet indices : ndarray    
-    """
-    subnrow, subncol = subshape
-    nrow, ncol = shape
-    # internal indices
-    n = subidxs_valid.size
-    subidxs_internal = np.ones(subnrow*subncol, np.uint32)*core._mv
-    subidxs_internal[subidxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
-    # allocate output 
-    subidxs_out = np.ones(nrow*ncol, dtype=subidxs_ds.dtype)*_mv
-    # loop over rep cell indices
-    for idx0 in range(subidxs_rep.size):
-        subidx = subidxs_rep[idx0]
-        if subidx == _mv: 
-            continue
-        while True:
-            # next downstream subgrid cell index; complicated because of use internal indices 
-            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]] # next subgrid cell
-            # at outlet if next subgrid cell is in next lowres cell
-            outlet = idx0 != subidx_2_idx(subidx1, subncol, cellsize, ncol) 
-            pit = subidx1 == subidx
-            if outlet or pit: 
-                break
-            subidx = subidx1 # next iter
-        subidxs_out[idx0] = subidx
-    return subidxs_out
-
 @njit
 def eam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
     """Returns next downstream lowres index by tracing a representative cell to the 
@@ -235,20 +184,22 @@ def eam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsiz
     subidxs_internal[subidxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
     # allocate output 
     idxs_ds = np.ones(nrow*ncol, dtype=subidxs_ds.dtype)*_mv
-    # loop over outlet cell indices
+    # loop over rep cell indices
     for idx0 in range(subidxs_out.size):
         subidx = subidxs_out[idx0]
         if subidx == _mv: 
             continue
-        # move one subgrid cell downstream into next lowres cell
-        subidx = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]] 
-        while not effective_area(subidx, subncol, cellsize):
+        while True:
             # next downstream subgrid cell index; complicated because of use internal indices 
             subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]] 
+            idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             if subidx1 == subidx: # pit
                 break
-            subidx = subidx1 # next iter
-        idxs_ds[idx0] = subidx_2_idx(subidx, subncol, cellsize, ncol)
+            elif idx1 != idx0 and effective_area(subidx1, subncol, cellsize): # in d8 effective area
+                break
+            # next iter
+            subidx = subidx1 
+        idxs_ds[idx0] = subidx_2_idx(subidx1, subncol, cellsize, ncol)
     return idxs_ds
 
 def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
@@ -277,15 +228,14 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
     shape = nrow, ncol
     # get representative cells    
     subidxs_rep = eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
-    # get subgrid outlet cells
-    subidxs_out = eam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
     # get next downstream lowres index
-    nextidx = eam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
-    return nextidx.reshape(shape), subidxs_out
+    nextidx = eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
+    return nextidx.reshape(shape), subidxs_rep
 
 #### EXTENDED EFFECTIVE AREA METHOD ####
 @njit
-def eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize):
+def eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, 
+                    subshape, shape, cellsize, min_stream_len=1):
     """Returns subgrid outlet cell indices of lowres cells which are located
     at the edge of the lowres cell downstream of the representative cell
     according to the double effective area method. 
@@ -298,18 +248,22 @@ def eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, subshape, sh
         internal highres indices of downstream cells
     subidxs_valid : ndarray of int
         highres raster indices of vaild cells
+    subuparea : ndarray of int
+        highres flattened upstream area array
     subshape : tuple of int
         highres raster shape
     shape : tuple of int
         lowres raster shape
     cellsize : int
         size of lowres cell measured in higres cells
+    min_stream_len : int
+        minimum length (pixels) between outlet and previous confluence
+        a confluence is determined by at least a doubling of upstream area
 
     Returns
     -------
     raster with subgrid outlet indices : ndarray    
     """
-    N = 1
     subnrow, subncol = subshape
     nrow, ncol = shape
     # internal indices
@@ -323,27 +277,30 @@ def eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, subshape, sh
         subidx = subidxs_rep[idx0]
         if subidx == _mv: 
             continue
-        subupa = subuparea[subidx]
-        subidx_last_stream = _mv
-        ncells = 0
+        if min_stream_len > 0:
+            subupa = subuparea[subidx]
+            subidx_prev_stream = _mv
+            stream_len = 0
         while True:
             # next downstream subgrid cell index; complicated because of use internal indices 
             subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]] # next subgrid cell
-            subupa1 = subuparea[subidx1]
-            if subupa1 > 2*subupa: #new stream
-                subidx_last_stream = subidx
-                ncells = -1
+            if min_stream_len > 0:
+                subupa1 = subuparea[subidx1]
+                if subupa1 > 2*subupa: # confluence
+                    subidx_prev_stream = subidx
+                    stream_len = 0
             # at outlet if next subgrid cell is in next lowres cell
             outlet = idx0 != subidx_2_idx(subidx1, subncol, cellsize, ncol) 
             pit = subidx1 == subidx
             if outlet or pit:
-                if subidx_last_stream != _mv and ncells < N:
-                    subidx = subidx_last_stream
+                if min_stream_len > 0 and stream_len <= min_stream_len and subidx_prev_stream != _mv:
+                    subidx = subidx_prev_stream
                 break
             # next iter
-            subidx = subidx1 
-            subupa = subupa1
-            ncells += 1
+            subidx = subidx1
+            if min_stream_len > 0:
+                subupa = subupa1
+                stream_len += 1
         subidxs_out[idx0] = subidx
     return subidxs_out
 
@@ -549,114 +506,123 @@ def eeam_nextidx_iter2(
                 idxs_us_conn_lst1.append(noutlets-1)        
 
         # STEP 4: connect the dots
-        idxs_edit_lst = list()
-        nextidx2 = nextidx1.copy()
-        subidxs_out2 = subidxs_out1.copy()
-        seq1 = np.argsort(np.array(idxs_us_conn_lst, dtype=nextidx.dtype)) # sort from up to downstream
-        idxs_us0 = np.array(idxs_us_lst, dtype=nextidx.dtype)[seq1]
-        idxs_us_conn = np.array(idxs_us_conn_lst, dtype=nextidx.dtype)[seq1]
-        idxs_us_conn1 = np.array(idxs_us_conn_lst1, dtype=nextidx.dtype)[seq1]
-        idx0 = idx00
-        j0, k0 = 0, 0
-        for j in range(noutlets): # @4A lowres connecting loop
-            idx1 = idxs_lst[j]
-            subidx_out1 = subidxs_lst[j]
-            # check if not connected to ds pit
-            pit = subidx_out1 == subidxs_valid[subidxs_ds[subidxs_internal[subidx_out1]]]
-            if pit and len(idxs_edit_lst) == 0:
-                idxs_pit = np.where(subidxs_out2 == subidx_out1)[0]
-                if idxs_pit.size == 1: # previous (smaller) branch already claimed pit
-                    nextidx2[idx0] = idxs_pit[0]
-                else:
-                    nextidx2[idx0] = idx0
-                    subidxs_out2[idx0] = subidx_out1 # NOTE pit outlet outside original cell
-                break # @4A
-            # check if ds lowres cell already edited to avoid loops
-            d8 = False if idx1 in idxs_edit_lst else in_d8(idx0, idx1, ncol)
-            # check lateral connections
-            ks = np.where(np.logical_and(idxs_us_conn[k0:]>=j0, idxs_us_conn[k0:]<=j))[0]+k0
-            lats = ks.size > 0
-            nextlats = np.all(idxs_us_conn1[ks]>j) if lats else False
-            # check if possible d8 connection downstream
-            nextd8 = False
-            for jj in range(j+1, noutlets):
-                if idxs_lst[jj] in idxs_edit_lst:
-                    continue
-                elif in_d8(idx0, idxs_lst[jj], ncol):
-                    nextd8 = True
-                if subidxs_out2[idxs_lst[jj]] == subidxs_lst[jj]: # original outlet
-                    break
-            # if next subgird outlet exists nextd8 is False to force d8c
-            nextd8 = nextd8 and subidxs_out2[idx1] != subidx_out1
-            # print(idx0, idx1)
-            # print(d8, nextd8, lats, nextlats)
-            # import pdb; pdb.set_trace()
-            if (not d8 and not nextd8):
-                nextiter = True
-                break # @4A
-            elif (not lats and nextd8) or (nextlats and nextd8):
-                continue
-            # UPDATE CONNECTIONS
-            if (d8 and  lats) or (d8 and not nextd8):
-                # update main connection
-                nextidx2[idx0] = idx1
-                subidxs_out2[idx1] = subidx_out1
-                idxs_edit_lst.append(idx1) # outlet edited
-                # print('ds', idx0, idx1)
-                # import pdb; pdb.set_trace()
-                # update lateral connections
-                for k in ks: # @4C loop lateral connections
-                    idx0 = idxs_us0[k]
-                    if idx0 in idxs_edit_lst:
-                        continue # @4C, already edited
-                    subidx = subidxs_out2[idx0]
-                    idx_ds0 = idx0
-                    path = list()
-                    while True: # 4D connect lateral to next downstream subgrid outlet
-                        # next downstream subgrid cell index; complicated because of use internal indices 
-                        subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
-                        idx_ds = subidx_2_idx(subidx1, subncol, cellsize, ncol)
-                        if subidx1 == subidxs_out2[idx_ds] or subidx1 == subidx: # at outlet or at pit
-                            if not in_d8(idx0, idx_ds, ncol): # outside d8 neighbors
-                                nextiter = True
-                            else:
-                                # TODO: double check if this creates loops
-                                nextidx2[idx0] = idx_ds # update
-                                # print('lats', idx0, idx_ds)
-                                # import pdb; pdb.set_trace()
-                            break # @4D
-                        elif idx_ds0 != idx_ds and idx_ds0 != idx0: # lowres cell outlet
-                            if idx_ds0 in idxs_edit_lst:
-                                pass
-                            elif (idxs_us[idxs_internal[idx_ds0],0] == _mv and  # zero upstream cells
-                                    subidxs_out1[nextidx2[idx0]] in path):      # original outlet
-                                nextidx2[idx0] = idx_ds0 # update
-                                nextidx2[idx_ds0] = nextidx1[nextidx1[idx0]] # original next downstream cell
-                                subidxs_out2[idx_ds0] = subidx
-                                idxs_edit_lst.append(idx_ds0) # outlet edited
-                                # print('lats - outlet', idx0, idx_ds0)
-                                # import pdb; pdb.set_trace()
-                                break # @4D
-                        # next iter @4D
-                        path.append(subidx1)
-                        subidx = subidx1 
-                        idx_ds0 = idx_ds
-                # next iter @4A
-                if nextiter:
-                    break # @4A
-                idx0 = idx1 
-                j0 = j+1
-            # drop upstream lateral connections if past the connection outlet which 
-            # has not been edited
-            if lats:
-                for k in ks: # @4E loop laterals with upstream connections
-                    idx_ds0 = nextidx2[idxs_us0[k]]
-                    lat_ds = idx_ds0 in idxs_lst[j:]
-                    lat_edit = idx_ds0 in idxs_edit_lst
-                    if not lat_ds and not lat_edit:
-                        k0 = k
+        bottleneck = list()
+        nbottlenecks = -1
+        while len(bottleneck) > nbottlenecks:
+            nextiter = False
+            nbottlenecks = len(bottleneck)
+            idxs_edit_lst = list()
+            nextidx2 = nextidx1.copy()
+            subidxs_out2 = subidxs_out1.copy()
+            seq1 = np.argsort(np.array(idxs_us_conn_lst, dtype=nextidx.dtype)) # sort from up to downstream
+            idxs_us0 = np.array(idxs_us_lst, dtype=nextidx.dtype)[seq1]
+            idxs_us_conn = np.array(idxs_us_conn_lst, dtype=nextidx.dtype)[seq1]
+            idxs_us_conn1 = np.array(idxs_us_conn_lst1, dtype=nextidx.dtype)[seq1]
+            idx0 = idx00
+            j0, k0 = 0, 0
+            for j in range(noutlets): # @4A lowres connecting loop
+                idx1 = idxs_lst[j]
+                subidx_out1 = subidxs_lst[j]
+                # check if not connected to ds pit
+                pit = subidx_out1 == subidxs_valid[subidxs_ds[subidxs_internal[subidx_out1]]]
+                if pit and len(idxs_edit_lst) == 0:
+                    idxs_pit = np.where(subidxs_out2 == subidx_out1)[0]
+                    if idxs_pit.size == 1: # previous (smaller) branch already claimed pit
+                        nextidx2[idx0] = idxs_pit[0]
                     else:
-                        break # @4E
+                        nextidx2[idx0] = idx0
+                        subidxs_out2[idx0] = subidx_out1 # NOTE pit outlet outside original cell
+                    break # @4A
+                # check if ds lowres cell already edited to avoid loops
+                d8 = False if idx1 in idxs_edit_lst or idx1 in bottleneck else in_d8(idx0, idx1, ncol)
+                # check lateral connections
+                ks = np.where(np.logical_and(idxs_us_conn[k0:]>=j0, idxs_us_conn[k0:]<=j))[0]+k0
+                lats = ks.size > 0
+                nextlats = np.all(idxs_us_conn1[ks]>j) if lats else False
+                # check if possible d8 connection downstream
+                nextd8 = False
+                for jj in range(j+1, noutlets):
+                    if idxs_lst[jj] in idxs_edit_lst or idxs_lst[jj] in bottleneck:
+                        continue
+                    elif in_d8(idx0, idxs_lst[jj], ncol):
+                        nextd8 = True
+                    if subidxs_out2[idxs_lst[jj]] == subidxs_lst[jj]: # original outlet
+                        break
+                # if next subgird outlet exists nextd8 is False to force d8c
+                nextd8 = nextd8 and subidxs_out2[idx1] != subidx_out1
+                # print(idx0, idx1)
+                # print(d8, nextd8, lats, nextlats)
+                if (not d8 and not nextd8):
+                    nextiter = True
+                    break # @4A
+                elif (not lats and nextd8) or (nextlats and nextd8):
+                    continue
+                # UPDATE CONNECTIONS
+                if (d8 and  lats) or (d8 and not nextd8):
+                    # update main connection
+                    nextidx2[idx0] = idx1
+                    subidxs_out2[idx1] = subidx_out1
+                    idxs_edit_lst.append(idx1) # outlet edited
+                    # print('ds', idx0, idx1)
+                    # import pdb; pdb.set_trace()
+                    # update lateral connections
+                    for k in ks: # @4C loop lateral connections
+                        idx0 = idxs_us0[k]
+                        if idx0 in idxs_edit_lst:
+                            continue # @4C, already edited
+                        subidx = subidxs_out2[idx0]
+                        idx_ds0 = idx0
+                        path = list()
+                        while True: # 4D connect lateral to next downstream subgrid outlet
+                            # next downstream subgrid cell index; complicated because of use internal indices 
+                            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+                            idx_ds = subidx_2_idx(subidx1, subncol, cellsize, ncol)
+                            if subidx1 == subidxs_out2[idx_ds] or subidx1 == subidx: # at outlet or at pit
+                                if not in_d8(idx0, idx_ds, ncol): # outside d8 neighbors
+                                    nextiter = True
+                                    if nextidx1[idx0] in bottleneck:
+                                        pass
+                                    else:
+                                        bottleneck.append(nextidx1[idx0])
+                                        # print('bottleneck ', bottleneck)
+                                else:
+                                    nextidx2[idx0] = idx_ds # update
+                                    # print('lats', idx0, idx_ds)
+                                    # import pdb; pdb.set_trace()
+                                break # @4D
+                            elif idx_ds0 != idx_ds and idx_ds0 != idx0: # lowres cell outlet
+                                if idx_ds0 in idxs_edit_lst:
+                                    pass
+                                elif (idxs_us[idxs_internal[idx_ds0],0] == _mv and  # zero upstream cells
+                                        subidxs_out1[nextidx2[idx0]] in path):      # original outlet
+                                    nextidx2[idx0] = idx_ds0 # update
+                                    nextidx2[idx_ds0] = nextidx1[nextidx1[idx0]] # original next downstream cell
+                                    subidxs_out2[idx_ds0] = subidx
+                                    idxs_edit_lst.append(idx_ds0) # outlet edited
+                                    # print('lats - outlet', idx0, idx_ds0)
+                                    # import pdb; pdb.set_trace()
+                                    break # @4D
+                            # next iter @4D
+                            path.append(subidx1)
+                            subidx = subidx1 
+                            idx_ds0 = idx_ds
+                    # next iter @4A
+                    if nextiter:
+                        break # @4A
+                    idx0 = idx1 
+                    j0 = j+1
+                # drop upstream lateral connections if past the connection outlet which 
+                # has not been edited
+                if lats:
+                    for k in ks: # @4E loop laterals with upstream connections
+                        idx_ds0 = nextidx2[idxs_us0[k]]
+                        lat_ds = idx_ds0 in idxs_lst[j:]
+                        lat_edit = idx_ds0 in idxs_edit_lst
+                        if not lat_ds and not lat_edit:
+                            k0 = k
+                        else:
+                            break # @4E
+
         # if next downstream in idxs_edit_lst we've created a loop -> break.
         if nextiter or nextidx2[idx1] in idxs_edit_lst:
             idxs_fix_lst.append(idx00)
@@ -667,12 +633,15 @@ def eeam_nextidx_iter2(
         if ndiff > 0:
             _, idxs_ds, idxs_us, _ = core_nextidx.from_flwdir(nextidx2.reshape(shape))
             assert core.loop_indices(idxs_ds, idxs_us).size == 0 # loop at idx00
+            # if core.loop_indices(idxs_ds, idxs_us).size > 0:
+            #     print(idx00)
+            #     import pdb; pdb.set_trace()
             nextidx1 = nextidx2
             subidxs_out1 = subidxs_out2
 
     return nextidx1, subidxs_out1, np.array(idxs_fix_lst, dtype=np.uint32)
 
-def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, iter2=True):
+def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, iter2=True, min_stream_len=1):
     """Returns the upscaled flow direction network based on the EXTENDED effective area method
     
     Parameters
@@ -687,6 +656,11 @@ def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, iter2=True):
         highres raster shape
     cellsize : int
         size of lowres cell measured in higres cells
+    iter2 : bool
+        second iteration to improve subgrid connections
+    min_stream_len : int
+        minimum length (pixels) between outlet and previous confluence
+        a confluence is determined by at least a doubling of upstream area
 
     Returns
     -------
@@ -699,18 +673,18 @@ def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, iter2=True):
     # get representative cells    
     subidxs_rep = eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
     # get subgrid outlet cells
-    # subidxs_out = eam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
-    subidxs_out = eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
+    subidxs_out = eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, 
+                                subshape, shape, cellsize, min_stream_len=min_stream_len)
     # get next downstream lowres index
     nextidx, idxs_fix = eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
     print(idxs_fix.size)
-    # idxs_fix = np.array([119103], dtype=np.uint32)
+    # second iteration to improve subgrid connections
     if iter2:
+        # idxs_fix = np.array([4263], dtype=np.uint32)
         nextidx, subidxs_out, idxs_fix = eeam_nextidx_iter2(
                 nextidx, subidxs_out, idxs_fix,       # 
                 subidxs_ds, subidxs_valid,            # subgrid high res flwdir arrays
                 subuparea, subshape, shape, cellsize)
         print(idxs_fix.size)
 
-    # import pdb; pdb.set_trace()
     return nextidx.reshape(shape), subidxs_out, idxs_fix
