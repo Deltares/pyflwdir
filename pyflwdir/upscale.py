@@ -561,6 +561,16 @@ def eeam_nextidx_iter2(
         for j in range(noutlets): # @4A lowres connecting loop
             idx1 = idxs_lst[j]
             subidx_out1 = subidxs_lst[j]
+            # check if not connected to ds pit
+            pit = subidx_out1 == subidxs_valid[subidxs_ds[subidxs_internal[subidx_out1]]]
+            if pit and len(idxs_edit_lst) == 0:
+                idxs_pit = np.where(subidxs_out2 == subidx_out1)[0]
+                if idxs_pit.size == 1: # previous (smaller) branch already claimed pit
+                    nextidx2[idx0] = idxs_pit[0]
+                else:
+                    nextidx2[idx0] = idx0
+                    subidxs_out2[idx0] = subidx_out1 # NOTE pit outlet outside original cell
+                break # @4A
             # check if ds lowres cell already edited to avoid loops
             d8 = False if idx1 in idxs_edit_lst else in_d8(idx0, idx1, ncol)
             # check lateral connections
