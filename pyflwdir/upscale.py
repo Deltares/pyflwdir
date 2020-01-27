@@ -2,15 +2,9 @@
 # Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
 # August 2019
 
-# TODO
-# add double maximum method
-# add subgrid connected function
-
 from numba import njit
 import numpy as np
 
-# import flow direction definition
-# from .utils import flwdir_check
 from pyflwdir import core, core_nextidx
 _mv = core._mv
 
@@ -57,60 +51,6 @@ def next_suboutlet(subidx, idx0, subidxs_internal, subidxs_ds, subidxs_valid, su
         subidx = subidx1 # next iter
         path.append(subidx1)
     return subidx, np.array(path, dtype=subidxs_ds.dtype)
-
-@njit
-def isconnected(nextidx, subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
-    """Returns binary array with ones if sugrid outlet/representative cells are connected in d8.
-    
-    Parameters
-    ----------
-    nextidx : ndarray of int
-        lowres indices of next downstream cell
-    subidxs_out : ndarray of int
-        highres indices of outlet cells with size shape[0]*shape[1]
-    subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
-        highres raster indices of vaild cells
-    subshape : tuple of int
-        highres raster shape
-    shape : tuple of int
-        lowres raster shape
-    cellsize : int
-        size of lowres cell measured in higres cells
-
-    Returns
-    -------
-    array with ones where connected : ndarray of int
-    """
-    subnrow, subncol = subshape
-    nrow, ncol = shape
-    # internal indices
-    n = subidxs_valid.size
-    subidxs_internal = np.ones(subnrow*subncol, np.uint32)*_mv
-    subidxs_internal[subidxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
-    # allocate output 
-    connect = np.ones(nrow*ncol, dtype=np.int8)*np.int8(-1)
-    # loop over outlet cell indices
-    for idx0 in range(subidxs_out.size):
-        subidx = subidxs_out[idx0]
-        if subidx == _mv:
-            continue
-        idx_ds = nextidx[idx0]
-        while True:
-            # next downstream subgrid cell index; complicated because of use internal indices 
-            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
-            idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
-            # NOTE pits can be located outside low res cell
-            if subidxs_out[idx1] == subidx1 or subidx1 == subidx: # at outlet or at pit 
-                if subidx1 == subidxs_out[idx_ds]:
-                    connect[idx0] = np.int8(1)
-                else: # not connected
-                    connect[idx0] = np.int8(0)
-                break
-            # next iter
-            subidx = subidx1 
-    return connect
 
 #### DOUBLE MAXIMUM METHOD ####
 
@@ -275,12 +215,7 @@ def dmm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, return_connect
     subidxs_rep = dmm_exitcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
     # get next downstream lowres index
     nextidx = dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
-    # check subgrid connection
-    connect = None
-    if return_connect:
-        connect = isconnected(nextidx, subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
-        print(np.sum(connect==0))
-    return nextidx.reshape(shape), subidxs_rep.reshape(shape), connect
+    return nextidx.reshape(shape), subidxs_rep.reshape(shape)
 
 #### EFFECTIVE AREA METHOD ####
 
@@ -437,12 +372,7 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, return_connect
     subidxs_rep = eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
     # get next downstream lowres index
     nextidx = eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
-    # check subgrid connection
-    connect = None
-    if return_connect:
-        connect = isconnected(nextidx, subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
-        print(np.sum(connect==0))
-    return nextidx.reshape(shape), subidxs_rep.reshape(shape), connect
+    return nextidx.reshape(shape), subidxs_rep.reshape(shape)
 
 #### CONNECTING OUTLETS SCALING METHOD ####
 @njit
@@ -873,7 +803,7 @@ def cosm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize,
         internal highres indices of downstream cells
     subidxs_valid : ndarray of int
         highres raster indices of vaild cells
-    subuparea : ndarray of int
+    subuparea : ndarray
         highres flattened upstream area array
     subshape : tuple of int
         highres raster shape
@@ -895,7 +825,7 @@ def cosm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize,
     subnrow, subncol = subshape
     nrow, ncol = int(np.ceil(subnrow/cellsize)), int(np.ceil(subncol/cellsize))
     shape = nrow, ncol
-    # first iteration
+    # STEP 1
     # get representative cells    
     subidxs_rep = eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
     # get subgrid outlet cells
@@ -904,17 +834,10 @@ def cosm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize,
     # get next downstream lowres index
     nextidx, idxs_fix = cosm_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
     print(idxs_fix.size)
-
-    # second iteration to improve subgrid connections
+    # STEP 2 try fixing invalid subgrid connections
     if iter2:
         nextidx, subidxs_out = cosm_nextidx_iter2(
                 nextidx, subidxs_out, idxs_fix,
                 subidxs_ds, subidxs_valid,
                 subuparea, subshape, shape, cellsize)
-    
-    connect = None
-    if return_connect:
-        connect = isconnected(nextidx, subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
-        print(np.sum(connect==0))
-
-    return nextidx.reshape(shape), subidxs_out.reshape(shape), connect
+    return nextidx.reshape(shape), subidxs_out.reshape(shape)

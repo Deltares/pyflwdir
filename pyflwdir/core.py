@@ -7,8 +7,11 @@
 from numba import njit, prange
 from numba.typed import List
 import numpy as np
+import math
 
 _mv = np.uint32(-1)
+
+from pyflwdir import gis_utils
 
 #### NETWORK TREE ####
 @njit
@@ -61,7 +64,9 @@ def _main_upstream(idx0, idxs_us, uparea_flat, upa_min = 0):
     """Returns the index of the upstream cell with the largest uparea"""
     idx_us0 = _mv
     upa0 = upa_min
-    for idx_us in upstream(idx0, idxs_us):
+    for idx_us in idxs_us[idx0,:]:
+        if idx_us == _mv:
+            break
         if uparea_flat[idx_us] > upa0:
             idx_us0 = idx_us
             upa0 = uparea_flat[idx_us]
@@ -145,6 +150,26 @@ def downstream_river(idxs0, idxs_ds, river_flat):
     for i in range(idxs0.size):
         idx_out[i] = _downstream_river(np.uint32(idxs0[i]), idxs_ds, river_flat)
     return idx_out
+
+#TODO: write test for this function
+@njit
+def flwdir_length(idx0, idx1, idxs_valid, ncol, latlon=False, affine=gis_utils.IDENTITY):
+    xres, yres, north = affine[0], affine[4], affine[5]    
+    r0 = idxs_valid[idx0] // ncol
+    c0 = idxs_valid[idx0] %  ncol
+    r1 = idxs_valid[idx1] // ncol
+    c1 = idxs_valid[idx1] %  ncol
+    dr = r1 - r0
+    dc = c1 - c0
+    if latlon: # calculate cell size in metres
+        lat = north + (r0+0.5)*yres
+        dy = 0 if dr == 0 else gis_utils.degree_metres_y(lat) * yres
+        dx = 0 if dc == 0 else gis_utils.degree_metres_x(lat) * xres
+    else:
+        dy = xres
+        dx = yres
+    return math.hypot(dy*dr, dx*dc) # length
+
 
 #### PIT / LOOP INDICES ####
 @njit
