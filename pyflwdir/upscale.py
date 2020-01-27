@@ -2,6 +2,10 @@
 # Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
 # August 2019
 
+# TODO
+# add double maximum method
+# add subgrid connected function
+
 from numba import njit
 import numpy as np
 
@@ -54,6 +58,62 @@ def next_suboutlet(subidx, idx0, subidxs_internal, subidxs_ds, subidxs_valid, su
     return subidx, np.array(path, dtype=subidxs_ds.dtype)
 
 @njit
+def connected(nextidx, subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
+    """Returns binary array with ones if sugrid outlet/representative cells are connected in d8.
+    
+    Parameters
+    ----------
+    nextidx : ndarray of int
+        lowres indices of next downstream cell
+    subidxs_out : ndarray of int
+        highres indices of outlet cells with size shape[0]*shape[1]
+    subidxs_ds : ndarray of int
+        internal highres indices of downstream cells
+    subidxs_valid : ndarray of int
+        highres raster indices of vaild cells
+    subshape : tuple of int
+        highres raster shape
+    shape : tuple of int
+        lowres raster shape
+    cellsize : int
+        size of lowres cell measured in higres cells
+
+    Returns
+    -------
+    array with ones where connected : ndarray of int
+    """
+    subnrow, subncol = subshape
+    nrow, ncol = shape
+    # internal indices
+    n = subidxs_valid.size
+    subidxs_internal = np.ones(subnrow*subncol, np.uint32)*_mv
+    subidxs_internal[subidxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
+    # allocate output 
+    connect = np.ones(nrow*ncol, dtype=np.int8)*np.int8(-1)
+    # loop over outlet cell indices
+    for idx0 in range(subidxs_out.size):
+        subidx = subidxs_out[idx0]
+        if subidx == _mv:
+            continue
+        idx_ds = nextidx[idx0]
+        while True:
+            # next downstream subgrid cell index; complicated because of use internal indices 
+            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+            idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
+            # NOTE pits can be located outside low res cell
+            if subidxs_out[idx1] == subidx1 or subidx1 == subidx: # at outlet or at pit 
+                if subidx1 == subidxs_out[idx_ds]:
+                    connect[idx0] = np.int8(1)
+                else: # not connected
+                    connect[idx0] = np.int8(0)
+                break
+            # next iter
+            subidx = subidx1 
+    return connect
+
+#### DOUBLE MAXIMUM METHOD ####
+
+@njit
 def cell_edge(subidx, subncol, cellsize):
     """Returns True if highres cell <subidx> is on edge of lowres cell"""
     ri = (subidx // subncol) % cellsize
@@ -74,6 +134,18 @@ def map_celledge(subidxs_ds, subidxs_valid, subshape, cellsize):
             edges[subidx] = np.int8(0)
     return edges.reshape(subshape)
 
+
+#### EFFECTIVE AREA METHOD ####
+
+@njit
+def effective_area(subidx, subncol, cellsize):
+    """Returns True if highress cell <subidx> is inside the effective area"""
+    R = cellsize / 2.
+    offset = R-0.5 # lowres center at cellsize/2 - 0.5
+    ri = abs((subidx // subncol) % cellsize - offset)
+    ci = abs((subidx %  subncol) % cellsize - offset)
+    return (ri**0.5 + ci**0.5 <= R**0.5) or (ri <= 0.5) or (ci <= 0.5) # describes effective area
+
 @njit
 def map_effare(subidxs_ds, subidxs_valid, subshape, cellsize):
     """Returns a map with ones on subgrid cells of lowres effective area"""
@@ -87,17 +159,6 @@ def map_effare(subidxs_ds, subidxs_valid, subshape, cellsize):
         else:
             effare[subidx] = np.int8(0)
     return effare.reshape(subshape)
-
-#### EFFECTIVE AREA METHOD ####
-
-@njit
-def effective_area(subidx, subncol, cellsize):
-    """Returns True if highress cell <subidx> is inside the effective area"""
-    R = cellsize / 2.
-    offset = R-0.5 # lowres center at cellsize/2 - 0.5
-    ri = abs((subidx // subncol) % cellsize - offset)
-    ci = abs((subidx %  subncol) % cellsize - offset)
-    return (ri**0.5 + ci**0.5 <= R**0.5) or (ri <= 0.5) or (ci <= 0.5) # describes effective area
 
 @njit
 def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize):
@@ -196,7 +257,7 @@ def eam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsiz
         idxs_ds[idx0] = subidx_2_idx(subidx1, subncol, cellsize, ncol)
     return idxs_ds
 
-def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
+def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, return_connect=False):
     """Returns the upscaled next downstream index based on the 
     effective area method.
     
@@ -215,7 +276,9 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
 
     Returns
     -------
-    lowres indices of next downstream and subgrid indices of reprecentative cells : Tuple of ndarray
+    lowres indices of next downstream : ndarray of int
+    subgrid indices of representative cells : ndarray of int
+    binary grid with connected cells : ndarray of int, optional
     """
     # calculate new size
     subnrow, subncol = subshape
@@ -225,15 +288,20 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
     subidxs_rep = eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
     # get next downstream lowres index
     nextidx = eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
-    return nextidx.reshape(shape), subidxs_rep
+    # check subgrid connection
+    connect = None
+    if return_connect:
+        connect = connected(nextidx, subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
+        print(np.sum(connect==0))
+    return nextidx.reshape(shape), subidxs_rep.reshape(shape), connect
 
-#### EXTENDED EFFECTIVE AREA METHOD ####
+#### CONNECTING OUTLETS SCALING METHOD ####
 @njit
-def eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, 
+def cosm_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, 
                     subshape, shape, cellsize, min_stream_len=0):
     """Returns subgrid outlet cell indices of lowres cells which are located
     at the edge of the lowres cell downstream of the representative cell
-    according to the double effective area method. 
+    according to the connecting outlets scaling method. 
 
     NOTE: If <min_stream_len> is larger than zero, the outlet does not have to be
     the the lowres cells edge.
@@ -303,8 +371,8 @@ def eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea,
     return subidxs_out
 
 @njit
-def eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
-    """Returns next downstream lowres index according to EXTENDED effective area method. 
+def cosm_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
+    """Returns next downstream lowres index according to connecting outlets scaling method. 
     Every outlet subgrid cell is traced to the next downstream subgrid outlet cell. If 
     this lays outside d8, we fallback to the next downstream effective area.
     
@@ -363,16 +431,16 @@ def eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsi
     return nextidx, np.array(idxs_fix_lst, dtype=np.uint32)
 
 @njit
-def eeam_nextidx_iter2(
+def cosm_nextidx_iter2(
         nextidx, subidxs_out, idxs_fix,
         subidxs_ds, subidxs_valid,
         subuparea, subshape, shape, cellsize):
-    """
+    """Second iteration to fix cells which are not connected in subgrid.
     
     Parameters
     ----------
     nextidx : ndarray of int
-        raster with next downstream lowres indices
+        lowres indices of next downstream cell
     subidxs_out : ndarray of int
         subgrid indices of outlet cells with size shape[0]*shape[1]
     idxs_fix : ndarray of int
@@ -409,7 +477,6 @@ def eeam_nextidx_iter2(
     # allocate output
     nextidx1 = nextidx.copy()
     subidxs_out1 = subidxs_out.copy()
-    idxs_fix_lst = list()
     # loop over unconnected cells from up to downstream
     upa_check = subuparea[subidxs_out[idxs_fix]]
     seq = np.argsort(upa_check)
@@ -459,7 +526,6 @@ def eeam_nextidx_iter2(
         if connected and subidx == subidxs_out1[nextidx1[idx00]]: # connection at first outlet -> already fixed
             continue # @0A
         elif not connected:
-            idxs_fix_lst.append(idx00)
             continue # @0A
 
         # STEP 2: find original upstream connections 
@@ -531,6 +597,7 @@ def eeam_nextidx_iter2(
                 subidx_out1 = subidxs_lst[j]
                 # check if not connected to ds pit
                 pit = subidx_out1 == subidxs_valid[subidxs_ds[subidxs_internal[subidx_out1]]]
+                # print('pit', pit)
                 if pit and len(idxs_edit_lst) == 0:
                     idxs_pit = np.where(subidxs_out2 == subidx_out1)[0]
                     if idxs_pit.size == 1: # previous (smaller) branch already claimed pit
@@ -575,7 +642,7 @@ def eeam_nextidx_iter2(
                     for k in ks: # @4C loop lateral connections
                         idx0 = idxs_us0[k]
                         if idx0 in idxs_edit_lst:
-                            continue # @4C, already edited
+                            continue # @4C
                         subidx = subidxs_out2[idx0]
                         idx_ds0 = idx0
                         path = list()
@@ -631,26 +698,25 @@ def eeam_nextidx_iter2(
 
         # if next downstream in idxs_edit_lst we've created a loop -> break.
         if nextiter or nextidx2[idx1] in idxs_edit_lst:
-            idxs_fix_lst.append(idx00)
             continue # @0A
         
         # next iter @A0
         ndiff = np.sum(subidxs_out1 != subidxs_out2) + np.sum(nextidx1 != nextidx2)
         if ndiff > 0:
-            _, idxs_ds, idxs_us, _ = core_nextidx.from_flwdir(nextidx2.reshape(shape))
-            assert core.loop_indices(idxs_ds, idxs_us).size == 0 # loop at idx00
+            _, _, idxs_us, _ = core_nextidx.from_flwdir(nextidx2.reshape(shape))
+            # assert core.loop_indices(idxs_ds, idxs_us).size == 0 # loop at idx00
             # if core.loop_indices(idxs_ds, idxs_us).size > 0:
             #     print(idx00)
             #     import pdb; pdb.set_trace()
             nextidx1 = nextidx2
             subidxs_out1 = subidxs_out2
 
-    return nextidx1, subidxs_out1, np.array(idxs_fix_lst, dtype=np.uint32)
+    return nextidx1, subidxs_out1
 
-def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, 
-            iter2=True, min_stream_len=1):
+def cosm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, 
+            iter2=True, min_stream_len=1, return_connect=False):
     """Returns the upscaled next downstream index based on the 
-    EXTENDED effective area method.
+    connecting outlets scaling method (COSM).
 
     Parameters
     ----------
@@ -672,27 +738,34 @@ def eeam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize,
 
     Returns
     -------
-    lowres indices of next downstream and subgrid indices of outlet cells : Tuple of ndarray
+    lowres indices of next downstream : ndarray of int
+    subgrid indices of outlet cells : ndarray of int
+    binary grid with connected cells : ndarray of int, optional
     """
     # calculate new size
     subnrow, subncol = subshape
     nrow, ncol = int(np.ceil(subnrow/cellsize)), int(np.ceil(subncol/cellsize))
     shape = nrow, ncol
+    # first iteration
     # get representative cells    
     subidxs_rep = eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
     # get subgrid outlet cells
-    subidxs_out = eeam_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, 
+    subidxs_out = cosm_outlets(subidxs_rep, subidxs_ds, subidxs_valid, subuparea, 
                                 subshape, shape, cellsize, min_stream_len=min_stream_len)
     # get next downstream lowres index
-    nextidx, idxs_fix = eeam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
+    nextidx, idxs_fix = cosm_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
     print(idxs_fix.size)
+
     # second iteration to improve subgrid connections
     if iter2:
-        # idxs_fix = np.array([4263], dtype=np.uint32)
-        nextidx, subidxs_out, idxs_fix = eeam_nextidx_iter2(
+        nextidx, subidxs_out = cosm_nextidx_iter2(
                 nextidx, subidxs_out, idxs_fix,
                 subidxs_ds, subidxs_valid,
                 subuparea, subshape, shape, cellsize)
-        print(idxs_fix.size)
+    
+    connect = None
+    if return_connect:
+        connect = connected(nextidx, subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
+        print(np.sum(connect==0))
 
-    return nextidx.reshape(shape), subidxs_out, idxs_fix
+    return nextidx.reshape(shape), subidxs_out.reshape(shape), connect
