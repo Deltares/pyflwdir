@@ -31,7 +31,8 @@ def subidx_2_idx(subidx, subncol, cellsize, ncol):
 
 @njit
 def ii_2_subidx(ii, idx, subncol, cellsize, ncol):
-    """Returns the subgrid index <subidx> lowres cell index <indx> and index within that cell <ii>"""
+    """Returns the subgrid index <subidx> based on the 
+    lowres cell index <idx> and index within that cell <ii>"""
     r = idx // ncol * cellsize + ii // cellsize 
     c = idx %  ncol * cellsize + ii %  cellsize
     return r * subncol + c
@@ -58,7 +59,7 @@ def next_suboutlet(subidx, idx0, subidxs_internal, subidxs_ds, subidxs_valid, su
     return subidx, np.array(path, dtype=subidxs_ds.dtype)
 
 @njit
-def connected(nextidx, subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
+def isconnected(nextidx, subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
     """Returns binary array with ones if sugrid outlet/representative cells are connected in d8.
     
     Parameters
@@ -134,6 +135,152 @@ def map_celledge(subidxs_ds, subidxs_valid, subshape, cellsize):
             edges[subidx] = np.int8(0)
     return edges.reshape(subshape)
 
+@njit
+def dmm_exitcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize):
+    """Returns exit subgrid cell indices of lowres cells according to the double maximum method (DMM). 
+    
+    Parameters
+    ----------
+    subidxs_ds : ndarray of int
+        internal highres indices of downstream cells
+    subidxs_valid : ndarray of int
+        highres raster indices of vaild cells
+    subuparea : ndarray of int
+        highres flattened upstream area array
+    subshape : tuple of int
+        highres raster shape
+    shape : tuple of int
+        lowres raster shape
+    cellsize : int
+        size of lowres cell measured in higres cells
+
+    Returns
+    -------
+    raster with subgrid representative cell indices : ndarray with size shape[0]*shape[1]
+    """
+    subncol = subshape[1]
+    nrow, ncol = shape
+    # allocate output and internal array
+    subidxs_rep = np.ones(nrow*ncol, dtype=subidxs_valid.dtype)*_mv
+    uparea = np.zeros(nrow*ncol, dtype=subuparea.dtype)
+    # loop over valid indices
+    for i in range(subidxs_valid.size):
+        subidx = subidxs_valid[i]
+        # NOTE including pits in the edge area is different from the original
+        ispit = subidxs_ds[i] == i # NOTE internal index
+        edge = cell_edge(subidx, subncol, cellsize)
+        # check upstream area if cell ispit or at effective area
+        if ispit or edge:
+            idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
+            upa = subuparea[subidx]
+            upa0 = uparea[idx]
+            # cell with largest upstream area is representative cell
+            if upa > upa0:
+                uparea[idx] = upa
+                subidxs_rep[idx] = subidx
+    return subidxs_rep
+
+@njit
+def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
+    """Returns next downstream lowres index by tracing a representative cell to where it
+    leaves a buffered area around the lowres cell according to the double maximum method (DMM). 
+    
+    Parameters
+    ----------
+    subidxs_rep : ndarray of int
+        highres indices of representative cells
+    subidxs_ds : ndarray of int
+        internal highres indices of downstream cells
+    subidxs_valid : ndarray of int
+        highres raster indices of vaild cells
+    subshape : tuple of int
+        highres raster shape
+    shape : tuple of int
+        lowres raster shape
+    cellsize : int
+        size of lowres cell measured in higres cells
+
+    Returns
+    -------
+    lowres indices of next downstream cell : ndarray    
+    """
+    subnrow, subncol = subshape
+    nrow, ncol = shape
+    R = cellsize / 2
+    # internal indices
+    n = subidxs_valid.size
+    subidxs_internal = np.ones(subnrow*subncol, np.uint32)*_mv
+    subidxs_internal[subidxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
+    # allocate output 
+    idxs_ds = np.ones(nrow*ncol, dtype=subidxs_ds.dtype)*_mv
+    # loop over rep cell indices
+    for idx0 in range(subidxs_rep.size):
+        subidx = subidxs_rep[idx0]
+        idx = idx0
+        if subidx == _mv: 
+            continue
+        # subgrid coordinates at center of offset lowres cell
+        dr = (subidx // subncol) % cellsize // R
+        dc = (subidx %  subncol) % cellsize // R
+        subr0 = (idx0 // ncol + dr) * cellsize - 0.5
+        subc0 = (idx0  % ncol + dc) * cellsize - 0.5
+        while True:
+            # next downstream subgrid cell index; complicated because of use internal indices 
+            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]] 
+            idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
+            if subidx1 == subidx: # pit
+                break
+            elif idx1 != idx0: # outside offset lowres cell
+                subr = subidx // subncol 
+                subc = subidx %  subncol
+                if abs(subr - subr0) > R or abs(subc - subc0) > R:
+                    break
+            # next iter
+            subidx = subidx1
+            idx = idx1
+        idxs_ds[idx0] = idx
+    return idxs_ds
+
+def dmm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, return_connect=False):
+    """Returns the upscaled next downstream index based on the double maximum method (DMM) [1].
+
+    ...[1] Olivera F, Lear M S, Famiglietti J S and Asante K 2002 "Extracting low-resolution 
+    river networks from high-resolution digital elevation models" Water Resour. Res. 38 13-1-13–8 
+    Online: http://doi.wiley.com/10.1029/2001WR000726
+    
+    Parameters
+    ----------
+    subidxs_ds : ndarray of int
+        internal highres indices of downstream cells
+    subidxs_valid : ndarray of int
+        highres raster indices of vaild cells
+    subuparea : ndarray of int
+        highres flattened upstream area array
+    subshape : tuple of int
+        highres raster shape
+    cellsize : int
+        size of lowres cell measured in higres cells
+
+    Returns
+    -------
+    lowres indices of next downstream : ndarray of int
+    subgrid indices of representative cells : ndarray of int
+    binary grid with connected cells : ndarray of int, optional
+    """
+    # calculate new size
+    subnrow, subncol = subshape
+    nrow, ncol = int(np.ceil(subnrow/cellsize)), int(np.ceil(subncol/cellsize))
+    shape = nrow, ncol
+    # get representative cells    
+    subidxs_rep = dmm_exitcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
+    # get next downstream lowres index
+    nextidx = dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize)
+    # check subgrid connection
+    connect = None
+    if return_connect:
+        connect = isconnected(nextidx, subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
+        print(np.sum(connect==0))
+    return nextidx.reshape(shape), subidxs_rep.reshape(shape), connect
 
 #### EFFECTIVE AREA METHOD ####
 
@@ -208,14 +355,14 @@ def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape, cellsize)
     return subidxs_rep
 
 @njit
-def eam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
+def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize):
     """Returns next downstream lowres index by tracing a representative cell to the 
     next downstream effective area according to the effective area method. 
     
     Parameters
     ----------
-    subidxs_out : ndarray of int
-        highres indices of outlet cells with size shape[0]*shape[1]
+    subidxs_rep : ndarray of int
+        highres indices of representative subgird cells
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
     subidxs_valid : ndarray of int
@@ -240,8 +387,8 @@ def eam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsiz
     # allocate output 
     idxs_ds = np.ones(nrow*ncol, dtype=subidxs_ds.dtype)*_mv
     # loop over rep cell indices
-    for idx0 in range(subidxs_out.size):
-        subidx = subidxs_out[idx0]
+    for idx0 in range(subidxs_rep.size):
+        subidx = subidxs_rep[idx0]
         if subidx == _mv: 
             continue
         while True:
@@ -254,12 +401,14 @@ def eam_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsiz
                 break
             # next iter
             subidx = subidx1 
-        idxs_ds[idx0] = subidx_2_idx(subidx1, subncol, cellsize, ncol)
+        idxs_ds[idx0] = idx1
     return idxs_ds
 
 def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, return_connect=False):
-    """Returns the upscaled next downstream index based on the 
-    effective area method.
+    """Returns the upscaled next downstream index based on the effective area method (EAM) [1].
+
+    ...[1] Yamazaki D, Masutomi Y, Oki T and Kanae S 2008 "An Improved Upscaling Method to 
+    Construct a Global River Map" APHW
     
     Parameters
     ----------
@@ -291,7 +440,7 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize, return_connect
     # check subgrid connection
     connect = None
     if return_connect:
-        connect = connected(nextidx, subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
+        connect = isconnected(nextidx, subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
         print(np.sum(connect==0))
     return nextidx.reshape(shape), subidxs_rep.reshape(shape), connect
 
@@ -765,7 +914,7 @@ def cosm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize,
     
     connect = None
     if return_connect:
-        connect = connected(nextidx, subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
+        connect = isconnected(nextidx, subidxs_out, subidxs_ds, subidxs_valid, subshape, shape, cellsize).reshape(shape)
         print(np.sum(connect==0))
 
     return nextidx.reshape(shape), subidxs_out.reshape(shape), connect
