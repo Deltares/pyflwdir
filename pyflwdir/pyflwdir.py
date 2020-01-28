@@ -210,7 +210,7 @@ class FlwdirRaster(object):
         -------
         upstream area map: 2D array
         """
-        upa_flat = basin.upstream_area(self.tree, self._idxs_us, self.shape, affine=affine, latlon=latlon)
+        upa_flat = basin.upstream_area(self.tree, self._idxs_valid, self._idxs_us, self.shape[1], affine=affine, latlon=latlon)
         return self._reshape(upa_flat, nodata=nodata)
 
     def stream_order(self):

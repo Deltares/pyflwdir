@@ -31,10 +31,9 @@ def accuflux(tree, idxs_us, material_flat, nodata):
     return accu_flat
 
 @njit()
-def upstream_area(tree, idxs_us, shape, affine=gis_utils.IDENTITY, latlon=False):
+def upstream_area(tree, idxs_valid, idxs_us, ncol, affine=gis_utils.IDENTITY, latlon=False):
     """accumulated upstream area using network tree and grid affine transform; nodata = -9999"""
     # NOTE same as accuflux but works with transform to calculate area
-    ncol = np.uint32(shape[1])
     xres, yres, north = affine[0], affine[4], affine[5]
     area0 = abs(xres*yres)
     size = idxs_us.shape[0]
@@ -46,7 +45,7 @@ def upstream_area(tree, idxs_us, shape, affine=gis_utils.IDENTITY, latlon=False)
         idxs = tree[-i-1] # from up- to downstream
         for idx0 in idxs:
             if latlon:
-                r = np.uint32(idx0 // ncol)
+                r = idxs_valid[idx0] // ncol
                 lat = north + (r+0.5)*yres
                 area0 = gis_utils.cellarea(lat, xres, yres)
             upa_ds = area0
@@ -56,7 +55,7 @@ def upstream_area(tree, idxs_us, shape, affine=gis_utils.IDENTITY, latlon=False)
                 upa_us = upa[idx_us]
                 if upa_us <= 0:
                     if latlon:
-                        r = np.uint32(idx_us // ncol)
+                        r = idxs_valid[idx_us] // ncol
                         lat = north + (r+0.5)*yres
                         area0 = gis_utils.cellarea(lat, xres, yres)
                     upa_us = area0

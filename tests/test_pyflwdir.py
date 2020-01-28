@@ -71,6 +71,7 @@ def test_stream_order(d8):
     assert np.all(strord.shape == d8.shape)
 
 def test_upstream_area(d8):
+    # TODO add test with latlon
     try:
         uparea = d8.upstream_area()
     except:
