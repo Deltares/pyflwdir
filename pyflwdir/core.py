@@ -137,7 +137,7 @@ def downstream_river(idxs0, idxs_ds, river_flat):
     idxs0 : ndarray of in
         index of local cell(s)
     idxs_ds : ndarray of int
-        internal indices of upstream cells
+        internal indices of downstream cells
     data : ndarray of bool
         True if stream cell
 
@@ -153,22 +153,49 @@ def downstream_river(idxs0, idxs_ds, river_flat):
 
 #TODO: write test for this function
 @njit
-def flwdir_length(idx0, idx1, idxs_valid, ncol, latlon=False, affine=gis_utils.IDENTITY):
-    xres, yres, north = affine[0], affine[4], affine[5]    
-    r0 = idxs_valid[idx0] // ncol
-    c0 = idxs_valid[idx0] %  ncol
-    r1 = idxs_valid[idx1] // ncol
-    c1 = idxs_valid[idx1] %  ncol
-    dr = r1 - r0
-    dc = c1 - c0
+def downstream_length(idx0, idxs_ds, idxs_valid, ncol, latlon=False, affine=gis_utils.IDENTITY):
+    """Return the next downstream cell index as well as the length in downstream direction
+    assuming a regular raster defined by the affine transform.
+    
+    Parameters
+    ----------
+    idx0 : int
+        index of local cell
+    idxs_ds : ndarray of int
+        internal indices of downstream cells
+    idxs_valid : ndarray of int
+        flattened raster indices of cells
+    ncol : int
+        number of columns in raster
+    latlon : bool, optional
+        True if WGS84 coordinates
+        (the default is False)
+    affine : affine transform
+        Two dimensional affine transform for 2D linear mapping
+        (the default is an identity transform which results in an area of 1 for every cell)
+
+    Returns
+    -------
+    Tuple of int, float
+        next downstream internal index, length
+    """
+    xres, yres, north = np.float64(affine[0]), np.float64(affine[4]), np.float64(affine[5])
+    idx1 = downstream(idx0, idxs_ds) # next downstream
+    # convert to flattened raster indices 
+    idx = idxs_valid[idx0]
+    idx_ds = idxs_valid[idx1]
+    # compute delta row, col
+    r = idx_ds // ncol
+    dr = (idx // ncol) - r
+    dc = (idx %  ncol) - (idx_ds %  ncol)
     if latlon: # calculate cell size in metres
-        lat = north + (r0+0.5)*yres
-        dy = 0 if dr == 0 else gis_utils.degree_metres_y(lat) * yres
-        dx = 0 if dc == 0 else gis_utils.degree_metres_x(lat) * xres
+        lat = north + (r + 0.5)*yres
+        dy = 0. if dr == 0 else gis_utils.degree_metres_y(lat) * yres
+        dx = 0. if dc == 0 else gis_utils.degree_metres_x(lat) * xres
     else:
         dy = xres
         dx = yres
-    return math.hypot(dy*dr, dx*dc) # length
+    return idx1, math.hypot(dy*dr, dx*dc) # length
 
 
 #### PIT / LOOP INDICES ####

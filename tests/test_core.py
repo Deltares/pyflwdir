@@ -122,6 +122,21 @@ def test_ftype_conversion():
     assert np.all(d8_to_ldd(ldd_to_d8(core_ldd._ds)) == core_ldd._ds), 'conversion of ldd failed'
     assert np.all(ldd_to_d8(d8_to_ldd(core_d8._ds)) == core_d8._ds), 'conversion of d8 failed'
 
+def test_downstream_length():
+    """test downstream length"""
+    ncol = 3
+    idxs_valid, idxs_ds, _, _ = core_d8.from_flwdir(core_d8._us)
+    # test length
+    dy = core.downstream_length(1, idxs_ds, idxs_valid, ncol, latlon=True)[1]
+    dx = core.downstream_length(3, idxs_ds, idxs_valid, ncol, latlon=True)[1]
+    for idx0 in [1,3,5,7]: # horizontal / vertical
+        assert core.downstream_length(idx0, idxs_ds, idxs_valid, ncol)[1] == 1
+    for idx0 in [0,2,6,8]: # diagonal
+        assert core.downstream_length(idx0, idxs_ds, idxs_valid, ncol)[1] == np.hypot(1,1)
+        assert core.downstream_length(idx0, idxs_ds, idxs_valid, ncol, latlon=True)[1] == np.hypot(dx, dy)
+    assert core.downstream_length(4, idxs_ds, idxs_valid, ncol)[1] == 0 # pit
+    assert core.downstream_length(4, idxs_ds, idxs_valid, ncol, latlon=True)[1] == 0 # pit
+
 def test_core_realdata(_d8, d8_parsed):
     """test core.py submodule with actual flwdir data"""
     # test parsing real data

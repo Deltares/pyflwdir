@@ -74,9 +74,8 @@ def river_length(subidxs_out,
         # STEP 2 follow river downstream to get subgrid river length
         l = np.float64(0.)
         while True:
-            subidx1 = subidxs_ds[subidx] # next downstream subgrid cell index
-            l += 1
-            # l += core.flwdir_length(subidx, subidx1, idxs_valid, subncol, latlon=latlon, affine=affine)
+            subidx1, dist = core.downstream_length(subidx, subidxs_ds, subidxs_valid, subncol, latlon=latlon, affine=affine)
+            l += dist
             # break if at subgrid outlet or 
             if outlets[subidx1] == np.int8(1) or subidx1 == subidx:
                 break
