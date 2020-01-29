@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
 # August 2019
-
 """Tests for the pyflwdir module.
 """
 import pytest
@@ -16,49 +15,75 @@ import pyflwdir
 from pyflwdir.core import _mv
 from pyflwdir import FlwdirRaster
 
+
 # read and parse data
 @pytest.fixture
 def d8_data():
-    return np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8).reshape((678, 776))
+    return np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8).reshape(
+        (678, 776))
+
+
 @pytest.fixture
 def ldd_data():
-    return np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8).reshape((678, 776))
+    return np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8).reshape(
+        (678, 776))
+
+
 @pytest.fixture
 def nextxy_data():
-    return np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32).reshape((2, 678, 776))
+    return np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32).reshape(
+        (2, 678, 776))
+
+
 @pytest.fixture
 def nextidx_data():
-    return np.fromfile(r'./tests/data/nextidx.bin', dtype=np.uint32).reshape((678, 776))
+    return np.fromfile(r'./tests/data/nextidx.bin', dtype=np.uint32).reshape(
+        (678, 776))
+
+
 @pytest.fixture
 def d8(d8_data):
-    return FlwdirRaster(d8_data, ftype = 'infer', check_ftype = True)
+    return FlwdirRaster(d8_data, ftype='infer', check_ftype=True)
+
+
 @pytest.fixture
 def ldd(ldd_data):
-    return FlwdirRaster(ldd_data, ftype = 'infer', check_ftype = True)
+    return FlwdirRaster(ldd_data, ftype='infer', check_ftype=True)
+
+
 @pytest.fixture
 def nextxy(nextxy_data):
-    return FlwdirRaster(nextxy_data, ftype = 'infer', check_ftype = True)
+    return FlwdirRaster(nextxy_data, ftype='infer', check_ftype=True)
+
+
 @pytest.fixture
 def nextidx(nextidx_data):
-    return FlwdirRaster(nextidx_data, ftype = 'infer', check_ftype = True)
+    return FlwdirRaster(nextidx_data, ftype='infer', check_ftype=True)
+
 
 # test object
 def test_object(d8, ldd, nextxy, nextidx, ldd_data):
     ftypes = {'d8': d8, 'ldd': ldd, 'nextxy': nextxy, 'nextidx': nextidx}
     for name, fd in ftypes.items():
         assert fd.ftype == name
-        assert fd.size == 678*776
+        assert fd.size == 678 * 776
         assert fd.shape == (678, 776)
-        assert fd._idxs_us[d8._idxs_us!=_mv].size + fd._idx0.size == fd._idxs_ds.size
+        assert fd._idxs_us[
+            d8._idxs_us != _mv].size + fd._idx0.size == fd._idxs_ds.size
         assert fd._tree is None
         assert fd.pits.size == 1
         assert fd.isvalid
     # make sure these raise errors
     with pytest.raises(ValueError):
-        FlwdirRaster(ldd_data, ftype = 'd8', check_ftype = True)    # invalid type
-        FlwdirRaster(nextxy_data, ftype = 'd8', check_ftype = True) # invalid shape & type
-        FlwdirRaster(np.arange(20, dtype=np.uint32), ftype = 'infer', check_ftype = False) # unknown type
-        FlwdirRaster(np.array([2]), ftype = 'd8', check_ftype = True) # invalid data: too small
+        FlwdirRaster(ldd_data, ftype='d8', check_ftype=True)  # invalid type
+        FlwdirRaster(nextxy_data, ftype='d8',
+                     check_ftype=True)  # invalid shape & type
+        FlwdirRaster(np.arange(20, dtype=np.uint32),
+                     ftype='infer',
+                     check_ftype=False)  # unknown type
+        FlwdirRaster(np.array([2]), ftype='d8',
+                     check_ftype=True)  # invalid data: too small
+
 
 def test_stream_order(d8):
     try:
@@ -66,9 +91,10 @@ def test_stream_order(d8):
     except:
         pytest.fail('stream order failed')
     assert strord.min() == -1
-    assert strord.max() == 9 # NOTE specific to data
-    assert strord.dtype == np.int8 
+    assert strord.max() == 9  # NOTE specific to data
+    assert strord.dtype == np.int8
     assert np.all(strord.shape == d8.shape)
+
 
 def test_upstream_area(d8):
     # TODO add test with latlon
@@ -77,10 +103,11 @@ def test_upstream_area(d8):
     except:
         pytest.fail('upstream area failed')
     assert uparea.min() == -9999
-    assert uparea[uparea!=-9999].min() == 1
-    assert uparea.max() == d8.ncells # NOTE specific to data with single basin
-    assert uparea.dtype == np.float64 
+    assert uparea[uparea != -9999].min() == 1
+    assert uparea.max() == d8.ncells  # NOTE specific to data with single basin
+    assert uparea.dtype == np.float64
     assert np.all(uparea.shape == d8.shape)
+
 
 def test_basins(d8):
     try:
@@ -88,21 +115,21 @@ def test_basins(d8):
     except:
         pytest.fail('basins failed')
     assert basins.min() == 0
-    assert basins.max() == 1 # NOTE specific to data with single basin
-    assert basins.sum() == d8.ncells # NOTE specific to data with single basin
-    assert basins.dtype == np.uint32 
+    assert basins.max() == 1  # NOTE specific to data with single basin
+    assert basins.sum() == d8.ncells  # NOTE specific to data with single basin
+    assert basins.dtype == np.uint32
     assert np.all(basins.shape == d8.shape)
 
+
 def test_vector(d8):
-    affine = Affine(
-        1/120., 0.0, 5+50/120.,
-        0.0, -1/120, 51+117/120.
-        )
+    affine = Affine(1 / 120., 0.0, 5 + 50 / 120., 0.0, -1 / 120,
+                    51 + 117 / 120.)
     try:
         gdf = d8.vector(affine=affine)
     except:
         pytest.fail('basins failed')
     assert gdf.index.size == d8.ncells
+
 
 # def test_flwdir_repair():
 #     flwdir = FlwdirRaster(data.copy())
@@ -114,7 +141,7 @@ def test_vector(d8):
 #     assert len(lst) == 0 and not hasloops
 #     assert np.all(flwdir._data == data_repaired)
 #     # create loop
-#     idx = 450 
+#     idx = 450
 #     idx_us = fd.us_indices(idx, flwdir._data_flat, flwdir.shape)[0]
 #     flwdir[idx] = fd.idx_to_dd(idx, idx_us, flwdir.shape)
 #     lst, hasloops = flwdir_check(flwdir._data_flat, flwdir.shape)
@@ -140,7 +167,7 @@ def test_vector(d8):
 #     assert np.all((xmin, ymin, xmax, ymax) == flwdir.bounds)
 #     assert bboxs.shape[0] == idx.size
 #     assert np.all(np.unique(basins).size==idx.size) # single basin index
-    
+
 #     # check bboxs of main basin
 #     flwdir = FlwdirRaster(data.copy())
 #     basins, bboxs = flwdir.delineate_basins(idx0)
@@ -169,7 +196,7 @@ def test_vector(d8):
 #     #     dst.write(basins2, 1)
 
 # def test_stream_order():
-#     # 
+#     #
 #     flwdir = FlwdirRaster(data.copy())
 #     flwdir.setup_network(idx0)
 #     stream_order = flwdir.stream_order()
@@ -228,7 +255,7 @@ def test_vector(d8):
 #     flwdir2, outlets, cat_idx, riv_idx = flwdir.upscale(2, uparea=uparea, upa_min=0.5, return_subcatch_indices=True)
 #     assert np.all(flwdir2._data == data2)
 #     assert outlets.size == np.unique(outlets).size
-    
+
 #     # # test with large data (local only)
 #     # with rasterio.open(r'./tests/data/s05w050_dir.tif', 'r') as src:
 #     #     data0 = src.read(1)
@@ -237,7 +264,7 @@ def test_vector(d8):
 #     # with rasterio.open(r'./tests/data/s05w050_upa.tif', 'r') as src:
 #     #     uparea = src.read(1)
 #     # with rasterio.open(r'./tests/data/s05w050_dir_05min.tif', 'r') as src:
-#     #     data2 = src.read(1)    
+#     #     data2 = src.read(1)
 #     # flwdir = FlwdirRaster(data0, crs=crs, transform=transform)
 
 #     # flwdir2, outlets = flwdir.upscale(100, uparea=uparea, upa_min=1.)
@@ -297,7 +324,6 @@ def test_vector(d8):
 #     elevtn_new = flwdir.adjust_elevation(elevtn, copy=True)
 #     assert np.sum(elevtn!=elevtn_new) == 12
 
-
 # def test_ucat_map():
 #     with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/flwdir.tif', 'r') as src:
 #         data = src.read(1)
@@ -305,22 +331,22 @@ def test_vector(d8):
 #         crs = src.crs
 #     with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/uparea.tif', 'r') as src:
 #         uparea = src.read(1)
-#     flwdir = FlwdirRaster(data, transform=transform, crs=crs)    
+#     flwdir = FlwdirRaster(data, transform=transform, crs=crs)
 #     basin, outlet = flwdir.ucat_map(10, uparea=uparea, upa_min=0.5)
-#     # TODO add test 
-    
+#     # TODO add test
+
 # def check_memory_time():
 #     # data = xr.open_dataset(r'd:\work\flwdir_scaling\03sec\test_sel_idx74.nc')['dir'].load().values
 #     data = xr.open_dataset(r'/media/data/hydro_merit_1.0/03sec/test_sel_idx74.nc')['dir'].load().values
 #     idx0 = np.uint32(8640959)
 #     print(rtsys.get_allocation_stats())
-    
+
 #     print('initialize')
 #     flwdir = FlwdirRaster(data)
 #     print(rtsys.get_allocation_stats())
 
 #     print('setup network')
-#     start = time.time()    
+#     start = time.time()
 #     pyflwdir.network.setup_dd(np.asarray([idx0], dtype=np.uint32), flwdir._data_flat, flwdir.shape)
 #     end = time.time()
 #     print(f"Elapsed (before compilation) = {(end - start):.6f} s")
@@ -331,11 +357,11 @@ def test_vector(d8):
 #         end = time.time()
 #         print(f"Elapsed (after compilation) = {(end - start):.6f} s")
 #         print(rtsys.get_allocation_stats())
-    
+
 #     # print('basin delineation')
 #     # basins = flwdir.basin_map()
 #     # print(rtsys.get_allocation_stats())
-    
+
 #     # print('basin bouhds')
 #     # bounds = flwdir.delineate_basins()
 #     # print(rtsys.get_allocation_stats())
@@ -347,7 +373,6 @@ def test_vector(d8):
 #     # print('stream oder')
 #     # stro = flwdir.stream_order()
 #     # print(rtsys.get_allocation_stats())
-
 
 # if __name__ == "__main__":
 #     # check_memory_time()

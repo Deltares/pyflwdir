@@ -1,38 +1,40 @@
 # -*- coding: utf-8 -*-
 # Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
 # August 2019
-
 """"""
 
 import numpy as np
 from pyflwdir import (
-    basin, 
-    basin_utils, 
+    basin,
+    basin_utils,
     basin_descriptors,
-    core, 
-    core_d8, 
-    core_nextxy, 
+    core,
+    core_d8,
+    core_nextxy,
     core_nextidx,
-    core_ldd, 
-    gis_utils, 
+    core_ldd,
+    gis_utils,
 )
 ftypes = {
-    core_d8._ftype: core_d8, 
-    core_ldd._ftype: core_ldd, 
+    core_d8._ftype: core_d8,
+    core_ldd._ftype: core_ldd,
     core_nextxy._ftype: core_nextxy,
     core_nextidx._ftype: core_nextidx
-    }
+}
 
 # export
 __all__ = ['FlwdirRaster']
+
 
 # import logging
 # logger = logging.getLogger(__name__)
 def parse_flwdir(flwdir, ftype, check_ftype=True):
     fd = ftypes[ftype]
     if check_ftype and not fd.isvalid(flwdir):
-        raise ValueError(f'The flow direction type is not recognized as "{ftype}".')
+        raise ValueError(
+            f'The flow direction type is not recognized as "{ftype}".')
     return fd.from_flwdir(flwdir)
+
 
 def infer_ftype(flwdir):
     """infer flowdir type from data"""
@@ -44,6 +46,7 @@ def infer_ftype(flwdir):
     if ftype is None:
         raise ValueError('The flow direction type not recognized.')
     return ftype
+
 
 class FlwdirRaster(object):
     """
@@ -77,7 +80,11 @@ class FlwdirRaster(object):
     accuflux
     
     """
-    def __init__(self, data, ftype='infer', check_ftype=True,
+    def __init__(
+        self,
+        data,
+        ftype='infer',
+        check_ftype=True,
         # _max_depth=None,
     ):
         """Flow direction raster array parsed to actionable format.
@@ -95,17 +102,19 @@ class FlwdirRaster(object):
         """
         if ftype == 'infer':
             ftype = infer_ftype(data)
-            check_ftype = False # already done
+            check_ftype = False  # already done
         if ftype == 'nextxy':
             self.size = data[0].size
             self.shape = data[0].shape
             # _max_depth = 35 if _max_depth is None else _max_depth
         else:
-            self.size = data.size 
+            self.size = data.size
             self.shape = data.shape
 
-        if self.size > 2**32-2:       # maximum size we can have with uint32 indices
-            raise ValueError("The current framework limits the raster size to 2**32-2 cells")
+        if self.size > 2**32 - 2:  # maximum size we can have with uint32 indices
+            raise ValueError(
+                "The current framework limits the raster size to 2**32-2 cells"
+            )
         if len(self.shape) != 2:
             raise ValueError("Flow direction array should be 2 dimensional")
 
@@ -115,18 +124,19 @@ class FlwdirRaster(object):
         # initialize
         # convert to internal indices
         self._idxs_valid, self._idxs_ds, self._idxs_us, self._idx0 = parse_flwdir(
-            data, 
-            ftype=ftype, 
-            check_ftype=check_ftype, 
+            data,
+            ftype=ftype,
+            check_ftype=check_ftype,
             # _max_depth=_max_depth
         )
         if self._idxs_valid.size <= 1:
-            raise ValueError('Invalid flow direction raster: size equal or smaller to 1')
+            raise ValueError(
+                'Invalid flow direction raster: size equal or smaller to 1')
         elif self._idx0.size == 0:
             raise ValueError('Invalid flow direction raster: no pits found')
         self.ncells = self._idxs_valid.size
         # set placeholder for network tree
-        self._tree = None         # List of array ordered from down- to upstream
+        self._tree = None  # List of array ordered from down- to upstream
 
     @property
     def pits(self):
@@ -137,7 +147,8 @@ class FlwdirRaster(object):
     def tree(self):
         """Return network tree, a list of arrays ordered from down- to upstream"""
         if self._tree is None:
-            self.set_tree()    # setup network, with pits as most downstream indices
+            self.set_tree(
+            )  # setup network, with pits as most downstream indices
         return self._tree
 
     @property
@@ -160,10 +171,11 @@ class FlwdirRaster(object):
         """
         idxs_pit = np.asarray(idxs_pit, dtype=np.uint32).flatten()
         idxs_pit = self._internal_idx(idxs_pit)
-        if streams is not None: # snap to streams
-            idxs_pit = core.ds_stream(idxs_pit, self._idxs_ds, self._flatten(streams))
+        if streams is not None:  # snap to streams
+            idxs_pit = core.ds_stream(idxs_pit, self._idxs_ds,
+                                      self._flatten(streams))
         self._idx0 = idxs_pit
-        self._tree = None       # reset network tree
+        self._tree = None  # reset network tree
 
     def set_tree(self, idxs_pit=None, streams=None):
         """Setup network tree, a list of arrays ordered from down- to upstream.
@@ -180,18 +192,25 @@ class FlwdirRaster(object):
         repair_idx = core.loop_indices(self._idxs_ds, self._idxs_us)
         if repair_idx.size > 0:
             # set pits for all loop indices !
-            self._idxs_ds[repair_idx] = repair_idx 
+            self._idxs_ds[repair_idx] = repair_idx
             self._idx0 = core.pit_indices[self._idxs_ds]
 
     def basins(self):
         """Returns a basin map with a unique id (starting from 1) for every basin"""
-        return self._reshape(basin.basins(self.tree, self._idxs_us, self.tree[0]), nodata=np.uint32(0))
+        return self._reshape(basin.basins(self.tree, self._idxs_us,
+                                          self.tree[0]),
+                             nodata=np.uint32(0))
 
     def subbasins(self, idxs):
         """Returns a subbasin map with a unique id (starting from 1) for every subbasin"""
-        return self._reshape(basin.basins(self.tree, self._idxs_us, self._internal_idx(idxs)), nodata=np.uint32(0))
+        return self._reshape(basin.basins(self.tree, self._idxs_us,
+                                          self._internal_idx(idxs)),
+                             nodata=np.uint32(0))
 
-    def upstream_area(self, affine=gis_utils.IDENTITY, latlon=False, nodata=-9999.):
+    def upstream_area(self,
+                      affine=gis_utils.IDENTITY,
+                      latlon=False,
+                      nodata=-9999.):
         """Returns the upstream area map based on the flow direction map. 
 
 
@@ -210,7 +229,12 @@ class FlwdirRaster(object):
         -------
         upstream area map: 2D array
         """
-        upa_flat = basin.upstream_area(self.tree, self._idxs_valid, self._idxs_us, self.shape[1], affine=affine, latlon=latlon)
+        upa_flat = basin.upstream_area(self.tree,
+                                       self._idxs_valid,
+                                       self._idxs_us,
+                                       self.shape[1],
+                                       affine=affine,
+                                       latlon=latlon)
         return self._reshape(upa_flat, nodata=nodata)
 
     def stream_order(self):
@@ -227,7 +251,8 @@ class FlwdirRaster(object):
         -------
         strahler order map: 2D array of int
         """
-        return self._reshape(basin.stream_order(self.tree, self._idxs_us), nodata=np.int8(-1))
+        return self._reshape(basin.stream_order(self.tree, self._idxs_us),
+                             nodata=np.int8(-1))
 
     def accuflux(self, material, nodata=-9999):
         """Return accumulated amount of material along the flow direction map.
@@ -245,11 +270,18 @@ class FlwdirRaster(object):
         accumulated material map: 2D array
         """
         if not np.all(material.shape == self.shape):
-            raise ValueError("'Material' shape does not match with flow direction shape.")
-        accu_flat = basin.accuflux(self.tree, self._idxs_us, self._flatten(material), nodata)
+            raise ValueError(
+                "'Material' shape does not match with flow direction shape.")
+        accu_flat = basin.accuflux(self.tree, self._idxs_us,
+                                   self._flatten(material), nodata)
         return self._reshape(accu_flat, nodata=nodata)
 
-    def vector(self, min_order=1, xs=None, ys=None, affine=gis_utils.IDENTITY, crs=None):
+    def vector(self,
+               min_order=1,
+               xs=None,
+               ys=None,
+               affine=gis_utils.IDENTITY,
+               crs=None):
         """Returns a GeoDataFrame with river segments. Segments are LineStrings 
         connecting cell from down to upstream and are splitted based on strahler order. 
         
@@ -275,13 +307,16 @@ class FlwdirRaster(object):
         river segments : geopandas.GeoDataFrame
         """
         try:
-            import geopandas as gp 
+            import geopandas as gp
             import shapely
         except ImportError:
-            raise ImportError("The `vector` method requies the shapely and geopandas packages")
+            raise ImportError(
+                "The `vector` method requies the shapely and geopandas packages"
+            )
         # get geoms and make geopandas dataframe
         if xs is None or ys is None:
-            xs, ys = gis_utils.idxs_to_coords(self._idxs_valid, affine, self.shape)
+            xs, ys = gis_utils.idxs_to_coords(self._idxs_valid, affine,
+                                              self.shape)
         else:
             xs, ys = xs.ravel()[self._idxs_valid], ys.ravel()[self._idxs_valid]
         geoms = gis_utils.idxs_to_geoms(self._idxs_ds, xs, ys)
@@ -293,11 +328,14 @@ class FlwdirRaster(object):
 
     def drainage_path_stats(self, rivlen, elevtn):
         if not np.all(rivlen.shape == self.shape):
-            raise ValueError("'rivlen' shape does not match with flow direction shape")
+            raise ValueError(
+                "'rivlen' shape does not match with flow direction shape")
         if not np.all(elevtn.shape == self.shape):
-            raise ValueError("'elevtn' shape does not match with flow direction shape")
-        df_out = basin_descriptors.mean_drainage_path_stats(self.tree, self._idxs_us, 
-            self._flatten(rivlen), self._flatten(elevtn))
+            raise ValueError(
+                "'elevtn' shape does not match with flow direction shape")
+        df_out = basin_descriptors.mean_drainage_path_stats(
+            self.tree, self._idxs_us, self._flatten(rivlen),
+            self._flatten(elevtn))
         return df_out
 
     def _reshape(self, data, nodata):
