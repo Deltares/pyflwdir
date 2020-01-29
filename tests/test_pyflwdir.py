@@ -19,26 +19,26 @@ from pyflwdir import FlwdirRaster
 # read and parse data
 @pytest.fixture
 def d8_data():
-    return np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8).reshape(
-        (678, 776))
+    data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
+    return data.reshape((678, 776))
 
 
 @pytest.fixture
 def ldd_data():
-    return np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8).reshape(
-        (678, 776))
+    data = np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8)
+    return data.reshape((678, 776))
 
 
 @pytest.fixture
 def nextxy_data():
-    return np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32).reshape(
-        (2, 678, 776))
+    data = np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32)
+    return data.reshape((2, 678, 776))
 
 
 @pytest.fixture
 def nextidx_data():
-    return np.fromfile(r'./tests/data/nextidx.bin', dtype=np.uint32).reshape(
-        (678, 776))
+    data = np.fromfile(r'./tests/data/nextidx.bin', dtype=np.uint32)
+    return data.reshape((678, 776))
 
 
 @pytest.fixture

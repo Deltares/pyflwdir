@@ -15,8 +15,8 @@ from pyflwdir.core import _mv
 # read and parse data
 @pytest.fixture
 def _d8():
-    return np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8).reshape(
-        (678, 776))
+    data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
+    return data.reshape((678, 776))
 
 
 @pytest.fixture
@@ -26,23 +26,20 @@ def d8_parsed(_d8):
 
 @pytest.fixture
 def ldd_parsed():
-    _ldd = np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8).reshape(
-        (678, 776))
-    return core_ldd.from_flwdir(_ldd)
+    data = np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8)
+    return core_ldd.from_flwdir(data.reshape((678, 776)))
 
 
 @pytest.fixture
 def nextxy_parsed():
-    _nextxy = np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32).reshape(
-        (2, 678, 776))
-    return core_nextxy.from_flwdir(_nextxy)
+    data = np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32)
+    return core_nextxy.from_flwdir(data.reshape((2, 678, 776)))
 
 
 @pytest.fixture
 def nextidx_parsed():
-    _nextidx = np.fromfile(r'./tests/data/nextidx.bin',
-                           dtype=np.uint32).reshape(678, 776)
-    return core_nextidx.from_flwdir(_nextidx)
+    data = np.fromfile(r'./tests/data/nextidx.bin', dtype=np.uint32)
+    return core_nextidx.from_flwdir(data.reshape(678, 776))
 
 
 def test_core_xxx_simple():
@@ -101,6 +98,9 @@ def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed,
                  nextxy=nextxy_parsed,
                  nextidx=nextidx_parsed)
     for ftype, _fd_ in fdict.items():
+        # test if internal indices are valid
+        idxs_valid, idxs_ds = _fd_[:2]
+        assert idxs_ds.max() < idxs_valid.size and idxs_ds.min() >= 0
         # test conistent results
         for i in range(len(_d8_)):
             assert np.all(
@@ -108,13 +108,10 @@ def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed,
             ), f"disagreement between 'd8' and '{ftype}'' output {i}"
         # test to/from_flwdir conversions
         fd = getattr(pyflwdir, f'core_{ftype}')
-        idxs_valid, idxs_ds = _fd_[:2]
         _fd2_ = fd.from_flwdir(fd.to_flwdir(idxs_valid, idxs_ds, _d8.shape))
         for i in range(len(_fd_)):
-            assert np.all(
-                _fd2_[i] == _fd_[i]
-            ), f"dissimilarities after conversion: '{ftype}'' output {i}"
-
+            msg = f"dissimilarities after conversion: '{ftype}'' output {i}"
+            assert np.all(_fd2_[i] == _fd_[i]), msg 
 
 def test_core_d8():
     """test d8_upstream and d8_upstream functions"""

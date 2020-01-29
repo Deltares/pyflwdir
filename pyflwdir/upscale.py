@@ -303,17 +303,24 @@ def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
     # allocate output and internal array
     subidxs_rep = np.ones(nrow * ncol, dtype=subidxs_valid.dtype) * _mv
     uparea = np.zeros(nrow * ncol, dtype=subuparea.dtype)
-    # loop over valid indices
+    touched_ea = uparea == 1 #  create "false" array
+    # loop over internal indices
     for i in range(subidxs_valid.size):
-        subidx = subidxs_valid[i]
+        subidx = subidxs_valid[i] # subgrid index
         # NOTE including pits is different from the original EAM
         ispit = subidxs_ds[i] == i  # NOTE internal index
         eff_area = effective_area(subidx, subncol, cellsize)
+        idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
         # check upstream area if cell ispit or at effective area
-        if ispit or eff_area:
-            idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
+        if ispit or eff_area or ~touched_ea[idx]:
+            # include subgrid cells outside effective area until we touched on
+            # the effective area
+            if ~touched_ea[idx] and (eff_area or ispit):
+                touched_ea[idx] = True
+                upa0 = 0 # reset upa0
+            else:
+                upa0 = uparea[idx]
             upa = subuparea[subidx]
-            upa0 = uparea[idx]
             # cell with largest upstream area is representative cell
             if upa > upa0:
                 uparea[idx] = upa
@@ -672,6 +679,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
         # STEP 2: find original upstream connections
         idxs_us_lst = list()
         idxs_ds0 = np.unique(np.array(idxs_lst, dtype=idxs_fix.dtype))
+        assert np.all(idxs_internal[idxs_ds0] != _mv)
         for idx_ds in idxs_ds0:  # @2A lowres us connections loop
             for i in idxs_us[idxs_internal[idx_ds], :]:
                 if i == _mv:
