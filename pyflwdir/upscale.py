@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
 # August 2019
+"""Methods for upscaling high res flow direction data to lower model 
+resolutions."""
 
 from numba import njit
 import numpy as np
@@ -111,7 +113,8 @@ def dmm_exitcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
 
     Returns
     -------
-    subgrid representative cell indices : ndarray with size shape[0]*shape[1]
+    1D array of int 
+        subgrid indices of representative cells
     """
     subncol = subshape[1]
     nrow, ncol = shape
@@ -160,7 +163,8 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
 
     Returns
     -------
-    lowres indices of next downstream cell : ndarray    
+    ndarray of int
+        lowres indices of next downstream cell
     """
     subnrow, subncol = subshape
     nrow, ncol = shape
@@ -679,7 +683,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
         # STEP 2: find original upstream connections
         idxs_us_lst = list()
         idxs_ds0 = np.unique(np.array(idxs_lst, dtype=idxs_fix.dtype))
-        assert np.all(idxs_internal[idxs_ds0] != _mv)
+        # assert np.all(idxs_internal[idxs_ds0] != _mv)
         for idx_ds in idxs_ds0:  # @2A lowres us connections loop
             for i in idxs_us[idxs_internal[idx_ds], :]:
                 if i == _mv:

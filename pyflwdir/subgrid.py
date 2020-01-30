@@ -12,38 +12,37 @@ _mv = core._mv
 
 
 @njit
-def river_length(subidxs_out,
-                 idxs_valid,
-                 idxs_ds,
-                 idxs_us,
+def river_params(subidxs_out,
                  subidxs_valid,
                  subidxs_ds,
                  subidxs_us,
-                 subshape,
                  subuparea,
+                 subelevtn,
+                 subshape,
                  min_uparea=1.,
                  latlon=False,
                  affine=gis_utils.IDENTITY):
-    """Returns subgrid river length, calculated by following the 
-    subgrid flow direction network from one subgrid outlet cell to 
-    the next downstream outlet cell. 
+    """Returns the subgrid river length and slope per lowres cell. The 
+    subgrid river is defined by the path starting at the subgrid outlet 
+    cell moving upstream following the upstream subgrid cells with the 
+    largest upstream area until it reaches the next upstream outlet cell. 
     
+    A mimumum upstream area can be set to discriminate river cells.
+
     Parameters
     ----------
     subidxs_out : ndarray of int
         internal highres indices of subgrid outlet cells
-    idxs_valid : ndarray of int
-        lowres indices of valid cells
-    idxs_ds, idxs_us : ndarray of int
-        internal lowres indices of downstream, upstream cells
     subidxs_valid : ndarray of int
         highres raster indices of vaild cells
     subidxs_ds, subidxs_us : ndarray of int
         internal highres indices of downstream, upstream cells
+    subuparea : ndarray of float
+        highres flattened upstream area
+    subelevtn : ndarray of float
+        highres flattened elevation
     subshape : tuple of int
         highres raster shape
-    subuparea : ndarray
-        highres flattened upstream area array
     min_uparea : float
         minimum upstream area of a river cell
     latlon : bool, optional
@@ -56,62 +55,116 @@ def river_length(subidxs_out,
 
     Returns
     -------
-    array with subgrid river lengths : ndarray of float
+    1D array of float
+        subgrid river length [m]
+    1D array of float
+        subgrid river slope [m/m] 
     """
-    assert subidxs_out.size == idxs_ds.size  # size should match
     subncol = subshape[1]
     # binary array with outlets
-    outlets = np.zeros(subidxs_ds.size, dtype=np.int8)
-    outlets[subidxs_out] = np.int8(1)
-    # uparea at outlets
-    uparea = subuparea[subidxs_out]
+    subn = subidxs_ds.size
+    outlets = np.array([np.bool(0) for _ in range(subn)])
+    outlets[subidxs_out] = np.bool(1)
     # allocate output
-    rivlen = np.ones(idxs_ds.size, dtype=np.float64) * -9999.
+    n = subidxs_out.size
+    rivlen = np.ones(n, dtype=np.float64) * -9999.
+    rivslp = np.ones(n, dtype=np.float64) * -9999.
     # loop over outlet cell indices
-    for idx0 in range(idxs_ds.size):
-        # STEP 1 get subgrid index at upstream end of river reach
-        idx_us = core._main_upstream(idx0, idxs_us, uparea,
-                                     upa_min=min_uparea)  # internal index
-        if idx_us == _mv:  # no upstream neighbor with river cells
-            # find most upstream river subgrid cell
-            subidx1 = subidxs_out[idx0]
-            while subidx1 != _mv:
-                subidx = subidx1
-                subidx1 = core._main_upstream(subidx,
-                                              subidxs_us,
-                                              subuparea,
-                                              upa_min=min_uparea)
-        else:
-            subidx = subidxs_out[idx_us]
-        assert subidx != _mv
-        # STEP 2 follow river downstream to get subgrid river length
+    for idx0 in range(n):
+        subidx = subidxs_out[idx0]
+        z0 = subelevtn[subidx]
         l = np.float64(0.)
         while True:
-            subidx1, dist = core.downstream_length(subidx,
-                                                   subidxs_ds,
-                                                   subidxs_valid,
-                                                   subncol,
-                                                   latlon=latlon,
-                                                   affine=affine)
-            l += dist
-            # break if at subgrid outlet or
-            if outlets[subidx1] == np.int8(1) or subidx1 == subidx:
+            subidx1 = core._main_upstream(subidx, subidxs_us, subuparea,
+                                          min_uparea)
+            # break if no more upstream cells
+            if subidx1 == _mv:
+                z1 = subelevtn[subidx]
+                break
+            # update length
+            l += core.downstream_length(subidx1, subidxs_ds, subidxs_valid,
+                                        subncol, latlon, affine)[1]
+            # break if at upstream subgrid outlet
+            if outlets[subidx1]:
+                z1 = subelevtn[subidx1]
                 break
             # next iter
             subidx = subidx1
         # write riv length
         rivlen[idx0] = l
+        rivslp[idx0] = 0. if l == 0 else (z1 - z0) / l
+    return rivlen, rivslp
 
-    return rivlen
+
+def cell_area(subidxs_out,
+              subidxs_valid,
+              subidxs_us,
+              subshape,
+              latlon=False,
+              affine=gis_utils.IDENTITY):
+    """Returns the subgrid cell area. 
+    
+    Parameters
+    ----------
+    subidxs_out : ndarray of int
+        internal highres indices of subgrid outlet cells
+    subidxs_valid : ndarray of int
+        highres raster indices of vaild cells
+    subidxs_us : ndarray of int
+        internal highres indices of upstream cells
+    subshape : tuple of int
+        highres raster shape
+    latlon : bool, optional
+        True if WGS84 coordinates
+        (the default is False)
+    affine : affine transform
+        Two dimensional transform for 2D linear mapping
+        (the default is an identity transform which results 
+        in an area of 1 for every cell)
+
+    Returns
+    -------
+    1D array of float
+        subgrid cell area
+    """
+    subncol = subshape[1]
+    xres, yres, north = affine[0], affine[4], affine[5]
+    area0 = abs(xres * yres)
+    # binary array with outlets
+    subn = subidxs_valid.size
+    outlets = np.array([np.bool(0) for _ in range(subn)])
+    outlets[subidxs_out] = np.bool(1)
+    # allocate output
+    n = subidxs_out.size
+    subare = np.ones(n, dtype=np.float64) * -9999.
+    # loop over outlet cell indices
+    for idx0 in range(n):
+        area = np.float64(0)
+        subidxs = np.array([subidxs_out[idx0]])
+        while True:
+            next_lst = []
+            for subidx in subidxs_us[subidxs, :].ravel():
+                if subidx == _mv or outlets[subidx]:
+                    continue
+                next_lst.append(subidx)
+                if latlon:
+                    r = subidxs_valid[subidx] // subncol
+                    lat = north + (r + 0.5) * yres
+                    area0 = gis_utils.cellarea(lat, xres, yres)
+                area += area0
+            # next iter
+            if len(next_lst) == 0:
+                break
+            subidxs = np.array(next_lst)
+        subare[idx0] = area
+    return subare
 
 
 @njit
-def connected(idxs_ds, subidxs_out, subidxs_ds):
+def connected(subidxs_out, idxs_ds, subidxs_ds):
     """Returns binary array with ones if sugrid outlet/representative 
     cells are connected in d8.
     
-    NOTE all indices are internal!
-
     Parameters
     ----------
     idxs_ds : ndarray of int
@@ -125,22 +178,21 @@ def connected(idxs_ds, subidxs_out, subidxs_ds):
     """
     assert subidxs_out.size == idxs_ds.size
     # binary array with outlets
-    outlets = np.zeros(subidxs_ds.size, dtype=np.int8)
-    outlets[subidxs_out] = np.int8(1)
-    # allocate output
-    connect_map = np.ones(idxs_ds.size, dtype=np.int8) * np.int8(-1)
+    subn = subidxs_ds.size
+    outlets = np.array([np.bool(0) for _ in range(subn)])
+    outlets[subidxs_out] = True
+    # allocate output. intialize 'True' map
+    n = idxs_ds.size
+    connect_map = np.array([np.bool(1) for _ in range(n)])
     # loop over outlet cell indices
-    for idx0 in range(idxs_ds.size):
+    for idx0 in range(n):
         subidx = subidxs_out[idx0]
         idx_ds = idxs_ds[idx0]
         while True:
             subidx1 = subidxs_ds[subidx]  # next downstream subgrid cell index
-            if outlets[subidx1] == np.int8(
-                    1) or subidx1 == subidx:  # at outlet or at pit
-                if subidx1 == subidxs_out[idx_ds]:
-                    connect_map[idx0] = np.int8(1)
-                else:  # not connected
-                    connect_map[idx0] = np.int8(0)
+            if outlets[subidx1] or subidx1 == subidx:  # at outlet or at pit
+                if subidx1 != subidxs_out[idx_ds]:
+                    connect_map[idx0] = False
                 break
             # next iter
             subidx = subidx1
