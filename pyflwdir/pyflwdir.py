@@ -366,10 +366,18 @@ class FlwdirRaster(object):
         """Upscale flow direction network to lower resolution. 
         Available methods are Connecting Outlets Scaling Method (COSM) [1], 
         Effective Area Method (EAM) [2] and Double Maximum Method (DMM) [3].
-        
-        # TODO add refs
-        .. [1]
 
+        Note: This method only works for D8 or LDD flow directon data.
+        
+        # TODO update ref
+        ..[1] Eilander et al. in preperation
+        ..[2] Yamazaki D, Masutomi Y, Oki T and Kanae S 2008 
+        "An Improved Upscaling Method to Construct a Global River Map" APHW
+        ..[3] Olivera F, Lear M S, Famiglietti J S and Asante K 2002 
+        "Extracting low-resolution river networks from high-resolution digital 
+        elevation models" Water Resour. Res. 38 13-1-13–8 
+        Online: http://doi.wiley.com/10.1029/2001WR000726
+    
         
         Parameters
         ----------
@@ -389,8 +397,10 @@ class FlwdirRaster(object):
         ndarray of uint32
             1D raster indices of subgrid outlets
         """
-
         methods = ['cosm', 'eam', 'dmm']
+        if self.ftype not in  ['d8', 'ldd']:
+            raise ValueError("The upscale method only works for D8 or LDD " +
+                             "flow directon data.")
         if method not in methods:
             methodstr = "', '".join(methods)
             raise ValueError(f"Unknown method, select from: '{methodstr}'")
