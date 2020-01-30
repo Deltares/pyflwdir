@@ -475,7 +475,7 @@ class FlwdirRaster(object):
                  subidxs_out,
                  elevtn,
                  uparea=None,
-                 min_uparea=1.,
+                 min_uparea=0.,
                  latlon=False,
                  affine=gis_utils.IDENTITY):
         """Returns the subgrid river length and slope per lowres cell. The 
@@ -502,7 +502,7 @@ class FlwdirRaster(object):
         min_uparea : float, optional
             Minimum upstream area to be consided as stream. Only used if 
             return_sublength is True. 
-            (by default 1.)
+            (by default 0.)
         latlon : bool, optional
             True if WGS84 coordinates
             (the default is False)

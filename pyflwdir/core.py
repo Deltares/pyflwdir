@@ -29,6 +29,7 @@ def network_tree(idxs_pits, idxs_us):
     -------
     Ordered internal indices : List of arrays 
     """
+    # TODO: test if this works faster with single array per pit
     tree = List()
     tree.append(idxs_pits)
     idxs = idxs_pits

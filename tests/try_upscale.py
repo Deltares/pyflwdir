@@ -68,9 +68,12 @@ if __name__ == "__main__":
     # data = d8.stream_order().astype(np.int32)
     # name = 'ord'
     # nodata = -1
+    # name = 'upa'
+    # nodata = -9999.
+    # data = uparea.reshape(d8.shape)
     # prof.update(nodata=nodata, dtype=data.dtype)
-    # with rasterio.open(f'./tests/data/{prefix}0_{name}.tif', 'w',
-    #                    **prof) as dst:
+    # fn = f'./tests/data/{prefix}0_{name}.tif'
+    # with rasterio.open(fn, 'w', **prof) as dst:
     #     dst.write(data, 1)
     # import pdb; pdb.set_trace()
 
@@ -126,20 +129,19 @@ if __name__ == "__main__":
     # river length
     rivlen = np.ones(dir_lr.shape, dtype=np.float32) * -9999.
     rivlen.flat[dir_lr._idxs_valid] = subgrid.river_params(
-        subidxs_out0,
+        subidxs_out0, #[dir_lr._internal_idx(np.array([1440]))],
         d8._idxs_valid,
         d8._idxs_ds,
         d8._idxs_us,
         subelevtn=np.ones(d8.ncells),  # fake elevation; ignore slope
         subuparea=uparea.flat[d8._idxs_valid],
         subshape=d8.shape,
-        min_uparea=1.,
+        min_uparea=0.,
         latlon=False,
         affine=gis_utils.IDENTITY)[0].astype(np.float32)
 
     # write files for visual check
-    import pdb
-    pdb.set_trace()
+    import pdb; pdb.set_trace()
     valid = nextidx.ravel() != _mv
     xs, ys = np.ones(nextidx.size) * np.nan, np.ones(nextidx.size) * np.nan
     xs[valid], ys[valid] = gis_utils.idxs_to_coords(subidxs_out[valid], affine,
