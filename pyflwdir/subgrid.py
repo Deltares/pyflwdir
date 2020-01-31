@@ -19,7 +19,7 @@ def river_params(subidxs_out,
                  subuparea,
                  subelevtn,
                  subshape,
-                 min_uparea=1.,
+                 min_uparea=0.,
                  latlon=False,
                  affine=gis_utils.IDENTITY):
     """Returns the subgrid river length and slope per lowres cell. The 
@@ -45,13 +45,13 @@ def river_params(subidxs_out,
         highres raster shape
     min_uparea : float
         minimum upstream area of a river cell
+        (the default is 0.)
     latlon : bool, optional
         True if WGS84 coordinates
         (the default is False)
     affine : affine transform
         Two dimensional transform for 2D linear mapping
-        (the default is an identity transform which results 
-        in an area of 1 for every cell)
+        (the default is an identity transform; cell length = 1)
 
     Returns
     -------
@@ -71,27 +71,29 @@ def river_params(subidxs_out,
     rivslp = np.ones(n, dtype=np.float64) * -9999.
     # loop over outlet cell indices
     for idx0 in range(n):
-        subidx = subidxs_out[idx0]
-        z0 = subelevtn[subidx]
+        subidx0 = subidxs_out[idx0]
         l = np.float64(0.)
+        subidx = subidx0
         while True:
             subidx1 = core._main_upstream(subidx, subidxs_us, subuparea,
                                           min_uparea)
             # break if no more upstream cells
             if subidx1 == _mv:
-                z1 = subelevtn[subidx]
+                subidx1 = subidx
                 break
             # update length
             l += core.downstream_length(subidx1, subidxs_ds, subidxs_valid,
                                         subncol, latlon, affine)[1]
             # break if at upstream subgrid outlet
             if outlets[subidx1]:
-                z1 = subelevtn[subidx1]
                 break
             # next iter
             subidx = subidx1
         # write riv length
         rivlen[idx0] = l
+        # write riv slope
+        z0 = subelevtn[subidx]
+        z1 = subelevtn[subidx1]
         rivslp[idx0] = 0. if l == 0 else (z1 - z0) / l
     return rivlen, rivslp
 

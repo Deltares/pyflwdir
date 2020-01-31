@@ -93,7 +93,8 @@ def basins(tree, idxs_us, idxs_pit):
     """label basins using network tree"""
     size = idxs_us.shape[0]
     basins = np.zeros(size, dtype=np.uint32)
-    basins[idxs_pit] = np.arange(idxs_pit.size).astype(np.uint32) + 1
+    npit = idxs_pit.size
+    basins[idxs_pit] = np.array([np.uint32(i + 1) for i in range(npit)])
     return fillnodata_upstream(tree, idxs_us, data=basins, nodata=np.uint32(0))
 
 

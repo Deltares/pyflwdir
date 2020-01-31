@@ -94,7 +94,7 @@ class FlwdirRaster(object):
         ----------
         data : ndarray
             flow direction raster data
-        ftype : {'d8', 'ldd', 'nextxy', 'infer'}, optional
+        ftype : {'d8', 'ldd', 'nextxy', 'nextidx', 'infer'}, optional
             name of flow direction type, infer from data if 'infer'
             (the default is 'infer')
         check_ftype : bool, optional
@@ -258,6 +258,24 @@ class FlwdirRaster(object):
         """
         basids = basin.basins(self.tree, self._idxs_us, self.tree[0])
         return self._reshape(basids, nodata=np.uint32(0))
+
+    def subbasins(self, idxs):
+        """Returns a subbasin map with a unique ID for every subbasin. The IDs
+        start from 1 and the background value is 0.
+        
+        Parameters
+        ----------
+        idxs : ndarray of int
+            1D raster indices of subbasin outlets
+        
+        Returns
+        -------
+        2D array of uint32
+            subbasin map
+        """
+        idxs0 = self._internal_idx(idxs)
+        subbas = basin.basins(self.tree, self._idxs_us, idxs0)
+        return self._reshape(subbas, nodata=np.uint32(0))
 
     def upstream_area(self, affine=gis_utils.IDENTITY, latlon=False):
         """Returns the upstream area map based on the flow direction map. 
@@ -433,8 +451,11 @@ class FlwdirRaster(object):
                 "'uparea' shape does not match with flow direction shape")
         # upscale flow directions
         fupscale = getattr(upscale, method)
-        nextidx, subidxs_out = fupscale(self._idxs_ds, self._idxs_valid,
-                                        uparea, self.shape, scale_factor,
+        nextidx, subidxs_out = fupscale(subidxs_ds = self._idxs_ds,
+                                        subidxs_valid = self._idxs_valid,
+                                        subuparea = uparea.ravel(),
+                                        subshape = self.shape,
+                                        cellsize = scale_factor,
                                         **kwargs)
         dir_lr = FlwdirRaster(nextidx, ftype='nextidx', check_ftype=False)
         if not dir_lr.isvalid:
@@ -442,24 +463,6 @@ class FlwdirRaster(object):
                 'The upscaled flow direction network is invalid.' +
                 'Please provide a minimal reproducible example.')
         return dir_lr, subidxs_out
-
-    def subbasins(self, idxs):
-        """Returns a subbasin map with a unique ID for every subbasin. The IDs
-        start from 1 and the background value is 0.
-        
-        Parameters
-        ----------
-        idxs : ndarray of int
-            1D raster indices of subbasin outlets
-        
-        Returns
-        -------
-        2D array of uint32
-            subbasin map
-        """
-        idxs0 = self._internal_idx(idxs)
-        subbas = basin.basins(self.tree, self._idxs_us, idxs0)
-        return self._reshape(subbas, nodata=np.uint32(0))
 
     def subarea(self,
                 other,
@@ -558,7 +561,7 @@ class FlwdirRaster(object):
         elif not np.all(uparea.shape == self.shape):
             raise ValueError(
                 "'uparea' shape does not match with flow direction shape")
-        rivlen, rivslp = subgrid.river_length_slope(
+        rivlen, rivslp = subgrid.river_params(
             subidxs_out=self._internal_idx(subidxs_out0),
             subidxs_valid=self._idxs_valid,
             subidxs_ds=self._idxs_ds,

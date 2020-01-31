@@ -124,6 +124,28 @@ def test_basins(d8):
     assert basins.dtype == np.uint32
     assert np.all(basins.shape == d8.shape)
 
+def test_upscale(d8, nextidx):
+    try:
+        d8_lr, idxout = d8.upscale(10)
+    except:
+        pytest.fail('upscaling failed')
+    with pytest.raises(ValueError):
+        d8.upscale(10, method='unknown') # unknown method
+        nextidx.upscale(10) # works only for D8/LDD
+        d8.upscale(10, uparea=np.ones(d8.shape).ravel()) # wrong uparea shape
+    try:
+        d8.subconnect(d8_lr, idxout)
+    except:
+         pytest.fail('subconnect failed')
+    try:
+        d8.subarea(d8_lr, idxout)
+    except:
+        pytest.fail('subarea failed')
+    try:
+        d8.subriver(d8_lr, idxout, np.ones(d8.shape))
+    except:
+        pytest.fail('subriver failed')
+    
 
 def test_vector(d8):
     affine = Affine(1 / 120., 0.0, 5 + 50 / 120., 0.0, -1 / 120,
