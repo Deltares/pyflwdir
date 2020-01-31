@@ -97,7 +97,7 @@ def river_params(subidxs_out,
         rivslp[idx0] = 0. if l == 0 else (z1 - z0) / l
     return rivlen, rivslp
 
-
+@njit
 def cell_area(subidxs_out,
               subidxs_valid,
               subidxs_us,
