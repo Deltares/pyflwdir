@@ -460,7 +460,7 @@ class FlwdirRaster(object):
         dir_lr = FlwdirRaster(nextidx, ftype='nextidx', check_ftype=False)
         if not dir_lr.isvalid:
             raise ValueError(
-                'The upscaled flow direction network is invalid.' +
+                'The upscaled flow direction network is invalid. ' +
                 'Please provide a minimal reproducible example.')
         return dir_lr, subidxs_out
 
