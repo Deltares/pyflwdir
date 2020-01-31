@@ -35,7 +35,7 @@ def parse_flwdir(flwdir, ftype, check_ftype=True):
     if check_ftype and not fd.isvalid(flwdir):
         raise ValueError(
             f'The flow direction type is not recognized as "{ftype}".')
-    return fd.from_flwdir(flwdir)
+    return fd.from_array(flwdir)
 
 
 def infer_ftype(flwdir):
@@ -224,6 +224,28 @@ class FlwdirRaster(object):
             # set pits for all loop indices !
             self._idxs_ds[repair_idx] = repair_idx
             self._idx0 = core.pit_indices[self._idxs_ds]
+
+    def to_array(self, ftype=None):
+        """Return 2D flow direction array. 
+        
+        Parameters
+        ----------
+        ftype : {'d8', 'ldd', 'nextxy', 'nextidx'}, optional
+            name of flow direction type
+            (the default is None; use input ftype)
+        
+        Returns
+        -------
+        2D array of int
+            Flow direction raster
+        """
+        if ftype is None:
+            ftype = self.ftype
+        if ftype not in ftypes:
+            msg = f'The flow direction type "{ftype}" is not recognized.'
+            raise ValueError(msg)
+        return ftypes[ftype].to_array(self._idxs_valid, self._idxs_ds, 
+                                      self.shape)
 
     def basins(self):
         """Returns a basin map with a unique IDs for every basin. The IDs

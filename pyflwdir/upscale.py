@@ -614,7 +614,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
     subnrow, subncol = subshape
     nrow, ncol = shape
     # parse nextidx
-    idxs_valid, _, idxs_us, _ = core_nextidx.from_flwdir(
+    idxs_valid, _, idxs_us, _ = core_nextidx.from_array(
         nextidx.reshape(shape))
     # internal indices
     n = idxs_valid.size
@@ -881,7 +881,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
             continue  # @0A
 
         # next iter @A0
-        _, _, idxs_us, _ = core_nextidx.from_flwdir(nextidx2.reshape(shape))
+        _, _, idxs_us, _ = core_nextidx.from_array(nextidx2.reshape(shape))
         # assert core.loop_indices(idxs_ds, idxs_us).size == 0 # loop at idx00
         # if core.loop_indices(idxs_ds, idxs_us).size > 0:
         #     print(idx00)

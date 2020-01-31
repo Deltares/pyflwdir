@@ -15,7 +15,7 @@ _us = np.ones((2, 3, 3), dtype=np.int32) * 2
 _us[:, 1, 1] = _pv
 
 
-def from_flwdir(flwdir):
+def from_array(flwdir):
     if not ((isinstance(flwdir, tuple) and len(flwdir) == 2) or
             (isinstance(flwdir, np.ndarray) and flwdir.ndim == 3
              and flwdir.shape[0] == 2)):
@@ -24,7 +24,7 @@ def from_flwdir(flwdir):
     return _from_flwdir(nextx, nexty)
 
 
-def to_flwdir(idxs_valid, idxs_ds, shape):
+def to_array(idxs_valid, idxs_ds, shape):
     nextx, nexty = _to_flwdir(idxs_valid, idxs_ds, shape)
     return np.stack([nextx, nexty])
 

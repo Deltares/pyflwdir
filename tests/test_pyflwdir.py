@@ -85,6 +85,10 @@ def test_object(d8, ldd, nextxy, nextidx, ldd_data):
                      check_ftype=True)  # invalid data: too small
 
 
+def test_toarray(d8, d8_data):
+    assert np.all(d8.to_array() == d8_data)
+
+
 def test_stream_order(d8):
     try:
         strord = d8.stream_order()

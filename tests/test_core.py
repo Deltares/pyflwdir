@@ -21,25 +21,25 @@ def _d8():
 
 @pytest.fixture
 def d8_parsed(_d8):
-    return core_d8.from_flwdir(_d8)
+    return core_d8.from_array(_d8)
 
 
 @pytest.fixture
 def ldd_parsed():
     data = np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8)
-    return core_ldd.from_flwdir(data.reshape((678, 776)))
+    return core_ldd.from_array(data.reshape((678, 776)))
 
 
 @pytest.fixture
 def nextxy_parsed():
     data = np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32)
-    return core_nextxy.from_flwdir(data.reshape((2, 678, 776)))
+    return core_nextxy.from_array(data.reshape((2, 678, 776)))
 
 
 @pytest.fixture
 def nextidx_parsed():
     data = np.fromfile(r'./tests/data/nextidx.bin', dtype=np.uint32)
-    return core_nextidx.from_flwdir(data.reshape(678, 776))
+    return core_nextidx.from_array(data.reshape(678, 776))
 
 
 def test_core_xxx_simple():
@@ -66,10 +66,10 @@ def test_core_xxx_simple():
                 fd._mv)), f"{_name}: isnodata test with _mv data failed"
         # test data type / dim errors
         with pytest.raises(TypeError):
-            fd.from_flwdir(fd._us[None, ...])
-            fd.from_flwdir(fd._us.astype(np.float))
+            fd.from_array(fd._us[None, ...])
+            fd.from_array(fd._us.astype(np.float))
         # test upstream / downstream / pit with _us data
-        idxs_valid, idxs_ds, idxs_us, idx_pits = fd.from_flwdir(fd._us)
+        idxs_valid, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._us)
         assert np.all(idxs_valid == np.arange(
             9)), f"{_name}: valid idx test with _us data failed"
         assert np.all(
@@ -80,11 +80,11 @@ def test_core_xxx_simple():
                 and np.all(idxs_us[:4, :] == _mv)
                 and np.all(idxs_us[5:, :] == _mv)
                 ), f"{_name}: upstream idx test with _us data failed"
-        assert np.all(fd.to_flwdir(idxs_valid, idxs_ds, _shape) ==
+        assert np.all(fd.to_array(idxs_valid, idxs_ds, _shape) ==
                       fd._us), f"{_name}: convert back with _us data failed"
         # test all invalid/pit with _ds data
         if getattr(fd, '_ds', None) is not None:
-            idxs_valid, idxs_ds, idxs_us, idx_pits = fd.from_flwdir(fd._ds)
+            idxs_valid, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._ds)
             assert (np.all(idxs_valid == idx_pits) and np.all(idxs_us == _mv)
                     ), f"{_name}: test all pits with _ds data failed"
 
@@ -106,9 +106,9 @@ def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed,
             assert np.all(
                 _d8_[i] == _fd_[i]
             ), f"disagreement between 'd8' and '{ftype}'' output {i}"
-        # test to/from_flwdir conversions
+        # test to/from_array conversions
         fd = getattr(pyflwdir, f'core_{ftype}')
-        _fd2_ = fd.from_flwdir(fd.to_flwdir(idxs_valid, idxs_ds, _d8.shape))
+        _fd2_ = fd.from_array(fd.to_array(idxs_valid, idxs_ds, _d8.shape))
         for i in range(len(_fd_)):
             msg = f"dissimilarities after conversion: '{ftype}'' output {i}"
             assert np.all(_fd2_[i] == _fd_[i]), msg 
@@ -152,7 +152,7 @@ def test_ftype_conversion():
 def test_downstream_length():
     """test downstream length"""
     ncol = 3
-    idxs_valid, idxs_ds, _, _ = core_d8.from_flwdir(core_d8._us)
+    idxs_valid, idxs_ds, _, _ = core_d8.from_array(core_d8._us)
     # test length
     dy = core.downstream_length(1, idxs_ds, idxs_valid, ncol, latlon=True)[1]
     dx = core.downstream_length(3, idxs_ds, idxs_valid, ncol, latlon=True)[1]

@@ -19,7 +19,7 @@ _us = np.ones((3, 3), dtype=np.uint32) * np.uint32(4)
     "Tuple((u4[:], u4[:], u4[:,:], u4[:]))(u4[:,:])",
     "Tuple((u4[:], u4[:], u4[:,:], u4[:]))(u4[:])",
 ])
-def from_flwdir(nextidx):
+def from_array(nextidx):
     size = nextidx.size
     nextidx_flat = nextidx.ravel()
     # keep valid indices only
@@ -61,7 +61,7 @@ def from_flwdir(nextidx):
 
 
 @njit  #("u4[:,:]( u4[:], u4[:], Tuple(i8, i8) )")
-def to_flwdir(idxs_valid, idxs_ds, shape):
+def to_array(idxs_valid, idxs_ds, shape):
     """convert 1D index to 2D NEXTIDX raster"""
     nextidx = np.ones(shape, dtype=np.uint32).ravel() * _mv
     nextidx[idxs_valid] = idxs_valid[idxs_ds]

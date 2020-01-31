@@ -49,7 +49,7 @@ def idx_to_dd(idx0, idx_ds, shape):
 
 
 @njit("Tuple((u4[:], u4[:], u4[:,:], u4[:]))(u1[:,:])")
-def from_flwdir(flwdir):
+def from_array(flwdir):
     """convert 2D D8 network to 1D indices"""
     size = flwdir.size
     nrow, ncol = flwdir.shape[0], flwdir.shape[-1]
@@ -95,7 +95,7 @@ def from_flwdir(flwdir):
 
 
 @njit("u1[:,:](u4[:], u4[:], Tuple((u8, u8)))")
-def to_flwdir(idxs_valid, idxs_ds, shape):
+def to_array(idxs_valid, idxs_ds, shape):
     """convert 1D index to 2D D8 raster"""
     n = idxs_valid.size
     flwdir = np.ones(shape, dtype=np.uint8).ravel() * _mv
