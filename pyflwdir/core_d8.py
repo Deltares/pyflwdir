@@ -20,7 +20,7 @@ _max_depth = 8
 def drdc(dd):
     """convert d8 value to delta row/col"""
     dr, dc = np.int8(0), np.int8(0)
-    if dd >= np.uint8(16):  # W / NW / N / NE
+    if dd >= np.uint8(16) and dd <= np.uint8(128):  # W / NW / N / NE
         if dd == np.uint8(16):  # W
             dr, dc = np.int8(0), np.int8(-1)
         else:  # NW / N / NE
