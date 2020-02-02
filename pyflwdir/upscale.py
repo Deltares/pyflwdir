@@ -762,7 +762,10 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                     idxs_pit = np.where(subidxs_out2 == subidx_out1)[0]
                     if idxs_pit.size == 1:
                         # previous (smaller) branch already claimed pit
-                        nextidx2[idx0] = idxs_pit[0]
+                        if in_d8(idx0, idxs_pit[0], ncol):
+                            nextidx2[idx0] = idxs_pit[0]
+                        else:
+                            print('pit ~in_d8', idx0)
                     else:
                         nextidx2[idx0] = idx0
                         # NOTE pit outlet outside original cell !
