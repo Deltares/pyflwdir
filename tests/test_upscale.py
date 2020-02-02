@@ -41,7 +41,7 @@ tests = {
     },
     'cosm2': {
         'method': 'cosm',
-        'n': 67
+        'n': 68
     },
 }
 
@@ -58,6 +58,11 @@ def test_upscale(d8):
         d8_lr = FlwdirRaster(nextidx, ftype='nextidx', check_ftype=True)
         subidxs_out = subidxs_out.ravel()
         assert d8_lr.isvalid
+        # check if in d8
+        try:
+            d8_lr.to_array(ftype='d8')
+        except:
+            pytest.fail(f'{name} not connected in d8')
         pit_idxs = nextidx.flat[d8_lr.pits]
         assert np.unique(pit_idxs).size == pit_idxs.size, name
         pitbas = basins[subidxs_out[d8_lr.pits]]

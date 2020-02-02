@@ -102,16 +102,21 @@ def to_array(idxs_valid, idxs_ds, shape):
     for i in range(n):
         idx0 = idxs_valid[i]
         idx_ds = idxs_valid[idxs_ds[i]]
-        flwdir[idx0] = idx_to_dd(idx0, idx_ds, shape)
+        dd = idx_to_dd(idx0, idx_ds, shape)
+        if dd == _mv:
+            msg = 'Invalid data. Downstream cell outside 8 neighbors.'
+            raise ValueError(msg)
+        flwdir[idx0] = dd
     return flwdir.reshape(shape)
 
 
 # core d8 functions
 def isvalid(flwdir):
     """True if 2D D8 raster is valid"""
-    return (isinstance(flwdir, np.ndarray) and flwdir.dtype == 'uint8'
-            and flwdir.ndim == 2
-            and np.all([v in _d8_ for v in np.unique(flwdir)]))
+    return (isinstance(flwdir, np.ndarray) and 
+            flwdir.dtype == 'uint8' and 
+            flwdir.ndim == 2 and
+            np.all([v in _d8_ for v in np.unique(flwdir)]))
 
 
 @vectorize(["b1(u1)"])

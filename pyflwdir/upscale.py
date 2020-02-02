@@ -703,17 +703,19 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
             idx0 = idxs_us_lst[i]
             subidx = subidxs_out1[idx0]
             connected = False
-            j0, j1 = 0, 0
+            j0, j1 = 0, 0 # start and end connection to path
             # move into next cell to initialize
             subidx = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
             idx = idx0
-            while True:  # @3B find connecting outlet in subidxs_lst
+            ii = 0 
+            while True and ii <= 10:  # @3B find connecting outlet in subidxs_lst
                 subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
                 idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
                 if (subidx == subidx1 or idx != idx1):  # if pit OR outlet
+                    if not connected:
+                        ii += 1
                     for j in range(j0, noutlets):  # @3C check outlet loop
-                        if subidxs_lst[
-                                j] == subidx:  # connection on path found
+                        if subidxs_lst[j] == subidx: # connection on path
                             if not connected:
                                 j0, j1, connected = j, j, True
                             elif in_d8(idx0, idx, ncol):
@@ -824,8 +826,8 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                             pit = subidx1 == subidx
                             if (outlet or pit):
                                 # at outlet or at pit
-                                notd8 = ~in_d8(idx0, idx_ds, ncol)
-                                if notd8 or (~outlet and pit):
+                                ind8 = in_d8(idx0, idx_ds, ncol)
+                                if ~ind8 or (~outlet and pit):
                                     # outside d8 neighbors
                                     nextiter = True
                                     if nextidx1[idx0] in bottleneck:
@@ -833,20 +835,23 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                     else:
                                         bottleneck.append(nextidx1[idx0])
                                         # print('bottleneck ', bottleneck)
-                                else:
+                                elif ind8:
                                     nextidx2[idx0] = idx_ds  # update
                                     # print('lats', idx0, idx_ds)
                                 break  # @4D
                             elif idx_ds0 != idx_ds and idx_ds0 != idx0:
-                                # lowres cell outlet
-                                if idx_ds0 in idxs_edit_lst:
+                                # original next downstream cell
+                                idx_ds00 = nextidx1[nextidx1[idx0]]
+                                if (idx_ds0 in idxs_edit_lst or 
+                                    ~in_d8(idx0, idx_ds0, ncol) or 
+                                    ~in_d8(idx_ds0, idx_ds00, ncol)):
                                     pass
                                 # zero upstream cells AND at original outlet
                                 elif (idxs_us[idxs_internal[idx_ds0], 0] == _mv and
                                       subidxs_out1[nextidx2[idx0]] in path):
                                     # update original next downstream cell
                                     nextidx2[idx0] = idx_ds0  
-                                    nextidx2[idx_ds0] = nextidx1[nextidx1[idx0]]
+                                    nextidx2[idx_ds0] = idx_ds00
                                     subidxs_out2[idx_ds0] = subidx
                                     # outlet edited
                                     idxs_edit_lst.append(idx_ds0)
