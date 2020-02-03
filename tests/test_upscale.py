@@ -31,17 +31,17 @@ tests = {
         'n': 1073
     },
     'eam': {
-        'n': 424
+        'n': 406
     },
     'cosm': {
         'kwargs': {
             'iter2': False
         },
-        'n': 144
+        'n': 138
     },
     'cosm2': {
         'method': 'cosm',
-        'n': 68
+        'n': 67
     },
 }
 

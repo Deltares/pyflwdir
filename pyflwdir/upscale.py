@@ -45,25 +45,6 @@ def in_d8(idx0, idx_ds, ncol):
     return cond1 or cond2 or cond3
 
 
-@njit
-def next_suboutlet(subidx, idx0, subidxs_internal, subidxs_ds, subidxs_valid,
-                   subncol, cellsize, ncol):
-    """Returns the next downstream lowres subgrid outlet index of 
-    lowres cell."""
-    path = list()
-    while True:
-        # next downstream subgrid cell index; NOTE use of internal indices
-        subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
-        # at outlet if next subgrid cell is in next lowres cell
-        outlet = idx0 != subidx_2_idx(subidx1, subncol, cellsize, ncol)
-        pit = subidx1 == subidx
-        if outlet or pit:
-            break
-        subidx = subidx1  # next iter
-        path.append(subidx1)
-    return subidx, np.array(path, dtype=subidxs_ds.dtype)
-
-
 #### DOUBLE MAXIMUM METHOD ####
 
 
@@ -307,7 +288,6 @@ def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
     # allocate output and internal array
     subidxs_rep = np.ones(nrow * ncol, dtype=subidxs_valid.dtype) * _mv
     uparea = np.zeros(nrow * ncol, dtype=subuparea.dtype)
-    touched_ea = uparea == 1 #  create "false" array
     # loop over internal indices
     for i in range(subidxs_valid.size):
         subidx = subidxs_valid[i] # subgrid index
@@ -316,14 +296,8 @@ def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
         eff_area = effective_area(subidx, subncol, cellsize)
         idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
         # check upstream area if cell ispit or at effective area
-        if ispit or eff_area or ~touched_ea[idx]:
-            # include subgrid cells outside effective area until we touched on
-            # the effective area
-            if ~touched_ea[idx] and (eff_area or ispit):
-                touched_ea[idx] = True
-                upa0 = 0 # reset upa0
-            else:
-                upa0 = uparea[idx]
+        if ispit or eff_area:
+            upa0 = uparea[idx]
             upa = subuparea[subidx]
             # cell with largest upstream area is representative cell
             if upa > upa0:
@@ -661,8 +635,10 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                             pass
                         else:
                             connected = True
-                    subidxs_lst.append(subidx)  # append subgrid outlet index
-                    idxs_lst.append(idx0)  # append lowres index
+                    # check if valid cell (required at edges)
+                    if np.any(idxs_valid == idx0):
+                        subidxs_lst.append(subidx)  # append subgrid outlet index
+                        idxs_lst.append(idx0)  # append lowres index
                     # if at original outlet cell of idx0 -> update idx_ds0
                     if subidx == subidxs_out1[idx0]:
                         idx_ds0 = nextidx[idx0]
@@ -956,6 +932,7 @@ def cosm(subidxs_ds,
     # STEP 2 try fixing invalid subgrid connections
     if iter2:
         # print(idxs_fix.size)
+        # idxs_fix = np.array([858, 252, 254, 864])
         nextidx, subidxs_out = cosm_nextidx_iter2(nextidx, subidxs_out,
                                                   idxs_fix, subidxs_ds,
                                                   subidxs_valid, subuparea,
