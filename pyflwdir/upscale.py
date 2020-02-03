@@ -736,17 +736,16 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                 # print('pit', pit1)
                 if pit1 and len(idxs_edit_lst) == 0:
                     idxs_pit = np.where(subidxs_out2 == subidx_out1)[0]
-                    if idxs_pit.size == 1:
+                    if idxs_pit.size == 1 and in_d8(idx0, idxs_pit[0], ncol):
                         # previous (smaller) branch already claimed pit
-                        if in_d8(idx0, idxs_pit[0], ncol):
-                            nextidx2[idx0] = idxs_pit[0]
-                        else:
-                            print('pit ~in_d8', idx0)
-                    else:
+                        nextidx2[idx0] = idxs_pit[0]
+                        break  # @4A
+                    elif idxs_pit.size == 0:
+                        # set pit and move outlet to neighboring cell
+                        # NOTE pit outlet outside lowres cell !
                         nextidx2[idx0] = idx0
-                        # NOTE pit outlet outside original cell !
                         subidxs_out2[idx0] = subidx_out1
-                    break  # @4A
+                        break  # @4A
                 # check if ds lowres cell already edited to avoid loops
                 if idx1 in idxs_edit_lst or idx1 in bottleneck:
                     d8 = False
