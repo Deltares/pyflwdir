@@ -119,13 +119,15 @@ def isvalid(flwdir):
             np.all([v in _d8_ for v in np.unique(flwdir)]))
 
 
-@vectorize(["b1(u1)"])
+# @vectorize(["b1(u1)"])
+@njit
 def ispit(dd):
     """True if D8 pit"""
     return np.any(dd == _pv)
 
 
-@vectorize(["b1(u1)"])
+# @vectorize(["b1(u1)"])
+@njit
 def isnodata(dd):
     """True if D8 nodata"""
     return dd == _mv

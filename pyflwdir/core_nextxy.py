@@ -116,13 +116,15 @@ def isvalid(flwdir):
             and np.all(nextx[mask] == nexty[mask]))
 
 
-@vectorize(["b1(i4)", "b1(i8)"])
+# @vectorize(["b1(i4)", "b1(i8)"])
+@njit
 def ispit(dd):
     """True if NEXTXY pit"""
     return dd == _pv
 
 
-@vectorize(["b1(i4)", "b1(i8)"])
+# @vectorize(["b1(i4)", "b1(i8)"])
+@njit
 def isnodata(dd):
     """True if NEXTXY nodata"""
     return dd == _mv

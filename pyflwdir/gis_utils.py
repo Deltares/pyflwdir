@@ -4,6 +4,7 @@ import numpy as np
 import math
 from affine import identity as IDENTITY
 
+_R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
 
 def idxs_to_geoms(idxs_ds, xs, ys):
     """Returns a list of LineString for each up- downstream connection"""
@@ -85,36 +86,36 @@ def reggrid_area(lats, lons):
         (lats.size, lons.size), dtype=lats.dtype)
 
 
-@vectorize(
-    ["float64(float64,float64,float64)", "float32(float32,float32,float32)"])
+# @vectorize(
+#     ["float64(float64,float64,float64)", "float32(float32,float32,float32)"])
+@njit
 def cellarea(lat, xres, yres):
     """returns the area of cell with a given resolution (resx,resy) at a given 
     cell center latitude [m2]."""
-    _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
-    l1 = math.radians(lat - abs(yres) / 2.)
-    l2 = math.radians(lat + abs(yres) / 2.)
-    dx = math.radians(abs(xres))
-    return _R**2 * dx * (math.sin(l2) - math.sin(l1))
+    l1 = np.radians(lat - np.abs(yres) / 2.)
+    l2 = np.radians(lat + np.abs(yres) / 2.)
+    dx = np.radians(np.abs(xres))
+    return _R**2 * dx * (np.sin(l2) - np.sin(l1))
 
 
-@vectorize([
-    "float64(float64,float64,float64,float64)",
-    "float32(float32,float32,float32,float32)"
-])
-def distance(lon1, lat1, lon2, lat2):
-    """returns the great circle distance between two points on the earth [m]."""
-    # haversine formula
-    _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
-    dlon = math.radians(lon2 - lon1)
-    dlat = math.radians(lat2 - lat1)
-    a = math.sin(
-        dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
-    c = 2 * math.asin(math.sqrt(a))
-    return c * _R
+# @vectorize([
+#     "float64(float64,float64,float64,float64)",
+#     "float32(float32,float32,float32,float32)"
+# ])
+# def distance(lon1, lat1, lon2, lat2):
+#     """returns the great circle distance between two points on the earth [m]."""
+#     # haversine formula
+#     dlon = math.radians(lon2 - lon1)
+#     dlat = math.radians(lat2 - lat1)
+#     a = math.sin(
+#         dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+#     c = 2 * math.asin(math.sqrt(a))
+#     return c * _R
 
 
 # latlon to length conversion
-@vectorize(["float64(float64)", "float32(float32)"])
+# @vectorize(["float64(float64)", "float32(float32)"])
+@njit
 def degree_metres_y(lat):
     """"returns the verical length of a degree in metres at 
     a given latitude."""
@@ -123,13 +124,14 @@ def degree_metres_y(lat):
     m3 = 1.175  # latitude calculation term 3
     m4 = -0.0023  # latitude calculation term 4
     # # Calculate the length of a degree of latitude and longitude in meters
-    radlat = math.radians(lat)
-    latlen = (m1 + (m2 * math.cos(2.0 * radlat)) +
-              (m3 * math.cos(4.0 * radlat)) + (m4 * math.cos(6.0 * radlat)))
+    radlat = np.radians(lat)
+    latlen = (m1 + (m2 * np.cos(2.0 * radlat)) +
+              (m3 * np.cos(4.0 * radlat)) + (m4 * np.cos(6.0 * radlat)))
     return latlen
 
 
-@vectorize(["float64(float64)", "float32(float32)"])
+# @vectorize(["float64(float64)", "float32(float32)"])
+@njit
 def degree_metres_x(lat):
     """"returns the horizontal length of a degree in metres at 
     a given latitude."""
@@ -137,7 +139,7 @@ def degree_metres_x(lat):
     p2 = -93.5  # longitude calculation term 2
     p3 = 0.118  # longitude calculation term 3
     # # Calculate the length of a degree of latitude and longitude in meters
-    radlat = math.radians(lat)
-    longlen = ((p1 * math.cos(radlat)) + (p2 * math.cos(3.0 * radlat)) +
-               (p3 * math.cos(5.0 * radlat)))
+    radlat = np.radians(lat)
+    longlen = ((p1 * np.cos(radlat)) + (p2 * np.cos(3.0 * radlat)) +
+               (p3 * np.cos(5.0 * radlat)))
     return longlen
