@@ -862,7 +862,8 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
             continue  # @0A
 
         # next iter @A0
-        _, idxs_ds, idxs_us, _ = core_nextidx.from_array(nextidx2.reshape(shape))
+        # TODO test if this is required
+        # _, idxs_ds, idxs_us, _ = core_nextidx.from_array(nextidx2.reshape(shape))
         # assert core.loop_indices(idxs_ds, idxs_us).size == 0 # loop at idx00
         # if core.loop_indices(idxs_ds, idxs_us).size > 0:
         #     print(idx00)
