@@ -37,19 +37,19 @@ if __name__ == "__main__":
     cellsize = 10
     method = 'eeam2'
 
-    # prefix = 'rhine'
-    # d8_data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
-    # d8_data = d8_data.reshape((678, 776))
-    # res, west, north = 1 / 120, 5 + 50 / 120., 51 + 117 / 120.
-    # affine = Affine(res, 0.0, west, 0.0, -res, north)
+    prefix = 'rhine'
+    d8_data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
+    d8_data = d8_data.reshape((678, 776))
+    res, west, north = 1 / 120, 5 + 50 / 120., 51 + 117 / 120.
+    affine = Affine(res, 0.0, west, 0.0, -res, north)
 
-    prefix = 'ireland' # ireland
-    with rasterio.open(f'./tests/data/{prefix}_dir.tif', 'r') as src:
-        d8_data = src.read(1)
-        affine = src.transform
+    # prefix = 'ireland' #'n30w100'
+    # with rasterio.open(f'./tests/data/{prefix}_dir.tif', 'r') as src:
+    #     d8_data = src.read(1)
+    #     affine = src.transform
+    # res, west, north = affine[0], affine[2], affine[5]
     # with rasterio.open(f'./tests/data/{prefix}_upa.tif', 'r') as src:
     #     uparea = src.read(1).ravel()
-    res, west, north = affine[0], affine[2], affine[5]
 
     affine2 = Affine(res * cellsize, 0.0, west, 0.0, -res * cellsize, north)
 
@@ -57,7 +57,6 @@ if __name__ == "__main__":
     d8 = FlwdirRaster(d8_data, ftype='d8', check_ftype=False)
     uparea = d8.upstream_area(latlon=False).ravel()
     uparea = np.where(uparea != -9999., uparea / 1e2, -9999.)
-    basins = d8.basins().ravel()
 
     prof = dict(driver='GTiff',
                 height=d8.shape[0],
@@ -81,14 +80,24 @@ if __name__ == "__main__":
 
     # upscale
     # nextidx, subidxs_out = upscale.eam(
-    #     d8._idxs_ds, d8._idxs_valid, uparea, d8.shape, cellsize,
-    #     return_connect=True)
+    #     d8._idxs_ds, d8._idxs_valid, uparea, d8.shape, cellsize)
     nextidx, subidxs_out = upscale.cosm(d8._idxs_ds,
                                         d8._idxs_valid,
                                         uparea,
                                         d8.shape,
                                         cellsize,
                                         iter2='2' in method)
+    # shape = (610, 610)
+    # fn_nextidx = f'./tests/data/{prefix}{cellsize}_nextidx.bin'
+    # nextidx = np.fromfile(fn_nextidx, dtype=np.uint32)
+    # fn_subidxs_out = f'./tests/data/{prefix}{cellsize}_subidxs_out.bin'
+    # subidxs_out = np.fromfile(fn_subidxs_out, dtype=np.uint32)
+    # idxs_fix = np.array([197917], dtype=np.uint32)
+    # nextidx, subidxs_out = upscale.cosm_nextidx_iter2(nextidx, subidxs_out,
+    #                                         idxs_fix, d8._idxs_ds,
+    #                                         d8._idxs_valid, uparea,
+    #                                         d8.shape, shape, cellsize)
+    # nextidx, subidxs_out = nextidx.reshape(shape), subidxs_out.reshape(shape)
     dir_lr = FlwdirRaster(nextidx, ftype='nextidx', check_ftype=True)
 
     prof2 = dict(driver='GTiff',
@@ -108,6 +117,10 @@ if __name__ == "__main__":
         fn = f'./tests/data/{prefix}{cellsize}_{name}.tif'
         with rasterio.open(fn, 'w', **prof2) as dst:
             dst.write(data, 1)
+        fn = f'./tests/data/{prefix}{cellsize}_nextidx.bin'
+        nextidx.tofile(fn)
+        fn = f'./tests/data/{prefix}{cellsize}_subidxs_out.bin'
+        subidxs_out.tofile(fn)
         print(idxs_to_coords(repair_idx[0], affine2, dir_lr.shape)[::-1])
         print(repair_idx.size)
 
@@ -123,6 +136,7 @@ if __name__ == "__main__":
     # check
     assert np.unique(
         nextidx.flat[dir_lr.pits]).size == nextidx.flat[dir_lr.pits].size
+    basins = d8.basins().ravel()
     pitbas = basins[subidxs_out[dir_lr.pits]]
     assert np.unique(pitbas).size == pitbas.size
     # check quality
@@ -148,6 +162,7 @@ if __name__ == "__main__":
         idx = idxs_error[i]
         print(f'{np.abs(upadiff[idx]):.2f} km2:',
               idxs_to_coords(idx, affine2, dir_lr.shape)[::-1])
+    import pdb; pdb.set_trace()
 
     # river length
     rivlen = np.ones(dir_lr.shape, dtype=np.float32) * -9999.
@@ -164,24 +179,22 @@ if __name__ == "__main__":
         affine=gis_utils.IDENTITY)[0].astype(np.float32)
 
     # write files for visual check
-    import pdb; pdb.set_trace()
     valid = nextidx.ravel() != _mv
     xs, ys = np.ones(nextidx.size) * np.nan, np.ones(nextidx.size) * np.nan
-    xs[valid], ys[valid] = gis_utils.idxs_to_coords(subidxs_out[valid], affine,
-                                                    d8.shape)
+    xs[valid], ys[valid] = gis_utils.idxs_to_coords(subidxs_out[valid], affine, d8.shape)
     dir_lr.vector(xs=xs, ys=ys).to_file(
         f'./tests/data/{prefix}{cellsize}_{method}.gpkg',
         layer='rivers',
         driver="GPKG")
     
     # highres
-    name = 'ucat'
-    nodata = 0
-    data = d8.subbasins(subidxs_out[valid])
-    prof.update(nodata=nodata, dtype=data.dtype)
-    fn = f'./tests/data/{prefix}0_{name}.tif'
-    with rasterio.open(fn, 'w', **prof) as dst:
-        dst.write(data, 1)
+    # name = 'ucat'
+    # nodata = 0
+    # data = d8.subbasins(subidxs_out[valid])
+    # prof.update(nodata=nodata, dtype=data.dtype)
+    # fn = f'./tests/data/{prefix}0_{name}.tif'
+    # with rasterio.open(fn, 'w', **prof) as dst:
+    #     dst.write(data, 1)
     
     # lowres
     nodata = -9999.
@@ -201,29 +214,29 @@ if __name__ == "__main__":
     with rasterio.open(fn, 'w', **prof2) as dst:
         dst.write(data, 1)
 
-    name = f'basins_{method}'
-    nodata = 0
-    data = dir_lr.basins()
-    prof2.update(nodata=nodata, dtype=data.dtype)
-    fn = f'./tests/data/{prefix}{cellsize}_{name}.tif'
-    with rasterio.open(fn, 'w', **prof2) as dst:
-        dst.write(data, 1)
+    # name = f'basins_{method}'
+    # nodata = 0
+    # data = dir_lr.basins()
+    # prof2.update(nodata=nodata, dtype=data.dtype)
+    # fn = f'./tests/data/{prefix}{cellsize}_{name}.tif'
+    # with rasterio.open(fn, 'w', **prof2) as dst:
+    #     dst.write(data, 1)
 
-    name = f'rivlen_{method}'
-    nodata = -9999
-    data = rivlen
-    prof2.update(nodata=nodata, dtype=data.dtype)
-    fn = f'./tests/data/{prefix}{cellsize}_{name}.tif'
-    with rasterio.open(fn, 'w', **prof2) as dst:
-        dst.write(data, 1)
+    # name = f'rivlen_{method}'
+    # nodata = -9999
+    # data = rivlen
+    # prof2.update(nodata=nodata, dtype=data.dtype)
+    # fn = f'./tests/data/{prefix}{cellsize}_{name}.tif'
+    # with rasterio.open(fn, 'w', **prof2) as dst:
+    #     dst.write(data, 1)
 
-    name = f'subare_{method}'
-    nodata = -9999
-    data = subare
-    prof2.update(nodata=nodata, dtype=data.dtype)
-    fn = f'./tests/data/{prefix}{cellsize}_{name}.tif'
-    with rasterio.open(fn, 'w', **prof2) as dst:
-        dst.write(data, 1)
+    # name = f'subare_{method}'
+    # nodata = -9999
+    # data = subare
+    # prof2.update(nodata=nodata, dtype=data.dtype)
+    # fn = f'./tests/data/{prefix}{cellsize}_{name}.tif'
+    # with rasterio.open(fn, 'w', **prof2) as dst:
+    #     dst.write(data, 1)
 
     name = f'idx'
     nodata = _mv

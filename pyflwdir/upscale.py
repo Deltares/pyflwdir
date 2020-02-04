@@ -588,7 +588,7 @@ def cosm_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
         nextidx[idx0] = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
     return nextidx, np.array(idxs_fix_lst, dtype=np.uint32)
 
-# NOTE function only works in numba mode ??
+
 @njit
 def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                        subidxs_valid, subuparea, subshape, shape, cellsize):
@@ -740,6 +740,12 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
             else:
                 idxs_us_conn_lst.append(noutlets - 1)
                 idxs_us_conn_lst1.append(noutlets - 1)
+        # sort from up to downstream
+        idxs_us_conn = np.array(idxs_us_conn_lst, dtype=nextidx.dtype)
+        seq1 = np.argsort(idxs_us_conn)
+        idxs_us0 = np.array(idxs_us_lst, dtype=nextidx.dtype)[seq1]
+        idxs_us_conn1 = np.array(idxs_us_conn_lst1, dtype=nextidx.dtype)[seq1]
+        idxs_us_conn = idxs_us_conn[seq1]
 
         # STEP 4: connect the dots
         bottleneck = list()
@@ -751,13 +757,6 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
             idxs_ds_lst = list()
             nextidx2 = nextidx.copy()
             subidxs_out2 = subidxs_out.copy()
-            # sort from up to downstream
-            seq1 = np.argsort(np.array(idxs_us_conn_lst, dtype=nextidx.dtype))
-            idxs_us0 = np.array(idxs_us_lst, dtype=nextidx.dtype)[seq1]
-            idxs_us_conn = np.array(idxs_us_conn_lst,
-                                    dtype=nextidx.dtype)[seq1]
-            idxs_us_conn1 = np.array(idxs_us_conn_lst1,
-                                     dtype=nextidx.dtype)[seq1]
             idx0 = idx00
             j0, k0 = 0, 0
             for j in range(noutlets):  # @4A lowres connecting loop
@@ -833,17 +832,18 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                             # NOTE use internal indices
                             subidx1 = subidxs_valid[subidxs_ds[
                                 subidxs_internal[subidx]]]
-                            idx_ds = subidx_2_idx(subidx1, subncol, cellsize,
-                                                  ncol)
+                            idx_ds = subidx_2_idx(subidx1, subncol, cellsize, ncol)
+                            idx_ds_edited = idx_ds0 in idxs_edit_lst
                             outlet = subidx1 == subidxs_out2[idx_ds]
                             pit = subidx1 == subidx
                             if (outlet or pit):
                                 # at outlet or at pit
                                 ind8 = in_d8(idx0, idx_ds, ncol)
-                                if ~ind8 or (~outlet and pit):
+                                if not ind8 or (not outlet and pit):
                                     # outside d8 neighbors
                                     nextiter = True
-                                    if ~(nextidx[idx0] in bottleneck):
+                                    in_bottleneck = nextidx[idx0] in bottleneck
+                                    if not in_bottleneck:
                                         bottleneck.append(nextidx[idx0])
                                         # print('bottleneck ', bottleneck)
                                 elif ind8:
@@ -853,7 +853,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                 break  # @4D
                             elif (idx_ds0 != idx_ds and 
                                     idx_ds0 != idx0 and 
-                                    ~(idx_ds0 in idxs_edit_lst) and
+                                    not idx_ds_edited and
                                     in_d8(idx0, idx_ds0, ncol)):
                                 # at new outlet ->
                                 # set ds neihbor for lateral and relocate outlet 
@@ -906,6 +906,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
 
         # if next downstream in idxs_edit_lst we've created a loop -> break.
         if nextiter or nextidx2[idx1] in idxs_edit_lst:
+            # print('failed -', idx00)
             continue  # @0A
 
         # next iter @A0
