@@ -815,8 +815,9 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                     # update main connection
                     nextidx2[idx0] = idx1
                     idxs_ds_lst.append((idx0, idx1))
-                    subidxs_out2[idx1] = subidx_out1
-                    idxs_edit_lst.append(idx1)  # outlet edited
+                    if subidx_out1 != subidxs_out2[idx1]:
+                        subidxs_out2[idx1] = subidx_out1
+                        idxs_edit_lst.append(idx1)  # outlet edited
                     # print('ds', idx0, idx1)
                     # update lateral connections
                     for k in ks:  # @4C loop lateral connections
@@ -833,7 +834,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                             subidx1 = subidxs_valid[subidxs_ds[
                                 subidxs_internal[subidx]]]
                             idx_ds = subidx_2_idx(subidx1, subncol, cellsize, ncol)
-                            idx_ds_edited = idx_ds0 in idxs_edit_lst
+                            idx_ds_edit = idx_ds0 in idxs_edit_lst
                             outlet = subidx1 == subidxs_out2[idx_ds]
                             pit = subidx1 == subidx
                             if (outlet or pit):
@@ -853,7 +854,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                 break  # @4D
                             elif (idx_ds0 != idx_ds and 
                                     idx_ds0 != idx0 and 
-                                    not idx_ds_edited and
+                                    not idx_ds_edit and
                                     in_d8(idx0, idx_ds0, ncol)):
                                 # at new outlet ->
                                 # set ds neihbor for lateral and relocate outlet 
@@ -861,25 +862,29 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                 # AND we passed the original outlet cell
                                 us_n0 = idxs_us[idxs_internal[idx_ds0], 0] == _mv
                                 idx_ds_org = nextidx[idx0]
-                                subidx_out_org = subidxs_out[idx_ds_org]
-                                passed_out_org = subidx_out_org in path
+                                subidx0 = subidxs_out[idx_ds_org]
+                                subidx0_passed = subidx0 in path
                                 # next original downstream cell which we did not yet pass
                                 idx_ds00 = nextidx[idx_ds_org]
                                 while subidxs_out[idx_ds00] in path:
                                     idx_ds_org = idx_ds00
                                     idx_ds00 = nextidx[idx_ds_org]
+                                idx_ds00_edit = idx_ds00 in idxs_edit_lst
                                 # zero upstream cells AND passed original outlet
                                 # and in_d8
-                                if (us_n0 and passed_out_org and 
+                                if (us_n0 and 
+                                    subidx0_passed and 
+                                    not idx_ds00_edit and
                                     in_d8(idx_ds0, idx_ds00, ncol)):
                                     # update original next downstream cell
                                     nextidx2[idx0] = idx_ds0  
                                     idxs_ds_lst.append((idx0, idx_ds0))
                                     nextidx2[idx_ds0] = idx_ds00
                                     idxs_ds_lst.append((idx_ds0, idx_ds00))
-                                    subidxs_out2[idx_ds0] = subidx
-                                    # outlet edited
-                                    idxs_edit_lst.append(idx_ds0)
+                                    if subidx != subidxs_out2[idx_ds0]: 
+                                        # outlet edited
+                                        subidxs_out2[idx_ds0] = subidx
+                                        idxs_edit_lst.append(idx_ds0)
                                     # print('lats - outlet', idx0, idx_ds0, idx_ds00)
                                     break  # @4D
                             # next iter @4D

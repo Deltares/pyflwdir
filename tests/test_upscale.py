@@ -41,7 +41,7 @@ tests = {
     },
     'cosm2': {
         'method': 'cosm',
-        'n': 67
+        'n': 65
     },
 }
 
