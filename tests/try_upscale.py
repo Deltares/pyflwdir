@@ -37,17 +37,17 @@ if __name__ == "__main__":
     cellsize = 10
     method = 'eeam2'
 
-    prefix = 'rhine'
-    d8_data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
-    d8_data = d8_data.reshape((678, 776))
-    res, west, north = 1 / 120, 5 + 50 / 120., 51 + 117 / 120.
-    affine = Affine(res, 0.0, west, 0.0, -res, north)
+    # prefix = 'rhine'
+    # d8_data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
+    # d8_data = d8_data.reshape((678, 776))
+    # res, west, north = 1 / 120, 5 + 50 / 120., 51 + 117 / 120.
+    # affine = Affine(res, 0.0, west, 0.0, -res, north)
 
-    # prefix = 'ireland' #'n30w100'
-    # with rasterio.open(f'./tests/data/{prefix}_dir.tif', 'r') as src:
-    #     d8_data = src.read(1)
-    #     affine = src.transform
-    # res, west, north = affine[0], affine[2], affine[5]
+    prefix = 'ireland' #'n30w100'
+    with rasterio.open(f'./tests/data/{prefix}_dir.tif', 'r') as src:
+        d8_data = src.read(1)
+        affine = src.transform
+    res, west, north = affine[0], affine[2], affine[5]
     # with rasterio.open(f'./tests/data/{prefix}_upa.tif', 'r') as src:
     #     uparea = src.read(1).ravel()
 
