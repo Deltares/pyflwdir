@@ -27,7 +27,7 @@ def d8(d8_data):
 # configure tests with different options
 # n is number of disconnected cells per method
 tests = {
-    'dmm': {`
+    'dmm': {
         'n': 1073
     },
     'eam': {
@@ -38,7 +38,7 @@ tests = {
             'iter2': False
         },
         'n': 138
-    },`
+    },
     'cosm2': {
         'method': 'cosm',
         'n': 65

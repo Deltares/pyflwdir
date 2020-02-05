@@ -43,20 +43,20 @@ if __name__ == "__main__":
     # res, west, north = 1 / 120, 5 + 50 / 120., 51 + 117 / 120.
     # affine = Affine(res, 0.0, west, 0.0, -res, north)
 
-    prefix = 'ireland' #'n30w100'
+    prefix = 'n55w015' #'ireland' #'n30w100'
     with rasterio.open(f'./tests/data/{prefix}_dir.tif', 'r') as src:
         d8_data = src.read(1)
         affine = src.transform
     res, west, north = affine[0], affine[2], affine[5]
-    # with rasterio.open(f'./tests/data/{prefix}_upa.tif', 'r') as src:
-    #     uparea = src.read(1).ravel()
+    with rasterio.open(f'./tests/data/{prefix}_upa.tif', 'r') as src:
+        uparea = src.read(1).ravel()
 
     affine2 = Affine(res * cellsize, 0.0, west, 0.0, -res * cellsize, north)
-
+    import pdb; pdb.set_trace()
     # parse d8 data
     d8 = FlwdirRaster(d8_data, ftype='d8', check_ftype=False)
-    uparea = d8.upstream_area(latlon=False).ravel()
-    uparea = np.where(uparea != -9999., uparea / 1e2, -9999.)
+    # uparea = d8.upstream_area(latlon=False).ravel()
+    # uparea = np.where(uparea != -9999., uparea / 1e2, -9999.)
 
     prof = dict(driver='GTiff',
                 height=d8.shape[0],
