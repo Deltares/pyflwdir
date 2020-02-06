@@ -588,6 +588,23 @@ def cosm_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
 
 
 @njit
+def next_outlet(subidx, subidxs_valid, subidxs_ds, subidxs_internal, 
+                subidxs_out, subncol, cellsize, ncol):
+    idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
+    while True:
+        # next downstream subgrid cell index; NOTE use internal indices
+        subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+        idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
+        outlet = subidx1 == subidxs_out[idx1]
+        pit = subidx1 == subidx
+        if outlet or pit:
+            break
+        # next iter 
+        subidx = subidx1
+        idx = idx1
+    return subidx1, idx1, pit, outlet
+
+@njit
 def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                        subidxs_valid, subuparea, subshape, shape, cellsize):
     """Second iteration to fix cells which are not connected in subgrid.
@@ -797,7 +814,8 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                    idxs_us_conn[k0:] <= j))[0] + k0
                 lats = ks.size > 0
                 nextlats = np.all(idxs_us_conn1[ks] > j) if lats else False
-                # check if possible d8 connection downstream
+                # check if possible to maka a d8 connection downstream, but 
+                # before next outlet
                 nextd8 = False
                 for jj in range(j + 1, noutlets):
                     idx = idxs_lst[jj]
@@ -833,6 +851,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                         idx0_edit = idx0 in idxs_edit_lst 
                         if idx0_edit:
                             continue  # @4C
+                        subidx_ds0 = subidxs_out[nextidx[idx0]]
                         subidx = subidxs_out2[idx0]
                         idx_ds0 = idx0
                         path = list()
@@ -840,12 +859,11 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                         while True:  # 4D
                             # next downstream subgrid cell index
                             # NOTE use internal indices
-                            subidx1 = subidxs_valid[subidxs_ds[
-                                subidxs_internal[subidx]]]
+                            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
                             idx_ds = subidx_2_idx(subidx1, subncol, cellsize, ncol)
-                            idx_ds_edit = idx_ds0 in idxs_edit_lst
                             outlet = subidx1 == subidxs_out2[idx_ds]
                             pit = subidx1 == subidx
+                            idx_ds_edit = idx_ds0 in idxs_edit_lst
                             if (outlet or pit):
                                 # if ds direction and outlet unchanged, don't 
                                 # create bottleneck.
@@ -866,43 +884,39 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                     nextidx2[idx0] = idx_ds  # update
                                     # print('lats', idx0, idx_ds)
                                 break  # @4D
-                            elif (idx_ds0 != idx_ds and 
-                                    idx_ds0 != idx0 and 
-                                    not idx_ds_edit and
-                                    in_d8(idx0, idx_ds0, ncol)):
-                                # at new outlet ->
-                                # set ds neighbor for lateral and relocate 
-                                # outlet IF the original outlet has zero 
-                                # upstream cells AND we passed the original 
-                                # outlet cell
+                            # new cell AND
+                            # passed unchanged donwstream outlet AND
+                            elif (idx_ds0 != idx_ds and idx_ds0 != idx0   
+                                  and subidx_ds0 in path and not idx_ds_edit 
+                                  and in_d8(idx0, idx_ds0, ncol)):
+                                # at new cell / potential outlet
+                                # set ds neighbor and relocate outlet IF 
+                                # the original outlet has zero upstream cells 
+                                # and the next downstream outlet is unchanged
                                 # no old us neighbors
-                                idx_us0 = idxs_us[idxs_internal[idx_ds0], 0]
-                                us_old0 = idx_us0 == _mv
+                                us_old0 = idxs_us[idxs_internal[idx_ds0], 0] == _mv
                                 # new us neighbors
                                 us_new = idx_ds0 in [t[1] for t in idxs_ds_lst] 
-                                idx_ds_org = nextidx[idx0]
-                                subidx0 = subidxs_out[idx_ds_org]
-                                subidx0_passed = subidx0 in path
-                                # next original downstream cell which we did not yet pass
-                                idx_ds00 = nextidx[idx_ds_org]
-                                while subidxs_out[idx_ds00] in path:
-                                    idx_ds_org = idx_ds00
-                                    idx_ds00 = nextidx[idx_ds_org]
+                                # next sugbrid outlet from
+                                _, idx_ds00, _, outlet0 = next_outlet(
+                                    subidx, subidxs_valid, subidxs_ds, 
+                                    subidxs_internal, subidxs_out2, subncol, 
+                                    cellsize, ncol)
                                 idx_ds00_edit = idx_ds00 in idxs_edit_lst
-                                # zero upstream cells AND passed original outlet
-                                # and in_d8
-                                if (us_old0 and 
-                                    not us_new and
-                                    subidx0_passed and 
-                                    not idx_ds00_edit and
+                                # zero upstream cells from original outlet AND 
+                                # and unchanged next downstream outlet (not pit)
+                                if (us_old0 and not us_new and 
+                                    outlet0 and not idx_ds00_edit and 
                                     in_d8(idx_ds0, idx_ds00, ncol)):
                                     # update original next downstream cell
                                     if nextidx2[idx0] != idx_ds0:
-                                        idxs_ds_lst.append((idx0, idx_ds0, nextidx2[idx0]))
+                                        idxs_ds_lst.append(
+                                            (idx0, idx_ds0, nextidx2[idx0]))
                                         nextidx2[idx0] = idx_ds0  
                                         # print('lat1', idx0, idx_ds0)
                                     if nextidx2[idx_ds0] != idx_ds00: 
-                                        idxs_ds_lst.append((idx_ds0, idx_ds00, nextidx2[idx_ds0]))
+                                        idxs_ds_lst.append(
+                                            (idx_ds0, idx_ds00, nextidx2[idx_ds0]))
                                         nextidx2[idx_ds0] = idx_ds00
                                         # print('lat2', idx_ds0, idx_ds00)
                                     if subidx != subidxs_out2[idx_ds0]: 
@@ -944,9 +958,9 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
             idxs_ds, idxs_us = update_idxs_ds_us(idx0, idx_ds, idx_ds0, 
                                             idxs_ds, idxs_us, idxs_internal)
         # assert core.loop_indices(idxs_ds, idxs_us).size == 0 # loop at idx00
-        # if len(idxs_ds_lst) > 0 and core.loop_indices(idxs_ds, idxs_us).size > 0:
-        #     print('loop - ', idx00)
-        #     break
+        if len(idxs_ds_lst) > 0 and core.loop_indices(idxs_ds, idxs_us).size > 0:
+            # print('loop - ', idx00)
+            break
         nextidx = nextidx2
         subidxs_out = subidxs_out2
 
