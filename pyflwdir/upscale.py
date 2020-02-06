@@ -590,7 +590,6 @@ def cosm_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
 @njit
 def next_outlet(subidx, subidxs_valid, subidxs_ds, subidxs_internal, 
                 subidxs_out, subncol, cellsize, ncol):
-    idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
     while True:
         # next downstream subgrid cell index; NOTE use internal indices
         subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
@@ -601,7 +600,6 @@ def next_outlet(subidx, subidxs_valid, subidxs_ds, subidxs_internal,
             break
         # next iter 
         subidx = subidx1
-        idx = idx1
     return subidx1, idx1, pit, outlet
 
 @njit
@@ -958,9 +956,9 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
             idxs_ds, idxs_us = update_idxs_ds_us(idx0, idx_ds, idx_ds0, 
                                             idxs_ds, idxs_us, idxs_internal)
         # assert core.loop_indices(idxs_ds, idxs_us).size == 0 # loop at idx00
-        if len(idxs_ds_lst) > 0 and core.loop_indices(idxs_ds, idxs_us).size > 0:
-            # print('loop - ', idx00)
-            break
+        # if len(idxs_ds_lst) > 0 and core.loop_indices(idxs_ds, idxs_us).size > 0:
+        #     print('loop - ', idx00)
+        #     break
         nextidx = nextidx2
         subidxs_out = subidxs_out2
 
