@@ -436,7 +436,7 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
 
 #### CONNECTING OUTLETS SCALING METHOD ####
 @njit
-def cosm_outlets(subidxs_rep,
+def com_outlets(subidxs_rep,
                  subidxs_ds,
                  subidxs_valid,
                  subuparea,
@@ -446,7 +446,7 @@ def cosm_outlets(subidxs_rep,
                  min_stream_len=0):
     """Returns subgrid outlet cell indices of lowres cells which are located
     at the edge of the lowres cell downstream of the representative cell
-    according to the connecting outlets scaling method. 
+    according to the connecting outlets method (COM). 
 
     NOTE: If <min_stream_len> is larger than zero, the outlet does not have 
     to be the the lowres cells edge.
@@ -520,10 +520,10 @@ def cosm_outlets(subidxs_rep,
 
 
 @njit
-def cosm_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
+def com_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
                  cellsize):
     """Returns next downstream lowres index according to connecting outlets 
-    scaling method. Every outlet subgrid cell is traced to the next downstream 
+    method (COM). Every outlet subgrid cell is traced to the next downstream 
     subgrid outlet cell. If this lays outside d8, we fallback to the next 
     downstream effective area.
     
@@ -604,7 +604,7 @@ def next_outlet(subidx, subidxs_valid, subidxs_ds, subidxs_internal,
     return subidx1, idx1, outlet
 
 @njit
-def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
+def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                        subidxs_valid, subuparea, subshape, shape, cellsize):
     """Second iteration to fix cells which are not connected in subgrid.
     
@@ -992,7 +992,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
     return nextidx, subidxs_out
 
 
-def cosm(subidxs_ds,
+def com(subidxs_ds,
          subidxs_valid,
          subuparea,
          subshape,
@@ -1000,7 +1000,7 @@ def cosm(subidxs_ds,
          iter2=True,
          min_stream_len=1):
     """Returns the upscaled next downstream index based on the 
-    connecting outlets scaling method (COSM).
+    connecting outlets method (COM).
 
     Parameters
     ----------
@@ -1037,7 +1037,7 @@ def cosm(subidxs_ds,
     subidxs_rep = eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape,
                               shape, cellsize)
     # get subgrid outlet cells
-    subidxs_out = cosm_outlets(subidxs_rep,
+    subidxs_out = com_outlets(subidxs_rep,
                                subidxs_ds,
                                subidxs_valid,
                                subuparea,
@@ -1046,11 +1046,11 @@ def cosm(subidxs_ds,
                                cellsize,
                                min_stream_len=min_stream_len)
     # get next downstream lowres index
-    nextidx, idxs_fix = cosm_nextidx(subidxs_out, subidxs_ds, subidxs_valid,
+    nextidx, idxs_fix = com_nextidx(subidxs_out, subidxs_ds, subidxs_valid,
                                      subshape, shape, cellsize)
     # STEP 2 try fixing invalid subgrid connections
     if iter2:
-        nextidx, subidxs_out = cosm_nextidx_iter2(nextidx, subidxs_out,
+        nextidx, subidxs_out = com_nextidx_iter2(nextidx, subidxs_out,
                                                   idxs_fix, subidxs_ds,
                                                   subidxs_valid, subuparea,
                                                   subshape, shape, cellsize)

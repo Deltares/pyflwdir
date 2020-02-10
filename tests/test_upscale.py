@@ -33,14 +33,14 @@ tests = {
     'eam': {
         'n': 406
     },
-    'cosm': {
+    'com': {
         'kwargs': {
             'iter2': False
         },
         'n': 138
     },
-    'cosm2': {
-        'method': 'cosm',
+    'com2': {
+        'method': 'com',
         'n': 54
     },
 }

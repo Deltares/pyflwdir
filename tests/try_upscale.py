@@ -35,7 +35,8 @@ if __name__ == "__main__":
     import rasterio  # NOTE not a dependecy
 
     cellsize = 10
-    method = 'eeam2'
+    min_stream_len = 1
+    method = 'com2'
 
     # prefix = 'rhine'
     # d8_data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     # res, west, north = 1 / 120, 5 + 50 / 120., 51 + 117 / 120.
     # affine = Affine(res, 0.0, west, 0.0, -res, north)
 
-    prefix = 'n55w015' #'ireland' #'n30w100'
+    prefix = 'ireland' #'s35e020'
     with rasterio.open(f'./tests/data/{prefix}_dir.tif', 'r') as src:
         d8_data = src.read(1)
         affine = src.transform
@@ -52,17 +53,21 @@ if __name__ == "__main__":
         uparea = src.read(1).ravel()
 
     affine2 = Affine(res * cellsize, 0.0, west, 0.0, -res * cellsize, north)
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     # parse d8 data
     d8 = FlwdirRaster(d8_data, ftype='d8', check_ftype=False)
-    # uparea = d8.upstream_area(latlon=False).ravel()
-    # uparea = np.where(uparea != -9999., uparea / 1e2, -9999.)
-
     prof = dict(driver='GTiff',
                 height=d8.shape[0],
                 width=d8.shape[1],
                 transform=affine,
                 count=1)
+
+    # uparea = d8.upstream_area(latlon=False).ravel()
+    # uparea = np.where(uparea != -9999., uparea / 1e2, -9999.)
+    # prof.update(nodata=-9999, dtype=uparea.dtype)
+    # with rasterio.open(f'./tests/data/{prefix}_upa.tif', 'w', **prof) as src:
+    #     src.write(uparea.reshape(d8.shape), 1)
+
     # celledge = upscale.map_celledge(d8._idxs_ds, d8._idxs_valid, d8.shape, cellsize).astype(np.uint8)
     # effare = upscale.map_effare(d8._idxs_ds, d8._idxs_valid, d8.shape, cellsize).astype(np.uint8)
     # nodata = 255
@@ -79,25 +84,44 @@ if __name__ == "__main__":
     # import pdb; pdb.set_trace()
 
     # upscale
-    # nextidx, subidxs_out = upscale.eam(
-    #     d8._idxs_ds, d8._idxs_valid, uparea, d8.shape, cellsize)
-    nextidx, subidxs_out = upscale.cosm(d8._idxs_ds,
-                                        d8._idxs_valid,
-                                        uparea,
-                                        d8.shape,
-                                        cellsize,
-                                        iter2='2' in method)
-    # shape = (610, 610)
-    # fn_nextidx = f'./tests/data/{prefix}{cellsize}_nextidx.bin'
-    # nextidx = np.fromfile(fn_nextidx, dtype=np.uint32)
-    # fn_subidxs_out = f'./tests/data/{prefix}{cellsize}_subidxs_out.bin'
-    # subidxs_out = np.fromfile(fn_subidxs_out, dtype=np.uint32)
-    # idxs_fix = np.array([197917], dtype=np.uint32)
-    # nextidx, subidxs_out = upscale.cosm_nextidx_iter2(nextidx, subidxs_out,
-    #                                         idxs_fix, d8._idxs_ds,
-    #                                         d8._idxs_valid, uparea,
-    #                                         d8.shape, shape, cellsize)
-    # nextidx, subidxs_out = nextidx.reshape(shape), subidxs_out.reshape(shape)
+    fn_nextidx = f'./tests/data/{prefix}{cellsize}_nextidx.bin'
+    fn_subidxs_out = f'./tests/data/{prefix}{cellsize}_subidxs_out.bin'
+    fn_idxs_fix = f'./tests/data/{prefix}{cellsize}_idxs_fix.bin'
+    # calculate new size
+    subnrow, subncol = d8.shape
+    nrow = int(np.ceil(subnrow / cellsize))
+    ncol = int(np.ceil(subncol / cellsize))
+    shape = nrow, ncol
+    # # STEP 1
+    # # get representative cells
+    # subidxs_rep = upscale.eam_repcell(d8._idxs_ds, d8._idxs_valid, uparea, 
+    #                                   d8.shape, shape, cellsize)
+    # # get subgrid outlet cells
+    # subidxs_out = upscale.com_outlets(subidxs_rep, d8._idxs_ds, d8._idxs_valid,
+    #                                   uparea, d8.shape, shape, cellsize,
+    #                                   min_stream_len=min_stream_len)
+    # # get next downstream lowres index
+    # nextidx, idxs_fix = upscale.com_nextidx(subidxs_out, d8._idxs_ds, 
+    #                                         d8._idxs_valid, d8.shape, shape, 
+    #                                         cellsize)
+    # # temp save data
+    # nextidx.tofile(fn_nextidx)
+    # subidxs_out.tofile(fn_subidxs_out)
+    # idxs_fix.tofile(fn_idxs_fix)
+    # # STEP 2 try fixing invalid subgrid connections
+    nextidx = np.fromfile(fn_nextidx, dtype=np.uint32)
+    subidxs_out = np.fromfile(fn_subidxs_out, dtype=np.uint32)
+    idxs_fix = np.fromfile(fn_idxs_fix, dtype=np.uint32)
+    # idxs_fix = np.array([186692, 186693, 186085, 186086, 186696], dtype=np.uint32)
+    if '2' in method:
+        nextidx, subidxs_out = upscale.com_nextidx_iter2(nextidx, subidxs_out,
+                                                        idxs_fix, d8._idxs_ds,
+                                                        d8._idxs_valid, uparea,
+                                                        d8.shape, shape, 
+                                                        cellsize)
+        # nextidx.tofile(fn_nextidx)
+        # subidxs_out.tofile(fn_subidxs_out)
+    nextidx, subidxs_out = nextidx.reshape(shape), subidxs_out.reshape(shape)
     dir_lr = FlwdirRaster(nextidx, ftype='nextidx', check_ftype=True)
 
     prof2 = dict(driver='GTiff',
@@ -117,10 +141,6 @@ if __name__ == "__main__":
         fn = f'./tests/data/{prefix}{cellsize}_{name}.tif'
         with rasterio.open(fn, 'w', **prof2) as dst:
             dst.write(data, 1)
-        fn = f'./tests/data/{prefix}{cellsize}_nextidx.bin'
-        nextidx.tofile(fn)
-        fn = f'./tests/data/{prefix}{cellsize}_subidxs_out.bin'
-        subidxs_out.tofile(fn)
         print(idxs_to_coords(repair_idx[0], affine2, dir_lr.shape)[::-1])
         print(repair_idx.size)
 
@@ -132,6 +152,7 @@ if __name__ == "__main__":
         subidxs_out0, dir_lr._idxs_ds, d8._idxs_ds)
     print(np.sum(connect == 0))
     # print(idxs_to_coords(165, affine2, dir_lr.shape)[::-1])
+    import pdb; pdb.set_trace()
 
     # check
     assert np.unique(
@@ -139,6 +160,7 @@ if __name__ == "__main__":
     basins = d8.basins().ravel()
     pitbas = basins[subidxs_out[dir_lr.pits]]
     assert np.unique(pitbas).size == pitbas.size
+
     # check quality
     valid = nextidx.ravel() != _mv
     subare = np.ones(dir_lr.shape, dtype=np.float32) * -9999.
@@ -164,19 +186,19 @@ if __name__ == "__main__":
               idxs_to_coords(idx, affine2, dir_lr.shape)[::-1])
     import pdb; pdb.set_trace()
 
-    # river length
-    rivlen = np.ones(dir_lr.shape, dtype=np.float32) * -9999.
-    rivlen.flat[dir_lr._idxs_valid] = subgrid.river_params(
-        subidxs_out0, #[dir_lr._internal_idx(np.array([1440]))],
-        d8._idxs_valid,
-        d8._idxs_ds,
-        d8._idxs_us,
-        subelevtn=np.ones(d8.ncells),  # fake elevation; ignore slope
-        subuparea=uparea.flat[d8._idxs_valid],
-        subshape=d8.shape,
-        min_uparea=0.,
-        latlon=False,
-        affine=gis_utils.IDENTITY)[0].astype(np.float32)
+    # # river length
+    # rivlen = np.ones(dir_lr.shape, dtype=np.float32) * -9999.
+    # rivlen.flat[dir_lr._idxs_valid] = subgrid.river_params(
+    #     subidxs_out0, #[dir_lr._internal_idx(np.array([1440]))],
+    #     d8._idxs_valid,
+    #     d8._idxs_ds,
+    #     d8._idxs_us,
+    #     subelevtn=np.ones(d8.ncells),  # fake elevation; ignore slope
+    #     subuparea=uparea.flat[d8._idxs_valid],
+    #     subshape=d8.shape,
+    #     min_uparea=0.,
+    #     latlon=False,
+    #     affine=gis_utils.IDENTITY)[0].astype(np.float32)
 
     # write files for visual check
     valid = nextidx.ravel() != _mv

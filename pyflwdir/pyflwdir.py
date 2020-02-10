@@ -402,9 +402,9 @@ class FlwdirRaster(object):
         gdf['pit'] = self._idxs_ds == np.arange(self.ncells)
         return gdf
 
-    def upscale(self, scale_factor, method='cosm', uparea=None, **kwargs):
+    def upscale(self, scale_factor, method='com', uparea=None, **kwargs):
         """Upscale flow direction network to lower resolution. 
-        Available methods are Connecting Outlets Scaling Method (COSM) [1], 
+        Available methods are Connecting Outlets Method (COM) [1], 
         Effective Area Method (EAM) [2] and Double Maximum Method (DMM) [3].
 
         Note: This method only works for D8 or LDD flow directon data.
@@ -423,9 +423,9 @@ class FlwdirRaster(object):
         ----------
         scale_factor : int
             number gridcells in resulting upscaled gridcell
-        method : {'cosm', 'eam', 'dmm'}
+        method : {'com', 'eam', 'dmm'}
             upscaling method
-            (by default 'cosm')
+            (by default 'com')
         uparea : 2D array of float, optional
             2D raster with upstream area 
             (by default None; calculated on the fly)
@@ -437,7 +437,7 @@ class FlwdirRaster(object):
         ndarray of uint32
             1D raster indices of subgrid outlets
         """
-        methods = ['cosm', 'eam', 'dmm']
+        methods = ['com', 'eam', 'dmm']
         if self.ftype not in  ['d8', 'ldd']:
             raise ValueError("The upscale method only works for D8 or LDD " +
                              "flow directon data.")
