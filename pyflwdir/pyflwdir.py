@@ -49,7 +49,7 @@ def infer_ftype(flwdir):
         raise ValueError('The flow direction type not recognized.')
     return ftype
 
-
+# TODO change FlwdirRaster to Flwdir
 class FlwdirRaster(object):
     """
     Flow direction raster array parsed to actionable format.
@@ -128,11 +128,11 @@ class FlwdirRaster(object):
             ftype=ftype,
             check_ftype=check_ftype,
         )
-        if self._idxs_valid.size <= 1:
+        if self._idxs_valid.size < 1:
             raise ValueError(
-                'Invalid flow direction raster: size equal or smaller to 1')
+                'Invalid flow direction data: zer size ')
         elif self._idx0.size == 0:
-            raise ValueError('Invalid flow direction raster: no pits found')
+            raise ValueError('Invalid flow direction data: no pits found')
         self.ncells = self._idxs_valid.size
         # set placeholder for network tree
         self._tree = None  # List of array ordered from down- to upstream

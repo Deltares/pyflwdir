@@ -590,6 +590,7 @@ def cosm_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
 @njit
 def next_outlet(subidx, subidxs_valid, subidxs_ds, subidxs_internal, 
                 subidxs_out, subncol, cellsize, ncol):
+    """Return lowres and subgrid indices of next outlet"""
     while True:
         # next downstream subgrid cell index; NOTE use internal indices
         subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
@@ -600,7 +601,7 @@ def next_outlet(subidx, subidxs_valid, subidxs_ds, subidxs_internal,
             break
         # next iter 
         subidx = subidx1
-    return subidx1, idx1, pit, outlet
+    return subidx1, idx1, outlet
 
 @njit
 def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
@@ -766,8 +767,12 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
         while len(bottleneck) > nbottlenecks:
             nextiter = False
             nbottlenecks = len(bottleneck)
-            idxs_edit_lst = list()
-            idxs_ds_lst = list()
+            idx_out_lst = list()
+            subidx0_out_lst = list()
+            idx_ds_lst = list()
+            idx_ds0_lst = list()
+            idx0_lst = list()
+            # TODO remove copy and keep data to unroll edits
             nextidx2 = nextidx.copy()
             subidxs_out2 = subidxs_out.copy()
             idx0 = idx00
@@ -778,12 +783,14 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                 # check if not connected to ds pit
                 pit1 = subidx_out1 == subidxs_valid[subidxs_ds[
                     subidxs_internal[subidx_out1]]]
-                if pit1 and len(idxs_edit_lst) == 0:
+                if pit1 and len(idx_out_lst) == 0:
                     idxs_pit = np.where(subidxs_out2 == subidx_out1)[0]
                     if idxs_pit.size == 1 and in_d8(idx0, idxs_pit[0], ncol):
                         # previous (smaller) branch already claimed pit
                         if nextidx2[idx0] != idxs_pit[0]:
-                            idxs_ds_lst.append((idx0, idxs_pit[0], nextidx2[idx0]))
+                            idx_ds0_lst.append(nextidx2[idx0])
+                            idx0_lst.append(idx0)
+                            idx_ds_lst.append(idxs_pit[0])
                             nextidx2[idx0] = idxs_pit[0]
                             # print('pit - connect', idx0, idxs_pit[0])
                         break  # @4A
@@ -791,18 +798,21 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                         # set pit and move outlet to neighboring cell
                         # NOTE pit outlet outside lowres cell !
                         if nextidx2[idx0] != idx0:
-                            idxs_ds_lst.append((idx0, idx0, nextidx2[idx0]))
+                            idx_ds0_lst.append(nextidx2[idx0])
+                            idx0_lst.append(idx0)
+                            idx_ds_lst.append(idx0)
                             nextidx2[idx0] = idx0
                             # print('pit', idx0, idx0)
+                        idx_out_lst.append(idx0)
+                        subidx0_out_lst.append(subidxs_out2[idx0])
                         subidxs_out2[idx0] = subidx_out1
-                        idxs_edit_lst.append(idx0)
                         # print('pit - outlet', idx0)
                         break  # @4A
                     else:
                         nextiter = True
                         # print('pit - no connection', idx0)
                 # check if ds lowres cell already edited to avoid loops
-                if idx1 in idxs_edit_lst or idx1 in bottleneck:
+                if idx1 in idx_out_lst or idx1 in bottleneck:
                     d8 = False
                 else:
                     d8 = in_d8(idx0, idx1, ncol)
@@ -817,7 +827,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                 nextd8 = False
                 for jj in range(j + 1, noutlets):
                     idx = idxs_lst[jj]
-                    if idx in idxs_edit_lst or idx in bottleneck:
+                    if idx in idx_out_lst or idx in bottleneck:
                         continue
                     elif in_d8(idx0, idx, ncol):
                         nextd8 = True
@@ -829,6 +839,7 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                 # print(d8, nextd8, lats, nextlats)
                 if (not d8 and not nextd8):
                     nextiter = True
+                    # TODO remove break to unroll edits later
                     break  # @4A
                 elif (not lats and nextd8) or (nextlats and nextd8):
                     continue
@@ -836,17 +847,20 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                 if (d8 and lats) or (d8 and not nextd8):
                     # update MAIN connection
                     if nextidx2[idx0] != idx1:
-                        idxs_ds_lst.append((idx0, idx1, nextidx2[idx0]))
+                        idx_ds0_lst.append(nextidx2[idx0])
+                        idx0_lst.append(idx0)
+                        idx_ds_lst.append(idx1)
                         nextidx2[idx0] = idx1
                         # print('ds', idx0, idx1)
                     if subidx_out1 != subidxs_out2[idx1]:
+                        idx_out_lst.append(idx1)  # outlet edited
+                        subidx0_out_lst.append(subidxs_out2[idx1])
                         subidxs_out2[idx1] = subidx_out1
-                        idxs_edit_lst.append(idx1)  # outlet edited
                         # print('ds - outlet', idx1)
                     # update LATERAL connections
                     for k in ks:  # @4C loop lateral connections
                         idx0 = idxs_us0[k]
-                        idx0_edit = idx0 in idxs_edit_lst 
+                        idx0_edit = idx0 in idx_out_lst 
                         if idx0_edit:
                             continue  # @4C
                         subidx_ds0 = subidxs_out[nextidx[idx0]]
@@ -861,12 +875,12 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                             idx_ds = subidx_2_idx(subidx1, subncol, cellsize, ncol)
                             outlet = subidx1 == subidxs_out2[idx_ds]
                             pit = subidx1 == subidx
-                            idx_ds_edit = idx_ds0 in idxs_edit_lst
+                            idx_ds_edit = idx_ds0 in idx_out_lst
                             if (outlet or pit):
                                 # if ds direction and outlet unchanged, don't 
                                 # create bottleneck.
                                 idx_ds0_edit = (nextidx2[idx0] == nextidx[idx0] 
-                                        and nextidx[idx0] in idxs_edit_lst)
+                                        and nextidx[idx0] in idx_out_lst)
                                 # at outlet or at pit
                                 ind8 = in_d8(idx0, idx_ds, ncol)
                                 if ((not ind8 and idx_ds0_edit) or 
@@ -878,7 +892,9 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                         bottleneck.append(nextidx[idx0])
                                         # print('bottleneck ', bottleneck)
                                 elif ind8 and nextidx2[idx0] != idx_ds:
-                                    idxs_ds_lst.append((idx0, idx_ds, nextidx2[idx0]))
+                                    idx_ds0_lst.append(nextidx2[idx0])
+                                    idx0_lst.append(idx0)
+                                    idx_ds_lst.append(idx_ds)
                                     nextidx2[idx0] = idx_ds  # update
                                     # print('lats', idx0, idx_ds)
                                 break  # @4D
@@ -894,13 +910,13 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                 # no old us neighbors
                                 us_old0 = idxs_us[idxs_internal[idx_ds0], 0] == _mv
                                 # new us neighbors
-                                us_new = idx_ds0 in [t[1] for t in idxs_ds_lst] 
+                                us_new = idx_ds0 in idx_ds_lst 
                                 # next sugbrid outlet from
-                                _, idx_ds00, _, outlet0 = next_outlet(
+                                _, idx_ds00, outlet0 = next_outlet(
                                     subidx, subidxs_valid, subidxs_ds, 
                                     subidxs_internal, subidxs_out2, subncol, 
                                     cellsize, ncol)
-                                idx_ds00_edit = idx_ds00 in idxs_edit_lst
+                                idx_ds00_edit = idx_ds00 in idx_out_lst
                                 # zero upstream cells from original outlet AND 
                                 # and unchanged next downstream outlet (not pit)
                                 if (us_old0 and not us_new and 
@@ -908,19 +924,22 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                     in_d8(idx_ds0, idx_ds00, ncol)):
                                     # update original next downstream cell
                                     if nextidx2[idx0] != idx_ds0:
-                                        idxs_ds_lst.append(
-                                            (idx0, idx_ds0, nextidx2[idx0]))
+                                        idx_ds0_lst.append(nextidx2[idx0])
+                                        idx0_lst.append(idx0)
+                                        idx_ds_lst.append(idx_ds0)
                                         nextidx2[idx0] = idx_ds0  
                                         # print('lat1', idx0, idx_ds0)
                                     if nextidx2[idx_ds0] != idx_ds00: 
-                                        idxs_ds_lst.append(
-                                            (idx_ds0, idx_ds00, nextidx2[idx_ds0]))
+                                        idx_ds0_lst.append(nextidx2[idx_ds0])
+                                        idx0_lst.append(idx_ds0)
+                                        idx_ds_lst.append(idx_ds00)
                                         nextidx2[idx_ds0] = idx_ds00
                                         # print('lat2', idx_ds0, idx_ds00)
                                     if subidx != subidxs_out2[idx_ds0]: 
                                         # outlet edited
+                                        idx_out_lst.append(idx_ds0)
+                                        subidx0_out_lst.append(subidxs_out2[idx_ds0])
                                         subidxs_out2[idx_ds0] = subidx
-                                        idxs_edit_lst.append(idx_ds0)
                                         # print('lat - outlet', idx_ds0)
                                     break  # @4D
                             # next iter @4D
@@ -934,29 +953,38 @@ def cosm_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                     j0 = j + 1
                 # drop upstream lateral connections if past the connection
                 # outlet which has not been edited
-                elif lats:
+                elif not nextiter and lats:
                     for k in ks:  # @4E loop laterals with upstream connections
                         idx_ds0 = nextidx2[idxs_us0[k]]
                         lat_ds = idx_ds0 in idxs_lst[j:]
-                        lat_edit = idx_ds0 in idxs_edit_lst
+                        lat_edit = idx_ds0 in idx_out_lst
                         if not lat_ds and not lat_edit:
                             k0 = k
                             # print('lats - skip', idxs_us0[k])
                         else:
                             break  # @4E
 
-        # if next downstream in idxs_edit_lst we've created a loop -> break.
-        if nextiter or nextidx2[idx1] in idxs_edit_lst:
+                # # unroll edits
+                # if nextiter:
+                #     for i in range(len(idx_ds_lst)):
+                #         idx0, _, idx_ds0 = idx_ds_lst[-1-i]
+                #         nextidx[idx0] = idx_ds0
+                #     for i in range(len(idx_out_lst))
+                #         idx0, subidx0 = idx_out_lst[-1-i]
+                #         subidxs[idx0] = subidx0
+
+        # if next downstream in idx_out_lst we've created a loop -> break.
+        if nextiter or nextidx2[idx1] in idx_out_lst:
             # print('failed -', idx00)
             continue  # @0A
 
         # next iter @A0
-        for i in range(len(idxs_ds_lst)):
-            idx0, idx_ds, idx_ds0 = idxs_ds_lst[i]
+        for i in range(len(idx_ds_lst)):
+            idx0, idx_ds, idx_ds0 = idx0_lst[i], idx_ds_lst[i], idx_ds0_lst[i]
             idxs_ds, idxs_us = update_idxs_ds_us(idx0, idx_ds, idx_ds0, 
                                             idxs_ds, idxs_us, idxs_internal)
         # assert core.loop_indices(idxs_ds, idxs_us).size == 0 # loop at idx00
-        # if len(idxs_ds_lst) > 0 and core.loop_indices(idxs_ds, idxs_us).size > 0:
+        # if len(idx_ds_lst) > 0 and core.loop_indices(idxs_ds, idxs_us).size > 0:
         #     print('loop - ', idx00)
         #     break
         nextidx = nextidx2
