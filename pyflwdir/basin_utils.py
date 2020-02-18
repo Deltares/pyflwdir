@@ -27,33 +27,31 @@ def basin_area(basins, affine=gis_utils.IDENTITY, latlon=False):
 def basin_slices(basins):
     lbs = np.unique(basins[basins > 0])
     slices = ndimage.find_objects(basins)
-    df_slices = pd.DataFrame(index=lbs,
-                             data=[s for s in slices if s is not None],
-                             columns=['yslice', 'xslice'])
-    return df_slices
+    df = pd.DataFrame(index=lbs,
+                      data=[s for s in slices if s is not None],
+                      columns=['yslice', 'xslice'])
+    return df
 
 
 def basin_bounds(basins, affine=gis_utils.IDENTITY):
-    df_slices = basin_slices(basins)
-    lons, lats = gis_utils.affine_to_coords(affine, basins.shape)
+    df = basin_slices(basins)
     xres, yres = affine[0], affine[4]
-    bboxs = np.zeros((df_slices.index.size, 4), dtype=np.float64)
-    for i, idx in enumerate(df_slices.index):
-        yslice, xslice = df_slices.loc[idx, ['yslice', 'xslice']]
-        if xres < 0:
-            xmax, xmin = lons[xslice][[0, -1]]
-        else:
-            xmin, xmax = lons[xslice][[0, -1]]
-        if yres < 0:
-            ymax, ymin = lats[yslice][[0, -1]]
-        else:
-            ymin, ymax = lats[yslice][[0, -1]]
-    bboxs[i, :] = xmin - abs(xres) / 2., ymin - abs(yres) / 2., xmax + abs(
-        xres) / 2., ymax + abs(yres) / 2.
-    df_bounds = pd.DataFrame(index=df_slices.index,
-                             data=bboxs,
-                             columns=['xmin', 'ymin', 'xmax', 'ymax'])
-    return df_bounds
+    lons, lats = gis_utils.affine_to_coords(affine, basins.shape)
+    xs = np.array([(s.start, s.stop) for s in df['xslice']])
+    ys = np.array([(s.start, s.stop) for s in df['yslice']])
+    if yres < 0:
+        df['ymax'], df['ymin'] = lats[ys[:,0]], lats[ys[:,1]-1]
+    else:
+        df['ymin'], df['ymax'] = lats[ys[:,0]], lats[ys[:,1]-1]
+    if xres < 0:
+        df['xmax'], df['xmin'] = lons[xs[:,0]], lons[xs[:,1]-1]
+    else:
+        df['xmin'], df['xmax'] = lons[xs[:,0]], lons[xs[:,1]-1]
+    df['xmin'] -= abs(xres)/2
+    df['ymin'] -= abs(yres)/2
+    df['xmax'] += abs(xres)/2
+    df['ymax'] += abs(yres)/2
+    return df.drop(columns=['yslice', 'xslice'])
 
 
 def total_basin_bounds(basins, affine=gis_utils.IDENTITY):
