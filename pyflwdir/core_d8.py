@@ -55,54 +55,44 @@ def from_array(flwdir):
     nrow, ncol = flwdir.shape[0], flwdir.shape[-1]
     flwdir_flat = flwdir.ravel()
     # keep valid indices only
-    idxs_valid = []
-    idxs_internal = np.ones(size, np.uint32)
-    idxs_internal[:] = core._mv
+    idxs_valid = np.where(flwdir.ravel() != _mv)[0].astype(np.uint32)
+    n = idxs_valid.size
+    idxs_internal = np.ones(size, np.uint32) * core._mv
     i = np.uint32(0)
-    for idx0 in range(size):
-        if flwdir_flat[idx0] != _mv:
-            idxs_valid.append(np.uint32(idx0))
-            idxs_internal[idx0] = i
-            i += 1
-    n = np.int64(i)
-    # calculate depth per cell & downsteam index
+    for i in range(n):
+        idxs_internal[idxs_valid[i]] = i
+    # allocate output list / arrays
     pits_lst = []
-    idxs_ds = np.ones(n, dtype=np.uint32)
-    idxs_ds[:] = core._mv
-    n_up = np.zeros(n, dtype=np.uint8)
-    for idx0 in idxs_valid:
-        i = idxs_internal[idx0]
+    idxs_ds = np.ones(n, dtype=np.uint32) * core._mv
+    idxs_us = np.ones((n, _max_depth), dtype=np.uint32) * core._mv
+    # loop over valid cells
+    _max_us = 0
+    for i in range(n):
+        idx0 = idxs_valid[i]
         dd = flwdir_flat[idx0]
         dr, dc = drdc(dd)
-        r = int(idx0 // ncol + dr) 
-        c = int(idx0  % ncol + dc)
+        r, c = idx0 // ncol + dr, idx0 % ncol + dc
         pit = dr == 0 and dc == 0
         outside = r >= nrow or c >= ncol or r < 0 or c < 0
-        # pit or outside
-        if pit or outside:
+        if pit or outside or dd == _mv:
+            # pit or ds cell is out of bounds / invalid -> set pit
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
-        else:        
+        else:
+            # valid ds cell
             idx_ds = idx0 + dc + dr * ncol
-            i_ds = idxs_internal[idx_ds]
-            if i_ds == core._mv:
+            ids = idxs_internal[idx_ds]
+            if ids == core._mv or ids == i:
                 raise ValueError('invalid flwdir data')
-            idxs_ds[i] = i_ds
-            n_up[i_ds] += 1
-    # list with arrays of upstream index
-    _max_depth = np.int64(np.max(n_up))
-    idxs_us = np.ones((n, _max_depth), dtype=np.uint32)
-    idxs_us[:] = core._mv
-    n_up[:] = np.uint8(0)
-    for i in range(n):
-        i_ds = idxs_ds[i]
-        if i_ds == i:
-            continue
-        # valid ds cell
-        ii = n_up[i_ds]
-        idxs_us[i_ds][ii] = i
-        n_up[i_ds] += 1
-    return np.array(idxs_valid), idxs_ds, idxs_us, np.array(pits_lst)
+            idxs_ds[i] = ids
+            for ii in range(_max_depth):
+                if idxs_us[ids, ii] == core._mv:
+                    idxs_us[ids, ii] = i
+                    break
+            if ii > _max_us:
+                _max_us = ii
+    # idxs_us = idxs_us[:, :_max_us + 1]
+    return idxs_valid, idxs_ds, idxs_us, np.array(pits_lst)
 
 
 @njit("u1[:,:](u4[:], u4[:], Tuple((u8, u8)))")
