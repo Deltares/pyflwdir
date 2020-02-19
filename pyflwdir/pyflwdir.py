@@ -277,7 +277,7 @@ class FlwdirRaster(object):
         subbas = basin.basins(self.tree, self._idxs_us, idxs0)
         return self._reshape(subbas, nodata=np.uint32(0))
 
-    def upstream_area(self, affine=gis_utils.IDENTITY, latlon=False):
+    def upstream_area(self, affine=gis_utils.IDENTITY, latlon=False, mult=1):
         """Returns the upstream area map based on the flow direction map. 
         
         If latlon is True it converts the cell areas to metres, otherwise it
@@ -291,7 +291,9 @@ class FlwdirRaster(object):
         affine : affine transform
             Two dimensional affine transform for 2D linear mapping
             (the default is an identity transform; cell area = 1)
-
+        mult : float, optional
+            Multiplication factor for unit conversion
+            (the default is 1)
         Returns
         -------
         2D array of float
@@ -303,7 +305,7 @@ class FlwdirRaster(object):
                                      self.shape[1],
                                      affine=affine,
                                      latlon=latlon)
-        return self._reshape(uparea, nodata=-9999.)
+        return self._reshape(uparea * mult, nodata=-9999.)
 
     def stream_order(self):
         """Returns the Strahler Order map [1]. 
