@@ -4,6 +4,7 @@
 """"""
 
 import numpy as np
+import pickle
 from pyflwdir import (
     basin,
     basin_utils,
@@ -23,22 +24,17 @@ ftypes = {
     core_nextxy._ftype: core_nextxy,
     core_nextidx._ftype: core_nextidx
 }
+ftypes_str = ' ,'.join(list(ftypes.keys()))
 
 # export
-__all__ = ['FlwdirRaster']
+__all__ = ['FlwdirRaster', 'from_array', 'load']
 
 
 # import logging
 # logger = logging.getLogger(__name__)
-def parse_flwdir(flwdir, ftype, check_ftype=True):
-    fd = ftypes[ftype]
-    if check_ftype and not fd.isvalid(flwdir):
-        raise ValueError(
-            f'The flow direction type is not recognized as "{ftype}".')
-    return fd.from_array(flwdir)
 
 # TODO: this is slow on large arrays
-def infer_ftype(flwdir):
+def _infer_ftype(flwdir):
     """infer flowdir type from data"""
     ftype = None
     for _, fd in ftypes.items():
@@ -48,6 +44,64 @@ def infer_ftype(flwdir):
     if ftype is None:
         raise ValueError('The flow direction type not recognized.')
     return ftype
+
+def from_array(
+        data,
+        ftype='infer',
+        check_ftype=True,
+    ):
+    """Flow direction raster array parsed to actionable format.
+    
+    Parameters
+    ----------
+    data : ndarray
+        flow direction raster data
+    ftype : {'d8', 'ldd', 'nextxy', 'nextidx', 'infer'}, optional
+        name of flow direction type, infer from data if 'infer'
+        (the default is 'infer')
+    check_ftype : bool, optional
+        check if valid flow direction raster, only if ftype is not 'infer'
+        (the default is True)
+    """
+    if ftype == 'infer':
+        ftype = _infer_ftype(data)
+        check_ftype = False  # already done
+    if ftype == 'nextxy':
+        size = data[0].size
+        shape = data[0].shape
+    else:
+        size = data.size
+        shape = data.shape
+    # TODO: check if this can go
+    if len(shape) != 2:
+        raise ValueError("Flow direction array should be 2 dimensional")
+    
+    # parse data
+    fd = ftypes[ftype]
+    if check_ftype and not fd.isvalid(data):
+        raise ValueError(f'The flow direction type is not recognized as "{ftype}".')
+    idxs_dense, idxs_ds, idxs_pit = fd.from_array(data)
+
+    # initialize
+    return FlwdirRaster(
+        idxs_dense = idxs_dense,
+        idxs_ds = idxs_ds,
+        idxs_pit = idxs_pit,
+        shape = shape,
+        ftype = ftype,
+    )
+
+def load(fn):
+    """Load serialized FlwdirRaster object from file
+    
+    Parameters
+    ----------
+    fn : str
+        path
+    """
+    with open(fn, 'rb') as handle:
+        kwargs = pickle.load(handle)
+    return FlwdirRaster(**kwargs)
 
 # TODO change FlwdirRaster to Flwdir
 class FlwdirRaster(object):
@@ -65,9 +119,7 @@ class FlwdirRaster(object):
     ftype : {'d8', 'ldd', 'nextxy', 'nextidx'}
         flow direction type
     pits : ndarray of int
-        1D raster indices of pit cells
-    tree : list of ndarray of int 
-        indices ordered from down- to upstream
+        linear dense raster indices of pit cells
     isvalid : bool
         True if no loops in flow direction data
     
@@ -84,9 +136,11 @@ class FlwdirRaster(object):
     """
     def __init__(
         self,
-        data,
-        ftype='infer',
-        check_ftype=True,
+        idxs_dense,
+        idxs_ds,
+        idxs_pit,
+        shape,
+        ftype,
     ):
         """Flow direction raster array parsed to actionable format.
         
@@ -94,53 +148,52 @@ class FlwdirRaster(object):
         ----------
         data : ndarray
             flow direction raster data
-        ftype : {'d8', 'ldd', 'nextxy', 'nextidx', 'infer'}, optional
+        ftype : {'d8', 'ldd', 'nextxy', 'nextidx'}, optional
             name of flow direction type, infer from data if 'infer'
             (the default is 'infer')
         check_ftype : bool, optional
             check if valid flow direction raster, only if ftype is not 'infer'
             (the default is True)
         """
-        if ftype == 'infer':
-            ftype = infer_ftype(data)
-            check_ftype = False  # already done
-        if ftype == 'nextxy':
-            self.size = data[0].size
-            self.shape = data[0].shape
-        else:
-            self.size = data.size
-            self.shape = data.shape
-
-        if len(self.shape) != 2:
-            raise ValueError("Flow direction array should be 2 dimensional")
-
+        if not ftype in ftypes.keys():
+            raise ValueError(f"Unknown ftype {ftype}. Choose from {ftypes_str}")
+        
+        # properties
+        self.shape = shape
+        self.size = np.multiply(*self.shape)
         self.ftype = ftype
         self._core = ftypes[ftype]
 
-        # initialize
-        # TODO: split into seperate function for 
-        self._idxs_dense, self._idxs_ds, self._idx0 = parse_flwdir(
-            data,
-            ftype=ftype,
-            check_ftype=check_ftype,
-        )
+        # data
+        self._idxs_dense = idxs_dense
+        self._idxs_ds = idxs_ds
+        self._idxs_pit = idxs_pit
         self.ncells = self._idxs_dense.size
+
+        # check validity
         if self.ncells < 1:
-            raise ValueError('Invalid flow direction data: zerp size ')
+            raise ValueError('Invalid flow direction data: zero size ')
         elif self.ncells > 2**32 - 2:  # maximum size we can have with uint32 indices
             raise ValueError(f"Too many active nodes, max: {2**32 - 2}.")
-        if self._idx0.size == 0:
+        if self._idxs_pit.size == 0:
             raise ValueError('Invalid flow direction data: no pits found')
+        
         # set placeholder for upstream indices / network tree
         self._idxs_us_ = None # 2D array with upstream indices
-        self._tree = None  # List of array ordered from down- to upstream
+        self._tree_ = None  # List of array ordered from down- to upstream
 
+    def __str__(self):
+        return pprint.pformat(self._dict)
+        
     @property
-    def _idxs_us(self):
-        """"""
-        if self._idxs_us_ is None:
-            self._idxs_us_ = core._idxs_us(self._idxs_ds) 
-        return self._idxs_us_
+    def _dict(self):
+        return {
+            'ftype': self.ftype,
+            'shape': self.shape,
+            'idxs_dense': self._idxs_dense, 
+            'idxs_ds': self._idxs_ds, 
+            'idxs_pit': self._idxs_pit,
+            }
 
     @property
     def pits(self):
@@ -151,10 +204,32 @@ class FlwdirRaster(object):
         1D array of int
             1D raster indices of pit
         """
-        return self._idxs_dense[self._idx0]
+        return self._idxs_dense[self._idxs_pit]
+
+    def dump(self, fn):
+        """Serialize object to file using pickle library.
+        
+        #TODO finish example
+        Example
+        -------
+        >>> import pyflwdir
+        >>> flw = pyflwdir.from_array()
+        >>> flw.dump(fn)
+        >>> pyflwdir.load(fn)
+        
+        """
+        with open(fn, 'wb') as handle:
+            pickle.dump(self._dict, handle, protocol=-1)
 
     @property
-    def tree(self):
+    def _idxs_us(self):
+        """internal property for 2D array of upstream indices"""
+        if self._idxs_us_ is None:
+            self._idxs_us_ = core._idxs_us(self._idxs_ds) 
+        return self._idxs_us_
+        
+    @property
+    def _tree(self):
         """Returns the network tree: a list of arrays ordered from down- to 
         upstream. 
         
@@ -163,9 +238,9 @@ class FlwdirRaster(object):
         list of ndarray of int
             river network tree
         """
-        if self._tree is None:
+        if self._tree_ is None:
             self.set_tree()  # setup network
-        return self._tree
+        return self._tree_
 
     @property
     def isvalid(self):
@@ -194,7 +269,7 @@ class FlwdirRaster(object):
         if streams is not None:  # snap to streams
             idxs_pit = core.ds_stream(idxs_pit, self._idxs_ds,
                                       self._flatten(streams))
-        self._idx0 = idxs_pit
+        self._idxs_pit = idxs_pit
         self._tree = None  # reset network tree
 
     def set_tree(self, idxs_pit=None, streams=None):
@@ -218,7 +293,7 @@ class FlwdirRaster(object):
         """
         if idxs_pit is not None:
             self.set_pits(idxs_pit=idxs_pit, streams=streams)
-        self._tree = core.network_tree(self._idx0, self._idxs_us)
+        self._tree_ = core.network_tree(self._idxs_pit, self._idxs_us)
 
     def repair(self):
         """Repairs loops by set a pit at every cell witch does not drain to 
@@ -227,7 +302,7 @@ class FlwdirRaster(object):
         if repair_idx.size > 0:
             # set pits for all loop indices !
             self._idxs_ds[repair_idx] = repair_idx
-            self._idx0 = core.pit_indices[self._idxs_ds]
+            self._idxs_pit = core.pit_indices[self._idxs_ds]
 
     def to_array(self, ftype=None):
         """Return 2D flow direction array. 
@@ -260,7 +335,7 @@ class FlwdirRaster(object):
         ndarray of uint32
             basin map
         """
-        basids = basin.basins(self.tree, self._idxs_us, self.tree[0])
+        basids = basin.basins(self._tree, self._idxs_us, self._tree[0])
         return self._densify(basids, nodata=np.uint32(0))
 
     def subbasins(self, idxs):
@@ -278,7 +353,7 @@ class FlwdirRaster(object):
             subbasin map
         """
         idxs0 = self._sparse_idx(idxs)
-        subbas = basin.basins(self.tree, self._idxs_us, idxs0)
+        subbas = basin.basins(self._tree, self._idxs_us, idxs0)
         return self._densify(subbas, nodata=np.uint32(0))
 
     def upstream_area(self, affine=gis_utils.IDENTITY, latlon=False, mult=1):
@@ -303,7 +378,7 @@ class FlwdirRaster(object):
         2D array of float
             upstream area map [m2]
         """
-        uparea = basin.upstream_area(self.tree,
+        uparea = basin.upstream_area(self._tree,
                                      self._idxs_dense,
                                      self._idxs_us,
                                      self.shape[1],
@@ -328,7 +403,7 @@ class FlwdirRaster(object):
         2D array of int
             strahler order map
         """
-        strord = basin.stream_order(self.tree, self._idxs_us)
+        strord = basin.stream_order(self._tree, self._idxs_us)
         return self._densify(strord, nodata=np.int8(-1))
 
     def accuflux(self, material, nodata=-9999):
@@ -350,7 +425,7 @@ class FlwdirRaster(object):
         if not np.all(material.shape == self.shape):
             raise ValueError(
                 "'Material' shape does not match with flow direction shape.")
-        accu_flat = basin.accuflux(self.tree, self._idxs_us,
+        accu_flat = basin.accuflux(self._tree, self._idxs_us,
                                    self._flatten(material), nodata)
         return self._densify(accu_flat, nodata=nodata)
 
@@ -463,7 +538,7 @@ class FlwdirRaster(object):
                                         subshape = self.shape,
                                         cellsize = scale_factor,
                                         **kwargs)
-        dir_lr = FlwdirRaster(nextidx, ftype='nextidx', check_ftype=False)
+        dir_lr = from_array(nextidx, ftype='nextidx', check_ftype=False)
         if not dir_lr.isvalid:
             raise ValueError(
                 'The upscaled flow direction network is invalid. ' +
@@ -609,7 +684,7 @@ class FlwdirRaster(object):
     #         raise ValueError(
     #             "'elevtn' shape does not match with flow direction shape")
     #     df_out = basin_descriptors.mean_drainage_path_stats(
-    #         self.tree, self._idxs_us, self._flatten(rivlen),
+    #         self._tree, self._idxs_us, self._flatten(rivlen),
     #         self._flatten(elevtn))
     #     return df_out
 

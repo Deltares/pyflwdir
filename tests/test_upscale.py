@@ -8,20 +8,15 @@ from affine import Affine
 import time
 import numpy as np
 # local
-from pyflwdir import (core, core_conversion, gis_utils, FlwdirRaster, upscale,
-                      subgrid)
-_mv = core._mv
+import pyflwdir
+from pyflwdir import upscale, subgrid
 
 
 @pytest.fixture
-def d8_data():
-    data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
-    return data.reshape((678, 776))
-
-
-@pytest.fixture
-def d8(d8_data):
-    return FlwdirRaster(d8_data, ftype='d8', check_ftype=False)
+def d8():
+    flw = pyflwdir.load(r'./tests/data/flw.pkl')
+    flw._idxs_us # initialize us array
+    return flw
 
 
 # configure tests with different options
@@ -55,7 +50,7 @@ def test_upscale(d8):
         kwargs = mdict.get('kwargs', {})
         nextidx, subidxs_out = fupscale(d8._idxs_ds, d8._idxs_dense, uparea,
                                         d8.shape, cellsize, **kwargs)
-        d8_lr = FlwdirRaster(nextidx, ftype='nextidx', check_ftype=True)
+        d8_lr = pyflwdir.from_array(nextidx, ftype='nextidx', check_ftype=True)
         subidxs_out = subidxs_out.ravel()
         assert d8_lr.isvalid
         # check if in d8
