@@ -73,6 +73,14 @@ def test_object(d8_data, ldd_data, nextxy_data, nextidx_data):
 def test_toarray(d8, d8_data):
     assert np.all(d8.to_array() == d8_data)
 
+#NOTE tempdir is predefined fixture
+def test_save(d8, tmpdir):
+    fn = tmpdir.join('flw.pkl')
+    d8.dump(fn)
+    flw = pyflwdir.load(fn)
+    for key in d8._dict:
+        assert np.all(d8._dict[key] == flw._dict[key])
+
 def test_stream_order(d8):
     try:
         strord = d8.stream_order()

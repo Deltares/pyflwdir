@@ -103,7 +103,6 @@ def load(fn):
         kwargs = pickle.load(handle)
     return FlwdirRaster(**kwargs)
 
-# TODO change FlwdirRaster to Flwdir
 class FlwdirRaster(object):
     """
     Flow direction raster array parsed to actionable format.
