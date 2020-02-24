@@ -4,6 +4,7 @@
 """"""
 
 import numpy as np
+import pprint
 import pickle
 from pyflwdir import (
     basin,
@@ -206,16 +207,7 @@ class FlwdirRaster(object):
         return self._idxs_dense[self._idxs_pit]
 
     def dump(self, fn):
-        """Serialize object to file using pickle library.
-        
-        #TODO finish example
-        Example
-        -------
-        >>> import pyflwdir
-        >>> flw = pyflwdir.from_array()
-        >>> flw.dump(fn)
-        >>> pyflwdir.load(fn)
-        
+        """Serialize object to file using pickle library.      
         """
         with open(fn, 'wb') as handle:
             pickle.dump(self._dict, handle, protocol=-1)
