@@ -45,17 +45,17 @@ def in_d8(idx0, idx_ds, ncol):
     return cond1 or cond2 or cond3
 
 @njit
-def update_idxs_ds_us(idx0, idx_ds, idx_ds0, idxs_ds, idxs_us, idxs_internal):
+def update_idxs_ds_us(idx0, idx_ds, idx_ds0, idxs_ds, idxs_us, idxs_sparse):
     """Updates idxs_ds and idxs_us based on new idx_ds for idx0"""
     n = idxs_us.shape[1]
     # update idxs_ds
-    id0 = idxs_internal[idx0] # internal index
-    ids = idxs_internal[idx_ds] # internal index
+    id0 = idxs_sparse[idx0] # internal index
+    ids = idxs_sparse[idx_ds] # internal index
     idxs_ds[id0] = ids
     # update idxs_us at new idx_ds if not pit -> add idx0
     if idx0 != idx_ds:
         if np.all(idxs_us[ids, :] != _mv) and n < 8:
-            idxs_us1 = np.ones((idxs_ds.size, 8), dtype=idxs_us.dtype) * _mv
+            idxs_us1 = np.full((idxs_ds.size, 8), _mv, dtype=idxs_us.dtype)
             idxs_us1[:, :n] = idxs_us
             idxs_us = idxs_us1
             n = 8
@@ -66,8 +66,8 @@ def update_idxs_ds_us(idx0, idx_ds, idx_ds0, idxs_ds, idxs_us, idxs_internal):
                 idxs_us[ids, i] = id0
                 break 
     # update idxs_us at old idx_ds0 -> remove idx0
-    ids0 = idxs_internal[idx_ds0] # internal index
-    idxs_us0 = np.ones(n, dtype=np.uint32)*_mv
+    ids0 = idxs_sparse[idx_ds0] # internal index
+    idxs_us0 = np.full(n, _mv, dtype=np.uint32)
     j = 0
     for i in range(n):
         if idxs_us[ids0, i] == _mv:
@@ -90,13 +90,13 @@ def cell_edge(subidx, subncol, cellsize):
 
 
 @njit
-def map_celledge(subidxs_ds, subidxs_valid, subshape, cellsize):
+def map_celledge(subidxs_ds, subidxs_dense, subshape, cellsize):
     """Returns a map with ones on subgrid cells of lowres cell edges"""
     surbnrow, subncol = subshape
     # allocate output and internal array
-    edges = np.ones(surbnrow * subncol, dtype=np.int8) * -1
+    edges = np.full(surbnrow * subncol, -1, dtype=np.int8)
     # loop over valid indices
-    for subidx in subidxs_valid:
+    for subidx in subidxs_dense:
         if cell_edge(subidx, subncol, cellsize):
             edges[subidx] = np.int8(1)
         else:
@@ -105,7 +105,7 @@ def map_celledge(subidxs_ds, subidxs_valid, subshape, cellsize):
 
 
 @njit
-def dmm_exitcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
+def dmm_exitcell(subidxs_ds, subidxs_dense, subuparea, subshape, shape,
                  cellsize):
     """Returns exit subgrid cell indices of lowres cells according to the 
     double maximum method (DMM). 
@@ -114,7 +114,7 @@ def dmm_exitcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
     ----------
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
         highres flattened upstream area array
@@ -133,11 +133,11 @@ def dmm_exitcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
     subncol = subshape[1]
     nrow, ncol = shape
     # allocate output and internal array
-    subidxs_rep = np.ones(nrow * ncol, dtype=subidxs_valid.dtype) * _mv
+    subidxs_rep = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
     uparea = np.zeros(nrow * ncol, dtype=subuparea.dtype)
     # loop over valid indices
-    for i in range(subidxs_valid.size):
-        subidx = subidxs_valid[i]
+    for i in range(subidxs_dense.size):
+        subidx = subidxs_dense[i]
         # NOTE including pits in the edge area is different from the original
         ispit = subidxs_ds[i] == i  # NOTE internal index
         edge = cell_edge(subidx, subncol, cellsize)
@@ -154,7 +154,7 @@ def dmm_exitcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
 
 
 @njit
-def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
+def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape, shape,
                 cellsize):
     """Returns next downstream lowres index by tracing a representative cell 
     to where it leaves a buffered area around the lowres cell according to the 
@@ -166,7 +166,7 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
         highres indices of representative cells
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subshape : tuple of int
         highres raster shape
@@ -181,15 +181,16 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
         lowres indices of next downstream cell
     """
     subnrow, subncol = subshape
+    subsize = subnrow * subncol
     nrow, ncol = shape
     R = cellsize / 2
     # internal indices
-    n = subidxs_valid.size
-    subidxs_internal = np.ones(subnrow * subncol, np.uint32) * _mv
-    subidxs_internal[subidxs_valid] = np.array([i for i in range(n)],
+    n = subidxs_dense.size
+    subidxs_sparse = np.full(subsize, _mv, np.uint32)
+    subidxs_sparse[subidxs_dense] = np.array([i for i in range(n)],
                                                dtype=np.uint32)
     # allocate output
-    idxs_ds = np.ones(nrow * ncol, dtype=subidxs_ds.dtype) * _mv
+    idxs_ds = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
     # loop over rep cell indices
     for idx0 in range(subidxs_rep.size):
         subidx = subidxs_rep[idx0]
@@ -203,7 +204,7 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
         subc0 = (idx0 % ncol + dc) * cellsize - 0.5
         while True:
             # next downstream subgrid cell index; NOTE use internal indices
-            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+            subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             if subidx1 == subidx:  # pit
                 break
@@ -219,7 +220,7 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
     return idxs_ds
 
 
-def dmm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
+def dmm(subidxs_ds, subidxs_dense, subuparea, subshape, cellsize):
     """Returns the upscaled next downstream index based on the 
     double maximum method (DMM) [1].
 
@@ -232,7 +233,7 @@ def dmm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
     ----------
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
         highres flattened upstream area array
@@ -254,10 +255,10 @@ def dmm(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
     ncol = int(np.ceil(subncol / cellsize))
     shape = nrow, ncol
     # get representative cells
-    subidxs_rep = dmm_exitcell(subidxs_ds, subidxs_valid, subuparea, subshape,
+    subidxs_rep = dmm_exitcell(subidxs_ds, subidxs_dense, subuparea, subshape,
                                shape, cellsize)
     # get next downstream lowres index
-    nextidx = dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape,
+    nextidx = dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape,
                           shape, cellsize)
     return nextidx.reshape(shape), subidxs_rep.reshape(shape)
 
@@ -277,13 +278,13 @@ def effective_area(subidx, subncol, cellsize):
 
 
 @njit
-def map_effare(subidxs_ds, subidxs_valid, subshape, cellsize):
+def map_effare(subidxs_ds, subidxs_dense, subshape, cellsize):
     """Returns a map with ones on subgrid cells of lowres effective area."""
     surbnrow, subncol = subshape
     # allocate output and internal array
-    effare = np.ones(surbnrow * subncol, dtype=np.int8) * -1
+    effare = np.full(surbnrow * subncol, -1, dtype=np.int8)
     # loop over valid indices
-    for subidx in subidxs_valid:
+    for subidx in subidxs_dense:
         if effective_area(subidx, subncol, cellsize):
             effare[subidx] = np.int8(1)
         else:
@@ -292,7 +293,7 @@ def map_effare(subidxs_ds, subidxs_valid, subshape, cellsize):
 
 
 @njit
-def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
+def eam_repcell(subidxs_ds, subidxs_dense, subuparea, subshape, shape,
                 cellsize):
     """Returns representative subgrid cell indices of lowres cells
     according to the effective area method. 
@@ -301,7 +302,7 @@ def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
     ----------
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
         highres flattened upstream area array
@@ -319,11 +320,11 @@ def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
     subncol = subshape[1]
     nrow, ncol = shape
     # allocate output and internal array
-    subidxs_rep = np.ones(nrow * ncol, dtype=subidxs_valid.dtype) * _mv
+    subidxs_rep = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
     uparea = np.zeros(nrow * ncol, dtype=subuparea.dtype)
     # loop over internal indices
-    for i in range(subidxs_valid.size):
-        subidx = subidxs_valid[i] # subgrid index
+    for i in range(subidxs_dense.size):
+        subidx = subidxs_dense[i] # subgrid index
         # NOTE including pits is different from the original EAM
         ispit = subidxs_ds[i] == i  # NOTE internal index
         eff_area = effective_area(subidx, subncol, cellsize)
@@ -340,7 +341,7 @@ def eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape, shape,
 
 
 @njit
-def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
+def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape, shape,
                 cellsize):
     """Returns next downstream lowres index by tracing a representative cell to 
     the next downstream effective area according to the effective area method. 
@@ -351,7 +352,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
         highres indices of representative subgird cells
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subshape : tuple of int
         highres raster shape
@@ -367,9 +368,9 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
     subnrow, subncol = subshape
     nrow, ncol = shape
     # internal indices
-    n = subidxs_valid.size
-    subidxs_internal = np.ones(subnrow * subncol, np.uint32) * _mv
-    subidxs_internal[subidxs_valid] = np.array([i for i in range(n)],
+    n = subidxs_dense.size
+    subidxs_sparse = np.full(subnrow * subncol, _mv, np.uint32)
+    subidxs_sparse[subidxs_dense] = np.array([i for i in range(n)],
                                                dtype=np.uint32)
     # allocate output
     idxs_ds = np.ones(nrow * ncol, dtype=subidxs_ds.dtype) * _mv
@@ -380,7 +381,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
             continue
         while True:
             # next downstream subgrid cell index; NOTE use internal indices
-            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+            subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             if subidx1 == subidx:  # at pit
                 break
@@ -393,7 +394,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape, shape,
     return idxs_ds
 
 
-def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
+def eam(subidxs_ds, subidxs_dense, subuparea, subshape, cellsize):
     """Returns the upscaled next downstream index based on the 
     effective area method (EAM) [1].
 
@@ -404,7 +405,7 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
     ----------
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
         highres flattened upstream area array
@@ -426,10 +427,10 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
     ncol = int(np.ceil(subncol / cellsize))
     shape = nrow, ncol
     # get representative cells
-    subidxs_rep = eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape,
+    subidxs_rep = eam_repcell(subidxs_ds, subidxs_dense, subuparea, subshape,
                               shape, cellsize)
     # get next downstream lowres index
-    nextidx = eam_nextidx(subidxs_rep, subidxs_ds, subidxs_valid, subshape,
+    nextidx = eam_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape,
                           shape, cellsize)
     return nextidx.reshape(shape), subidxs_rep.reshape(shape)
 
@@ -438,7 +439,7 @@ def eam(subidxs_ds, subidxs_valid, subuparea, subshape, cellsize):
 @njit
 def com_outlets(subidxs_rep,
                  subidxs_ds,
-                 subidxs_valid,
+                 subidxs_dense,
                  subuparea,
                  subshape,
                  shape,
@@ -457,7 +458,7 @@ def com_outlets(subidxs_rep,
         highres indices of representative cells with size shape[0]*shape[1]
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
         highres flattened upstream area array
@@ -479,12 +480,12 @@ def com_outlets(subidxs_rep,
     subnrow, subncol = subshape
     nrow, ncol = shape
     # internal indices
-    n = subidxs_valid.size
-    subidxs_internal = np.ones(subnrow * subncol, np.uint32) * core._mv
-    subidxs_internal[subidxs_valid] = np.array([i for i in range(n)],
+    n = subidxs_dense.size
+    subidxs_sparse = np.full(subnrow * subncol, _mv, np.uint32)
+    subidxs_sparse[subidxs_dense] = np.array([i for i in range(n)],
                                                dtype=np.uint32)
     # allocate output
-    subidxs_out = np.ones(nrow * ncol, dtype=subidxs_ds.dtype) * _mv
+    subidxs_out = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
     # loop over rep cell indices
     for idx0 in range(subidxs_rep.size):
         subidx = subidxs_rep[idx0]
@@ -496,7 +497,7 @@ def com_outlets(subidxs_rep,
             stream_len = 0
         while True:
             # next downstream subgrid cell index; NOTE use internal indices
-            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+            subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
             if min_stream_len > 0:
                 subupa1 = subuparea[subidx1]
                 if subupa1 > 2 * subupa:  # confluence
@@ -520,7 +521,7 @@ def com_outlets(subidxs_rep,
 
 
 @njit
-def com_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
+def com_nextidx(subidxs_out, subidxs_ds, subidxs_dense, subshape, shape,
                  cellsize):
     """Returns next downstream lowres index according to connecting outlets 
     method (COM). Every outlet subgrid cell is traced to the next downstream 
@@ -533,7 +534,7 @@ def com_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
         highres indices of outlet cells with size shape[0]*shape[1]
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subshape : tuple of int
         highres raster shape
@@ -550,12 +551,12 @@ def com_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
     subnrow, subncol = subshape
     nrow, ncol = shape
     # internal indices
-    n = subidxs_valid.size
-    subidxs_internal = np.ones(subnrow * subncol, np.uint32) * _mv
-    subidxs_internal[subidxs_valid] = np.array([i for i in range(n)],
+    n = subidxs_dense.size
+    subidxs_sparse = np.full(subnrow * subncol, _mv, np.uint32)
+    subidxs_sparse[subidxs_dense] = np.array([i for i in range(n)],
                                                dtype=np.uint32)
     # allocate output
-    nextidx = np.ones(nrow * ncol, dtype=subidxs_ds.dtype) * _mv
+    nextidx = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
     idxs_fix_lst = list()
     # loop over outlet cell indices
     for idx0 in range(subidxs_out.size):
@@ -565,7 +566,7 @@ def com_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
         subidx_ds = _mv
         while True:
             # next downstream subgrid cell index; NOTE use internal indices
-            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+            subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             if subidxs_out[idx1] == subidx1 or subidx1 == subidx:
                 # at outlet or pit
@@ -588,12 +589,12 @@ def com_nextidx(subidxs_out, subidxs_ds, subidxs_valid, subshape, shape,
 
 
 @njit
-def next_outlet(subidx, subidxs_valid, subidxs_ds, subidxs_internal, 
+def next_outlet(subidx, subidxs_dense, subidxs_ds, subidxs_sparse, 
                 subidxs_out, subncol, cellsize, ncol):
     """Return lowres and subgrid indices of next outlet"""
     while True:
         # next downstream subgrid cell index; NOTE use internal indices
-        subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+        subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
         idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
         outlet = subidx1 == subidxs_out[idx1]
         pit = subidx1 == subidx
@@ -605,7 +606,7 @@ def next_outlet(subidx, subidxs_valid, subidxs_ds, subidxs_internal,
 
 @njit
 def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
-                       subidxs_valid, subuparea, subshape, shape, cellsize):
+                       subidxs_dense, subuparea, subshape, shape, cellsize):
     """Second iteration to fix cells which are not connected in subgrid.
     
     Parameters
@@ -619,7 +620,7 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
     subidxs_ds : ndarray of int
         internal subgrid indices of downstream cells
         NOTE these are internal indices for valid cells only
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         subgrid raster indices of vaild cells
     subuparea : ndarray of int
         highres flattened upstream area array
@@ -635,18 +636,20 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
     raster with subgrid outlet indices : ndarray    
     """
     subnrow, subncol = subshape
+    subsize = subnrow * subncol
     nrow, ncol = shape
+    size = nrow * ncol
     # parse nextidx
-    idxs_valid, idxs_ds, idxs_us, _ = core_nextidx.from_array(
-        nextidx.reshape(shape))
+    idxs_dense, idxs_ds, _ = core_nextidx.from_array(nextidx.reshape(shape))
+    idxs_us = core._idxs_us(idxs_ds)
     # internal indices
-    n = idxs_valid.size
-    idxs_internal = np.ones(nrow * ncol, np.uint32) * _mv
-    idxs_internal[idxs_valid] = np.array([i for i in range(n)],
+    n = idxs_dense.size
+    idxs_sparse = np.full(size, _mv, np.uint32)
+    idxs_sparse[idxs_dense] = np.array([i for i in range(n)],
                                          dtype=np.uint32)
-    subn = subidxs_valid.size
-    subidxs_internal = np.ones(subnrow * subncol, np.uint32) * _mv
-    subidxs_internal[subidxs_valid] = np.array([i for i in range(subn)],
+    subn = subidxs_dense.size
+    subidxs_sparse = np.full(subsize, _mv, np.uint32)
+    subidxs_sparse[subidxs_dense] = np.array([i for i in range(subn)],
                                                dtype=np.uint32)
     # loop over unconnected cells from up to downstream
     upa_check = subuparea[subidxs_out[idxs_fix]]
@@ -663,11 +666,11 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
         # read outlet index and move into the next lowres cell to initialize
         subidx = subidxs_out[idx00]
         idx_ds0 = nextidx[idx00]  # original next downstream cell
-        subidx = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+        subidx = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
         idx0 = subidx_2_idx(subidx, subncol, cellsize, ncol)
         while True:  # @1A while noy connected to original downstream cell
             while True:  # @1B subgrid loop - while not at outlet
-                subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+                subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
                 idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
                 pit = subidx1 == subidx
                 if pit or idx0 != idx1:  # check pit or outlet
@@ -682,7 +685,7 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                         else:
                             connected = True
                     # check if valid cell (required at edges)
-                    if np.any(idxs_valid == idx0):
+                    if np.any(idxs_dense == idx0):
                         subidxs_lst.append(subidx)  # append subgrid outlet index
                         idxs_lst.append(idx0)  # append lowres index
                     # if at original outlet cell of idx0 -> update idx_ds0
@@ -705,12 +708,12 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
         # STEP 2: find original upstream connections
         idxs_us_lst = list()
         idxs_ds0 = np.unique(np.array(idxs_lst, dtype=idxs_fix.dtype))
-        # assert np.all(idxs_internal[idxs_ds0] != _mv)
+        # assert np.all(idxs_sparse[idxs_ds0] != _mv)
         for idx_ds in idxs_ds0:  # @2A lowres us connections loop
-            for i in idxs_us[idxs_internal[idx_ds], :]:
+            for i in idxs_us[idxs_sparse[idx_ds], :]:
                 if i == _mv:
                     break  # @2A
-                idx0 = idxs_valid[i]
+                idx0 = idxs_dense[i]
                 # skip upstream nodes wich are on path of step 1
                 if subidxs_out[idx0] in subidxs_lst or idx0 == idx00:
                     continue  # @2A
@@ -727,11 +730,11 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
             connected = False
             j0, j1 = 0, 0 # start and end connection to path
             # move into next cell to initialize
-            subidx = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+            subidx = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
             idx = idx0
             ii = 0 
             while True and ii <= 10:  # @3B find connecting outlet in subidxs_lst
-                subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+                subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
                 idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
                 if (subidx == subidx1 or idx != idx1):  # if pit OR outlet
                     if not connected:
@@ -781,8 +784,8 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                 idx1 = idxs_lst[j]
                 subidx_out1 = subidxs_lst[j]
                 # check if not connected to ds pit
-                pit1 = subidx_out1 == subidxs_valid[subidxs_ds[
-                    subidxs_internal[subidx_out1]]]
+                pit1 = subidx_out1 == subidxs_dense[subidxs_ds[
+                    subidxs_sparse[subidx_out1]]]
                 if pit1 and len(idx_out_lst) == 0:
                     idxs_pit = np.where(subidxs_out == subidx_out1)[0]
                     if idxs_pit.size == 1 and in_d8(idx0, idxs_pit[0], ncol):
@@ -869,7 +872,7 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                         while True:  # 4D
                             # next downstream subgrid cell index
                             # NOTE use internal indices
-                            subidx1 = subidxs_valid[subidxs_ds[subidxs_internal[subidx]]]
+                            subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
                             idx_ds = subidx_2_idx(subidx1, subncol, cellsize, ncol)
                             outlet = subidx1 == subidxs_out[idx_ds]
                             pit = subidx1 == subidx
@@ -906,13 +909,13 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
                                 # the original outlet has zero upstream cells 
                                 # and the next downstream outlet is unchanged
                                 # no old us neighbors
-                                us_old0 = idxs_us[idxs_internal[idx_ds0], 0] == _mv
+                                us_old0 = idxs_us[idxs_sparse[idx_ds0], 0] == _mv
                                 # new us neighbors
                                 us_new = idx_ds0 in idx_ds_lst 
                                 # next sugbrid outlet from
                                 _, idx_ds00, outlet0 = next_outlet(
-                                    subidx, subidxs_valid, subidxs_ds, 
-                                    subidxs_internal, subidxs_out, subncol, 
+                                    subidx, subidxs_dense, subidxs_ds, 
+                                    subidxs_sparse, subidxs_out, subncol, 
                                     cellsize, ncol)
                                 idx_ds00_edit = idx_ds00 in idx_out_lst
                                 # zero upstream cells from original outlet AND 
@@ -983,7 +986,7 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
         for i in range(len(idx_ds_lst)):
             idx0, idx_ds, idx_ds0 = idx0_lst[i], idx_ds_lst[i], idx_ds0_lst[i]
             idxs_ds, idxs_us = update_idxs_ds_us(idx0, idx_ds, idx_ds0, 
-                                            idxs_ds, idxs_us, idxs_internal)
+                                            idxs_ds, idxs_us, idxs_sparse)
         # assert core.loop_indices(idxs_ds, idxs_us).size == 0 # loop at idx00
         # if len(idx_ds_lst) > 0 and core.loop_indices(idxs_ds, idxs_us).size > 0:
         #     print('loop - ', idx00)
@@ -993,7 +996,7 @@ def com_nextidx_iter2(nextidx, subidxs_out, idxs_fix, subidxs_ds,
 
 
 def com(subidxs_ds,
-         subidxs_valid,
+         subidxs_dense,
          subuparea,
          subshape,
          cellsize,
@@ -1006,7 +1009,7 @@ def com(subidxs_ds,
     ----------
     subidxs_ds : ndarray of int
         internal highres indices of downstream cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray
         highres flattened upstream area array
@@ -1034,24 +1037,24 @@ def com(subidxs_ds,
     shape = nrow, ncol
     # STEP 1
     # get representative cells
-    subidxs_rep = eam_repcell(subidxs_ds, subidxs_valid, subuparea, subshape,
+    subidxs_rep = eam_repcell(subidxs_ds, subidxs_dense, subuparea, subshape,
                               shape, cellsize)
     # get subgrid outlet cells
     subidxs_out = com_outlets(subidxs_rep,
                                subidxs_ds,
-                               subidxs_valid,
+                               subidxs_dense,
                                subuparea,
                                subshape,
                                shape,
                                cellsize,
                                min_stream_len=min_stream_len)
     # get next downstream lowres index
-    nextidx, idxs_fix = com_nextidx(subidxs_out, subidxs_ds, subidxs_valid,
+    nextidx, idxs_fix = com_nextidx(subidxs_out, subidxs_ds, subidxs_dense,
                                      subshape, shape, cellsize)
     # STEP 2 try fixing invalid subgrid connections
     if iter2:
         nextidx, subidxs_out = com_nextidx_iter2(nextidx, subidxs_out,
                                                   idxs_fix, subidxs_ds,
-                                                  subidxs_valid, subuparea,
+                                                  subidxs_dense, subuparea,
                                                   subshape, shape, cellsize)
     return nextidx.reshape(shape), subidxs_out.reshape(shape)

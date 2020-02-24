@@ -21,46 +21,36 @@ def from_array(flwdir):
              and flwdir.shape[0] == 2)):
         raise TypeError('NEXTXY flwdir data not understood')
     nextx, nexty = flwdir  # convert [2,:,:] OR ([:,:], [:,:]) to [:,:], [:,:]
-    return _from_flwdir(nextx, nexty)
+    return _from_array(nextx, nexty)
 
 
-def to_array(idxs_valid, idxs_ds, shape):
-    nextx, nexty = _to_flwdir(idxs_valid, idxs_ds, shape)
+def to_array(idxs_dense, idxs_ds, shape):
+    nextx, nexty = _to_array(idxs_dense, idxs_ds, shape)
     return np.stack([nextx, nexty])
 
 
-@njit("Tuple((u4[:], u4[:], u4[:,:], u4[:]))(i4[:,:], i4[:,:])")
-def _from_flwdir(nextx, nexty):
+@njit("Tuple((intp[:], u4[:], u4[:]))(i4[:,:], i4[:,:])")
+def _from_array(nextx, nexty):
     size = nextx.size
     nrow, ncol = nextx.shape[0], nextx.shape[-1]
     nextx_flat = nextx.ravel()
     nexty_flat = nexty.ravel()
-    # keep valid indices only
-    idxs_valid = np.where(nextx.ravel() != _mv)[0].astype(np.uint32)
-    n = idxs_valid.size
-    idxs_inv = np.ones(size, np.uint32) * core._mv
-    idxs_inv[idxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
-    # max number of upstream cells unkonwn -> calculate max depth
-    n_up = np.zeros(n, dtype=np.uint8)
-    for i in range(n):
-        idx0 = idxs_valid[i]
-        c = nextx_flat[idx0]
-        r = nexty_flat[idx0]
-        if r != _pv and r <= nrow and c <= ncol and r >= 1 and c >= 1:
-            r, c = r - 1, c - 1  # convert from to zero-based index
-            idx_ds = c + r * ncol
-            ids = idxs_inv[idx_ds]  # internal idx_ds
-            if ids == core._mv or ids == i:
-                raise ValueError('invalid flwdir data')
-            n_up[ids] += 1
-    _max_depth = np.int64(np.max(n_up))
+    # find valid dense indices
+    idxs_dense = []
+    idxs_sparse = np.full(size, core._mv, dtype=np.uint32)
+    i = np.uint32(0)
+    for idx0 in range(size):
+        if nextx_flat[idx0] != _mv and nexty_flat[idx0] != _mv:
+            idxs_dense.append(np.intp(idx0))
+            idxs_sparse[idx0] = i
+            i += 1
+    n = i    
     # allocate output arrays
     pits_lst = []
-    idxs_ds = np.ones(n, dtype=np.uint32) * core._mv
-    idxs_us = np.ones((n, _max_depth), dtype=np.uint32) * core._mv
+    idxs_ds = np.full(n, core._mv, dtype=np.uint32)
     i = np.uint32(0)
     for i in range(n):
-        idx0 = idxs_valid[i]
+        idx0 = idxs_dense[i]
         c = nextx_flat[idx0]
         r = nexty_flat[idx0]
         if r == _pv or r > nrow or c > ncol or r < 1 or c < 1:
@@ -70,27 +60,24 @@ def _from_flwdir(nextx, nexty):
         else:
             r, c = r - 1, c - 1  # convert from to zero-based index
             idx_ds = c + r * ncol
-            ids = idxs_inv[idx_ds]
-            if ids == core._mv or ids == i:
-                raise ValueError('invalid flwdir data')
-            idxs_ds[i] = ids
-            for ii in range(_max_depth):
-                if idxs_us[ids, ii] == core._mv:
-                    idxs_us[ids, ii] = i
-                    break
-    return idxs_valid, idxs_ds, idxs_us, np.array(pits_lst)
+            i_ds = idxs_sparse[idx_ds]
+            if i_ds == core._mv or i_ds == i:
+                raise ValueError('invalid NEXTXY data')
+            idxs_ds[i] = i_ds
+    return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
 
 
-@njit("Tuple((i4[:,:], i4[:,:]))(u4[:], u4[:], Tuple((u8, u8)))")
-def _to_flwdir(idxs_valid, idxs_ds, shape):
+@njit #("Tuple((i4[:,:], i4[:,:]))(intp[:], u4[:], Tuple((u8, u8)))")
+def _to_array(idxs_dense, idxs_ds, shape):
     """convert 1D index to 3D NEXTXY raster"""
-    n = idxs_valid.size
+    n = idxs_dense.size
     ncol = shape[1]
-    nextx = np.ones(shape, dtype=np.int32).ravel() * _mv
-    nexty = np.ones(shape, dtype=np.int32).ravel() * _mv
+    size = shape[0]*shape[1]
+    nextx = np.full(size, _mv, dtype=np.int32)
+    nexty = np.full(size, _mv, dtype=np.int32)
     for i in range(n):
-        idx0 = idxs_valid[i]
-        idx_ds = idxs_valid[idxs_ds[i]]
+        idx0 = idxs_dense[i]
+        idx_ds = idxs_dense[idxs_ds[i]]
         if idx0 != idx_ds:
             # convert idx_ds to one-based row / col indices
             nextx[idx0] = idx_ds % ncol + 1

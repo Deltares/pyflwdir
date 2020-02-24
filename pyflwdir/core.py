@@ -9,14 +9,40 @@ from numba.typed import List
 import numpy as np
 import math
 
-_mv = np.uint32(-1)
-## use np.intp / np.uintp ?
-## np.full
-
 from pyflwdir import gis_utils
-
+_mv = np.uint32(-1)
 
 #### NETWORK TREE ####
+@njit
+def _idxs_us(idxs_ds):
+    """Return a 2D array with upstream cell indices for each cell 
+    
+    Parameters
+    ----------
+    idxs_ds : ndarray of int
+        indices of downstream cells
+    
+    Returns
+    -------
+    indices of upstream cells : ndarray of int
+    """
+    n_up = n_upstream(idxs_ds)
+    d = np.int64(np.max(n_up))
+    n = idxs_ds.size
+    # 2D arrays of upstream index
+    idxs_us = np.full((n, d), _mv, dtype=np.uint32)
+    n_up[:] = np.uint8(0)
+    for i in range(n):
+        i_ds = idxs_ds[i]
+        if i_ds == i:
+            continue
+        # valid ds cell
+        ii = n_up[i_ds]
+        idxs_us[i_ds][ii] = i
+        n_up[i_ds] += 1
+    return idxs_us
+
+
 @njit
 def network_tree(idxs_pits, idxs_us):
     """Return network tree, a list of arrays ordered 
@@ -25,11 +51,11 @@ def network_tree(idxs_pits, idxs_us):
     Parameters
     ----------
     idxs_pit, idxs_us : ndarray of int
-        internal indices of pit, upstream cells
+        indices of pit, upstream cells
 
     Returns
     -------
-    Ordered internal indices : List of arrays 
+    Ordered indices : List of arrays 
     """
     # TODO: test if this works faster with single array per pit
     tree = List()
@@ -55,11 +81,11 @@ def upstream(idx0, idxs_us):
     idx0 : array_like of int
         index of local cell(s)
     idxs_us : ndarray of int
-        internal indices of upstream cells
+        indices of upstream cells
 
     Returns
     -------
-    internal upstream indices : ndarray of int  
+    upstream indices : ndarray of int  
     """
     idxs_us0 = idxs_us[idx0, :].ravel()
     return idxs_us0[idxs_us0 != _mv]
@@ -111,6 +137,26 @@ def main_upstream(idxs, idxs_us, uparea_flat, upa_min=0):
                                          upa_min=upa_min)
     return idxs_us_main
 
+@njit
+def n_upstream(idxs_ds):
+    """Returns array with number of upstream cells per cell.
+    
+    Parameters
+    ----------
+    idxs_ds : ndarray of int
+        indices of downstream cells
+    
+    Returns
+    -------
+    number of upstream cells : ndarray of int  
+    """
+    n = idxs_ds.size
+    n_up = np.zeros(n, dtype=np.uint8)
+    for i in range(n):
+        i_ds = idxs_ds[i]
+        if i != i_ds: # pit
+            n_up[i_ds] += 1
+    return n_up
 
 @njit
 def downstream(idx0, idxs_ds):

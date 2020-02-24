@@ -37,7 +37,7 @@ def parse_flwdir(flwdir, ftype, check_ftype=True):
             f'The flow direction type is not recognized as "{ftype}".')
     return fd.from_array(flwdir)
 
-
+# TODO: this is slow on large arrays
 def infer_ftype(flwdir):
     """infer flowdir type from data"""
     ftype = None
@@ -118,9 +118,8 @@ class FlwdirRaster(object):
         self._core = ftypes[ftype]
 
         # initialize
-        # TODO: rename {'idxs_valid': 'idxs_dense'}
         # TODO: split into seperate function for 
-        self._idxs_dense, self._idxs_ds, self._idxs_us, self._idx0 = parse_flwdir(
+        self._idxs_dense, self._idxs_ds, self._idx0 = parse_flwdir(
             data,
             ftype=ftype,
             check_ftype=check_ftype,
@@ -132,8 +131,16 @@ class FlwdirRaster(object):
             raise ValueError(f"Too many active nodes, max: {2**32 - 2}.")
         if self._idx0.size == 0:
             raise ValueError('Invalid flow direction data: no pits found')
-        # set placeholder for network tree
+        # set placeholder for upstream indices / network tree
+        self._idxs_us_ = None # 2D array with upstream indices
         self._tree = None  # List of array ordered from down- to upstream
+
+    @property
+    def _idxs_us(self):
+        """"""
+        if self._idxs_us_ is None:
+            self._idxs_us_ = core._idxs_us(self._idxs_ds) 
+        return self._idxs_us_
 
     @property
     def pits(self):
@@ -157,8 +164,7 @@ class FlwdirRaster(object):
             river network tree
         """
         if self._tree is None:
-            self.set_tree(
-            )  # setup network, with pits as most downstream indices
+            self.set_tree()  # setup network
         return self._tree
 
     @property
@@ -452,7 +458,7 @@ class FlwdirRaster(object):
         # upscale flow directions
         fupscale = getattr(upscale, method)
         nextidx, subidxs_out = fupscale(subidxs_ds = self._idxs_ds,
-                                        subidxs_valid = self._idxs_dense,
+                                        subidxs_dense = self._idxs_dense,
                                         subuparea = uparea.ravel(),
                                         subshape = self.shape,
                                         cellsize = scale_factor,
@@ -563,7 +569,7 @@ class FlwdirRaster(object):
                 "'uparea' shape does not match with flow direction shape")
         rivlen, rivslp = subgrid.river_params(
             subidxs_out=self._sparse_idx(subidxs_out0),
-            subidxs_valid=self._idxs_dense,
+            subidxs_dense=self._idxs_dense,
             subidxs_ds=self._idxs_ds,
             subidxs_us=self._idxs_us,
             subuparea=uparea.flat[self._idxs_dense],

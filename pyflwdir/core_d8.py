@@ -48,30 +48,29 @@ def idx_to_dd(idx0, idx_ds, shape):
     return dd
 
 
-@njit("Tuple((intp[:], u4[:], u4[:,:], u4[:]))(u1[:,:])")
+@njit("Tuple((intp[:], u4[:], u4[:]))(u1[:,:])")
 def from_array(flwdir):
     """convert 2D D8 network to 1D indices"""
     size = flwdir.size
     nrow, ncol = flwdir.shape[0], flwdir.shape[-1]
     flwdir_flat = flwdir.ravel()
-    # keep valid indices only
+    # find valid dense indices
     idxs_dense = []
-    idxs_internal = np.full(size, core._mv, dtype=np.uint32)
+    idxs_sparse = np.full(size, core._mv, dtype=np.uint32)
     i = np.uint32(0)
     for idx0 in range(size):
         if flwdir_flat[idx0] != _mv:
             idxs_dense.append(np.intp(idx0))
-            idxs_internal[idx0] = i
+            idxs_sparse[idx0] = i
             i += 1
     n = i
-    # calculate depth per cell & downsteam index
+    # get downsteam sparse index
     pits_lst = []
     idxs_ds = np.full(n, core._mv, dtype=np.uint32)
-    n_up = np.zeros(n, dtype=np.uint8)
+    # loop over sparse indices
     for idx0 in idxs_dense:
-        i = idxs_internal[idx0]
-        dd = flwdir_flat[idx0]
-        dr, dc = drdc(dd)
+        i = idxs_sparse[idx0]
+        dr, dc = drdc(flwdir_flat[idx0])
         r = int(idx0 // ncol + dr) 
         c = int(idx0  % ncol + dc)
         pit = dr == 0 and dc == 0
@@ -82,24 +81,11 @@ def from_array(flwdir):
             pits_lst.append(np.uint32(i))
         else:        
             idx_ds = idx0 + dc + dr * ncol
-            i_ds = idxs_internal[idx_ds]
+            i_ds = idxs_sparse[idx_ds]
             if i_ds == core._mv:
-                raise ValueError('invalid flwdir data')
+                raise ValueError('invalid D8 data')
             idxs_ds[i] = i_ds
-            n_up[i_ds] += 1
-    # list with arrays of upstream index
-    _max_depth = np.int64(np.max(n_up))
-    idxs_us = np.full((n, _max_depth), core._mv, dtype=np.uint32)
-    n_up[:] = np.uint8(0)
-    for i in range(n):
-        i_ds = idxs_ds[i]
-        if i_ds == i:
-            continue
-        # valid ds cell
-        ii = n_up[i_ds]
-        idxs_us[i_ds][ii] = i
-        n_up[i_ds] += 1
-    return np.array(idxs_dense, dtype=np.intp), idxs_ds, idxs_us, np.array(pits_lst, np.uint32)
+    return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
 
 
 @njit#("u1[:,:](intp[:], u4[:], Tuple((u8, u8)))")

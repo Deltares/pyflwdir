@@ -16,55 +16,46 @@ _us = np.ones((3, 3), dtype=np.uint32) * np.uint32(4)
 
 
 @njit([
-    "Tuple((u4[:], u4[:], u4[:,:], u4[:]))(u4[:,:])",
-    "Tuple((u4[:], u4[:], u4[:,:], u4[:]))(u4[:])",
+    "Tuple((intp[:], u4[:], u4[:]))(u4[:,:])",
+    "Tuple((intp[:], u4[:], u4[:]))(u4[:])",
 ])
 def from_array(nextidx):
     size = nextidx.size
     nextidx_flat = nextidx.ravel()
-    # keep valid indices only
-    idxs_valid = np.where(nextidx_flat != _mv)[0].astype(np.uint32)
-    n = idxs_valid.size
-    idxs_inv = np.ones(size, np.uint32) * core._mv
-    idxs_inv[idxs_valid] = np.array([i for i in range(n)], dtype=np.uint32)
-    # max number of upstream cells unkonwn -> calculate max depth
-    n_up = np.zeros(n, dtype=np.uint8)
-    for i in range(n):
-        idx0 = idxs_valid[i]
-        idx_ds = nextidx_flat[idx0]
-        if idx_ds >= 0 and idx_ds < size and idx_ds != idx0:
-            ids = idxs_inv[idx_ds]  # internal idx_ds
-            if ids == core._mv or ids == i:
-                raise ValueError('invalid flwdir data')
-            n_up[ids] += 1
-    _max_depth = np.int64(np.max(n_up))
+    # find valid dense indices
+    idxs_dense = []
+    idxs_sparse = np.full(size, core._mv, dtype=np.uint32)
+    i = np.uint32(0)
+    for idx0 in range(size):
+        if nextidx_flat[idx0] != _mv:
+            idxs_dense.append(np.intp(idx0))
+            idxs_sparse[idx0] = i
+            i += 1
+    n = i    
     # allocate output arrays
     pits_lst = []
-    idxs_ds = np.ones(n, dtype=np.uint32) * core._mv
-    idxs_us = np.ones((n, _max_depth), dtype=np.uint32) * core._mv
+    idxs_ds = np.full(n, core._mv, dtype=np.uint32)
     i = np.uint32(0)
     for i in range(n):
-        idx0 = idxs_valid[i]
+        idx0 = idxs_dense[i]
         idx_ds = nextidx_flat[idx0]
         if idx_ds < 0 or idx_ds >= size or idx_ds == idx0:
             # ds cell is out of bounds / invalid or pit -> set pit
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
         else:
-            ids = idxs_inv[idx_ds]  # internal idx_ds
-            idxs_ds[i] = ids
-            for ii in range(_max_depth):
-                if idxs_us[ids, ii] == core._mv:
-                    idxs_us[ids, ii] = i
-                    break
-    return idxs_valid, idxs_ds, idxs_us, np.array(pits_lst)
+            i_ds = idxs_sparse[idx_ds] 
+            if i_ds == core._mv or i_ds == i:
+                raise ValueError('invalid NEXTIDX data')
+            idxs_ds[i] = i_ds
+    return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
 
-
-@njit  #("u4[:,:]( u4[:], u4[:], Tuple(i8, i8) )")
-def to_array(idxs_valid, idxs_ds, shape):
+@njit  #("u4[:,:](intp[:], u4[:], Tuple(i8, i8))")
+def to_array(idxs_dense, idxs_ds, shape):
     """convert 1D index to 2D NEXTIDX raster"""
-    nextidx = np.ones(shape, dtype=np.uint32).ravel() * _mv
-    nextidx[idxs_valid] = idxs_valid[idxs_ds]
+    size = shape[0]*shape[1]
+    nextidx = np.full(size, _mv, dtype=np.uint32)
+    nextidx[idxs_dense] = idxs_dense[idxs_ds]
     return nextidx.reshape(shape)
 
 

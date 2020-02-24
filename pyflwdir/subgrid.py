@@ -13,7 +13,7 @@ _mv = core._mv
 
 @njit
 def river_params(subidxs_out,
-                 subidxs_valid,
+                 subidxs_dense,
                  subidxs_ds,
                  subidxs_us,
                  subuparea,
@@ -33,7 +33,7 @@ def river_params(subidxs_out,
     ----------
     subidxs_out : ndarray of int
         internal highres indices of subgrid outlet cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subidxs_ds, subidxs_us : ndarray of int
         internal highres indices of downstream, upstream cells
@@ -82,7 +82,7 @@ def river_params(subidxs_out,
                 subidx1 = subidx
                 break
             # update length
-            l += core.downstream_length(subidx1, subidxs_ds, subidxs_valid,
+            l += core.downstream_length(subidx1, subidxs_ds, subidxs_dense,
                                         subncol, latlon, affine)[1]
             # break if at upstream subgrid outlet
             if outlets[subidx1]:
@@ -99,7 +99,7 @@ def river_params(subidxs_out,
 
 @njit
 def cell_area(subidxs_out,
-              subidxs_valid,
+              subidxs_dense,
               subidxs_us,
               subshape,
               latlon=False,
@@ -110,7 +110,7 @@ def cell_area(subidxs_out,
     ----------
     subidxs_out : ndarray of int
         internal highres indices of subgrid outlet cells
-    subidxs_valid : ndarray of int
+    subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subidxs_us : ndarray of int
         internal highres indices of upstream cells
@@ -133,7 +133,7 @@ def cell_area(subidxs_out,
     xres, yres, north = affine[0], affine[4], affine[5]
     area0 = abs(xres * yres)
     # binary array with outlets
-    subn = subidxs_valid.size
+    subn = subidxs_dense.size
     outlets = np.array([np.bool(0) for _ in range(subn)])
     outlets[subidxs_out] = np.bool(1)
     # allocate output
@@ -150,7 +150,7 @@ def cell_area(subidxs_out,
                     continue
                 next_lst.append(subidx)
                 if latlon:
-                    r = subidxs_valid[subidx] // subncol
+                    r = subidxs_dense[subidx] // subncol
                     lat = north + (r + 0.5) * yres
                     area0 = gis_utils.cellarea(lat, xres, yres)
                 area += area0

@@ -68,11 +68,13 @@ def test_core_xxx_simple():
         with pytest.raises(TypeError):
             fd.from_array(fd._us[None, ...])
             fd.from_array(fd._us.astype(np.float))
-        # test upstream / downstream / pit with _us data
-        idxs_dense, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._us)
+        # test downstream / pit with _us data
+        idxs_dense, idxs_ds, idx_pits = fd.from_array(fd._us)
         assert np.all(idxs_dense == np.arange(9))
         assert np.all(idxs_ds == 4)
         assert (np.all(idx_pits == 4) and idx_pits.size == 1)
+        # test upstream with _us data
+        idxs_us = core._idxs_us(idxs_ds)
         assert (np.all(idxs_us[4, :] == np.array([0, 1, 2, 3, 5, 6, 7, 8]))
                 and np.all(idxs_us[:4, :] == _mv)
                 and np.all(idxs_us[5:, :] == _mv)
@@ -80,8 +82,8 @@ def test_core_xxx_simple():
         assert np.all(fd.to_array(idxs_dense, idxs_ds, _shape) == fd._us)
         # test all invalid/pit with _ds data
         if getattr(fd, '_ds', None) is not None:
-            idxs_dense, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._ds)
-            assert (np.all(idxs_dense == idx_pits) and np.all(idxs_us == _mv))
+            idxs_dense, idxs_ds, idx_pits = fd.from_array(fd._ds)
+            assert np.all(idxs_dense == idx_pits)
 
 
 def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed,
@@ -147,7 +149,7 @@ def test_ftype_conversion():
 def test_downstream_length():
     """test downstream length"""
     ncol = 3
-    idxs_dense, idxs_ds, _, _ = core_d8.from_array(core_d8._us)
+    idxs_dense, idxs_ds, _ = core_d8.from_array(core_d8._us)
     # test length
     dy = core.downstream_length(1, idxs_ds, idxs_dense, ncol, latlon=True)[1]
     dx = core.downstream_length(3, idxs_ds, idxs_dense, ncol, latlon=True)[1]
@@ -169,7 +171,8 @@ def test_downstream_length():
 def test_core_realdata(_d8, d8_parsed):
     """test core.py submodule with actual flwdir data"""
     # test parsing real data
-    idxs_dense, idxs_ds, idxs_us, idxs_pit = d8_parsed
+    idxs_dense, idxs_ds, idxs_pit = d8_parsed
+    idxs_us = core._idxs_us(idxs_ds)
     n = idxs_dense.size
     assert idxs_us[idxs_us != _mv].size + idxs_pit.size == idxs_ds.size
     # test network tree
