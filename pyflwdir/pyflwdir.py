@@ -111,10 +111,6 @@ class FlwdirRaster(object):
             self.size = data.size
             self.shape = data.shape
 
-        if self.size > 2**32 - 2:  # maximum size we can have with uint32 indices
-            raise ValueError(
-                "The current framework limits the raster size to 2**32-2 cells"
-            )
         if len(self.shape) != 2:
             raise ValueError("Flow direction array should be 2 dimensional")
 
@@ -134,6 +130,10 @@ class FlwdirRaster(object):
         elif self._idx0.size == 0:
             raise ValueError('Invalid flow direction data: no pits found')
         self.ncells = self._idxs_valid.size
+        if self.ncells > 2**32 - 2:  # maximum size we can have with uint32 indices
+            raise ValueError(
+                "The current framework limits sixr of valid nodes to 2**32-2 cells"
+            )
         # set placeholder for network tree
         self._tree = None  # List of array ordered from down- to upstream
 
