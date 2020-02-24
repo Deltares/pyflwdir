@@ -14,7 +14,7 @@ To install pyflwdir, do:
 
 .. code-block:: console
 
-  git clone https://github.com/openstreams/pyflwdir.git
+  git clone https://gitlab.com/deltares/wflow/pyflwdir.git
   cd pyflwdir
   pip install .
 
