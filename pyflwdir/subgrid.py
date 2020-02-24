@@ -142,7 +142,7 @@ def cell_area(subidxs_out,
     # loop over outlet cell indices
     for idx0 in range(n):
         area = np.float64(0)
-        subidxs = np.array([subidxs_out[idx0]])
+        subidxs = np.array([subidxs_out[idx0]], dtype=subidxs_us.dtype)
         while True:
             next_lst = []
             for subidx in subidxs_us[subidxs, :].ravel():

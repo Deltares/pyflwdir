@@ -70,23 +70,18 @@ def test_core_xxx_simple():
             fd.from_array(fd._us.astype(np.float))
         # test upstream / downstream / pit with _us data
         idxs_valid, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._us)
-        assert np.all(idxs_valid == np.arange(
-            9)), f"{_name}: valid idx test with _us data failed"
-        assert np.all(
-            idxs_ds == 4), f"{_name}: downstream idx test with _us data failed"
-        assert (np.all(idx_pits == 4) and idx_pits.size == 1
-                ), f"{_name}: pit idx test with _us data failed"
+        assert np.all(idxs_valid == np.arange(9))
+        assert np.all(idxs_ds == 4)
+        assert (np.all(idx_pits == 4) and idx_pits.size == 1)
         assert (np.all(idxs_us[4, :] == np.array([0, 1, 2, 3, 5, 6, 7, 8]))
                 and np.all(idxs_us[:4, :] == _mv)
                 and np.all(idxs_us[5:, :] == _mv)
-                ), f"{_name}: upstream idx test with _us data failed"
-        assert np.all(fd.to_array(idxs_valid, idxs_ds, _shape) ==
-                      fd._us), f"{_name}: convert back with _us data failed"
+                )
+        assert np.all(fd.to_array(idxs_valid, idxs_ds, _shape) == fd._us)
         # test all invalid/pit with _ds data
         if getattr(fd, '_ds', None) is not None:
             idxs_valid, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._ds)
-            assert (np.all(idxs_valid == idx_pits) and np.all(idxs_us == _mv)
-                    ), f"{_name}: test all pits with _ds data failed"
+            assert (np.all(idxs_valid == idx_pits) and np.all(idxs_us == _mv))
 
 
 def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed,

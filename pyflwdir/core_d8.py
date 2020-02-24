@@ -48,58 +48,65 @@ def idx_to_dd(idx0, idx_ds, shape):
     return dd
 
 
-@njit("Tuple((u4[:], u4[:], u4[:,:], u4[:]))(u1[:,:])")
+@njit("Tuple((intp[:], u4[:], u4[:,:], u4[:]))(u1[:,:])")
 def from_array(flwdir):
     """convert 2D D8 network to 1D indices"""
     size = flwdir.size
     nrow, ncol = flwdir.shape[0], flwdir.shape[-1]
     flwdir_flat = flwdir.ravel()
     # keep valid indices only
-    idxs_valid = np.where(flwdir.ravel() != _mv)[0].astype(np.uint32)
-    n = idxs_valid.size
-    idxs_internal = np.ones(size, np.uint32) * core._mv
+    idxs_valid = []
+    idxs_internal = np.full(size, core._mv, dtype=np.uint32)
     i = np.uint32(0)
-    for i in range(n):
-        idxs_internal[idxs_valid[i]] = i
-    # allocate output list / arrays
+    for idx0 in range(size):
+        if flwdir_flat[idx0] != _mv:
+            idxs_valid.append(np.intp(idx0))
+            idxs_internal[idx0] = i
+            i += 1
+    n = i
+    # calculate depth per cell & downsteam index
     pits_lst = []
-    idxs_ds = np.ones(n, dtype=np.uint32) * core._mv
-    idxs_us = np.ones((n, _max_depth), dtype=np.uint32) * core._mv
-    # loop over valid cells
-    _max_us = 0
-    for i in range(n):
-        idx0 = idxs_valid[i]
+    idxs_ds = np.full(n, core._mv, dtype=np.uint32)
+    n_up = np.zeros(n, dtype=np.uint8)
+    for idx0 in idxs_valid:
+        i = idxs_internal[idx0]
         dd = flwdir_flat[idx0]
         dr, dc = drdc(dd)
-        r, c = idx0 // ncol + dr, idx0 % ncol + dc
+        r = int(idx0 // ncol + dr) 
+        c = int(idx0  % ncol + dc)
         pit = dr == 0 and dc == 0
         outside = r >= nrow or c >= ncol or r < 0 or c < 0
-        if pit or outside or dd == _mv:
-            # pit or ds cell is out of bounds / invalid -> set pit
+        # pit or outside
+        if pit or outside:
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
-        else:
-            # valid ds cell
+        else:        
             idx_ds = idx0 + dc + dr * ncol
-            ids = idxs_internal[idx_ds]
-            if ids == core._mv or ids == i:
+            i_ds = idxs_internal[idx_ds]
+            if i_ds == core._mv:
                 raise ValueError('invalid flwdir data')
-            idxs_ds[i] = ids
-            for ii in range(_max_depth):
-                if idxs_us[ids, ii] == core._mv:
-                    idxs_us[ids, ii] = i
-                    break
-            if ii > _max_us:
-                _max_us = ii
-    # idxs_us = idxs_us[:, :_max_us + 1]
-    return idxs_valid, idxs_ds, idxs_us, np.array(pits_lst)
+            idxs_ds[i] = i_ds
+            n_up[i_ds] += 1
+    # list with arrays of upstream index
+    _max_depth = np.int64(np.max(n_up))
+    idxs_us = np.full((n, _max_depth), core._mv, dtype=np.uint32)
+    n_up[:] = np.uint8(0)
+    for i in range(n):
+        i_ds = idxs_ds[i]
+        if i_ds == i:
+            continue
+        # valid ds cell
+        ii = n_up[i_ds]
+        idxs_us[i_ds][ii] = i
+        n_up[i_ds] += 1
+    return np.array(idxs_valid, dtype=np.intp), idxs_ds, idxs_us, np.array(pits_lst, np.uint32)
 
 
-@njit("u1[:,:](u4[:], u4[:], Tuple((u8, u8)))")
+@njit#("u1[:,:](intp[:], u4[:], Tuple((u8, u8)))")
 def to_array(idxs_valid, idxs_ds, shape):
     """convert 1D index to 2D D8 raster"""
     n = idxs_valid.size
-    flwdir = np.ones(shape, dtype=np.uint8).ravel() * _mv
+    flwdir = np.full(shape, _mv, dtype=np.uint8).ravel()
     for i in range(n):
         idx0 = idxs_valid[i]
         idx_ds = idxs_valid[idxs_ds[i]]

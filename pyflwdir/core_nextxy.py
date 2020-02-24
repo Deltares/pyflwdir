@@ -19,7 +19,7 @@ def from_array(flwdir):
     if not ((isinstance(flwdir, tuple) and len(flwdir) == 2) or
             (isinstance(flwdir, np.ndarray) and flwdir.ndim == 3
              and flwdir.shape[0] == 2)):
-        raise TypeError('NEXTXT flwdir data not understood')
+        raise TypeError('NEXTXY flwdir data not understood')
     nextx, nexty = flwdir  # convert [2,:,:] OR ([:,:], [:,:]) to [:,:], [:,:]
     return _from_flwdir(nextx, nexty)
 

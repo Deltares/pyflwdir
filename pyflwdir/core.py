@@ -10,6 +10,8 @@ import numpy as np
 import math
 
 _mv = np.uint32(-1)
+## use np.intp / np.uintp ?
+## np.full
 
 from pyflwdir import gis_utils
 
