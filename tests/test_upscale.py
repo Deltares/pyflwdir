@@ -53,7 +53,7 @@ def test_upscale(d8):
     for name, mdict in tests.items():
         fupscale = getattr(upscale, mdict.get('method', name))
         kwargs = mdict.get('kwargs', {})
-        nextidx, subidxs_out = fupscale(d8._idxs_ds, d8._idxs_valid, uparea,
+        nextidx, subidxs_out = fupscale(d8._idxs_ds, d8._idxs_dense, uparea,
                                         d8.shape, cellsize, **kwargs)
         d8_lr = FlwdirRaster(nextidx, ftype='nextidx', check_ftype=True)
         subidxs_out = subidxs_out.ravel()
@@ -68,6 +68,6 @@ def test_upscale(d8):
         pitbas = basins[subidxs_out[d8_lr.pits]]
         assert np.unique(pitbas).size == pitbas.size, name
         # check number of disconnected cells for each method
-        subidxs_out0 = d8._internal_idx(subidxs_out[d8_lr._idxs_valid])
+        subidxs_out0 = d8._sparse_idx(subidxs_out[d8_lr._idxs_dense])
         connect = subgrid.connected(subidxs_out0, d8_lr._idxs_ds, d8._idxs_ds)
         assert np.sum(~connect) == mdict['n'], name

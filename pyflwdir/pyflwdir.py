@@ -118,22 +118,20 @@ class FlwdirRaster(object):
         self._core = ftypes[ftype]
 
         # initialize
-        # convert to internal indices
-        self._idxs_valid, self._idxs_ds, self._idxs_us, self._idx0 = parse_flwdir(
+        # TODO: rename {'idxs_valid': 'idxs_dense'}
+        # TODO: split into seperate function for 
+        self._idxs_dense, self._idxs_ds, self._idxs_us, self._idx0 = parse_flwdir(
             data,
             ftype=ftype,
             check_ftype=check_ftype,
         )
-        if self._idxs_valid.size < 1:
-            raise ValueError(
-                'Invalid flow direction data: zer size ')
-        elif self._idx0.size == 0:
+        self.ncells = self._idxs_dense.size
+        if self.ncells < 1:
+            raise ValueError('Invalid flow direction data: zerp size ')
+        elif self.ncells > 2**32 - 2:  # maximum size we can have with uint32 indices
+            raise ValueError(f"Too many active nodes, max: {2**32 - 2}.")
+        if self._idx0.size == 0:
             raise ValueError('Invalid flow direction data: no pits found')
-        self.ncells = self._idxs_valid.size
-        if self.ncells > 2**32 - 2:  # maximum size we can have with uint32 indices
-            raise ValueError(
-                "The current framework limits sixr of valid nodes to 2**32-2 cells"
-            )
         # set placeholder for network tree
         self._tree = None  # List of array ordered from down- to upstream
 
@@ -146,7 +144,7 @@ class FlwdirRaster(object):
         1D array of int
             1D raster indices of pit
         """
-        return self._idxs_valid[self._idx0]
+        return self._idxs_dense[self._idx0]
 
     @property
     def tree(self):
@@ -186,7 +184,7 @@ class FlwdirRaster(object):
             (the default is None) 
         """
         idxs_pit = np.asarray(idxs_pit, dtype=np.uint32).flatten()
-        idxs_pit = self._internal_idx(idxs_pit)
+        idxs_pit = self._sparse_idx(idxs_pit)
         if streams is not None:  # snap to streams
             idxs_pit = core.ds_stream(idxs_pit, self._idxs_ds,
                                       self._flatten(streams))
@@ -244,7 +242,7 @@ class FlwdirRaster(object):
         if ftype not in ftypes:
             msg = f'The flow direction type "{ftype}" is not recognized.'
             raise ValueError(msg)
-        return ftypes[ftype].to_array(self._idxs_valid, self._idxs_ds, 
+        return ftypes[ftype].to_array(self._idxs_dense, self._idxs_ds, 
                                       self.shape)
 
     def basins(self):
@@ -257,7 +255,7 @@ class FlwdirRaster(object):
             basin map
         """
         basids = basin.basins(self.tree, self._idxs_us, self.tree[0])
-        return self._reshape(basids, nodata=np.uint32(0))
+        return self._densify(basids, nodata=np.uint32(0))
 
     def subbasins(self, idxs):
         """Returns a subbasin map with a unique ID for every subbasin. The IDs
@@ -273,9 +271,9 @@ class FlwdirRaster(object):
         2D array of uint32
             subbasin map
         """
-        idxs0 = self._internal_idx(idxs)
+        idxs0 = self._sparse_idx(idxs)
         subbas = basin.basins(self.tree, self._idxs_us, idxs0)
-        return self._reshape(subbas, nodata=np.uint32(0))
+        return self._densify(subbas, nodata=np.uint32(0))
 
     def upstream_area(self, affine=gis_utils.IDENTITY, latlon=False, mult=1):
         """Returns the upstream area map based on the flow direction map. 
@@ -300,12 +298,12 @@ class FlwdirRaster(object):
             upstream area map [m2]
         """
         uparea = basin.upstream_area(self.tree,
-                                     self._idxs_valid,
+                                     self._idxs_dense,
                                      self._idxs_us,
                                      self.shape[1],
                                      affine=affine,
                                      latlon=latlon)
-        return self._reshape(uparea * mult, nodata=-9999.)
+        return self._densify(uparea * mult, nodata=-9999.)
 
     def stream_order(self):
         """Returns the Strahler Order map [1]. 
@@ -325,7 +323,7 @@ class FlwdirRaster(object):
             strahler order map
         """
         strord = basin.stream_order(self.tree, self._idxs_us)
-        return self._reshape(strord, nodata=np.int8(-1))
+        return self._densify(strord, nodata=np.int8(-1))
 
     def accuflux(self, material, nodata=-9999):
         """Return accumulated amount of material along the flow direction map.
@@ -348,7 +346,7 @@ class FlwdirRaster(object):
                 "'Material' shape does not match with flow direction shape.")
         accu_flat = basin.accuflux(self.tree, self._idxs_us,
                                    self._flatten(material), nodata)
-        return self._reshape(accu_flat, nodata=nodata)
+        return self._densify(accu_flat, nodata=nodata)
 
     def vector(self,
                min_order=1,
@@ -390,17 +388,17 @@ class FlwdirRaster(object):
                               "shapely and geopandas packages.")
         # get geoms and make geopandas dataframe
         if xs is None or ys is None:
-            xs, ys = gis_utils.idxs_to_coords(self._idxs_valid, affine,
+            xs, ys = gis_utils.idxs_to_coords(self._idxs_dense, affine,
                                               self.shape)
         else:
             if xs.size != self.size or ys.size != self.size:
                 raise ValueError("'xs' and/or 'ys' size does not match with" +
                                  " flow direction size")
-            xs, ys = xs.ravel()[self._idxs_valid], ys.ravel()[self._idxs_valid]
+            xs, ys = xs.ravel()[self._idxs_dense], ys.ravel()[self._idxs_dense]
         geoms = gis_utils.idxs_to_geoms(self._idxs_ds, xs, ys)
         gdf = gp.GeoDataFrame(geometry=geoms, crs=crs)
         # get additional meta data
-        gdf['stream_order'] = self.stream_order().flat[self._idxs_valid]
+        gdf['stream_order'] = self.stream_order().flat[self._idxs_dense]
         gdf['pit'] = self._idxs_ds == np.arange(self.ncells)
         return gdf
 
@@ -454,7 +452,7 @@ class FlwdirRaster(object):
         # upscale flow directions
         fupscale = getattr(upscale, method)
         nextidx, subidxs_out = fupscale(subidxs_ds = self._idxs_ds,
-                                        subidxs_valid = self._idxs_valid,
+                                        subidxs_valid = self._idxs_dense,
                                         subuparea = uparea.ravel(),
                                         subshape = self.shape,
                                         cellsize = scale_factor,
@@ -499,13 +497,13 @@ class FlwdirRaster(object):
         if np.any(subidxs_out0 == core._mv):
             raise ValueError("invalid 'subidxs_out' with missing values" +
                              "at valid indices.")
-        subare = subgrid.cell_area(self._internal_idx(subidxs_out0),
-                                   self._idxs_valid,
+        subare = subgrid.cell_area(self._sparse_idx(subidxs_out0),
+                                   self._idxs_dense,
                                    self._idxs_us,
                                    self.shape,
                                    latlon=latlon,
                                    affine=affine)
-        return other._reshape(subare, -9999.)
+        return other._densify(subare, -9999.)
 
     def subriver(self,
                  other,
@@ -564,17 +562,17 @@ class FlwdirRaster(object):
             raise ValueError(
                 "'uparea' shape does not match with flow direction shape")
         rivlen, rivslp = subgrid.river_params(
-            subidxs_out=self._internal_idx(subidxs_out0),
-            subidxs_valid=self._idxs_valid,
+            subidxs_out=self._sparse_idx(subidxs_out0),
+            subidxs_valid=self._idxs_dense,
             subidxs_ds=self._idxs_ds,
             subidxs_us=self._idxs_us,
-            subuparea=uparea.flat[self._idxs_valid],
-            subelevtn=elevtn.flat[self._idxs_valid],
+            subuparea=uparea.flat[self._idxs_dense],
+            subelevtn=elevtn.flat[self._idxs_dense],
             subshape=self.shape,
             min_uparea=min_uparea,
             latlon=latlon,
             affine=affine)
-        return other._reshape(rivlen, -9999.), other._reshape(rivslp, -9999.)
+        return other._densify(rivlen, -9999.), other._densify(rivslp, -9999.)
 
     def subconnect(self, other, subidxs_out):
         """Returns binary array with ones if sugrid outlet cells are connected 
@@ -593,9 +591,9 @@ class FlwdirRaster(object):
             valid subgrid connection
         """
         subidxs_out0 = _check_convert_subidxs_out(subidxs_out, other)
-        subcon = subgrid.connected(self._internal_idx(subidxs_out0),
+        subcon = subgrid.connected(self._sparse_idx(subidxs_out0),
                                    other._idxs_ds, self._idxs_ds)
-        return other._reshape(subcon, True)
+        return other._densify(subcon, True)
 
     # def drainage_path_stats(self, rivlen, elevtn):
     #     if not np.all(rivlen.shape == self.shape):
@@ -609,20 +607,18 @@ class FlwdirRaster(object):
     #         self._flatten(elevtn))
     #     return df_out
 
-    def _reshape(self, data, nodata):
-        """Return 2D array from 1D data at valid indices and filled with 
-        nodata."""
-        return core._reshape(data, self._idxs_valid, self.shape, nodata=nodata)
+    def _densify(self, data, nodata):
+        """Return dense array from 1D sparse data, filled with nodata value."""
+        return core._densify(data, self._idxs_dense, self.shape, nodata=nodata)
 
-    def _flatten(self, data):
-        """Return 1D data array at valid indices for internal operations."""
-        return data.flat[self._idxs_valid]
+    def _sparsify(self, data):
+        """Return sparse data array from dense data array."""
+        return data.flat[self._idxs_dense]
 
-    def _internal_idx(self, idx):
-        """Return interal indices based on 1D raster indices."""
+    def _sparse_idx(self, idx):
+        """Transform linear indices of dense array to sparse indices."""
         # NOTE: should we throw an error if any idx is invalid ?
-        return core._internal_idx(idx, self._idxs_valid, self.size)
-
+        return core._sparse_idx(idx, self._idxs_dense, self.size)
 
 def _check_convert_subidxs_out(subidxs_out, other):
     """Convert 2D subidxs_out grid to 1D array at valid indices"""
@@ -632,7 +628,7 @@ def _check_convert_subidxs_out(subidxs_out, other):
     if not np.all(subidxs_out.shape == other.shape):
         raise ValueError("'subidxs_out' shape does not match with `other`" +
                          " flow direction shape")
-    subidxs_out0 = subidxs_out.ravel()[other._idxs_valid]
+    subidxs_out0 = subidxs_out.ravel()[other._idxs_dense]
     if np.any(subidxs_out0 == core._mv):
         raise ValueError("invalid 'subidxs_out' with missing values" +
                          "at valid indices.")

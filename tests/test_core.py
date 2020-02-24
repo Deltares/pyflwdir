@@ -69,19 +69,19 @@ def test_core_xxx_simple():
             fd.from_array(fd._us[None, ...])
             fd.from_array(fd._us.astype(np.float))
         # test upstream / downstream / pit with _us data
-        idxs_valid, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._us)
-        assert np.all(idxs_valid == np.arange(9))
+        idxs_dense, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._us)
+        assert np.all(idxs_dense == np.arange(9))
         assert np.all(idxs_ds == 4)
         assert (np.all(idx_pits == 4) and idx_pits.size == 1)
         assert (np.all(idxs_us[4, :] == np.array([0, 1, 2, 3, 5, 6, 7, 8]))
                 and np.all(idxs_us[:4, :] == _mv)
                 and np.all(idxs_us[5:, :] == _mv)
                 )
-        assert np.all(fd.to_array(idxs_valid, idxs_ds, _shape) == fd._us)
+        assert np.all(fd.to_array(idxs_dense, idxs_ds, _shape) == fd._us)
         # test all invalid/pit with _ds data
         if getattr(fd, '_ds', None) is not None:
-            idxs_valid, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._ds)
-            assert (np.all(idxs_valid == idx_pits) and np.all(idxs_us == _mv))
+            idxs_dense, idxs_ds, idxs_us, idx_pits = fd.from_array(fd._ds)
+            assert (np.all(idxs_dense == idx_pits) and np.all(idxs_us == _mv))
 
 
 def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed,
@@ -94,8 +94,8 @@ def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed,
                  nextidx=nextidx_parsed)
     for ftype, _fd_ in fdict.items():
         # test if internal indices are valid
-        idxs_valid, idxs_ds = _fd_[:2]
-        assert idxs_ds.max() < idxs_valid.size and idxs_ds.min() >= 0
+        idxs_dense, idxs_ds = _fd_[:2]
+        assert idxs_ds.max() < idxs_dense.size and idxs_ds.min() >= 0
         # test conistent results
         for i in range(len(_d8_)):
             assert np.all(
@@ -103,7 +103,7 @@ def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed,
             ), f"disagreement between 'd8' and '{ftype}'' output {i}"
         # test to/from_array conversions
         fd = getattr(pyflwdir, f'core_{ftype}')
-        _fd2_ = fd.from_array(fd.to_array(idxs_valid, idxs_ds, _d8.shape))
+        _fd2_ = fd.from_array(fd.to_array(idxs_dense, idxs_ds, _d8.shape))
         for i in range(len(_fd_)):
             msg = f"dissimilarities after conversion: '{ftype}'' output {i}"
             assert np.all(_fd2_[i] == _fd_[i]), msg 
@@ -147,55 +147,48 @@ def test_ftype_conversion():
 def test_downstream_length():
     """test downstream length"""
     ncol = 3
-    idxs_valid, idxs_ds, _, _ = core_d8.from_array(core_d8._us)
+    idxs_dense, idxs_ds, _, _ = core_d8.from_array(core_d8._us)
     # test length
-    dy = core.downstream_length(1, idxs_ds, idxs_valid, ncol, latlon=True)[1]
-    dx = core.downstream_length(3, idxs_ds, idxs_valid, ncol, latlon=True)[1]
+    dy = core.downstream_length(1, idxs_ds, idxs_dense, ncol, latlon=True)[1]
+    dx = core.downstream_length(3, idxs_ds, idxs_dense, ncol, latlon=True)[1]
     for idx0 in [1, 3, 5, 7]:  # horizontal / vertical
-        assert core.downstream_length(idx0, idxs_ds, idxs_valid, ncol)[1] == 1
+        assert core.downstream_length(idx0, idxs_ds, idxs_dense, ncol)[1] == 1
     for idx0 in [0, 2, 6, 8]:  # diagonal
-        assert core.downstream_length(idx0, idxs_ds, idxs_valid,
+        assert core.downstream_length(idx0, idxs_ds, idxs_dense,
                                       ncol)[1] == np.hypot(1, 1)
         assert core.downstream_length(idx0,
                                       idxs_ds,
-                                      idxs_valid,
+                                      idxs_dense,
                                       ncol,
                                       latlon=True)[1] == np.hypot(dx, dy)
-    assert core.downstream_length(4, idxs_ds, idxs_valid, ncol)[1] == 0  # pit
-    assert core.downstream_length(4, idxs_ds, idxs_valid, ncol,
+    assert core.downstream_length(4, idxs_ds, idxs_dense, ncol)[1] == 0  # pit
+    assert core.downstream_length(4, idxs_ds, idxs_dense, ncol,
                                   latlon=True)[1] == 0  # pit
 
 
 def test_core_realdata(_d8, d8_parsed):
     """test core.py submodule with actual flwdir data"""
     # test parsing real data
-    idxs_valid, idxs_ds, idxs_us, idxs_pit = d8_parsed
+    idxs_dense, idxs_ds, idxs_us, idxs_pit = d8_parsed
+    n = idxs_dense.size
     assert idxs_us[idxs_us != _mv].size + idxs_pit.size == idxs_ds.size
     # test network tree
     try:
         tree = core.network_tree(idxs_pit, idxs_us)
     except:
         pytest.fail('tree network failed')
-    assert np.array([leave.size for leave in tree
-                     ]).sum() == idxs_ds.size, 'tree network invalid'
+    assert np.array([leave.size for leave in tree]).sum() == idxs_ds.size
     # test internal data reshaping / reindexing functions
-    assert np.all(
-        core._internal_idx(idxs_valid, idxs_valid, _d8.size) == np.arange(
-            idxs_valid.size))
-    assert np.all(
-        core._reshape(
-            _d8.flat[idxs_valid], idxs_valid, _d8.shape, nodata=core_d8._mv) ==
-        _d8)
+    assert np.all(core._sparse_idx(idxs_dense, idxs_dense, _d8.size) == np.arange(n))
+    assert np.all(core._densify(_d8.flat[idxs_dense], idxs_dense, _d8.shape, nodata=core_d8._mv) == _d8)
     with pytest.raises(ValueError):
-        core._reshape(_d8.flat[idxs_valid[:-1]],
-                      idxs_valid,
+        core._densify(_d8.flat[idxs_dense[:-1]],
+                      idxs_dense,
                       _d8.shape,
                       nodata=core_d8._mv)
     # test upstream functions
     for idx0 in [idxs_pit[0], idxs_pit]:
-        assert np.all(
-            core.upstream(idx0, idxs_us) == idxs_us[idx0, :][
-                idxs_us[idx0, :] != _mv])
+        assert np.all(core.upstream(idx0, idxs_us) == idxs_us[idx0, :][idxs_us[idx0, :] != _mv])
     try:
         idxs = np.arange(idxs_ds.size, dtype=np.uint32)
         idxs_us_main = core.main_upstream(idxs, idxs_us, np.ones(idxs.size))
@@ -213,6 +206,6 @@ def test_core_realdata(_d8, d8_parsed):
     assert core.loop_indices(idxs_ds, idxs_us).size == 0, 'loop index failed'
     # test2 loop indices remove pit and check all cells are invalid
     idxs_ds_loop = idxs_ds.copy()
-    idxs_ds_loop[idxs_pit] = idxs_valid[0]
+    idxs_ds_loop[idxs_pit] = idxs_dense[0]
     assert core.loop_indices(
         idxs_ds_loop, idxs_us).size == idxs_ds.size, 'loop index invalid'

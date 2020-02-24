@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     dir_lr.to_array(ftype='d8')
     subidxs_out = subidxs_out.ravel()
-    subidxs_out0 = d8._internal_idx(subidxs_out[dir_lr._idxs_valid])
+    subidxs_out0 = d8._sparse_idx(subidxs_out[dir_lr._idxs_valid])
     connect = np.ones(dir_lr.shape, dtype=np.int8) * -1
     connect.flat[dir_lr._idxs_valid] = subgrid.connected(
         subidxs_out0, dir_lr._idxs_ds, d8._idxs_ds)
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     # # river length
     # rivlen = np.ones(dir_lr.shape, dtype=np.float32) * -9999.
     # rivlen.flat[dir_lr._idxs_valid] = subgrid.river_params(
-    #     subidxs_out0, #[dir_lr._internal_idx(np.array([1440]))],
+    #     subidxs_out0, #[dir_lr._sparse_idx(np.array([1440]))],
     #     d8._idxs_valid,
     #     d8._idxs_ds,
     #     d8._idxs_us,

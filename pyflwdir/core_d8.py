@@ -55,12 +55,12 @@ def from_array(flwdir):
     nrow, ncol = flwdir.shape[0], flwdir.shape[-1]
     flwdir_flat = flwdir.ravel()
     # keep valid indices only
-    idxs_valid = []
+    idxs_dense = []
     idxs_internal = np.full(size, core._mv, dtype=np.uint32)
     i = np.uint32(0)
     for idx0 in range(size):
         if flwdir_flat[idx0] != _mv:
-            idxs_valid.append(np.intp(idx0))
+            idxs_dense.append(np.intp(idx0))
             idxs_internal[idx0] = i
             i += 1
     n = i
@@ -68,7 +68,7 @@ def from_array(flwdir):
     pits_lst = []
     idxs_ds = np.full(n, core._mv, dtype=np.uint32)
     n_up = np.zeros(n, dtype=np.uint8)
-    for idx0 in idxs_valid:
+    for idx0 in idxs_dense:
         i = idxs_internal[idx0]
         dd = flwdir_flat[idx0]
         dr, dc = drdc(dd)
@@ -99,17 +99,17 @@ def from_array(flwdir):
         ii = n_up[i_ds]
         idxs_us[i_ds][ii] = i
         n_up[i_ds] += 1
-    return np.array(idxs_valid, dtype=np.intp), idxs_ds, idxs_us, np.array(pits_lst, np.uint32)
+    return np.array(idxs_dense, dtype=np.intp), idxs_ds, idxs_us, np.array(pits_lst, np.uint32)
 
 
 @njit#("u1[:,:](intp[:], u4[:], Tuple((u8, u8)))")
-def to_array(idxs_valid, idxs_ds, shape):
-    """convert 1D index to 2D D8 raster"""
-    n = idxs_valid.size
+def to_array(idxs_dense, idxs_ds, shape):
+    """convert sparse downstream indices to dense D8 raster"""
+    n = idxs_dense.size
     flwdir = np.full(shape, _mv, dtype=np.uint8).ravel()
     for i in range(n):
-        idx0 = idxs_valid[i]
-        idx_ds = idxs_valid[idxs_ds[i]]
+        idx0 = idxs_dense[i]
+        idx_ds = idxs_dense[idxs_ds[i]]
         dd = idx_to_dd(idx0, idx_ds, shape)
         if dd == _mv:
             msg = 'Invalid data. Downstream cell outside 8 neighbors.'

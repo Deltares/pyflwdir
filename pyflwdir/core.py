@@ -114,18 +114,18 @@ def main_upstream(idxs, idxs_us, uparea_flat, upa_min=0):
 
 @njit
 def downstream(idx0, idxs_ds):
-    """Returns the internal downstream indices.
+    """Returns next downstream indices.
     
     Parameters
     ----------
-    idx0 : array_like of int
-        index of local cell(s)
+    idx0 : int
+        index of local cell
     idxs_ds : ndarray of int
-        internal indices of downstream cells
+        indices of downstream cells
 
     Returns
     -------
-    internal downstream indices : ndarray of int  
+    downstream indices : ndarray of int  
     """
     return idxs_ds[idx0]
 
@@ -151,16 +151,16 @@ def downstream_river(idxs0, idxs_ds, river_flat):
     
     Parameters
     ----------
-    idxs0 : ndarray of in
-        index of local cell(s)
+    idx0 : int
+        index of local cell
     idxs_ds : ndarray of int
-        internal indices of downstream cells
+        indices of downstream cells
     data : ndarray of bool
         True if stream cell
 
     Returns
     -------
-    internal downstream stream indices : ndarray of int  
+    downstream stream indices : ndarray of int  
     """
 
     idx_out = np.zeros(idxs0.size, dtype=np.uint32)
@@ -173,7 +173,7 @@ def downstream_river(idxs0, idxs_ds, river_flat):
 @njit
 def downstream_length(idx0,
                       idxs_ds,
-                      idxs_valid,
+                      idxs_dense,
                       ncol,
                       latlon=False,
                       affine=gis_utils.IDENTITY):
@@ -186,9 +186,9 @@ def downstream_length(idx0,
     idx0 : int
         index of local cell
     idxs_ds : ndarray of int
-        internal indices of downstream cells
-    idxs_valid : ndarray of int
-        flattened raster indices of cells
+        indices of downstream cells
+    idxs_dense : ndarray of int
+        linear indices of dense raster
     ncol : int
         number of columns in raster
     latlon : bool, optional
@@ -202,14 +202,14 @@ def downstream_length(idx0,
     Returns
     -------
     Tuple of int, float
-        next downstream internal index, length
+        downstream index, length
     """
     xres, yres, north = np.float64(affine[0]), np.float64(
         affine[4]), np.float64(affine[5])
     idx1 = downstream(idx0, idxs_ds)  # next downstream
     # convert to flattened raster indices
-    idx = idxs_valid[idx0]
-    idx_ds = idxs_valid[idx1]
+    idx = idxs_dense[idx0]
+    idx_ds = idxs_dense[idx1]
     # compute delta row, col
     r = idx_ds // ncol
     dr = (idx // ncol) - r
@@ -277,43 +277,43 @@ def loop_indices(idxs_ds, idxs_us):
 
 #### internal data indexing and reordering functions ####
 @njit
-def _internal_idx(idxs, idxs_valid, size):
-    """Convert 1D index to internal 1D index (valid cells only).
+def _sparse_idx(idxs, idxs_dense, size):
+    """Convert linear indices of dense raster to linear indices of sparse 
+    array.
     
     Parameters
     ----------
     idxs : ndarray of int
-        1D flwdir raster index
-    idxs_valid : ndarray of int
-        1D flwdir raster indices of valid cells
+        linear indices of dense raster to be converted
+    idxs_dense : ndarray of int
+        linear indices of dense raster of valid cells
     size : int
         size of flwdir raster
 
     Returns
     -------
-    1D internal index : ndarray of int    
+    linear sparse indices : ndarray of int    
     """
-    # NOTE idx internal for d8 in intp data type
-    # output in uint32
+    # NOTE dense idxs in intp data type, sparse idxs in uint32
+    # TODO: test if this can be done faster with sorted idxs array
     if np.any(idxs < 0) or np.any(idxs >= size):
         raise ValueError('Index out of bounds')
-    idxs_inv = np.ones(size, np.uint32) * _mv
-    idxs_inv[idxs_valid] = np.array([i for i in range(idxs_valid.size)],
+    idxs_sparse = np.ones(size, np.uint32) * _mv
+    idxs_sparse[idxs_dense] = np.array([i for i in range(idxs_dense.size)],
                                     dtype=np.uint32)
-    return idxs_inv[idxs]
+    return idxs_sparse[idxs]
 
 
 @njit
-def _reshape(data, idxs_valid, shape, nodata=-9999):
-    """Reshape 1D data with same size as internal index 
-    to a 2D raster with the data placed at the internal index.
+def _densify(data, idxs_dense, shape, nodata=-9999):
+    """Densify sparse array.
     
     Parameters
     ----------
-    data : ndarray
+    data : ndarray 
         1D data
-    idxs_valid : ndarray of int
-        1D flwdir raster indices of valid cells
+    idxs_dense : ndarray of int
+        linear indices of dense raster
     shape : tuple of int
         shape of output raster
 
@@ -321,8 +321,8 @@ def _reshape(data, idxs_valid, shape, nodata=-9999):
     -------
     2D raster data : ndarray    
     """
-    if idxs_valid.size != data.size:
+    if idxs_dense.size != data.size:
         raise ValueError('data has invalid size')
-    data_out = np.ones(shape[0] * shape[1], dtype=data.dtype) * nodata
-    data_out[idxs_valid] = data
+    data_out = np.full(shape[0] * shape[1], nodata, dtype=data.dtype)
+    data_out[idxs_dense] = data
     return data_out.reshape(shape)
