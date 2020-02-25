@@ -50,9 +50,9 @@ def _from_array(nextx, nexty):
     idxs_ds = np.full(n, core._mv, dtype=np.uint32)
     i = np.uint32(0)
     for i in range(n):
-        idx0 = idxs_dense[i]
-        c = nextx_flat[idx0]
-        r = nexty_flat[idx0]
+        idx0 = np.intp(idxs_dense[i])
+        c = np.uint32(nextx_flat[idx0])
+        r = np.uint32(nexty_flat[idx0])
         if r == _pv or r > nrow or c > ncol or r < 1 or c < 1:
             # pit or ds cell is out of bounds / invalid -> set pit
             idxs_ds[i] = i

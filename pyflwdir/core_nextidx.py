@@ -37,8 +37,8 @@ def from_array(nextidx):
     idxs_ds = np.full(n, core._mv, dtype=np.uint32)
     i = np.uint32(0)
     for i in range(n):
-        idx0 = idxs_dense[i]
-        idx_ds = nextidx_flat[idx0]
+        idx0 = np.intp(idxs_dense[i])
+        idx_ds = np.uint32(nextidx_flat[idx0])
         if idx_ds < 0 or idx_ds >= size or idx_ds == idx0:
             # ds cell is out of bounds / invalid or pit -> set pit
             idxs_ds[i] = i

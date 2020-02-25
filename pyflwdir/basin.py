@@ -17,7 +17,7 @@ def accuflux(tree, idxs_us, material_flat, nodata):
     """accumulate 'material' in downstream direction using 
     the network tree"""
     size = idxs_us.shape[0]
-    accu_flat = np.ones(size, dtype=material_flat.dtype) * nodata
+    accu_flat = np.full(size, nodata, dtype=material_flat.dtype)
     for i in range(len(tree)):
         idxs = tree[-i - 1]  # from up- to downstream
         for idx0 in idxs:
@@ -48,7 +48,7 @@ def upstream_area(tree,
     size = idxs_us.shape[0]
     # intialize with correct dtypes
     upa_ds, upa_us = np.float64(0.), np.float64(0.)
-    upa = np.ones(size, dtype=np.float32) * -9999.
+    upa = np.full(size, -9999., dtype=np.float64)
     # loop over network from up- to downstream and calc upstream area
     for i in range(len(tree)):
         idxs = tree[-i - 1]  # from up- to downstream
@@ -68,9 +68,9 @@ def upstream_area(tree,
                         lat = north + (r + 0.5) * yres
                         area0 = gis_utils.cellarea(lat, xres, yres)
                     upa_us = area0
-                    upa[idx_us] = np.float32(upa_us)
+                    upa[idx_us] = np.float64(upa_us)
                 upa_ds += upa_us
-            upa[idx0] = np.float32(upa_ds)
+            upa[idx0] = np.float64(upa_ds)
     return upa
 
 
@@ -128,7 +128,7 @@ def _strahler_order(idxs_us, strord_flat):
 def stream_order(tree, idxs_us):
     """"determine stream order using network tree; nodata = -1"""
     size = idxs_us.shape[0]
-    strord_flat = np.ones(size, dtype=np.int8) * np.int8(-1)
+    strord_flat = np.full(size, -1, dtype=np.int8)
     for i in range(len(tree)):
         idxs = tree[-i - 1]  # from up- to downstream
         for idx0 in idxs:

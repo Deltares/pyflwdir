@@ -67,7 +67,7 @@ def from_array(flwdir):
     # loop over sparse indices
     i = np.uint32(0)
     for idx0 in idxs_dense:
-        i = idxs_sparse[idx0]
+        i = np.uint32(idxs_sparse[idx0])
         dr, dc = drdc(flwdir_flat[idx0]) # NOTE only difference to D8
         r = int(idx0 // ncol + dr) 
         c = int(idx0  % ncol + dc)
@@ -78,8 +78,8 @@ def from_array(flwdir):
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
         else:        
-            idx_ds = idx0 + dc + dr * ncol
-            i_ds = idxs_sparse[idx_ds]
+            idx_ds = np.intp(idx0 + dc + dr * ncol)
+            i_ds = np.uint32(idxs_sparse[idx_ds])
             if i_ds == core._mv:
                 raise ValueError('invalid LDD data')
             idxs_ds[i] = i_ds
