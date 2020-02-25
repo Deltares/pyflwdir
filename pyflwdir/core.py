@@ -344,9 +344,9 @@ def _sparse_idx(idxs, idxs_dense, size):
     # TODO: test if this can be done faster with sorted idxs array
     if np.any(idxs < 0) or np.any(idxs >= size):
         raise ValueError('Index out of bounds')
-    idxs_sparse = np.ones(size, np.uint32) * _mv
+    idxs_sparse = np.full(size, _mv, np.uint32)
     idxs_sparse[idxs_dense] = np.array([i for i in range(idxs_dense.size)],
-                                    dtype=np.uint32)
+                                        dtype=np.uint32)
     return idxs_sparse[idxs]
 
 

@@ -255,12 +255,12 @@ class FlwdirRaster(object):
             2D raster with cells flagged 'True' at river/stream cells  
             (the default is None) 
         """
-        idxs_pit = np.asarray(idxs_pit, dtype=np.uint32).flatten()
-        idxs_pit = self._sparse_idx(idxs_pit)
+        idxs_pit = np.asarray(idxs_pit).flatten()
+        idxs0 = self._sparse_idx(idxs_pit)
         if streams is not None:  # snap to streams
-            idxs_pit = core.ds_stream(idxs_pit, self._idxs_ds,
-                                      self._flatten(streams))
-        self._idxs_pit = idxs_pit
+            idxs_pit = core.ds_stream(idxs0, self._idxs_ds,
+                                      self._sparsify(streams))
+        self._idxs_pit = idxs0
         self._tree_ = None  # reset network tree
 
     def set_tree(self, idxs_pit=None, streams=None):
@@ -417,7 +417,7 @@ class FlwdirRaster(object):
             raise ValueError(
                 "'Material' shape does not match with flow direction shape.")
         accu_flat = basin.accuflux(self._tree, self._idxs_us,
-                                   self._flatten(material), nodata)
+                                   self._sparsify(material), nodata)
         return self._densify(accu_flat, nodata=nodata)
 
     def vector(self,
@@ -675,8 +675,8 @@ class FlwdirRaster(object):
     #         raise ValueError(
     #             "'elevtn' shape does not match with flow direction shape")
     #     df_out = basin_descriptors.mean_drainage_path_stats(
-    #         self._tree, self._idxs_us, self._flatten(rivlen),
-    #         self._flatten(elevtn))
+    #         self._tree, self._idxs_us, self._sparsify(rivlen),
+    #         self._sparsify(elevtn))
     #     return df_out
 
     def _densify(self, data, nodata):
@@ -690,7 +690,12 @@ class FlwdirRaster(object):
     def _sparse_idx(self, idx):
         """Transform linear indices of dense array to sparse indices."""
         # NOTE: should we throw an error if any idx is invalid ?
-        return core._sparse_idx(idx, self._idxs_dense, self.size)
+        idx_sparse = core._sparse_idx(idx, self._idxs_dense, self.size)
+        valid = np.logical_and(idx_sparse >= 0, idx_sparse < self.ncells)
+        if not np.all(valid):
+            raise IndexError('dense index outside valid cells')
+        return idx_sparse
+
 
 def _check_convert_subidxs_out(subidxs_out, other):
     """Convert 2D subidxs_out grid to 1D array at valid indices"""
