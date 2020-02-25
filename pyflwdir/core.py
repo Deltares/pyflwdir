@@ -183,7 +183,7 @@ def _downstream_river(idx0, idxs_ds, river_flat):
     at_stream = river_flat[idx0]
     while not at_stream:
         idx_ds = idxs_ds[idx0]
-        if idx_ds == idx0 or idx_ds == _mv:
+        if idx_ds == idx0:  # pit
             break
         idx0 = idx_ds
         at_stream = river_flat[idx0]
