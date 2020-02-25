@@ -225,7 +225,7 @@ class FlwdirRaster(object):
         """Returns True if the flow direction map is valid."""
         return core.loop_indices(self._idxs_ds, self._idxs_us).size == 0
 
-    def set_pits(self, idxs_pit, streams=None):
+    def set_pits(self, idxs_pit=None, streams=None):
         """Reset original pits from the flow direction raster based on 
         `idxs_pit`.
         
@@ -239,13 +239,19 @@ class FlwdirRaster(object):
             (the default is None, in which case the pits are infered 
             from flwdir data)
         streams : ndarray of bool, optional
-            2D raster with cells flagged 'True' at river/stream cells  
+            2D raster with cells flagged 'True' at stream cells, only used
+            in combination with idxs_pit.
             (the default is None) 
         """
-        idxs_pit = np.asarray(idxs_pit).flatten()
-        idxs0 = self._sparse_idx(idxs_pit)
-        if streams is not None:  # snap to streams
-            idxs_pit = core.ds_stream(idxs0, self._idxs_ds, self._sparsify(streams))
+        if idxs_pit is None:
+            idxs0 = core.pit_indices(self._idxs_ds)
+        else:
+            idxs_pit = np.asarray(idxs_pit).flatten()
+            idxs0 = self._sparse_idx(idxs_pit)
+            if streams is not None:  # snap to streams
+                idxs0 = core.downstream_river(
+                    idxs0, self._idxs_ds, self._sparsify(streams)
+                )
         self._idxs_pit = idxs0
         self._tree_ = None  # reset network tree
 

@@ -97,20 +97,41 @@ def test_save(d8, tmpdir):
 
 def test_stream_order(d8):
     strord = d8.stream_order()
+    assert strord.flat[d8._idxs_dense].min() == 1
     assert strord.min() == -1
     assert strord.max() == 9  # NOTE specific to data
     assert strord.dtype == np.int8
     assert np.all(strord.shape == d8.shape)
 
 
+def test_set_pits(d8):
+    idx0 = d8.pits
+    idx1 = d8._idxs_dense[0]
+    # all cells are True -> pit at idx1
+    d8.set_pits(idxs_pit=idx1, streams=np.full(d8.shape, True, dtype=np.bool))
+    assert np.all(d8.pits == idx1)
+    # original pit idx0
+    d8.set_pits()
+    assert np.all(d8.pits == idx0)
+    # no streams -> pit at idx0
+    d8.set_pits(idxs_pit=idx1, streams=np.full(d8.shape, False, dtype=np.bool))
+    assert np.all(d8.pits == idx0)
+
+
 def test_upstream_area(d8):
-    # TODO add test with latlon
     uparea = d8.upstream_area()
     assert uparea.min() == -9999
     assert uparea[uparea != -9999].min() == 1
     assert uparea.max() == d8.ncells  # NOTE specific to data with single basin
     assert uparea.dtype == np.float64
     assert np.all(uparea.shape == d8.shape)
+    # compare with accuflux
+    assert np.all(d8.accuflux(np.ones(d8.shape)) == uparea)
+    # km2
+    res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
+    affine = Affine(res, 0.0, west, 0.0, -res, north)
+    uparea2 = d8.upstream_area(affine=affine, latlon=True, mult=1 / 1e6)  # km2
+    assert uparea2.max().round(0) == 158957.0
 
 
 def test_basins(d8):
