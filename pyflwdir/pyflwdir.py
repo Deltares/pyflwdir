@@ -123,18 +123,7 @@ class FlwdirRaster(object):
     pits : ndarray of int
         linear dense raster indices of pit cells
     isvalid : bool
-        True if no loops in flow direction data
-    
-    Methods
-    ------
-    `set_pits`
-    `set_tree`
-    `basins`
-    `repair`
-    `upstream_area`
-    `stream_order`
-    `accuflux`
-    
+        True if no loops in flow direction data    
     """
 
     def __init__(
@@ -376,7 +365,7 @@ class FlwdirRaster(object):
         return self._densify(uparea * mult, nodata=-9999.0)
 
     def stream_order(self):
-        """Returns the Strahler Order map [1]. 
+        """Returns the Strahler Order map [1]_. 
 
         The smallest streams, which are the cells with no upstream cells, get 
         order 1. Where two channels of order 1 join, a channel of order 2 
@@ -384,8 +373,8 @@ class FlwdirRaster(object):
         a channel of order i+1 results.
 
         .. [1] Strahler, A.N., 1964 "Quantitative geomorphology of drainage 
-        basins and channel networks, section 4-II". In: Handbook of Applied 
-        Hydrology (V.T. Chow, et al. (1988)), McGraw-Hill, New York USA
+          basins and channel networks, section 4-II". In: Handbook of Applied 
+          Hydrology (V.T. Chow, et al. (1988)), McGraw-Hill, New York USA
 
         Returns
         -------
@@ -408,7 +397,7 @@ class FlwdirRaster(object):
 
         Returns
         -------
-        2D array of `material` dtype
+        2D array of material dtype
             accumulated material map
         """
         if not np.all(material.shape == self.shape):
@@ -475,19 +464,18 @@ class FlwdirRaster(object):
 
     def upscale(self, scale_factor, method="com", uparea=None, **kwargs):
         """Upscale flow direction network to lower resolution. 
-        Available methods are Connecting Outlets Method (COM) [1], 
-        Effective Area Method (EAM) [2] and Double Maximum Method (DMM) [3].
+        Available methods are Connecting Outlets Method (COM) [2]_, 
+        Effective Area Method (EAM) [3]_ and Double Maximum Method (DMM) [4]_.
 
         Note: This method only works for D8 or LDD flow directon data.
         
-        # TODO update ref
-        ..[1] Eilander et al. in preperation
-        ..[2] Yamazaki D, Masutomi Y, Oki T and Kanae S 2008 
-        "An Improved Upscaling Method to Construct a Global River Map" APHW
-        ..[3] Olivera F, Lear M S, Famiglietti J S and Asante K 2002 
-        "Extracting low-resolution river networks from high-resolution digital 
-        elevation models" Water Resour. Res. 38 13-1-13–8 
-        Online: http://doi.wiley.com/10.1029/2001WR000726
+        .. [2] Eilander et al. in preperation (TODO update ref)
+        .. [3] Yamazaki D, Masutomi Y, Oki T and Kanae S 2008 
+          "An Improved Upscaling Method to Construct a Global River Map" APHW
+        .. [4] Olivera F, Lear M S, Famiglietti J S and Asante K 2002 
+          "Extracting low-resolution river networks from high-resolution digital 
+          elevation models" Water Resour. Res. 38 13-1-13–8 
+          Online: http://doi.wiley.com/10.1029/2001WR000726
     
         
         Parameters
