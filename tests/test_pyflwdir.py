@@ -17,27 +17,27 @@ from pyflwdir.core import _mv
 # read and parse data
 @pytest.fixture
 def d8_data():
-    data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
+    data = np.fromfile(r'./data/d8.bin', dtype=np.uint8)
     return data.reshape((678, 776))
 
 @pytest.fixture
 def ldd_data():
-    data = np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8)
+    data = np.fromfile(r'./data/ldd.bin', dtype=np.uint8)
     return data.reshape((678, 776))
 
 @pytest.fixture
 def nextxy_data():
-    data = np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32)
+    data = np.fromfile(r'./data/nextxy.bin', dtype=np.int32)
     return data.reshape((2, 678, 776))
 
 @pytest.fixture
 def nextidx_data():
-    data = np.fromfile(r'./tests/data/nextidx.bin', dtype=np.uint32)
+    data = np.fromfile(r'./data/nextidx.bin', dtype=np.uint32)
     return data.reshape((678, 776))
 
 @pytest.fixture
 def d8():
-    flw = pyflwdir.load(r'./tests/data/flw.pkl')
+    flw = pyflwdir.load(r'./data/flw.pkl')
     flw._idxs_us # initialize us array
     return flw
 
@@ -210,7 +210,7 @@ def test_vector(d8):
 #     basins2 = flwdir.basin_map(idx=idx, values=idx, dtype=np.int32)
 #     assert np.sum(basins2!=0) == 3045
 #     assert np.unique(basins2).size == 20 # 19 subbasins + background zero
-#     # with rasterio.open(r'./tests/data/basins.tif', 'w', **prof) as dst:
+#     # with rasterio.open(r'./data/basins.tif', 'w', **prof) as dst:
 #     #     dst.write(basins2, 1)
 
 # def test_stream_order():
@@ -228,7 +228,7 @@ def test_vector(d8):
 #     # flwdir.repair()
 #     # stream_order = flwdir.stream_order()
 #     # prof.update(dtype=stream_order.dtype, nodata=-1)
-#     # with rasterio.open(r'./tests/data/stream_order.tif', 'w', **prof) as dst:
+#     # with rasterio.open(r'./data/stream_order.tif', 'w', **prof) as dst:
 #     #     dst.write(stream_order, 1)
 
 # def test_uparea():
@@ -246,7 +246,7 @@ def test_vector(d8):
 #     upa = flwdir.upstream_area()
 #     assert np.round(upa.max(),4) == 31610442.7120
 #     # prof.update(dtype=upa.dtype, nodata=-9999)
-#     # with rasterio.open(r'./tests/data/upa_numpy.tif', 'w', **prof) as dst:
+#     # with rasterio.open(r'./data/upa_numpy.tif', 'w', **prof) as dst:
 #     #     dst.write(upa, 1)
 
 # def test_riv_shape():
@@ -262,11 +262,11 @@ def test_vector(d8):
 #     assert np.all(gdf_pit1.total_bounds==1)
 
 # def test_upscale():
-#     with rasterio.open(r'./tests/data/uparea.tif', 'r') as src:
+#     with rasterio.open(r'./data/uparea.tif', 'r') as src:
 #         uparea = src.read(1)
 #         transform = src.transform
 #         crs = src.crs
-#     with rasterio.open(r'./tests/data/flwdir2.tif', 'r') as src:
+#     with rasterio.open(r'./data/flwdir2.tif', 'r') as src:
 #         data2 = src.read(1)
 #     flwdir = FlwdirRaster(data_repaired.copy(), crs=crs, transform=transform, copy=True)
 #     flwdir[idx0] = np.uint8(0)
@@ -275,13 +275,13 @@ def test_vector(d8):
 #     assert outlets.size == np.unique(outlets).size
 
 #     # # test with large data (local only)
-#     # with rasterio.open(r'./tests/data/s05w050_dir.tif', 'r') as src:
+#     # with rasterio.open(r'./data/s05w050_dir.tif', 'r') as src:
 #     #     data0 = src.read(1)
 #     #     transform = src.transform
 #     #     crs = src.crs
-#     # with rasterio.open(r'./tests/data/s05w050_upa.tif', 'r') as src:
+#     # with rasterio.open(r'./data/s05w050_upa.tif', 'r') as src:
 #     #     uparea = src.read(1)
-#     # with rasterio.open(r'./tests/data/s05w050_dir_05min.tif', 'r') as src:
+#     # with rasterio.open(r'./data/s05w050_dir_05min.tif', 'r') as src:
 #     #     data2 = src.read(1)
 #     # flwdir = FlwdirRaster(data0, crs=crs, transform=transform)
 
@@ -291,11 +291,11 @@ def test_vector(d8):
 
 #     # xs, ys = flwdir._xycoords()
 #     # gdf_riv, gdf_pits = flwdir2.stream_shape(min_order=1)
-#     # gdf_riv.to_file('./tests/data/s05w050_rivers_05min_lr.shp')
-#     # gdf_pits.to_file('./tests/data/s05w050_pits_05min_lr.shp')
+#     # gdf_riv.to_file('./data/s05w050_rivers_05min_lr.shp')
+#     # gdf_pits.to_file('./data/s05w050_pits_05min_lr.shp')
 #     # gdf_riv, gdf_pits = flwdir2.stream_shape(outlet_lr=outlets, xs=xs, ys=ys, min_order=1)
-#     # gdf_riv.to_file('./tests/data/s05w050_rivers_05min.shp')
-#     # gdf_pits.to_file('./tests/data/s05w050_pits_05min.shp')
+#     # gdf_riv.to_file('./data/s05w050_rivers_05min.shp')
+#     # gdf_pits.to_file('./data/s05w050_pits_05min.shp')
 
 #     # assert flwdir2._data.size*4 == flwdir._data.size
 #     # # assert np.all(flwdir2._data == data2)
@@ -314,7 +314,7 @@ def test_vector(d8):
 #     #     # nodata=-9999,
 #     #     count=1,
 #     # )
-#     # with rasterio.open(r'./tests/data/s05w050_dir_05min.tif', 'w', **prof) as dst:
+#     # with rasterio.open(r'./data/s05w050_dir_05min.tif', 'w', **prof) as dst:
 #     #     dst.write(flwdir2._data, 1)
 
 # def test_dem_adjust():
@@ -331,11 +331,11 @@ def test_vector(d8):
 #     dem1 = np.array([8, 7, 6, 6, 6, 6, 5, 4])
 #     assert np.all(pyflwdir.dem._fix_pits_streamline(dem0) ==  dem1)
 #     # TODO test full scale with small data
-#     with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/flwdir.tif', 'r') as src:
+#     with rasterio.open(r'./data/tmp/acara_620000004_30sec/flwdir.tif', 'r') as src:
 #         data = src.read(1)
 #         transform = src.transform
 #         crs = src.crs
-#     with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/outelv.tif', 'r') as src:
+#     with rasterio.open(r'./data/tmp/acara_620000004_30sec/outelv.tif', 'r') as src:
 #         elevtn = src.read(1)
 #         prof = src.profile
 #     flwdir = FlwdirRaster(data, transform=transform, crs=crs)
@@ -343,11 +343,11 @@ def test_vector(d8):
 #     assert np.sum(elevtn!=elevtn_new) == 12
 
 # def test_ucat_map():
-#     with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/flwdir.tif', 'r') as src:
+#     with rasterio.open(r'./data/tmp/acara_620000004_30sec/flwdir.tif', 'r') as src:
 #         data = src.read(1)
 #         transform = src.transform
 #         crs = src.crs
-#     with rasterio.open(r'./tests/data/tmp/acara_620000004_30sec/uparea.tif', 'r') as src:
+#     with rasterio.open(r'./data/tmp/acara_620000004_30sec/uparea.tif', 'r') as src:
 #         uparea = src.read(1)
 #     flwdir = FlwdirRaster(data, transform=transform, crs=crs)
 #     basin, outlet = flwdir.ucat_map(10, uparea=uparea, upa_min=0.5)

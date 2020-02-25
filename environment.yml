@@ -7,15 +7,17 @@ channels:
 # if you only want the user dependencies, see
 # install_requires in setup.py
 dependencies:
-  - python=3.6
   - affine
-  - numba
+  - geopandas
+  - numba>=0.48
   - numpy
-  - scipy
   - pandas
   - pytest
   - pytest-cov
   - pytest-benchmark
+  - python=3.6
+  - scipy
+  - setuptools_scm
   - sphinx
   - sphinx_rtd_theme
   

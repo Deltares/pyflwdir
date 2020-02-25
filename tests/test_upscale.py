@@ -14,7 +14,7 @@ from pyflwdir import upscale, subgrid
 
 @pytest.fixture
 def d8():
-    flw = pyflwdir.load(r'./tests/data/flw.pkl')
+    flw = pyflwdir.load(r'./data/flw.pkl')
     flw._idxs_us # initialize us array
     return flw
 

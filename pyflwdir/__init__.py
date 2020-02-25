@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
-# Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
-# August 2019
+import pkg_resources
 
-import logging
-
-from .__version__ import __version__
-
-logging.getLogger(__name__).addHandler(logging.NullHandler())
-
-__author__ = "Dirk Eilander"
-__email__ = 'dirk.eilander@deltares.nl'
-
+# submodules
 from pyflwdir.pyflwdir import *
-from pyflwdir.slope import *
+from pyflwdir import slope
+
+try:
+    __version__ = pkg_resources.get_distribution(__name__).version
+except pkg_resources.DistributionNotFound:
+    # package is not installed
+    pass

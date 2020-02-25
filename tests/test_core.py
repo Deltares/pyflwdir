@@ -15,7 +15,7 @@ from pyflwdir.core import _mv
 # read and parse data
 @pytest.fixture
 def _d8():
-    data = np.fromfile(r'./tests/data/d8.bin', dtype=np.uint8)
+    data = np.fromfile(r'./data/d8.bin', dtype=np.uint8)
     return data.reshape((678, 776))
 
 
@@ -26,24 +26,24 @@ def d8_parsed(_d8):
 
 @pytest.fixture
 def ldd_parsed():
-    data = np.fromfile(r'./tests/data/ldd.bin', dtype=np.uint8)
+    data = np.fromfile(r'./data/ldd.bin', dtype=np.uint8)
     return core_ldd.from_array(data.reshape((678, 776)))
 
 
 @pytest.fixture
 def nextxy_parsed():
-    data = np.fromfile(r'./tests/data/nextxy.bin', dtype=np.int32)
+    data = np.fromfile(r'./data/nextxy.bin', dtype=np.int32)
     return core_nextxy.from_array(data.reshape((2, 678, 776)))
 
 
 @pytest.fixture
 def nextidx_parsed():
-    data = np.fromfile(r'./tests/data/nextidx.bin', dtype=np.uint32)
+    data = np.fromfile(r'./data/nextidx.bin', dtype=np.uint32)
     return core_nextidx.from_array(data.reshape(678, 776))
 
 
-def test_core_xxx_simple():
-    """test core_xxx.py submodules based on _us and _ds definitions"""
+def test_core_x_simple():
+    """test core_x.py submodules based on _us and _ds definitions"""
     for fd in [core_nextidx, core_nextxy, core_d8, core_ldd]:
         _name = fd._ftype
         _invalid = np.array([[2, 4, 8], [10, 0, -1]], dtype=np.uint8)
@@ -64,10 +64,6 @@ def test_core_xxx_simple():
         if hasattr(fd, 'isnodata'):
             assert np.all(fd.isnodata(
                 fd._mv)), f"{_name}: isnodata test with _mv data failed"
-        # test data type / dim errors
-        with pytest.raises(TypeError):
-            fd.from_array(fd._us[None, ...])
-            fd.from_array(fd._us.astype(np.float))
         # test downstream / pit with _us data
         idxs_dense, idxs_ds, idx_pits = fd.from_array(fd._us)
         assert np.all(idxs_dense == np.arange(9))
@@ -86,9 +82,9 @@ def test_core_xxx_simple():
             assert np.all(idxs_dense == idx_pits)
 
 
-def test_core_xxx_realdata(d8_parsed, ldd_parsed, nextxy_parsed,
+def test_core_x_realdata(d8_parsed, ldd_parsed, nextxy_parsed,
                            nextidx_parsed, _d8):
-    """test core_xxx.py submodules with actual flwdir data"""
+    """test core_x.py submodules with actual flwdir data"""
     _d8_ = d8_parsed
     fdict = dict(d8=d8_parsed,
                  ldd=ldd_parsed,
@@ -176,10 +172,7 @@ def test_core_realdata(_d8, d8_parsed):
     n = idxs_dense.size
     assert idxs_us[idxs_us != _mv].size + idxs_pit.size == idxs_ds.size
     # test network tree
-    try:
-        tree = core.network_tree(idxs_pit, idxs_us)
-    except:
-        pytest.fail('tree network failed')
+    tree = core.network_tree(idxs_pit, idxs_us)
     assert np.array([leave.size for leave in tree]).sum() == idxs_ds.size
     # test internal data reshaping / reindexing functions
     assert np.all(core._sparse_idx(idxs_dense, idxs_dense, _d8.size) == np.arange(n))
@@ -192,11 +185,8 @@ def test_core_realdata(_d8, d8_parsed):
     # test upstream functions
     for idx0 in [idxs_pit[0], idxs_pit]:
         assert np.all(core.upstream(idx0, idxs_us) == idxs_us[idx0, :][idxs_us[idx0, :] != _mv])
-    try:
-        idxs = np.arange(idxs_ds.size, dtype=np.uint32)
-        idxs_us_main = core.main_upstream(idxs, idxs_us, np.ones(idxs.size))
-    except:
-        pytest.fail('main upstream index failed')
+    idxs = np.arange(idxs_ds.size, dtype=np.uint32)
+    idxs_us_main = core.main_upstream(idxs, idxs_us, np.ones(idxs.size))
     assert np.all(idxs_us_main == idxs_us[:, 0]), 'main upstream index failed'
     # test downstream_river with only stream cell at pit
     river_flat = np.zeros(idxs_ds.size, dtype=np.bool)
