@@ -26,11 +26,7 @@ def accuflux(tree, idxs_us, material_flat, nodata):
             for idx_us in idxs_us[idx0, :]:
                 if idx_us == _mv:
                     break
-                v0 = accu_flat[idx_us]
-                if v0 == nodata:
-                    v0 = material_flat[idx_us]
-                    accu_flat[idx_us] = v0
-                accu_flat[idx0] += v0  # accumulate material
+                accu_flat[idx0] += accu_flat[idx_us]  # accumulate material
     return accu_flat
 
 
@@ -45,7 +41,7 @@ def upstream_area(
     area0 = abs(xres * yres)
     size = idxs_us.shape[0]
     # intialize with correct dtypes
-    upa_ds, upa_us = np.float64(0.0), np.float64(0.0)
+    upa_ds = np.float64(0.0)
     upa = np.full(size, -9999.0, dtype=np.float64)
     # loop over network from up- to downstream and calc upstream area
     for i in range(len(tree)):
@@ -59,15 +55,7 @@ def upstream_area(
             for idx_us in idxs_us[idx0, :]:
                 if idx_us == _mv:
                     break
-                upa_us = upa[idx_us]
-                if upa_us <= 0:
-                    if latlon:
-                        r = idxs_dense[idx_us] // ncol
-                        lat = north + (r + 0.5) * yres
-                        area0 = gis_utils.cellarea(lat, xres, yres)
-                    upa_us = area0
-                    upa[idx_us] = np.float64(upa_us)
-                upa_ds += upa_us
+                upa_ds += upa[idx_us]
             upa[idx0] = np.float64(upa_ds)
     return upa
 
