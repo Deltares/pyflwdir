@@ -25,7 +25,7 @@ setup(
     python_requires=">=3.6",
     install_requires=["numba>=0.48", "numpy", "scipy", "affine",],
     extras_require={
-        "dev": ["pytest", "pytest-cov", "sphinx", "sphinx_rtd_theme",],
+        "dev": ["pytest", "pytest-cov", "sphinx", "sphinx_rtd_theme", "black"],
         "optional": ["geopandas",],
     },
     classifiers=[
