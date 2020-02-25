@@ -261,7 +261,7 @@ class FlwdirRaster(object):
             idxs_pit = core.ds_stream(idxs_pit, self._idxs_ds,
                                       self._flatten(streams))
         self._idxs_pit = idxs_pit
-        self._tree = None  # reset network tree
+        self._tree_ = None  # reset network tree
 
     def set_tree(self, idxs_pit=None, streams=None):
         """Setup the network tree: a list of arrays ordered from down- to 
