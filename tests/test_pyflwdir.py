@@ -7,6 +7,7 @@ import pytest
 import numba
 import time
 from affine import Affine
+
 rtsys = numba.runtime.rtsys
 
 import numpy as np
@@ -17,37 +18,42 @@ from pyflwdir.core import _mv
 # read and parse data
 @pytest.fixture
 def d8_data():
-    data = np.fromfile(r'./data/d8.bin', dtype=np.uint8)
+    data = np.fromfile(r"./data/d8.bin", dtype=np.uint8)
     return data.reshape((678, 776))
+
 
 @pytest.fixture
 def ldd_data():
-    data = np.fromfile(r'./data/ldd.bin', dtype=np.uint8)
+    data = np.fromfile(r"./data/ldd.bin", dtype=np.uint8)
     return data.reshape((678, 776))
+
 
 @pytest.fixture
 def nextxy_data():
-    data = np.fromfile(r'./data/nextxy.bin', dtype=np.int32)
+    data = np.fromfile(r"./data/nextxy.bin", dtype=np.int32)
     return data.reshape((2, 678, 776))
+
 
 @pytest.fixture
 def nextidx_data():
-    data = np.fromfile(r'./data/nextidx.bin', dtype=np.uint32)
+    data = np.fromfile(r"./data/nextidx.bin", dtype=np.uint32)
     return data.reshape((678, 776))
+
 
 @pytest.fixture
 def d8():
-    flw = pyflwdir.load(r'./data/flw.pkl')
-    flw._idxs_us # initialize us array
+    flw = pyflwdir.load(r"./data/flw.pkl")
+    flw._idxs_us  # initialize us array
     return flw
+
 
 # test object
 def test_object(d8_data, ldd_data, nextxy_data, nextidx_data):
     ftypes = {
-        'd8': d8_data, 
-        'ldd': ldd_data, 
-        'nextxy': nextxy_data, 
-        'nextidx': nextidx_data
+        "d8": d8_data,
+        "ldd": ldd_data,
+        "nextxy": nextxy_data,
+        "nextidx": nextidx_data,
     }
     for name, fdata in ftypes.items():
         fd = pyflwdir.from_array(fdata)
@@ -64,28 +70,33 @@ def test_object(d8_data, ldd_data, nextxy_data, nextidx_data):
         assert fd.isvalid
     # make sure these raise errors
     with pytest.raises(ValueError):
-        pyflwdir.from_array(ldd_data, ftype='d8', check_ftype=True)  # invalid type
-        pyflwdir.from_array(nextxy_data, ftype='d8', check_ftype=True)  # invalid shape & type
-        pyflwdir.from_array(np.arange(20, dtype=np.uint32), ftype='infer', check_ftype=False)  # unknown type
-        pyflwdir.from_array(np.array([2]), ftype='d8', check_ftype=True)  # invalid data: too small
+        pyflwdir.from_array(ldd_data, ftype="d8", check_ftype=True)  # invalid type
+        pyflwdir.from_array(
+            nextxy_data, ftype="d8", check_ftype=True
+        )  # invalid shape & type
+        pyflwdir.from_array(
+            np.arange(20, dtype=np.uint32), ftype="infer", check_ftype=False
+        )  # unknown type
+        pyflwdir.from_array(
+            np.array([2]), ftype="d8", check_ftype=True
+        )  # invalid data: too small
 
 
 def test_toarray(d8, d8_data):
     assert np.all(d8.to_array() == d8_data)
 
-#NOTE tempdir is predefined fixture
+
+# NOTE tempdir is predefined fixture
 def test_save(d8, tmpdir):
-    fn = tmpdir.join('flw.pkl')
+    fn = tmpdir.join("flw.pkl")
     d8.dump(fn)
     flw = pyflwdir.load(fn)
     for key in d8._dict:
         assert np.all(d8._dict[key] == flw._dict[key])
 
+
 def test_stream_order(d8):
-    try:
-        strord = d8.stream_order()
-    except:
-        pytest.fail('stream order failed')
+    strord = d8.stream_order()
     assert strord.min() == -1
     assert strord.max() == 9  # NOTE specific to data
     assert strord.dtype == np.int8
@@ -94,10 +105,7 @@ def test_stream_order(d8):
 
 def test_upstream_area(d8):
     # TODO add test with latlon
-    try:
-        uparea = d8.upstream_area()
-    except:
-        pytest.fail('upstream area failed')
+    uparea = d8.upstream_area()
     assert uparea.min() == -9999
     assert uparea[uparea != -9999].min() == 1
     assert uparea.max() == d8.ncells  # NOTE specific to data with single basin
@@ -106,46 +114,30 @@ def test_upstream_area(d8):
 
 
 def test_basins(d8):
-    try:
-        basins = d8.basins()
-    except:
-        pytest.fail('basins failed')
+    basins = d8.basins()
     assert basins.min() == 0
     assert basins.max() == 1  # NOTE specific to data with single basin
     assert basins.sum() == d8.ncells  # NOTE specific to data with single basin
     assert basins.dtype == np.uint32
     assert np.all(basins.shape == d8.shape)
 
+
 def test_upscale(d8, nextidx_data):
-    try:
-        d8_lr, idxout = d8.upscale(10)
-    except:
-        pytest.fail('upscaling failed')
+    d8_lr, idxout = d8.upscale(10)
     with pytest.raises(ValueError):
-        d8.upscale(10, method='unknown') # unknown method
-        pyflwdir.from_array(nextidx, ftype='nextidx').upscale(10) # works only for D8/LDD
-        d8.upscale(10, uparea=np.ones(d8.shape).ravel()) # wrong uparea shape
-    try:
-        d8.subconnect(d8_lr, idxout)
-    except:
-         pytest.fail('subconnect failed')
-    try:
-        d8.subarea(d8_lr, idxout)
-    except:
-        pytest.fail('subarea failed')
-    try:
-        d8.subriver(d8_lr, idxout, np.ones(d8.shape))
-    except:
-        pytest.fail('subriver failed')
-    
+        d8.upscale(10, method="unknown")  # unknown method
+        pyflwdir.from_array(nextidx, ftype="nextidx").upscale(
+            10
+        )  # works only for D8/LDD
+        d8.upscale(10, uparea=np.ones(d8.shape).ravel())  # wrong uparea shape
+    d8.subconnect(d8_lr, idxout)
+    d8.subarea(d8_lr, idxout)
+    d8.subriver(d8_lr, idxout, np.ones(d8.shape))
+
 
 def test_vector(d8):
-    affine = Affine(1 / 120., 0.0, 5 + 50 / 120., 0.0, -1 / 120,
-                    51 + 117 / 120.)
-    try:
-        gdf = d8.vector(affine=affine)
-    except:
-        pytest.fail('basins failed')
+    affine = Affine(1 / 120.0, 0.0, 5 + 50 / 120.0, 0.0, -1 / 120, 51 + 117 / 120.0)
+    gdf = d8.vector(affine=affine)
     assert gdf.index.size == d8.ncells
 
 

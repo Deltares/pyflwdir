@@ -6,17 +6,15 @@ from affine import identity as IDENTITY
 
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
 
+
 def idxs_to_geoms(idxs_ds, xs, ys):
     """Returns a list of LineString for each up- downstream connection"""
     from shapely.geometry import LineString
+
     geoms = list()
     for idx0 in range(idxs_ds.size):
         idx_ds = idxs_ds[idx0]
-        geoms.append(
-            LineString([
-                (xs[idx0], ys[idx0]),
-                (xs[idx_ds], ys[idx_ds]),
-            ]))
+        geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
     return geoms
 
 
@@ -82,8 +80,8 @@ def reggrid_area(lats, lons):
     lats & lons [m2]."""
     xres = np.abs(np.mean(np.diff(lons)))
     yres = np.abs(np.mean(np.diff(lats)))
-    return cellarea(lats, xres, yres)[:, None] * np.ones(
-        (lats.size, lons.size), dtype=lats.dtype)
+    area = np.ones((lats.size, lons.size), dtype=lats.dtype)
+    return cellarea(lats, xres, yres)[:, None] * area
 
 
 # @vectorize(
@@ -92,10 +90,10 @@ def reggrid_area(lats, lons):
 def cellarea(lat, xres, yres):
     """returns the area of cell with a given resolution (resx,resy) at a given 
     cell center latitude [m2]."""
-    l1 = np.radians(lat - np.abs(yres) / 2.)
-    l2 = np.radians(lat + np.abs(yres) / 2.)
+    l1 = np.radians(lat - np.abs(yres) / 2.0)
+    l2 = np.radians(lat + np.abs(yres) / 2.0)
     dx = np.radians(np.abs(xres))
-    return _R**2 * dx * (np.sin(l2) - np.sin(l1))
+    return _R ** 2 * dx * (np.sin(l2) - np.sin(l1))
 
 
 # @vectorize([
@@ -125,8 +123,12 @@ def degree_metres_y(lat):
     m4 = -0.0023  # latitude calculation term 4
     # # Calculate the length of a degree of latitude and longitude in meters
     radlat = np.radians(lat)
-    latlen = (m1 + (m2 * np.cos(2.0 * radlat)) +
-              (m3 * np.cos(4.0 * radlat)) + (m4 * np.cos(6.0 * radlat)))
+    latlen = (
+        m1
+        + (m2 * np.cos(2.0 * radlat))
+        + (m3 * np.cos(4.0 * radlat))
+        + (m4 * np.cos(6.0 * radlat))
+    )
     return latlen
 
 
@@ -140,6 +142,9 @@ def degree_metres_x(lat):
     p3 = 0.118  # longitude calculation term 3
     # # Calculate the length of a degree of latitude and longitude in meters
     radlat = np.radians(lat)
-    longlen = ((p1 * np.cos(radlat)) + (p2 * np.cos(3.0 * radlat)) +
-               (p3 * np.cos(5.0 * radlat)))
+    longlen = (
+        (p1 * np.cos(radlat))
+        + (p2 * np.cos(3.0 * radlat))
+        + (p3 * np.cos(5.0 * radlat))
+    )
     return longlen

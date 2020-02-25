@@ -10,6 +10,7 @@ import numpy as np
 import math
 
 from pyflwdir import gis_utils
+
 _mv = np.uint32(-1)
 
 #### NETWORK TREE ####
@@ -128,14 +129,12 @@ def main_upstream(idxs, idxs_us, uparea_flat, upa_min=0):
     internal upstream indices : ndarray of int  
     """
     if idxs_us.shape[0] != uparea_flat.size:
-        raise ValueError('uparea_flat has invalid size')
+        raise ValueError("uparea_flat has invalid size")
     idxs_us_main = np.ones(idxs.size, dtype=idxs_us.dtype) * _mv
     for i in range(idxs.size):
-        idxs_us_main[i] = _main_upstream(idxs[i],
-                                         idxs_us,
-                                         uparea_flat,
-                                         upa_min=upa_min)
+        idxs_us_main[i] = _main_upstream(idxs[i], idxs_us, uparea_flat, upa_min=upa_min)
     return idxs_us_main
+
 
 @njit
 def n_upstream(idxs_ds):
@@ -154,9 +153,10 @@ def n_upstream(idxs_ds):
     n_up = np.zeros(n, dtype=np.uint8)
     for i in range(n):
         i_ds = idxs_ds[i]
-        if i != i_ds: # pit
+        if i != i_ds:  # pit
             n_up[i_ds] += 1
     return n_up
+
 
 @njit
 def downstream(idx0, idxs_ds):
@@ -211,18 +211,14 @@ def downstream_river(idxs0, idxs_ds, river_flat):
 
     idx_out = np.zeros(idxs0.size, dtype=np.uint32)
     for i in range(idxs0.size):
-        idx_out[i] = _downstream_river(np.uint32(idxs0[i]), idxs_ds,
-                                       river_flat)
+        idx_out[i] = _downstream_river(np.uint32(idxs0[i]), idxs_ds, river_flat)
     return idx_out
 
 
 @njit
-def downstream_length(idx0,
-                      idxs_ds,
-                      idxs_dense,
-                      ncol,
-                      latlon=False,
-                      affine=gis_utils.IDENTITY):
+def downstream_length(
+    idx0, idxs_ds, idxs_dense, ncol, latlon=False, affine=gis_utils.IDENTITY
+):
     """Return the next downstream cell index as well 
     as the length in downstream direction assuming a 
     regular raster defined by the affine transform.
@@ -250,8 +246,11 @@ def downstream_length(idx0,
     Tuple of int, float
         downstream index, length
     """
-    xres, yres, north = np.float64(affine[0]), np.float64(
-        affine[4]), np.float64(affine[5])
+    xres, yres, north = (
+        np.float64(affine[0]),
+        np.float64(affine[4]),
+        np.float64(affine[5]),
+    )
     idx1 = downstream(idx0, idxs_ds)  # next downstream
     # convert to flattened raster indices
     idx = idxs_dense[idx0]
@@ -262,8 +261,8 @@ def downstream_length(idx0,
     dc = (idx % ncol) - (idx_ds % ncol)
     if latlon:  # calculate cell size in metres
         lat = north + (r + 0.5) * yres
-        dy = 0. if dr == 0 else gis_utils.degree_metres_y(lat) * yres
-        dx = 0. if dc == 0 else gis_utils.degree_metres_x(lat) * xres
+        dy = 0.0 if dr == 0 else gis_utils.degree_metres_y(lat) * yres
+        dx = 0.0 if dc == 0 else gis_utils.degree_metres_x(lat) * xres
     else:
         dy = xres
         dx = yres
@@ -343,10 +342,11 @@ def _sparse_idx(idxs, idxs_dense, size):
     # NOTE dense idxs in intp data type, sparse idxs in uint32
     # TODO: test if this can be done faster with sorted idxs array
     if np.any(idxs < 0) or np.any(idxs >= size):
-        raise ValueError('Index out of bounds')
+        raise ValueError("Index out of bounds")
     idxs_sparse = np.full(size, _mv, np.uint32)
-    idxs_sparse[idxs_dense] = np.array([i for i in range(idxs_dense.size)],
-                                        dtype=np.uint32)
+    idxs_sparse[idxs_dense] = np.array(
+        [i for i in range(idxs_dense.size)], dtype=np.uint32
+    )
     return idxs_sparse[idxs]
 
 
@@ -368,7 +368,7 @@ def _densify(data, idxs_dense, shape, nodata=-9999):
     2D raster data : ndarray    
     """
     if idxs_dense.size != data.size:
-        raise ValueError('data has invalid size')
+        raise ValueError("data has invalid size")
     data_out = np.full(shape[0] * shape[1], nodata, dtype=data.dtype)
     data_out[idxs_dense] = data
     return data_out.reshape(shape)

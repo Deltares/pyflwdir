@@ -7,7 +7,7 @@ import numpy as np
 from pyflwdir import core
 
 # D8 type
-_ftype = 'd8'
+_ftype = "d8"
 _ds = np.array([[32, 64, 128], [16, 0, 1], [8, 4, 2]], dtype=np.uint8)
 _us = np.array([[2, 4, 8], [1, 0, 16], [128, 64, 32]], dtype=np.uint8)
 _mv = np.uint8(247)
@@ -71,24 +71,24 @@ def from_array(flwdir):
     for idx0 in idxs_dense:
         i = np.uint32(idxs_sparse[idx0])
         dr, dc = drdc(flwdir_flat[idx0])
-        r = int(idx0 // ncol + dr) 
-        c = int(idx0  % ncol + dc)
+        r = int(idx0 // ncol + dr)
+        c = int(idx0 % ncol + dc)
         pit = dr == 0 and dc == 0
         outside = r >= nrow or c >= ncol or r < 0 or c < 0
         # pit or outside
         if pit or outside:
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
-        else:        
+        else:
             idx_ds = np.intp(idx0 + dc + dr * ncol)
             i_ds = np.uint32(idxs_sparse[idx_ds])
             if i_ds == core._mv:
-                raise ValueError('invalid D8 data')
+                raise ValueError("invalid D8 data")
             idxs_ds[i] = i_ds
     return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
 
 
-@njit#("u1[:,:](intp[:], u4[:], Tuple((u8, u8)))")
+@njit  # ("u1[:,:](intp[:], u4[:], Tuple((u8, u8)))")
 def to_array(idxs_dense, idxs_ds, shape):
     """convert sparse downstream indices to dense D8 raster"""
     n = idxs_dense.size
@@ -98,7 +98,7 @@ def to_array(idxs_dense, idxs_ds, shape):
         idx_ds = idxs_dense[idxs_ds[i]]
         dd = idx_to_dd(idx0, idx_ds, shape)
         if dd == _mv:
-            msg = 'Invalid data. Downstream cell outside 8 neighbors.'
+            msg = "Invalid data. Downstream cell outside 8 neighbors."
             raise ValueError(msg)
         flwdir[idx0] = dd
     return flwdir.reshape(shape)
@@ -107,10 +107,12 @@ def to_array(idxs_dense, idxs_ds, shape):
 # core d8 functions
 def isvalid(flwdir):
     """True if 2D D8 raster is valid"""
-    return (isinstance(flwdir, np.ndarray) and 
-            flwdir.dtype == 'uint8' and 
-            flwdir.ndim == 2 and
-            np.all([v in _d8_ for v in np.unique(flwdir)]))
+    return (
+        isinstance(flwdir, np.ndarray)
+        and flwdir.dtype == "uint8"
+        and flwdir.ndim == 2
+        and np.all([v in _d8_ for v in np.unique(flwdir)])
+    )
 
 
 # @vectorize(["b1(u1)"])
@@ -147,8 +149,12 @@ def downstream(idx0, flwdir_flat, shape, dd=_mv):
     c0 = idx0 % ncol
     dr, dc = drdc(dd)
     idx = np.int64(-1)
-    if not (r0 == 0 and dr == -1) and not (c0 == 0 and dc == -1)\
-        and not (r0 == nrow-1 and dr == 1) and not (c0 == ncol-1 and dc == 1):
+    if (
+        not (r0 == 0 and dr == -1)
+        and not (c0 == 0 and dc == -1)
+        and not (r0 == nrow - 1 and dr == 1)
+        and not (c0 == ncol - 1 and dc == 1)
+    ):
         idx = idx0 + dc + dr * ncol
     return idx
 

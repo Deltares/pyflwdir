@@ -8,20 +8,23 @@ import numpy as np
 import math
 
 from pyflwdir import core, core_nextidx, gis_utils, upscale
+
 _mv = core._mv
 
 
 @njit
-def river_params(subidxs_out,
-                 subidxs_dense,
-                 subidxs_ds,
-                 subidxs_us,
-                 subuparea,
-                 subelevtn,
-                 subshape,
-                 min_uparea=0.,
-                 latlon=False,
-                 affine=gis_utils.IDENTITY):
+def river_params(
+    subidxs_out,
+    subidxs_dense,
+    subidxs_ds,
+    subidxs_us,
+    subuparea,
+    subelevtn,
+    subshape,
+    min_uparea=0.0,
+    latlon=False,
+    affine=gis_utils.IDENTITY,
+):
     """Returns the subgrid river length and slope per lowres cell. The 
     subgrid river is defined by the path starting at the subgrid outlet 
     cell moving upstream following the upstream subgrid cells with the 
@@ -67,23 +70,23 @@ def river_params(subidxs_out,
     outlets[subidxs_out] = np.bool(1)
     # allocate output
     n = subidxs_out.size
-    rivlen = np.ones(n, dtype=np.float64) * -9999.
-    rivslp = np.ones(n, dtype=np.float64) * -9999.
+    rivlen = np.full(n, -9999.0, dtype=np.float64)
+    rivslp = np.full(n, -9999.0, dtype=np.float64)
     # loop over outlet cell indices
     for idx0 in range(n):
         subidx0 = subidxs_out[idx0]
-        l = np.float64(0.)
+        l = np.float64(0.0)
         subidx = subidx0
         while True:
-            subidx1 = core._main_upstream(subidx, subidxs_us, subuparea,
-                                          min_uparea)
+            subidx1 = core._main_upstream(subidx, subidxs_us, subuparea, min_uparea)
             # break if no more upstream cells
             if subidx1 == _mv:
                 subidx1 = subidx
                 break
             # update length
-            l += core.downstream_length(subidx1, subidxs_ds, subidxs_dense,
-                                        subncol, latlon, affine)[1]
+            l += core.downstream_length(
+                subidx1, subidxs_ds, subidxs_dense, subncol, latlon, affine
+            )[1]
             # break if at upstream subgrid outlet
             if outlets[subidx1]:
                 break
@@ -94,16 +97,19 @@ def river_params(subidxs_out,
         # write riv slope
         z0 = subelevtn[subidx]
         z1 = subelevtn[subidx1]
-        rivslp[idx0] = 0. if l == 0 else (z1 - z0) / l
+        rivslp[idx0] = 0.0 if l == 0 else (z1 - z0) / l
     return rivlen, rivslp
 
+
 @njit
-def cell_area(subidxs_out,
-              subidxs_dense,
-              subidxs_us,
-              subshape,
-              latlon=False,
-              affine=gis_utils.IDENTITY):
+def cell_area(
+    subidxs_out,
+    subidxs_dense,
+    subidxs_us,
+    subshape,
+    latlon=False,
+    affine=gis_utils.IDENTITY,
+):
     """Returns the subgrid cell area. 
     
     Parameters
@@ -138,7 +144,7 @@ def cell_area(subidxs_out,
     outlets[subidxs_out] = np.bool(1)
     # allocate output
     n = subidxs_out.size
-    subare = np.ones(n, dtype=np.float64) * -9999.
+    subare = np.full(n, -9999.0, dtype=np.float64)
     # loop over outlet cell indices
     for idx0 in range(n):
         area = np.float64(0)

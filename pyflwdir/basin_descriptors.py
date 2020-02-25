@@ -6,7 +6,7 @@ from scipy import ndimage
 
 from pyflwdir import core, gis_utils
 
-__all__ = ['mean_drainage_path_stats']
+__all__ = ["mean_drainage_path_stats"]
 
 
 @njit
@@ -17,8 +17,7 @@ def _drainage_paths(tree, idxs_us, rivlen):
     basins = np.zeros(rivlen.size, dtype=np.uint32)
     updist = np.zeros(rivlen.size, dtype=rivlen.dtype)
     idxs_ds0 = tree[0]
-    basins[idxs_ds0] = np.array([i for i in range(idxs_ds0.size)],
-                                dtype=np.uint32) + 1
+    basins[idxs_ds0] = np.array([i for i in range(idxs_ds0.size)], dtype=np.uint32) + 1
     updist[idxs_ds0] = rivlen[idxs_ds0]
     idx_lst = []
     upd_lst = []
@@ -50,6 +49,6 @@ def mean_drainage_path_stats(tree, idxs_us, rivlen, elevtn):
     drain_slp = (elevtn[idxs_us0] - elevtn[idxs_ds0[basins - 1]]) / drain_len
     assert np.all(np.unique(basins) == index)
     df_out = pd.DataFrame(index=index)
-    df_out['mean_drain_length'] = ndimage.mean(drain_len, basins, index=index)
-    df_out['mean_drain_slope'] = ndimage.mean(drain_slp, basins, index=index)
+    df_out["mean_drain_length"] = ndimage.mean(drain_len, basins, index=index)
+    df_out["mean_drain_slope"] = ndimage.mean(drain_slp, basins, index=index)
     return df_out

@@ -9,6 +9,7 @@ import numpy as np
 # import flow direction definition
 from pyflwdir import core
 from pyflwdir import gis_utils
+
 _mv = core._mv
 
 
@@ -34,12 +35,9 @@ def accuflux(tree, idxs_us, material_flat, nodata):
 
 
 @njit()
-def upstream_area(tree,
-                  idxs_dense,
-                  idxs_us,
-                  ncol,
-                  affine=gis_utils.IDENTITY,
-                  latlon=False):
+def upstream_area(
+    tree, idxs_dense, idxs_us, ncol, affine=gis_utils.IDENTITY, latlon=False
+):
     """accumulated upstream area using network tree and 
     grid affine transform; nodata = -9999"""
     # NOTE same as accuflux but works with transform to calculate area
@@ -47,8 +45,8 @@ def upstream_area(tree,
     area0 = abs(xres * yres)
     size = idxs_us.shape[0]
     # intialize with correct dtypes
-    upa_ds, upa_us = np.float64(0.), np.float64(0.)
-    upa = np.full(size, -9999., dtype=np.float64)
+    upa_ds, upa_us = np.float64(0.0), np.float64(0.0)
+    upa = np.full(size, -9999.0, dtype=np.float64)
     # loop over network from up- to downstream and calc upstream area
     for i in range(len(tree)):
         idxs = tree[-i - 1]  # from up- to downstream
@@ -119,7 +117,7 @@ def _strahler_order(idxs_us, strord_flat):
                 ord_max = ordi
                 ord_cnt = 1
     # where two channels of order i join, a channel of order i+1 results
-    if ord_cnt >= 2:  
+    if ord_cnt >= 2:
         ord_max += 1
     return ord_max, np.array(head_lst, dtype=np.uint32)
 
@@ -135,9 +133,8 @@ def stream_order(tree, idxs_us):
             idxs_us0 = idxs_us[idx0, :]
             ordi, idx_head = _strahler_order(idxs_us0, strord_flat)
             if ordi > 127:
-                raise TypeError('maximum stream order is 127')
-            strord_flat[idx0] = np.int8(
-                ordi)  # update stream order downstream cells
+                raise TypeError("maximum stream order is 127")
+            strord_flat[idx0] = np.int8(ordi)  # update stream order downstream cells
             if idx_head.size > 0:  # update head cells
                 strord_flat[idx_head] = np.int8(1)
     return strord_flat

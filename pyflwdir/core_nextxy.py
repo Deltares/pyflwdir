@@ -7,7 +7,7 @@ import numpy as np
 from pyflwdir import core
 
 # NEXTXY type
-_ftype = 'nextxy'
+_ftype = "nextxy"
 _mv = np.int32(-9999)
 _pv = np.int32(-9)
 # NOTE: data below for consistency with LDD / D8 types and testing
@@ -16,10 +16,13 @@ _us[:, 1, 1] = _pv
 
 
 def from_array(flwdir):
-    if not ((isinstance(flwdir, tuple) and len(flwdir) == 2) or
-            (isinstance(flwdir, np.ndarray) and flwdir.ndim == 3
-             and flwdir.shape[0] == 2)):
-        raise TypeError('NEXTXY flwdir data not understood')
+    if not (
+        (isinstance(flwdir, tuple) and len(flwdir) == 2)
+        or (
+            isinstance(flwdir, np.ndarray) and flwdir.ndim == 3 and flwdir.shape[0] == 2
+        )
+    ):
+        raise TypeError("NEXTXY flwdir data not understood")
     nextx, nexty = flwdir  # convert [2,:,:] OR ([:,:], [:,:]) to [:,:], [:,:]
     return _from_array(nextx, nexty)
 
@@ -44,7 +47,7 @@ def _from_array(nextx, nexty):
             idxs_dense.append(np.intp(idx0))
             idxs_sparse[idx0] = i
             i += 1
-    n = i    
+    n = i
     # allocate output arrays
     pits_lst = []
     idxs_ds = np.full(n, core._mv, dtype=np.uint32)
@@ -62,17 +65,17 @@ def _from_array(nextx, nexty):
             idx_ds = c + r * ncol
             i_ds = idxs_sparse[idx_ds]
             if i_ds == core._mv or i_ds == i:
-                raise ValueError('invalid NEXTXY data')
+                raise ValueError("invalid NEXTXY data")
             idxs_ds[i] = i_ds
     return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
 
 
-@njit #("Tuple((i4[:,:], i4[:,:]))(intp[:], u4[:], Tuple((u8, u8)))")
+@njit  # ("Tuple((i4[:,:], i4[:,:]))(intp[:], u4[:], Tuple((u8, u8)))")
 def _to_array(idxs_dense, idxs_ds, shape):
     """convert 1D index to 3D NEXTXY raster"""
     n = idxs_dense.size
     ncol = shape[1]
-    size = shape[0]*shape[1]
+    size = shape[0] * shape[1]
     nextx = np.full(size, _mv, dtype=np.int32)
     nexty = np.full(size, _mv, dtype=np.int32)
     for i in range(n):
@@ -91,16 +94,21 @@ def _to_array(idxs_dense, idxs_ds, shape):
 
 def isvalid(flwdir):
     """True if NEXTXY raster is valid"""
-    if not ((isinstance(flwdir, tuple) and len(flwdir) == 2) or
-            (isinstance(flwdir, np.ndarray) and flwdir.ndim == 3
-             and flwdir.shape[0] == 2)):
+    isfmt1 = isinstance(flwdir, tuple) and len(flwdir) == 2
+    isfmt2 = (
+        isinstance(flwdir, np.ndarray) and flwdir.ndim == 3 and flwdir.shape[0] == 2
+    )
+    if not (isfmt1 or isfmt2):
         return False
     nextx, nexty = flwdir  # should work for [2,:,:] and ([:,:], [:,:])
     mask = np.logical_or(nextx == _mv, nextx == _pv)
-    return (nexty.dtype == 'int32' and nextx.dtype == 'int32'
-            and np.all(nexty.shape == nextx.shape)
-            and np.all(nextx[~mask] >= 0)
-            and np.all(nextx[mask] == nexty[mask]))
+    return (
+        nexty.dtype == "int32"
+        and nextx.dtype == "int32"
+        and np.all(nexty.shape == nextx.shape)
+        and np.all(nextx[~mask] >= 0)
+        and np.all(nextx[mask] == nexty[mask])
+    )
 
 
 # @vectorize(["b1(i4)", "b1(i8)"])

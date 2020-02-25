@@ -36,13 +36,13 @@ def slope(dem, nodata, latlon=False, affine=gis_utils.IDENTITY):
                                     elev[i, j] = dem[row, col]
 
                 dzdx = (
-                    (elev[0, 0] + 2 * elev[1, 0] + elev[2, 0]) -
-                    (elev[0, 2] + 2 * elev[1, 2] + elev[2, 2])
-                    ) / (8 * abs(xres))
+                    (elev[0, 0] + 2 * elev[1, 0] + elev[2, 0])
+                    - (elev[0, 2] + 2 * elev[1, 2] + elev[2, 2])
+                ) / (8 * abs(xres))
                 dzdy = (
-                    (elev[0, 0] + 2 * elev[0, 1] + elev[0, 2]) -
-                    (elev[2, 0] + 2 * elev[2, 1] + elev[2, 2])
-                    ) / (8 * abs(yres))
+                    (elev[0, 0] + 2 * elev[0, 1] + elev[0, 2])
+                    - (elev[2, 0] + 2 * elev[2, 1] + elev[2, 2])
+                ) / (8 * abs(yres))
 
                 if latlon:
                     lat = north + (r + 0.5) * yres
