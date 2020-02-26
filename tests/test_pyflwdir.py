@@ -14,6 +14,7 @@ import numpy as np
 
 import pyflwdir
 from pyflwdir.core import _mv
+from pyflwdir import basin
 
 # read and parse data
 @pytest.fixture
@@ -147,9 +148,8 @@ def test_upscale(d8, nextidx_data):
     d8_lr, idxout = d8.upscale(10)
     with pytest.raises(ValueError):
         d8.upscale(10, method="unknown")  # unknown method
-        pyflwdir.from_array(nextidx, ftype="nextidx").upscale(
-            10
-        )  # works only for D8/LDD
+        # works only for D8/LDD
+        pyflwdir.from_array(nextidx, ftype="nextidx").upscale(10)
         d8.upscale(10, uparea=np.ones(d8.shape).ravel())  # wrong uparea shape
     d8.subconnect(d8_lr, idxout)
     d8.subarea(d8_lr, idxout)
@@ -160,6 +160,21 @@ def test_vector(d8):
     affine = Affine(1 / 120.0, 0.0, 5 + 50 / 120.0, 0.0, -1 / 120, 51 + 117 / 120.0)
     gdf = d8.vector(affine=affine)
     assert gdf.index.size == d8.ncells
+
+
+def test_repair(d8):
+    # TODO
+    pass
+
+
+def test_pfafstetter(d8):
+    pfaf = d8._sparsify(d8.pfafstetter(min_upa=0, depth=1))
+    assert np.all(np.unique(pfaf) == np.arange(1, 10))
+    uparea = d8.upstream_area()
+    pfaf = d8._sparsify(d8.pfafstetter(uparea=uparea, min_upa=0, depth=2))
+    assert np.unique(pfaf).size == 73  # basins specific
+    pfaf = d8._sparsify(d8.pfafstetter(uparea=uparea, min_upa=1e3, depth=2))
+    assert np.unique(pfaf).size == 67  # basins specific
 
 
 # def test_flwdir_repair():
