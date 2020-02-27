@@ -338,7 +338,7 @@ class FlwdirRaster(object):
         subbas = basin.basins(self._tree, self._idxs_us, idxs0)
         return self._densify(subbas, nodata=np.uint32(0))
 
-    def pfafstetter(self, depth = 1, uparea=None, min_upa=0.0):
+    def pfafstetter(self, depth=1, uparea=None, min_upa=0.0):
         """Returns the pfafstetter coding for a single basin.
         
         Parameters
@@ -366,10 +366,14 @@ class FlwdirRaster(object):
         elif not np.all(uparea.shape == self.shape):
             raise ValueError("'uparea' shape does not match with flow direction shape")
         pfaf = basin.pfafstetter(
-            self._idxs_pit[0], self._tree, self._idxs_us, self._sparsify(uparea), min_upa=min_upa, depth=depth
+            self._idxs_pit[0],
+            self._tree,
+            self._idxs_us,
+            self._sparsify(uparea),
+            min_upa=min_upa,
+            depth=depth,
         )
         return self._densify(pfaf, np.uint32(0))
-
 
     def upstream_area(self, affine=gis_utils.IDENTITY, latlon=False, mult=1):
         """Returns the upstream area map based on the flow direction map. 
@@ -552,7 +556,7 @@ class FlwdirRaster(object):
         nextidx, subidxs_out = fupscale(
             subidxs_ds=self._idxs_ds,
             subidxs_dense=self._idxs_dense,
-            subuparea=uparea.ravel(), # NOTE: not sparse!
+            subuparea=uparea.ravel(),  # NOTE: not sparse!
             subshape=self.shape,
             cellsize=scale_factor,
             **kwargs,
