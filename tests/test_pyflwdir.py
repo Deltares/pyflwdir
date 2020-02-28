@@ -142,6 +142,9 @@ def test_basins(d8):
     assert basins.sum() == d8.ncells  # NOTE specific to data with single basin
     assert basins.dtype == np.uint32
     assert np.all(basins.shape == d8.shape)
+    with pytest.raises(ValueError):
+        d8.basins(ids=np.arange(2))
+        d8.basins(ids=np.array([0]))
 
 
 def test_upscale(d8, nextidx_data):

@@ -308,16 +308,31 @@ class FlwdirRaster(object):
             raise ValueError(msg)
         return ftypes[ftype].to_array(self._idxs_dense, self._idxs_ds, self.shape)
 
-    def basins(self):
-        """Returns a basin map with a unique IDs for every basin. The IDs
-        start from 1 and the background value is 0.
+    def basins(self, ids=None):
+        """Returns a basin map with a unique IDs for every basin. 
         
+        If IDs are not provided, these start from 1 and the background value is 0.
+        
+        Parameters
+        ----------
+        ids : ndarray of uint32, optional
+            IDs of basins in some order as pits
+            (by Default these are numbered from 1)
+
         Returns
         -------
         ndarray of uint32
             basin map
         """
-        basids = basin.basins(self._tree, self._idxs_us, self._tree[0])
+        if ids is None:
+            ids = np.arange(self._tree[0].size, dtype=np.uint32) + 1
+        else:
+            ids = np.asarray(ids).astype(np.uint32)
+            if ids.size != self._tree[0].size:
+                raise ValueError("ids size does not match number of pits")
+            if np.any(idx == 0):
+                raise ValueError("ids cannot contain a value zero")
+        basids = basin.basins(self._tree, self._idxs_us, self._tree[0], ids)
         return self._densify(basids, nodata=np.uint32(0))
 
     def subbasins(self, idxs):

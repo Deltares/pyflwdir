@@ -76,13 +76,12 @@ def fillnodata_upstream(tree, idxs_us, data_sparse, nodata):
 
 
 @njit
-def basins(tree, idxs_us, idxs_pit):
+def basins(tree, idxs_us, idxs_pit, ids):
     """label basins using network tree"""
     size = idxs_us.shape[0]
-    basins = np.zeros(size, dtype=np.uint32)
-    npit = idxs_pit.size
-    basins[idxs_pit] = np.array([np.uint32(i + 1) for i in range(npit)])
-    return fillnodata_upstream(tree, idxs_us, basins, np.uint32(0))
+    basins = np.zeros(size, dtype=ids.dtype)
+    basins[idxs_pit] = ids
+    return fillnodata_upstream(tree, idxs_us, basins, 0)
 
 
 @njit
