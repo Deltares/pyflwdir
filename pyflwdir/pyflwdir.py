@@ -495,7 +495,7 @@ class FlwdirRaster(object):
         else:
             if xs.size != self.size or ys.size != self.size:
                 raise ValueError(
-                    "'xs' and/or 'ys' size does not match with" + " flow direction size"
+                    "'xs' and/or 'ys' size does not match with  flow direction size"
                 )
             xs, ys = xs.ravel()[self._idxs_dense], ys.ravel()[self._idxs_dense]
         geoms = gis_utils.idxs_to_geoms(self._idxs_ds, xs, ys)
@@ -542,7 +542,7 @@ class FlwdirRaster(object):
         methods = ["com", "eam", "dmm"]
         if self.ftype not in ["d8", "ldd"]:
             raise ValueError(
-                "The upscale method only works for D8 or LDD " + "flow directon data."
+                "The upscale method only works for D8 or LDD flow directon data."
             )
         if method not in methods:
             methodstr = "', '".join(methods)
@@ -597,7 +597,7 @@ class FlwdirRaster(object):
         subidxs_out0 = _check_convert_subidxs_out(subidxs_out, other)
         if np.any(subidxs_out0 == core._mv):
             raise ValueError(
-                "invalid 'subidxs_out' with missing values" + "at valid indices."
+                "invalid 'subidxs_out' with missing values at valid indices."
             )
         subare = subgrid.cell_area(
             self._sparse_idx(subidxs_out0),
@@ -737,11 +737,9 @@ def _check_convert_subidxs_out(subidxs_out, other):
         raise ValueError("'other' is not recognized as instance of FlwdirRaster")
     if not np.all(subidxs_out.shape == other.shape):
         raise ValueError(
-            "'subidxs_out' shape does not match with `other`" + " flow direction shape"
+            "'subidxs_out' shape does not match with `other` flow direction shape"
         )
     subidxs_out0 = subidxs_out.ravel()[other._idxs_dense]
     if np.any(subidxs_out0 == core._mv):
-        raise ValueError(
-            "invalid 'subidxs_out' with missing values" + "at valid indices."
-        )
+        raise ValueError("invalid 'subidxs_out' with missing values at valid indices.")
     return subidxs_out0

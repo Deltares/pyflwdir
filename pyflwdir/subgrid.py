@@ -147,8 +147,13 @@ def cell_area(
     subare = np.full(n, -9999.0, dtype=np.float64)
     # loop over outlet cell indices
     for idx0 in range(n):
-        area = np.float64(0)
-        subidxs = np.array([subidxs_out[idx0]], dtype=subidxs_us.dtype)
+        subidx = subidxs_out[idx0]
+        subidxs = np.array([subidx], dtype=subidxs_us.dtype)
+        if latlon:
+            r = subidxs_dense[subidx] // subncol
+            lat = north + (r + 0.5) * yres
+            area0 = gis_utils.cellarea(lat, xres, yres)
+        area = area0
         while True:
             next_lst = []
             for subidx in subidxs_us[subidxs, :].ravel():
