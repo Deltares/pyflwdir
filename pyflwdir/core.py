@@ -93,7 +93,7 @@ def upstream(idx0, idxs_us):
 
 
 @njit
-def _main_upstream(idx0, idxs_us, uparea_flat, upa_min=0):
+def _main_upstream(idx0, idxs_us, uparea_flat, upa_min=0.0):
     """Returns the index of the upstream cell with 
     the largest uparea."""
     idx_us0 = _mv
@@ -101,14 +101,14 @@ def _main_upstream(idx0, idxs_us, uparea_flat, upa_min=0):
     for idx_us in idxs_us[idx0, :]:
         if idx_us == _mv:
             break
-        if uparea_flat[idx_us] > upa0:
+        if uparea_flat[idx_us] >= upa0:
             idx_us0 = idx_us
             upa0 = uparea_flat[idx_us]
     return idx_us0
 
 
 @njit
-def main_upstream(idxs, idxs_us, uparea_flat, upa_min=0):
+def main_upstream(idxs, idxs_us, uparea_flat, upa_min=0.0):
     """Returns the index of the upstream cell with 
     the largest uparea.
     
