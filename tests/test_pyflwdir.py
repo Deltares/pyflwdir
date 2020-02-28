@@ -155,8 +155,11 @@ def test_upscale(d8, nextidx_data):
         pyflwdir.from_array(nextidx, ftype="nextidx").upscale(10)
         d8.upscale(10, uparea=np.ones(d8.shape).ravel())  # wrong uparea shape
     d8.subconnect(d8_lr, idxout)
-    d8.subarea(d8_lr, idxout)
-    d8.subriver(d8_lr, idxout, np.ones(d8.shape))
+    subgrd = d8.subarea(d8_lr, idxout)
+    assert subgrd.flat[d8_lr._idxs_dense].min() > 0
+    rivlen, rivslp = d8.subriver(d8_lr, idxout, np.ones(d8.shape))
+    assert rivlen.flat[d8_lr._idxs_dense].min() >= 0  # only zeros at boundary
+    assert rivslp.flat[d8_lr._idxs_dense].min() >= 0
 
 
 def test_vector(d8):
