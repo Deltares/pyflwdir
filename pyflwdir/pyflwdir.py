@@ -330,7 +330,7 @@ class FlwdirRaster(object):
             ids = np.asarray(ids).astype(np.uint32)
             if ids.size != self._tree[0].size:
                 raise ValueError("ids size does not match number of pits")
-            if np.any(idx == 0):
+            if np.any(ids == 0):
                 raise ValueError("ids cannot contain a value zero")
         basids = basin.basins(self._tree, self._idxs_us, self._tree[0], ids)
         return self._densify(basids, nodata=np.uint32(0))
