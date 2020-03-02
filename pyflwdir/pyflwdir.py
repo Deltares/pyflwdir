@@ -15,6 +15,7 @@ from pyflwdir import (
     core_nextxy,
     core_nextidx,
     core_ldd,
+    dem,
     gis_utils,
     subgrid,
     upscale,
@@ -715,6 +716,32 @@ class FlwdirRaster(object):
             self._sparse_idx(subidxs_out0), other._idxs_ds, self._idxs_ds
         )
         return other._densify(subcon, True)
+
+    def adjust_elevation(self, elevtn):
+        """Returns the hydrologically adjusted elevation where each downstream cell 
+        has the same or lower elevation as the current cell.
+
+        NOTE. elevation adjusted inplace!
+        
+        Parameters
+        ----------
+        elevnt : 2D array of float
+            elevation raster
+        
+        Returns
+        -------
+        2D array of float
+            elevation raster
+        """
+        if not np.all(elevtn.shape == self.shape):
+            raise ValueError("'elevtn' shape does not match with flow direction shape")
+        elevtn.flat[self._idxs_dense] = dem.adjust_elevation(
+            idxs_ds=self._idxs_ds,
+            idxs_us=self._idxs_us,
+            tree=self._tree,
+            elevtn_sparse=self._sparsify(elevtn),
+        )
+        return elevtn
 
     # def drainage_path_stats(self, rivlen, elevtn):
     #     if not np.all(rivlen.shape == self.shape):

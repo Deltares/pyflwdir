@@ -19,16 +19,15 @@ def adjust_elevation(idxs_ds, idxs_us, tree, elevtn_sparse):
     2012.
     """
     for i in range(len(tree)):
-        idxs = tree[-i - 1]  # from up- to downstream
-        for idx0 in idxs:
+        for idx0 in tree[-i - 1]:  # from up- to downstream
             if idxs_us[idx0, 0] != _mv:
                 # has upstream neighbors
                 continue
-            # @ most upstream point, i.e. no upstream neighbors
+            # @ head water cell, i.e. no upstream neighbors
             # get downstream indices
-            idxs = downstream_all(idx0, idxs_ds)
+            idxs0 = downstream_all(idx0, idxs_ds)
             # fix elevation
-            elevtn_sparse[idxs] = _adjust_elevation(elevtn_sparse[idxs])
+            elevtn_sparse[idxs0] = _adjust_elevation(elevtn_sparse[idxs0])
     return elevtn_sparse
 
 
@@ -37,6 +36,7 @@ def _adjust_elevation(elevtn):
     """fix elevation on single streamline based on minimum modification
     elevtn oderdered from up- to downstream
     """
+    n = elevtn.size
     zmin = elevtn[0]
     zmax = elevtn[0]
     valid = True
@@ -50,16 +50,16 @@ def _adjust_elevation(elevtn):
                 zmax = zi
                 imax = i
                 imin = i - 1
-        else:
+        if not valid:
             if zi <= zmin or i + 1 == elevtn.size:  # end of pit area: FIX
                 # option 1: dig -> zmod = zmin, for all values after pit
-                idxs = np.arange(imin, i)  # TODO: check if i+1 if at end of streamline
-                zmod = np.ones(idxs.size, dtype=elevtn.dtype) * zmin
+                idxs = np.arange(imin, min(n, i + 1))
+                zmod = np.full(idxs.size, zmin, dtype=elevtn.dtype)
                 cost = np.sum(elevtn[idxs] - zmod)
-                if imax - imin > 1:  # all options are equal when imax = imin + 1
+                if (imax - imin) > 1:  # all options are equal when imax = imin + 1
                     # option 2: fill -> zmod = zmax, for all values smaller than zmax, previous to zmax
                     idxs2 = np.where(elevtn[:imax] <= zmax)[0]
-                    zmod2 = np.ones(idxs2.size, dtype=elevtn.dtype) * zmax
+                    zmod2 = np.full(idxs2.size, zmax, dtype=elevtn.dtype)
                     cost2 = np.sum(zmod2 - elevtn[idxs2])
                     if cost2 < cost:
                         cost, idxs, zmod = cost2, idxs2, zmod2
@@ -70,12 +70,12 @@ def _adjust_elevation(elevtn):
                     zorg = elevtn[idxs3]
                     for z3 in np.unique(zorg):
                         if z3 > zmin and z3 < zmax:
-                            zmod3 = np.ones(idxs3.size, dtype=elevtn.dtype) * z3
+                            zmod3 = np.full(idxs3.size, z3, dtype=elevtn.dtype)
                             i0 = 0
-                            i1 = zorg.size
+                            i1 = zorg.size - 1
                             while zorg[i0] > z3:  # elevtn > z3 from start can remain
                                 zmod3[i0] = zorg[i0]
-                                i0 += i
+                                i0 += 1
                             while zorg[i1] < z3:  # elevtn < z3 from end can remain
                                 zmod3[i1] = zorg[i1]
                                 i1 -= 1
