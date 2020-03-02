@@ -7,7 +7,6 @@ import numpy as np
 import pprint
 import pickle
 from pyflwdir import (
-    basin,
     basin_utils,
     basin_descriptors,
     core,
@@ -18,6 +17,7 @@ from pyflwdir import (
     dem,
     gis_utils,
     subgrid,
+    tree,
     upscale,
 )
 
@@ -333,7 +333,7 @@ class FlwdirRaster(object):
                 raise ValueError("ids size does not match number of pits")
             if np.any(ids == 0):
                 raise ValueError("ids cannot contain a value zero")
-        basids = basin.basins(self._tree, self._idxs_us, self._tree[0], ids)
+        basids = tree.basins(self._tree, self._idxs_us, self._tree[0], ids)
         return self._densify(basids, nodata=np.uint32(0))
 
     def subbasins(self, idxs):
@@ -351,7 +351,7 @@ class FlwdirRaster(object):
             subbasin map
         """
         idxs0 = self._sparse_idx(idxs)
-        subbas = basin.basins(self._tree, self._idxs_us, idxs0)
+        subbas = tree.basins(self._tree, self._idxs_us, idxs0)
         return self._densify(subbas, nodata=np.uint32(0))
 
     def pfafstetter(self, depth=1, uparea=None, min_upa=0.0):
@@ -381,8 +381,7 @@ class FlwdirRaster(object):
             uparea = self.upstream_area()
         elif not np.all(uparea.shape == self.shape):
             raise ValueError("'uparea' shape does not match with flow direction shape")
-        pfaf = basin.pfafstetter(
-            self._idxs_pit[0],
+        pfaf = tree.pfafstetter(
             self._tree,
             self._idxs_us,
             self._sparsify(uparea),
@@ -413,10 +412,10 @@ class FlwdirRaster(object):
         2D array of float
             upstream area map [m2]
         """
-        uparea = basin.upstream_area(
+        uparea = tree.upstream_area(
             self._tree,
-            self._idxs_dense,
             self._idxs_us,
+            self._idxs_dense,
             self.shape[1],
             affine=affine,
             latlon=latlon,
@@ -440,7 +439,7 @@ class FlwdirRaster(object):
         2D array of int
             strahler order map
         """
-        strord = basin.stream_order(self._tree, self._idxs_us)
+        strord = tree.stream_order(self._tree, self._idxs_us)
         return self._densify(strord, nodata=np.int8(-1))
 
     def accuflux(self, material, nodata=-9999):
@@ -463,7 +462,7 @@ class FlwdirRaster(object):
             raise ValueError(
                 "'Material' shape does not match with flow direction shape."
             )
-        accu_flat = basin.accuflux(
+        accu_flat = tree.accuflux(
             self._tree, self._idxs_us, self._sparsify(material), nodata
         )
         return self._densify(accu_flat, nodata=nodata)

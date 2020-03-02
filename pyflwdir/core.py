@@ -8,6 +8,7 @@ from numba import njit, prange
 from numba.typed import List
 import numpy as np
 import math
+import heapq
 
 from pyflwdir import gis_utils
 
@@ -72,7 +73,7 @@ def network_tree(idxs_pits, idxs_us):
     return tree  # down- to upstream
 
 
-#### UPSTREAM / DOWNSTREAM functions ####
+#### UPSTREAM  functions ####
 @njit
 def upstream(idx0, idxs_us):
     """Returns the internal upstream indices.
@@ -161,11 +162,93 @@ def n_upstream(idxs_ds):
 
 
 @njit
-def idxs_no_upstream(idxs_us):
+def idxs_headwater(idxs_us):
     """Returns indices of cells without upstream neighbors"""
     return np.where(idxs_us[:, 0] == _mv)[0]
 
 
+@njit
+def main_tibutaries(idx0, idxs_us, uparea_sparse, idx_end=_mv, min_upa=0, n=4):
+    """Return indices of n largest tributaries upstream from idx0 and downstream
+    from idx_end
+    
+    Parameters
+    ----------
+    idx0 : uint32
+        index of most downstream cell
+    idxs_us : ndarray of uint32
+        indices of upstream cells
+    uparea_sparse : ndarray
+        sparse array with upstream area values
+    idx_end : uint32, optional
+        most upstream index
+        (by default set to missing value, i.e. no fixed most upstream cell)
+    upa_min : float, optional 
+        minimum upstream area for subbasin
+    n : int, optional
+        number of tributaries
+        (by default 4)
+
+    Returns
+    -------
+    1D array of uint32 with size n
+        indices of largest tributaries
+    1D array of uint32 with size n*2+1
+        indices of inter- and subbasins   
+    """
+    # use heapq to keep list of n largest tributaries
+    # initialize with n (zero, mv, mv, i) tuples
+    upa_ini = np.zeros(n, dtype=uparea_sparse.dtype)
+    ntrib = [(upa_ini[i], _mv, _mv, _mv) for i in range(n)]
+    heapq.heapify(ntrib)
+    upa0 = max(min_upa, heapq.nsmallest(1, ntrib)[0][0])
+    upa_main = upa0
+    upa_main0 = uparea_sparse[idx0]
+    i = np.uint32(0)  # sequence of basins
+    # ordered indices of sub- and interbasins from down to upstream
+    idxs = np.zeros(n * 2 + 1, dtype=idxs_us.dtype)
+    idxs[0] = idx0
+    # stop when no more upstream cells or upstream area on main stream
+    # smaller than nth largest tributary
+    while idx0 != _mv and upa_main >= upa0 and idx0 != idx_end:
+        idx_us_main = _mv
+        upa_main = 0.0
+        # find main upstream
+        for idx_us in idxs_us[idx0, :]:
+            if idx_us == _mv:
+                break
+            upa = uparea_sparse[idx_us]
+            if upa > upa_main:
+                idx_us_main = idx_us
+                upa_main = upa
+        # check min size interbasins
+        # if upa_main0 - uparea_sparse[idx0] > upa0:
+        # add tributaries
+        for idx_us in idxs_us[idx0, :]:
+            if idx_us == _mv:
+                break
+            upa = uparea_sparse[idx_us]
+            if upa < upa_main and upa > upa0:
+                i += 1
+                heapq.heappushpop(ntrib, (upa, idx_us, idx_us_main, np.uint32(i)))
+                upa0 = max(min_upa, heapq.nsmallest(1, ntrib)[0][0])
+                upa_main0 = uparea_sparse[idx_us_main]
+        # next iter
+        idx0 = idx_us_main
+    seq = np.argsort(np.array([ntrib[i][-1] for i in range(n)]))
+    idxs_subbasin = np.array([ntrib[i][1] for i in seq])
+    idxs_interbasin = np.array([ntrib[i][2] for i in seq])
+    for i in range(1, n * 2 + 1):
+        pfaf_id = i + 1
+        if pfaf_id % 2 == 0:  # even pfafstetter code -> subbasins
+            idx0 = idxs_subbasin[pfaf_id // 2 - 1]
+        else:  # odd pfafstetter code -> inter-subbasin
+            idx0 = idxs_interbasin[pfaf_id // 2 - 1]
+        idxs[i] = idx0
+    return idxs_subbasin, idxs
+
+
+####  DOWNSTREAM functions ####
 @njit
 def downstream(idx0, idxs_ds):
     """Returns next downstream indices.
@@ -247,29 +330,6 @@ def downstream_mask(idxs0, idxs_ds, mask_sparse):
         idx_out[i] = _downstream_mask(np.uint32(idxs0[i]), idxs_ds, mask_sparse)
     return idx_out
 
-@njit
-def flwdir_window(idx0, n, idxs_ds, idxs_us, uparea_sparse, upa_min=0.0):
-    """Returns the indices of between the nth upstream to nth downstream cell from 
-    the current cell. Upstream cells are with based on the  _main_upstream method."""
-    idxs = np.full(n * 2 + 1, _mv, idxs_ds.dtype)
-    idxs[n] = idx0
-    # get n downstream cells
-    for i in range(n):
-        idx_ds = idxs_ds[idx0]
-        if idx_ds == idx0:  # pit
-            break
-        idx0 = idx_ds
-        idxs[n + i + 1] = idx0
-    # get n upstreams cells
-    idx0 = idxs[n]
-    for i in range(n):
-        idx_us = _main_upstream(idx0, idxs_us, uparea_sparse, upa_min=upa_min)
-        if idx_us == _mv:  # at headwater / no upstream cells
-            break
-        idx0 = idx_us
-        idxs[n - i - 1] = idx0
-    return idxs
-
 
 @njit
 def downstream_length(
@@ -323,6 +383,33 @@ def downstream_length(
         dy = xres
         dx = yres
     return idx1, math.hypot(dy * dr, dx * dc)  # length
+
+
+##### UP/DOWNSTREAM window ####
+
+
+@njit
+def flwdir_window(idx0, n, idxs_ds, idxs_us, uparea_sparse, upa_min=0.0):
+    """Returns the indices of between the nth upstream to nth downstream cell from 
+    the current cell. Upstream cells are with based on the  _main_upstream method."""
+    idxs = np.full(n * 2 + 1, _mv, idxs_ds.dtype)
+    idxs[n] = idx0
+    # get n downstream cells
+    for i in range(n):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == idx0:  # pit
+            break
+        idx0 = idx_ds
+        idxs[n + i + 1] = idx0
+    # get n upstreams cells
+    idx0 = idxs[n]
+    for i in range(n):
+        idx_us = _main_upstream(idx0, idxs_us, uparea_sparse, upa_min=upa_min)
+        if idx_us == _mv:  # at headwater / no upstream cells
+            break
+        idx0 = idx_us
+        idxs[n - i - 1] = idx0
+    return idxs
 
 
 #### PIT / LOOP INDICES ####

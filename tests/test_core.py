@@ -216,11 +216,11 @@ def test_core_window(d8_parsed, d8_us_tree):
     idxs_us, tree = d8_us_tree
     upa = np.zeros(idxs_ds.size)
     idxs = core.flwdir_window(tree[2][0], 2, idxs_ds, idxs_us, upa)
-    assert idxs.size == 5 and np.all(idxs!=_mv)
+    assert idxs.size == 5 and np.all(idxs != _mv)
     idxs = core.flwdir_window(tree[1][0], 2, idxs_ds, idxs_us, upa)
-    assert idxs.size == 5 and np.sum(idxs[-1:]==_mv)
+    assert idxs.size == 5 and np.sum(idxs[-1:] == _mv)
     idxs = core.flwdir_window(tree[-1][0], 2, idxs_ds, idxs_us, upa)
-    assert idxs.size == 5 and np.all(idxs[:2]==_mv)
+    assert idxs.size == 5 and np.all(idxs[:2] == _mv)
 
 
 def test_core_loop(d8_parsed, d8_us_tree):

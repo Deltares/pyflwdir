@@ -21,7 +21,6 @@ def adjust_elevation(idxs_ds, idxs_us, tree, elevtn_sparse):
     for i in range(len(tree)):
         for idx0 in tree[-i - 1]:  # from up- to downstream
             if idxs_us[idx0, 0] != _mv:
-                # has upstream neighbors
                 continue
             # @ head water cell, i.e. no upstream neighbors
             # get downstream indices

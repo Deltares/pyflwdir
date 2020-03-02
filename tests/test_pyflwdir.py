@@ -9,7 +9,6 @@ from affine import Affine
 
 import pyflwdir
 from pyflwdir.core import _mv
-from pyflwdir import basin
 
 # read and parse data
 @pytest.fixture
@@ -118,7 +117,7 @@ def test_upstream_area(d8):
     uparea = d8.upstream_area()
     assert uparea.min() == -9999
     assert uparea[uparea != -9999].min() == 1
-    assert uparea.max() == d8.ncells  # NOTE specific to data with single basin
+    assert uparea.max() == d8.ncells  # NOTE specific to data with single pit
     assert uparea.dtype == np.float64
     assert np.all(uparea.shape == d8.shape)
     # compare with accuflux
@@ -133,8 +132,8 @@ def test_upstream_area(d8):
 def test_basins(d8):
     basins = d8.basins()
     assert basins.min() == 0
-    assert basins.max() == 1  # NOTE specific to data with single basin
-    assert basins.sum() == d8.ncells  # NOTE specific to data with single basin
+    assert basins.max() == 1  # NOTE specific to data with single pit
+    assert basins.sum() == d8.ncells  # NOTE specific to data with single pit
     assert basins.dtype == np.uint32
     assert np.all(basins.shape == d8.shape)
     with pytest.raises(ValueError):
