@@ -85,15 +85,12 @@ def basins(tree, idxs_us, idxs_pit, ids):
 
 
 @njit
-def _strahler_order(idxs_us, strord_flat):
-    """"""
+def _strahler_order(strord_us):
+    """Returns Strahler stream order based on array of upstream stream orders"""
     ord_max = np.int8(1)
     ord_cnt = 0
-    for i in range(idxs_us.size):
-        idx_us = idxs_us[i]
-        if idx_us == _mv:
-            break
-        ordi = strord_flat[idx_us]
+    for i in range(strord_us.size):
+        ordi = strord_us[i]
         if ordi >= ord_max:
             if ordi == ord_max:
                 ord_cnt += 1
@@ -114,8 +111,8 @@ def stream_order(tree, idxs_us):
     for i in range(len(tree)):
         idxs = tree[-i - 1]  # from up- to downstream
         for idx0 in idxs:
-            idxs_us0 = idxs_us[idx0, :]
-            ordi = _strahler_order(idxs_us0, strord_flat)
+            idxs_us0 = core.upstream(idx0, idxs_us)
+            ordi = _strahler_order(strord_flat[idxs_us0])
             if ordi > 127:
                 raise TypeError("maximum stream order is 127")
             strord_flat[idx0] = np.int8(ordi)  # update stream order downstream cells
