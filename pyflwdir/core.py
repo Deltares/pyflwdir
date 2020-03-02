@@ -159,6 +159,12 @@ def n_upstream(idxs_ds):
 
 
 @njit
+def idxs_no_upstream(idxs_us):
+    """Returns indices of cells without upstream neighbors"""
+    return np.where(idxs_us[:, 0] == _mv)[0]
+
+
+@njit
 def downstream(idx0, idxs_ds):
     """Returns next downstream indices.
     
@@ -171,9 +177,35 @@ def downstream(idx0, idxs_ds):
 
     Returns
     -------
-    downstream indices : ndarray of int  
+    downstream index : ndarray of int  
     """
     return idxs_ds[idx0]
+
+
+@njit
+def downstream_all(idx0, idxs_ds):
+    """Returns all downstream indices
+    
+    Parameters
+    ----------
+    idx0 : int
+        index of local cell
+    idxs_ds : ndarray of int
+        indices of downstream cells
+
+    Returns
+    -------
+    downstream indices : ndarray of int  
+    """
+    idxs = []
+    idxs.append(idx0)
+    while True:
+        idx_ds = idxs_ds[idx0]
+        if idx0 == idx_ds:
+            break
+        idx0 = idx_ds
+        idxs.append(idx0)
+    return np.array(idxs)
 
 
 @njit

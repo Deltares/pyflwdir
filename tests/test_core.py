@@ -177,9 +177,16 @@ def test_core_realdata(_d8, d8_parsed):
         assert np.all(
             core.upstream(idx0, idxs_us) == idxs_us[idx0, :][idxs_us[idx0, :] != _mv]
         )
+    # test with fake upa data
     idxs = np.arange(idxs_ds.size, dtype=np.uint32)
-    idxs_us_main = core.main_upstream(idxs, idxs_us, np.ones(idxs.size))
+    upa = np.ones(idxs.size)
+    idxs_us0 = idxs_us[:, 0][idxs_us[:, 0] != _mv]
+    upa[idxs_us0] = 2.0
+    idxs_us_main = core.main_upstream(idxs, idxs_us, upa)
     assert np.all(idxs_us_main == idxs_us[:, 0])
+    # test all downstream indices
+    idxs = core.downstream_all(tree[-1][0], idxs_ds)
+    assert idxs.size == len(tree)
     # test downstream_river with only stream cell at pit
     river_flat = np.zeros(idxs_ds.size, dtype=np.bool)
     river_flat[idxs_pit] = True

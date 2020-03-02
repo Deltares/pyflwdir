@@ -4,13 +4,8 @@
 """Tests for the pyflwdir module.
 """
 import pytest
-import numba
-import time
-from affine import Affine
-
-rtsys = numba.runtime.rtsys
-
 import numpy as np
+from affine import Affine
 
 import pyflwdir
 from pyflwdir.core import _mv
