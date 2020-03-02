@@ -250,7 +250,7 @@ class FlwdirRaster(object):
             idxs_pit = np.asarray(idxs_pit).flatten()
             idxs0 = self._sparse_idx(idxs_pit)
             if streams is not None:  # snap to streams
-                idxs0 = core.downstream_river(
+                idxs0 = core.downstream_mask(
                     idxs0, self._idxs_ds, self._sparsify(streams)
                 )
         self._idxs_pit = idxs0

@@ -25,6 +25,13 @@ def d8_parsed(_d8):
 
 
 @pytest.fixture
+def d8_us_tree(d8_parsed):
+    idxs_us = core._idxs_us(d8_parsed[1])
+    tree = core.network_tree(d8_parsed[2], idxs_us)
+    return idxs_us, tree
+
+
+@pytest.fixture
 def ldd_parsed():
     data = np.fromfile(r"./data/ldd.bin", dtype=np.uint8)
     return core_ldd.from_array(data.reshape((678, 776)))
@@ -152,17 +159,20 @@ def test_downstream_length():
     assert l == 0  # pit
 
 
-def test_core_realdata(_d8, d8_parsed):
+def test_core_tree(d8_parsed, d8_us_tree):
     """test core.py submodule with actual flwdir data"""
-    # test parsing real data
     idxs_dense, idxs_ds, idxs_pit = d8_parsed
-    idxs_us = core._idxs_us(idxs_ds)
-    n = idxs_dense.size
+    idxs_us, tree = d8_us_tree
+    # test us indices
     assert idxs_us[idxs_us != _mv].size + idxs_pit.size == idxs_ds.size
     # test network tree
-    tree = core.network_tree(idxs_pit, idxs_us)
     assert np.array([leave.size for leave in tree]).sum() == idxs_ds.size
+
+
+def test_core_sparse(_d8, d8_parsed):
     # test internal data reshaping / reindexing functions
+    idxs_dense, idxs_ds, idxs_pit = d8_parsed
+    n = idxs_dense.size
     assert np.all(core._sparse_idx(idxs_dense, idxs_dense, _d8.size) == np.arange(n))
     _d8_ = core._densify(
         _d8.flat[idxs_dense], idxs_dense, _d8.shape, nodata=core_d8._mv
@@ -172,12 +182,17 @@ def test_core_realdata(_d8, d8_parsed):
         core._densify(
             _d8.flat[idxs_dense[:-1]], idxs_dense, _d8.shape, nodata=core_d8._mv
         )
+
+
+def test_core_up_downstream(d8_parsed, d8_us_tree):
+    idxs_dense, idxs_ds, idxs_pit = d8_parsed
+    idxs_us, tree = d8_us_tree
     # test upstream functions
     for idx0 in [idxs_pit[0], idxs_pit]:
         assert np.all(
             core.upstream(idx0, idxs_us) == idxs_us[idx0, :][idxs_us[idx0, :] != _mv]
         )
-    # test with fake upa data
+    # test main upstream
     idxs = np.arange(idxs_ds.size, dtype=np.uint32)
     upa = np.ones(idxs.size)
     idxs_us0 = idxs_us[:, 0][idxs_us[:, 0] != _mv]
@@ -185,15 +200,32 @@ def test_core_realdata(_d8, d8_parsed):
     idxs_us_main = core.main_upstream(idxs, idxs_us, upa)
     assert np.all(idxs_us_main == idxs_us[:, 0])
     # test all downstream indices
-    idxs = core.downstream_all(tree[-1][0], idxs_ds)
+    idxs = core.downstream_path(tree[-1][0], idxs_ds)
     assert idxs.size == len(tree)
-    # test downstream_river with only stream cell at pit
-    river_flat = np.zeros(idxs_ds.size, dtype=np.bool)
-    river_flat[idxs_pit] = True
-    idxs_ds_stream = core.downstream_river(
-        np.arange(3, dtype=np.uint32), idxs_ds, river_flat
+    # test downstream_mask with only stream cell at pit
+    river_sparse = np.zeros(idxs_ds.size, dtype=np.bool)
+    river_sparse[idxs_pit] = True
+    idxs_ds_stream = core.downstream_mask(
+        np.arange(3, dtype=np.uint32), idxs_ds, river_sparse
     )
     assert np.all(idxs_ds_stream == idxs_pit)
+
+
+def test_core_window(d8_parsed, d8_us_tree):
+    idxs_dense, idxs_ds, idxs_pit = d8_parsed
+    idxs_us, tree = d8_us_tree
+    upa = np.zeros(idxs_ds.size)
+    idxs = core.flwdir_window(tree[2][0], 2, idxs_ds, idxs_us, upa)
+    assert idxs.size == 5 and np.all(idxs!=_mv)
+    idxs = core.flwdir_window(tree[1][0], 2, idxs_ds, idxs_us, upa)
+    assert idxs.size == 5 and np.sum(idxs[-1:]==_mv)
+    idxs = core.flwdir_window(tree[-1][0], 2, idxs_ds, idxs_us, upa)
+    assert idxs.size == 5 and np.all(idxs[:2]==_mv)
+
+
+def test_core_loop(d8_parsed, d8_us_tree):
+    idxs_dense, idxs_ds, idxs_pit = d8_parsed
+    idxs_us, _ = d8_us_tree
     # test pit / loop indices
     assert np.all(core.pit_indices(idxs_ds) == idxs_pit)
     assert core.loop_indices(idxs_ds, idxs_us).size == 0

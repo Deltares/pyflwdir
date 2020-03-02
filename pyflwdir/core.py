@@ -93,7 +93,7 @@ def upstream(idx0, idxs_us):
 
 
 @njit
-def _main_upstream(idx0, idxs_us, uparea_flat, upa_min=0.0):
+def _main_upstream(idx0, idxs_us, uparea_sparse, upa_min=0.0):
     """Returns the index of the upstream cell with 
     the largest uparea."""
     idx_us0 = _mv
@@ -101,14 +101,14 @@ def _main_upstream(idx0, idxs_us, uparea_flat, upa_min=0.0):
     for idx_us in idxs_us[idx0, :]:
         if idx_us == _mv:
             break
-        if uparea_flat[idx_us] >= upa0:
+        if uparea_sparse[idx_us] >= upa0:
             idx_us0 = idx_us
-            upa0 = uparea_flat[idx_us]
+            upa0 = uparea_sparse[idx_us]
     return idx_us0
 
 
 @njit
-def main_upstream(idxs, idxs_us, uparea_flat, upa_min=0.0):
+def main_upstream(idxs, idxs_us, uparea_sparse, upa_min=0.0):
     """Returns the index of the upstream cell with 
     the largest uparea.
     
@@ -118,8 +118,8 @@ def main_upstream(idxs, idxs_us, uparea_flat, upa_min=0.0):
         internal indices of local cells
     idxs_us : ndarray of int
         internal indices of upstream cells
-    uparea_flat : ndarray
-        1D array with upstream area values
+    uparea_sparse : ndarray
+        sparse array with upstream area values
     upa_min : float, optional 
         minimum upstream area for cell to be considered
     
@@ -128,11 +128,13 @@ def main_upstream(idxs, idxs_us, uparea_flat, upa_min=0.0):
     -------
     internal upstream indices : ndarray of int  
     """
-    if idxs_us.shape[0] != uparea_flat.size:
-        raise ValueError("uparea_flat has invalid size")
+    if idxs_us.shape[0] != uparea_sparse.size:
+        raise ValueError("uparea_sparse has invalid size")
     idxs_us_main = np.ones(idxs.size, dtype=idxs_us.dtype) * _mv
     for i in range(idxs.size):
-        idxs_us_main[i] = _main_upstream(idxs[i], idxs_us, uparea_flat, upa_min=upa_min)
+        idxs_us_main[i] = _main_upstream(
+            idxs[i], idxs_us, uparea_sparse, upa_min=upa_min
+        )
     return idxs_us_main
 
 
@@ -183,8 +185,8 @@ def downstream(idx0, idxs_ds):
 
 
 @njit
-def downstream_all(idx0, idxs_ds):
-    """Returns all downstream indices
+def downstream_path(idx0, idxs_ds):
+    """Returns path of downstream indices
     
     Parameters
     ----------
@@ -195,7 +197,8 @@ def downstream_all(idx0, idxs_ds):
 
     Returns
     -------
-    downstream indices : ndarray of int  
+    ndarray of int  
+        path of downstrewam indices
     """
     idxs = []
     idxs.append(idx0)
@@ -204,28 +207,26 @@ def downstream_all(idx0, idxs_ds):
         if idx0 == idx_ds:
             break
         idx0 = idx_ds
-        idxs.append(idx0)
-    return np.array(idxs)
+        idxs.append(np.uint32(idx0))
+    return np.array(idxs, dtype=np.uint32)
 
 
 @njit
-def _downstream_river(idx0, idxs_ds, river_flat):
-    """Return index of nearest downstream river 
-    cell for single index"""
-    at_stream = river_flat[idx0]
+def _downstream_mask(idx0, idxs_ds, mask_sparse):
+    """Returns index of nearest downstream True cell. For integer index"""
+    at_stream = mask_sparse[idx0]
     while not at_stream:
         idx_ds = idxs_ds[idx0]
         if idx_ds == idx0:  # pit
             break
         idx0 = idx_ds
-        at_stream = river_flat[idx0]
+        at_stream = mask_sparse[idx0]
     return idx0
 
 
 @njit
-def downstream_river(idxs0, idxs_ds, river_flat):
-    """Returns the next downstream index which is 
-    located on a river cell.
+def downstream_mask(idxs0, idxs_ds, mask_sparse):
+    """Returns index the next downstream True cell.
     
     Parameters
     ----------
@@ -238,13 +239,36 @@ def downstream_river(idxs0, idxs_ds, river_flat):
 
     Returns
     -------
-    downstream stream indices : ndarray of int  
+    ndarray of int  
+        downstream stream indices 
     """
-
     idx_out = np.zeros(idxs0.size, dtype=np.uint32)
     for i in range(idxs0.size):
-        idx_out[i] = _downstream_river(np.uint32(idxs0[i]), idxs_ds, river_flat)
+        idx_out[i] = _downstream_mask(np.uint32(idxs0[i]), idxs_ds, mask_sparse)
     return idx_out
+
+@njit
+def flwdir_window(idx0, n, idxs_ds, idxs_us, uparea_sparse, upa_min=0.0):
+    """Returns the indices of between the nth upstream to nth downstream cell from 
+    the current cell. Upstream cells are with based on the  _main_upstream method."""
+    idxs = np.full(n * 2 + 1, _mv, idxs_ds.dtype)
+    idxs[n] = idx0
+    # get n downstream cells
+    for i in range(n):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == idx0:  # pit
+            break
+        idx0 = idx_ds
+        idxs[n + i + 1] = idx0
+    # get n upstreams cells
+    idx0 = idxs[n]
+    for i in range(n):
+        idx_us = _main_upstream(idx0, idxs_us, uparea_sparse, upa_min=upa_min)
+        if idx_us == _mv:  # at headwater / no upstream cells
+            break
+        idx0 = idx_us
+        idxs[n - i - 1] = idx0
+    return idxs
 
 
 @njit
