@@ -183,3 +183,14 @@ def test_dem_adjust(d8):
     elevtn.flat[idxs0] = 2.0  # create values that need fix
     d8.adjust_elevation(elevtn)
     assert np.all(elevtn.flat[idxs0] == 1.0)
+
+
+def test_moving_average(d8):
+    data = np.random.random(d8.shape)
+    weigths = np.ones(d8.shape)
+    data_smooth = d8.moving_average(data, weigths, 1)
+    assert data_smooth.flat[d8._idxs_dense].max() < data.flat[d8._idxs_dense].max()
+    assert np.all(data_smooth.flat[d8._idxs_dense] != data.flat[d8._idxs_dense])
+    idx0 = d8._tree[-1][0]
+    idxs = d8._idxs_dense[np.array([idx0, d8._idxs_ds[idx0]])]
+    assert np.isclose(np.mean(data.flat[idxs]), data_smooth.flat[idxs[0]])

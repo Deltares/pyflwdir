@@ -8,14 +8,20 @@ import numpy as np
 
 from pyflwdir import numba_stats as ns
 
-def test_stats():
-    data = np.random.rand(10)
-    weights = np.random.rand(10)
-    assert np.average(data, weights=weights) == ns._average(data, weights, np.nan)
-    assert np.mean(data) == ns._mean(data, np.nan)
-    data[-1] = np.nan
-    assert np.average(data, weights=weights) != ns._average(data, weights, np.nan)
-    data = np.random.randint(0,10,10)
-    assert np.average(data, weights=weights) == ns._average(data, weights, np.nan)
 
-    
+def test_stats():
+    nodata = -9999.0
+    data = np.random.random(10)
+    weights = np.random.random(10)
+    assert np.isclose(
+        np.average(data, weights=weights), ns._average(data, weights, nodata)
+    )
+    assert np.isclose(np.mean(data), ns._mean(data, nodata))
+    data[-1] = nodata
+    assert np.isclose(
+        np.average(data[:-1], weights=weights[:-1]), ns._average(data, weights, nodata)
+    )
+    data = np.random.randint(0, 10, 10)
+    assert np.isclose(
+        np.average(data, weights=weights), ns._average(data, weights, nodata)
+    )

@@ -15,6 +15,7 @@ from pyflwdir import (
     core_nextidx,
     core_ldd,
     dem,
+    flwdir_stats,
     gis_utils,
     subgrid,
     tree,
@@ -741,6 +742,52 @@ class FlwdirRaster(object):
             elevtn_sparse=self._sparsify(elevtn),
         )
         return elevtn
+
+    def moving_average(
+        self, data, weights, n, nodata=-9999.0, min_uparea=0.0, uparea=None
+    ):
+        """Take the moving weighted average over the flow direction network
+        
+        Parameters
+        ----------
+        data : 2d array
+            values to be averaged
+        weights : 2D array
+            weights 
+        n : int
+            number of up/downstream neighbors to include
+        nodata : float, optional
+            Nodata values which is ignored when calculating the average
+            (by default -9999.0)
+        uparea : 2D array of float, optional
+            2D raster with upstream area, if None it is calculated 
+            (by default None)
+        min_uparea : float, optional
+            Minimum upstream area to be consided as stream. Only used if 
+            return_sublength is True. 
+            (by default 0.)
+
+        Returns
+        -------
+        2D array
+            averaged data
+        """
+        if uparea is None:
+            uparea = self.upstream_area()
+        elif not np.all(uparea.shape == self.shape):
+            raise ValueError("'uparea' shape does not match with flow direction shape")
+        data_out = np.full(data.shape, nodata, data.dtype)
+        data_out.flat[self._idxs_dense] = flwdir_stats.moving_average(
+            data=self._sparsify(data),
+            weights=self._sparsify(weights),
+            n=n,
+            idxs_ds=self._idxs_ds,
+            idxs_us=self._idxs_us,
+            uparea_sparse=self._sparsify(uparea),
+            upa_min=min_uparea,
+            nodata=nodata,
+        )
+        return data_out
 
     # def drainage_path_stats(self, rivlen, elevtn):
     #     if not np.all(rivlen.shape == self.shape):
