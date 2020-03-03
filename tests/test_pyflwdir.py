@@ -191,8 +191,10 @@ def test_dem_adjust(d8):
     elevtn = np.ones(d8.shape)
     idxs0 = d8._idxs_dense[d8._tree[30]]
     elevtn.flat[idxs0] = 2.0  # create values that need fix
-    d8.adjust_elevation(elevtn)
-    assert np.all(elevtn.flat[idxs0] == 1.0)
+    elevtn_new = d8.adjust_elevation(elevtn)
+    assert np.all(elevtn_new.flat[idxs0] == 1.0)
+    ndiff = np.sum(elevtn_new.flat[d8._idxs_dense] != elevtn.flat[d8._idxs_dense])
+    assert ndiff == idxs0.size
 
 
 def test_moving_average(d8):

@@ -774,9 +774,9 @@ class FlwdirRaster(object):
             idxs_ds=self._idxs_ds,
             idxs_us=self._idxs_us,
             tree=self._tree,
-            elevtn_sparse=self._sparsify(elevtn).copy(),
+            elevtn_sparse=self._sparsify(elevtn),
         )
-        return elevtn
+        return elevtn_out
 
     def moving_average(
         self, data, weights, n, nodata=-9999.0, min_uparea=0.0, uparea=None
