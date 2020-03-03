@@ -6,6 +6,8 @@ from numba import njit, vectorize
 import numpy as np
 from pyflwdir import core
 
+__all__ = []
+
 # LDD type
 _ftype = "ldd"
 _ds = np.array([[7, 8, 9], [4, 5, 6], [1, 2, 3]], dtype=np.uint8)

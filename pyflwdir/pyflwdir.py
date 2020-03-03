@@ -310,7 +310,7 @@ class FlwdirRaster(object):
             raise ValueError(msg)
         return ftypes[ftype].to_array(self._idxs_dense, self._idxs_ds, self.shape)
 
-    def basins(self, ids=None):
+    def basins(self, ids=None, idxs_pit=None):
         """Returns a basin map with a unique IDs for every basin. 
         
         If IDs are not provided, these start from 1 and the background value is 0.
@@ -319,13 +319,19 @@ class FlwdirRaster(object):
         ----------
         ids : ndarray of uint32, optional
             IDs of basins in some order as pits
-            (by Default these are numbered from 1)
+            (by default these are numbered from 1)
+        idxs_pit : array_like, optional
+            raster 1D indices of pits
+            (the default is None, in which case the pits are infered 
+            from flwdir data)
 
         Returns
         -------
-        ndarray of uint32
+        2D array of uint32
             basin map
         """
+        if idxs_pit is not None:
+            self.set_pits(idxs_pit=idxs_pit)
         if ids is None:
             ids = np.arange(self._tree[0].size, dtype=np.uint32) + 1
         else:
@@ -336,6 +342,36 @@ class FlwdirRaster(object):
                 raise ValueError("ids cannot contain a value zero")
         basids = tree.basins(self._tree, self._idxs_us, self._tree[0], ids)
         return self._densify(basids, nodata=np.uint32(0))
+
+    def basin_bounds(self, basins=None, affine=gis_utils.IDENTITY, **kwargs):
+        """Returns a table with the basin boundaries. At index 0 the total bounding 
+        box is given. 
+        
+        Kwargs are passed to the basins method which is used if no basins map is 
+        provided.
+        
+        Parameters
+        ----------
+        basins : 2D array of uint32, optional
+            2D raster with basin ids 
+            (by default None; calculated on the fly)
+        affine : affine transform
+            Two dimensional affine transform for 2D linear mapping
+            (the default is an identity transform; cell area = 1)
+            
+
+        Returns
+        -------
+        pandas.DataFrame
+            table bounds of basins
+        """
+
+        if basins is None:
+            basins = self.basins(**kwargs)
+        elif not np.all(basins.shape == self.shape):
+            raise ValueError("'basins' shape does not match with FlwdirRaster shape")
+        df = basin_utils.basin_bounds(basins, affine=affine)
+        return df
 
     def subbasins(self, idxs):
         """Returns a subbasin map with a unique ID for every subbasin. The IDs
@@ -381,7 +417,7 @@ class FlwdirRaster(object):
         if uparea is None:
             uparea = self.upstream_area()
         elif not np.all(uparea.shape == self.shape):
-            raise ValueError("'uparea' shape does not match with flow direction shape")
+            raise ValueError("'uparea' shape does not match with FlwdirRaster shape")
         pfaf = tree.pfafstetter(
             self._tree,
             self._idxs_us,
@@ -460,9 +496,7 @@ class FlwdirRaster(object):
             accumulated material map
         """
         if not np.all(material.shape == self.shape):
-            raise ValueError(
-                "'Material' shape does not match with flow direction shape."
-            )
+            raise ValueError("'Material' shape does not match with FlwdirRaster shape.")
         accu_flat = tree.accuflux(
             self._tree, self._idxs_us, self._sparsify(material), nodata
         )
@@ -566,7 +600,7 @@ class FlwdirRaster(object):
         if uparea is None:
             uparea = self.upstream_area()
         elif not np.all(uparea.shape == self.shape):
-            raise ValueError("'uparea' shape does not match with flow direction shape")
+            raise ValueError("'uparea' shape does not match with FlwdirRaster shape")
         # upscale flow directions
         fupscale = getattr(upscale, method)
         nextidx, subidxs_out = fupscale(
@@ -676,11 +710,11 @@ class FlwdirRaster(object):
         """
         subidxs_out0 = _check_convert_subidxs_out(subidxs_out, other)
         if not np.all(elevtn.shape == self.shape):
-            raise ValueError("'elevtn' shape does not match with flow direction shape")
+            raise ValueError("'elevtn' shape does not match with FlwdirRaster shape")
         if uparea is None:
             uparea = self.upstream_area(latlon=latlon, affine=affine)
         elif not np.all(uparea.shape == self.shape):
-            raise ValueError("'uparea' shape does not match with flow direction shape")
+            raise ValueError("'uparea' shape does not match with FlwdirRaster shape")
         rivlen, rivslp = subgrid.river_params(
             subidxs_out=self._sparse_idx(subidxs_out0),
             subidxs_dense=self._idxs_dense,
@@ -734,7 +768,7 @@ class FlwdirRaster(object):
             elevation raster
         """
         if not np.all(elevtn.shape == self.shape):
-            raise ValueError("'elevtn' shape does not match with flow direction shape")
+            raise ValueError("'elevtn' shape does not match with FlwdirRaster shape")
         elevtn.flat[self._idxs_dense] = dem.adjust_elevation(
             idxs_ds=self._idxs_ds,
             idxs_us=self._idxs_us,
@@ -775,7 +809,7 @@ class FlwdirRaster(object):
         if uparea is None:
             uparea = self.upstream_area()
         elif not np.all(uparea.shape == self.shape):
-            raise ValueError("'uparea' shape does not match with flow direction shape")
+            raise ValueError("'uparea' shape does not match with FlwdirRaster shape")
         data_out = np.full(data.shape, nodata, data.dtype)
         data_out.flat[self._idxs_dense] = flwdir_stats.moving_average(
             data=self._sparsify(data),
@@ -792,10 +826,10 @@ class FlwdirRaster(object):
     # def drainage_path_stats(self, rivlen, elevtn):
     #     if not np.all(rivlen.shape == self.shape):
     #         raise ValueError(
-    #             "'rivlen' shape does not match with flow direction shape")
+    #             "'rivlen' shape does not match with FlwdirRaster shape")
     #     if not np.all(elevtn.shape == self.shape):
     #         raise ValueError(
-    #             "'elevtn' shape does not match with flow direction shape")
+    #             "'elevtn' shape does not match with FlwdirRaster shape")
     #     df_out = basin_descriptors.mean_drainage_path_stats(
     #         self._tree, self._idxs_us, self._sparsify(rivlen),
     #         self._sparsify(elevtn))
@@ -825,7 +859,7 @@ def _check_convert_subidxs_out(subidxs_out, other):
         raise ValueError("'other' is not recognized as instance of FlwdirRaster")
     if not np.all(subidxs_out.shape == other.shape):
         raise ValueError(
-            "'subidxs_out' shape does not match with `other` flow direction shape"
+            "'subidxs_out' shape does not match with `other` FlwdirRaster shape"
         )
     subidxs_out0 = subidxs_out.ravel()[other._idxs_dense]
     if np.any(subidxs_out0 == core._mv):

@@ -7,6 +7,8 @@ from numba import njit
 
 from pyflwdir.core import downstream_path, _mv
 
+__all__ = []
+
 
 @njit
 def adjust_elevation(idxs_ds, idxs_us, tree, elevtn_sparse):

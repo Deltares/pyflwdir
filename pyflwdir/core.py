@@ -12,6 +12,7 @@ import heapq
 
 from pyflwdir import gis_utils
 
+__all__ = []
 _mv = np.uint32(-1)
 
 #### NETWORK TREE ####

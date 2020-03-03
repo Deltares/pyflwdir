@@ -6,6 +6,14 @@ from affine import identity as IDENTITY
 
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
 
+__all__ = [
+    "idxs_to_coords",
+    "affine_to_coords",
+    "reggrid_area",
+    "reggrid_dy",
+    "reggrid_dx",
+]
+
 
 def idxs_to_geoms(idxs_ds, xs, ys):
     """Returns a list of LineString for each up- downstream connection"""
@@ -94,21 +102,6 @@ def cellarea(lat, xres, yres):
     l2 = np.radians(lat + np.abs(yres) / 2.0)
     dx = np.radians(np.abs(xres))
     return _R ** 2 * dx * (np.sin(l2) - np.sin(l1))
-
-
-# @vectorize([
-#     "float64(float64,float64,float64,float64)",
-#     "float32(float32,float32,float32,float32)"
-# ])
-# def distance(lon1, lat1, lon2, lat2):
-#     """returns the great circle distance between two points on the earth [m]."""
-#     # haversine formula
-#     dlon = math.radians(lon2 - lon1)
-#     dlat = math.radians(lat2 - lat1)
-#     a = math.sin(
-#         dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
-#     c = 2 * math.asin(math.sqrt(a))
-#     return c * _R
 
 
 # latlon to length conversion

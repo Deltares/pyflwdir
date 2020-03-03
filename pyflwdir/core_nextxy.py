@@ -6,6 +6,8 @@ from numba import njit, vectorize
 import numpy as np
 from pyflwdir import core
 
+__all__ = []
+
 # NEXTXY type
 _ftype = "nextxy"
 _mv = np.int32(-9999)

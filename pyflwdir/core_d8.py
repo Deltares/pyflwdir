@@ -6,6 +6,8 @@ from numba import njit, vectorize
 import numpy as np
 from pyflwdir import core
 
+__all__ = []
+
 # D8 type
 _ftype = "d8"
 _ds = np.array([[32, 64, 128], [16, 0, 1], [8, 4, 2]], dtype=np.uint8)

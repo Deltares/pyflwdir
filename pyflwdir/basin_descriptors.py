@@ -6,7 +6,7 @@ from scipy import ndimage
 
 from pyflwdir import core, gis_utils
 
-__all__ = ["mean_drainage_path_stats"]
+__all__ = []
 
 
 @njit

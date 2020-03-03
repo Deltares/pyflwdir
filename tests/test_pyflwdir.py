@@ -130,7 +130,7 @@ def test_upstream_area(d8):
 
 
 def test_basins(d8):
-    basins = d8.basins()
+    basins = d8.basins(idxs_pit=d8.pits)
     assert basins.min() == 0
     assert basins.max() == 1  # NOTE specific to data with single pit
     assert basins.sum() == d8.ncells  # NOTE specific to data with single pit
@@ -139,6 +139,16 @@ def test_basins(d8):
     with pytest.raises(ValueError):
         d8.basins(ids=np.arange(2))
         d8.basins(ids=np.array([0]))
+
+
+def test_basin_bounds(d8):
+    df = d8.basin_bounds(basins=np.ones(d8.shape, dtype=np.uint32))
+    assert np.all(df.loc[0, ["ymax", "xmax"]].values == d8.shape)
+    idxs = d8._idxs_dense[d8._tree[30]]
+    df = d8.basin_bounds(idxs_pit=idxs)
+    assert df.index.size == idxs.size + 1
+    with pytest.raises(ValueError):
+        d8.basin_bounds(basins=np.ones((10, 10)))
 
 
 def test_upscale(d8, nextidx_data):

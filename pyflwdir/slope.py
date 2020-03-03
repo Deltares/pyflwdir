@@ -7,6 +7,8 @@ import numpy as np
 import math
 from pyflwdir import gis_utils
 
+__all__ = ["slope"]
+
 
 @njit
 def slope(dem, nodata, latlon=False, affine=gis_utils.IDENTITY):

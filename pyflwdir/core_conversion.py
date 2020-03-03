@@ -7,6 +7,8 @@ from numba import njit
 import numpy as np
 from pyflwdir import core_d8, core_ldd
 
+__all__ = ["d8_to_ldd", "ldd_to_d8"]
+
 
 def d8_to_ldd(flwdir):
     """Return ldd based on d8 array."""

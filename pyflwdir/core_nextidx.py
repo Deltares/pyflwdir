@@ -6,6 +6,8 @@ from numba import njit, vectorize
 import numpy as np
 from pyflwdir import core
 
+__all__ = []
+
 # NEXTIDX type
 #
 _ftype = "nextidx"

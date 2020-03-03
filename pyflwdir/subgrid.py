@@ -10,6 +10,7 @@ import math
 from pyflwdir import core, core_nextidx, gis_utils, upscale
 
 _mv = core._mv
+__all__ = []
 
 
 @njit

@@ -6,7 +6,7 @@ from numba import njit
 
 from pyflwdir import gis_utils
 
-# TODO check if basin in valid labeled array
+__all__ = ["basin_bounds", "basin_slices"]
 
 
 def basin_sum(data, basins):
@@ -52,7 +52,14 @@ def basin_bounds(basins, affine=gis_utils.IDENTITY):
     df["ymin"] -= abs(yres) / 2
     df["xmax"] += abs(xres) / 2
     df["ymax"] += abs(yres) / 2
-    return df.drop(columns=["yslice", "xslice"])
+    df = df.drop(columns=["yslice", "xslice"])
+    df.loc[0, ["xmin", "ymin", "xmax", "ymax"]] = [
+        df["xmin"].min(),
+        df["ymin"].min(),
+        df["xmax"].max(),
+        df["ymax"].max(),
+    ]
+    return df.sort_index()
 
 
 def total_basin_bounds(basins, affine=gis_utils.IDENTITY):
