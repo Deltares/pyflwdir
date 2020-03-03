@@ -769,11 +769,12 @@ class FlwdirRaster(object):
         """
         if not np.all(elevtn.shape == self.shape):
             raise ValueError("'elevtn' shape does not match with FlwdirRaster shape")
-        elevtn.flat[self._idxs_dense] = dem.adjust_elevation(
+        elevtn_out = np.full(self.shape, -9999.0, elevtn.dtype)
+        elevtn_out.flat[self._idxs_dense] = dem.adjust_elevation(
             idxs_ds=self._idxs_ds,
             idxs_us=self._idxs_us,
             tree=self._tree,
-            elevtn_sparse=self._sparsify(elevtn),
+            elevtn_sparse=self._sparsify(elevtn).copy(),
         )
         return elevtn
 
