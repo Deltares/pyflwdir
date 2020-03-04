@@ -959,6 +959,7 @@ def com_nextidx_iter2(
                                     and not us_new
                                     and outlet0
                                     and not idx_ds00_edit
+                                    and idx_ds0 != idx_ds00
                                     and in_d8(idx_ds0, idx_ds00, ncol)
                                 ):
                                     # update original next downstream cell
