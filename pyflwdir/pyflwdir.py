@@ -730,8 +730,8 @@ class FlwdirRaster(object):
         return other._densify(rivlen, -9999.0), other._densify(rivslp, -9999.0)
 
     def subconnect(self, other, subidxs_out):
-        """Returns binary array with ones if sugrid outlet cells are connected 
-        in d8.
+        """Returns array with 1 (0) if sugrid outlet cells are (not) connected in d8. 
+        Cells with missing flow direction data have a value -1.
         
         Parameters
         ----------
@@ -742,14 +742,15 @@ class FlwdirRaster(object):
         
         Returns
         -------
-        2D array of bool with other.shape
+        2D array of int8 with other.shape
             valid subgrid connection
         """
         subidxs_out0 = _check_convert_subidxs_out(subidxs_out, other)
-        subcon = subgrid.connected(
+        subcon = np.full(other.shape, -1, dtype=np.int8)
+        subcon.flat[other._idxs_dense] = subgrid.connected(
             self._sparse_idx(subidxs_out0), other._idxs_ds, self._idxs_ds
         )
-        return other._densify(subcon, True)
+        return subcon
 
     def adjust_elevation(self, elevtn):
         """Returns the hydrologically adjusted elevation where each downstream cell 

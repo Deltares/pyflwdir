@@ -197,7 +197,7 @@ def connected(subidxs_out, idxs_ds, subidxs_ds):
     outlets[subidxs_out] = True
     # allocate output. intialize 'True' map
     n = idxs_ds.size
-    connect_map = np.array([np.bool(1) for _ in range(n)])
+    connect_map = np.full(n, 1, np.int8)
     # loop over outlet cell indices
     for idx0 in range(n):
         subidx = subidxs_out[idx0]
@@ -206,7 +206,7 @@ def connected(subidxs_out, idxs_ds, subidxs_ds):
             subidx1 = subidxs_ds[subidx]  # next downstream subgrid cell index
             if outlets[subidx1] or subidx1 == subidx:  # at outlet or at pit
                 if subidx1 != subidxs_out[idx_ds]:
-                    connect_map[idx0] = False
+                    connect_map[idx0] = np.int8(0)
                 break
             # next iter
             subidx = subidx1
