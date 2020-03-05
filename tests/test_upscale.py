@@ -52,4 +52,4 @@ def test_upscale(d8):
         # check number of disconnected cells for each method
         subidxs_out0 = d8._sparse_idx(subidxs_out[d8_lr._idxs_dense])
         connect = subgrid.connected(subidxs_out0, d8_lr._idxs_ds, d8._idxs_ds)
-        assert np.sum(~connect) == mdict["n"], name
+        assert np.sum(connect==0) == mdict["n"], name
