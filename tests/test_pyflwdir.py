@@ -161,7 +161,7 @@ def test_upscale(d8, nextidx_data):
     subcon = d8.subconnect(d8_lr, idxout)
     assert subcon.flat[d8_lr._idxs_dense].min() == 0
     assert subcon.flat[d8_lr._idxs_dense].max() == 1
-    assert np.all(subcon[subcon<0] == -1)
+    assert np.all(subcon[subcon<0] == 255)
     subgrd = d8.subarea(d8_lr, idxout)
     assert subgrd.flat[d8_lr._idxs_dense].min() > 0
     rivlen, rivslp = d8.subriver(d8_lr, idxout, np.ones(d8.shape))

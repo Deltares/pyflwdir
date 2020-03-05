@@ -746,11 +746,10 @@ class FlwdirRaster(object):
             valid subgrid connection
         """
         subidxs_out0 = _check_convert_subidxs_out(subidxs_out, other)
-        subcon = np.full(other.shape, -1, dtype=np.int8)
-        subcon.flat[other._idxs_dense] = subgrid.connected(
+        subcon = subgrid.connected(
             self._sparse_idx(subidxs_out0), other._idxs_ds, self._idxs_ds
         )
-        return subcon
+        return other._densify(subcon, np.uint8(255))
 
     def adjust_elevation(self, elevtn):
         """Returns the hydrologically adjusted elevation where each downstream cell 
