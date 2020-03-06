@@ -598,10 +598,10 @@ class FlwdirRaster(object):
         if method not in methods:
             methodstr = "', '".join(methods)
             raise ValueError(f"Unknown method, select from: '{methodstr}'")
-        elif method == 'com2':
-            method = 'com'
+        elif method == "com2":
+            method = "com"
             kwargs = {"iter2": True}
-        elif method == 'com':
+        elif method == "com":
             kwargs = {"iter2": False}
         if uparea is None:
             uparea = self.upstream_area()

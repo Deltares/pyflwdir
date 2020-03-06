@@ -52,8 +52,8 @@ def update_idxs_ds_us(idx0, idx_ds, idx_ds0, idxs_ds, idxs_us, idxs_sparse):
     """Updates idxs_ds and idxs_us based on new idx_ds for idx0"""
     n = idxs_us.shape[1]
     # update idxs_ds
-    id0 = idxs_sparse[idx0]  # internal index
-    ids = idxs_sparse[idx_ds]  # internal index
+    id0 = idxs_sparse[idx0]  # sparse index
+    ids = idxs_sparse[idx_ds]  # sparse index
     idxs_ds[id0] = ids
     # update idxs_us at new idx_ds if not pit -> add idx0
     if idx0 != idx_ds:
@@ -69,7 +69,7 @@ def update_idxs_ds_us(idx0, idx_ds, idx_ds0, idxs_ds, idxs_us, idxs_sparse):
                 idxs_us[ids, i] = id0
                 break
     # update idxs_us at old idx_ds0 -> remove idx0
-    ids0 = idxs_sparse[idx_ds0]  # internal index
+    ids0 = idxs_sparse[idx_ds0]  # sparse index
     idxs_us0 = np.full(n, _mv, dtype=np.uint32)
     j = 0
     for i in range(n):
@@ -97,7 +97,7 @@ def cell_edge(subidx, subncol, cellsize):
 def map_celledge(subidxs_ds, subidxs_dense, subshape, cellsize):
     """Returns a map with ones on subgrid cells of lowres cell edges"""
     surbnrow, subncol = subshape
-    # allocate output and internal array
+    # allocate output and sparse array
     edges = np.full(surbnrow * subncol, -1, dtype=np.int8)
     # loop over valid indices
     for subidx in subidxs_dense:
@@ -116,7 +116,7 @@ def dmm_exitcell(subidxs_ds, subidxs_dense, subuparea, subshape, shape, cellsize
     Parameters
     ----------
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        sparse highres indices of downstream cells
     subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
@@ -135,14 +135,14 @@ def dmm_exitcell(subidxs_ds, subidxs_dense, subuparea, subshape, shape, cellsize
     """
     subncol = subshape[1]
     nrow, ncol = shape
-    # allocate output and internal array
+    # allocate output and sparse array
     subidxs_rep = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
     uparea = np.zeros(nrow * ncol, dtype=subuparea.dtype)
     # loop over valid indices
     for i in range(subidxs_dense.size):
         subidx = subidxs_dense[i]
         # NOTE including pits in the edge area is different from the original
-        ispit = subidxs_ds[i] == i  # NOTE internal index
+        ispit = subidxs_ds[i] == i  # NOTE sparse index
         edge = cell_edge(subidx, subncol, cellsize)
         # check upstream area if cell ispit or at effective area
         if ispit or edge:
@@ -167,7 +167,7 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape, shape, cellsiz
     subidxs_rep : ndarray of int
         highres indices of representative cells
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        sparse highres indices of downstream cells
     subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subshape : tuple of int
@@ -186,7 +186,7 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape, shape, cellsiz
     subsize = subnrow * subncol
     nrow, ncol = shape
     R = cellsize / 2
-    # internal indices
+    # sparse indices
     n = subidxs_dense.size
     subidxs_sparse = np.full(subsize, _mv, np.uint32)
     subidxs_sparse[subidxs_dense] = np.array([i for i in range(n)], dtype=np.uint32)
@@ -204,7 +204,7 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape, shape, cellsiz
         subr0 = (idx0 // ncol + dr) * cellsize - 0.5
         subc0 = (idx0 % ncol + dc) * cellsize - 0.5
         while True:
-            # next downstream subgrid cell index; NOTE use internal indices
+            # next downstream subgrid cell index; NOTE use sparse indices
             subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             if subidx1 == subidx:  # pit
@@ -233,7 +233,7 @@ def dmm(subidxs_ds, subidxs_dense, subuparea, subshape, cellsize):
     Parameters
     ----------
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        sparse highres indices of downstream cells
     subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
@@ -285,7 +285,7 @@ def effective_area(subidx, subncol, cellsize):
 def map_effare(subidxs_ds, subidxs_dense, subshape, cellsize):
     """Returns a map with ones on subgrid cells of lowres effective area."""
     surbnrow, subncol = subshape
-    # allocate output and internal array
+    # allocate output and sparse array
     effare = np.full(surbnrow * subncol, -1, dtype=np.int8)
     # loop over valid indices
     for subidx in subidxs_dense:
@@ -304,7 +304,7 @@ def eam_repcell(subidxs_ds, subidxs_dense, subuparea, subshape, shape, cellsize)
     Parameters
     ----------
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        sparse highres indices of downstream cells
     subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
@@ -322,14 +322,14 @@ def eam_repcell(subidxs_ds, subidxs_dense, subuparea, subshape, shape, cellsize)
     """
     subncol = subshape[1]
     nrow, ncol = shape
-    # allocate output and internal array
+    # allocate output and sparse array
     subidxs_rep = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
     uparea = np.zeros(nrow * ncol, dtype=subuparea.dtype)
-    # loop over internal indices
+    # loop over sparse indices
     for i in range(subidxs_dense.size):
         subidx = subidxs_dense[i]  # subgrid index
         # NOTE including pits is different from the original EAM
-        ispit = subidxs_ds[i] == i  # NOTE internal index
+        ispit = subidxs_ds[i] == i  # NOTE sparse index
         eff_area = effective_area(subidx, subncol, cellsize)
         idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
         # check upstream area if cell ispit or at effective area
@@ -353,7 +353,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape, shape, cellsiz
     subidxs_rep : ndarray of int
         highres indices of representative subgird cells
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        sparse highres indices of downstream cells
     subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subshape : tuple of int
@@ -369,7 +369,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape, shape, cellsiz
     """
     subnrow, subncol = subshape
     nrow, ncol = shape
-    # internal indices
+    # sparse indices
     n = subidxs_dense.size
     subidxs_sparse = np.full(subnrow * subncol, _mv, np.uint32)
     subidxs_sparse[subidxs_dense] = np.array([i for i in range(n)], dtype=np.uint32)
@@ -381,7 +381,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subidxs_dense, subshape, shape, cellsiz
         if subidx == _mv:
             continue
         while True:
-            # next downstream subgrid cell index; NOTE use internal indices
+            # next downstream subgrid cell index; NOTE use sparse indices
             subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             if subidx1 == subidx:  # at pit
@@ -405,7 +405,7 @@ def eam(subidxs_ds, subidxs_dense, subuparea, subshape, cellsize):
     Parameters
     ----------
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        sparse highres indices of downstream cells
     subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
@@ -462,7 +462,7 @@ def com_outlets(
     subidxs_rep : ndarray of int
         highres indices of representative cells with size shape[0]*shape[1]
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        sparse highres indices of downstream cells
     subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray of int
@@ -484,7 +484,7 @@ def com_outlets(
     """
     subnrow, subncol = subshape
     nrow, ncol = shape
-    # internal indices
+    # sparse indices
     n = subidxs_dense.size
     subidxs_sparse = np.full(subnrow * subncol, _mv, np.uint32)
     subidxs_sparse[subidxs_dense] = np.array([i for i in range(n)], dtype=np.uint32)
@@ -500,7 +500,7 @@ def com_outlets(
             subidx_prev_stream = _mv
             stream_len = 0
         while True:
-            # next downstream subgrid cell index; NOTE use internal indices
+            # next downstream subgrid cell index; NOTE use sparse indices
             subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
             if min_stream_len > 0:
                 subupa1 = subuparea[subidx1]
@@ -539,7 +539,7 @@ def com_nextidx(subidxs_out, subidxs_ds, subidxs_dense, subshape, shape, cellsiz
     subidxs_out : ndarray of int
         highres indices of outlet cells with size shape[0]*shape[1]
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        sparse highres indices of downstream cells
     subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subshape : tuple of int
@@ -556,7 +556,7 @@ def com_nextidx(subidxs_out, subidxs_ds, subidxs_dense, subshape, shape, cellsiz
     """
     subnrow, subncol = subshape
     nrow, ncol = shape
-    # internal indices
+    # sparse indices
     n = subidxs_dense.size
     subidxs_sparse = np.full(subnrow * subncol, _mv, np.uint32)
     subidxs_sparse[subidxs_dense] = np.array([i for i in range(n)], dtype=np.uint32)
@@ -570,7 +570,7 @@ def com_nextidx(subidxs_out, subidxs_ds, subidxs_dense, subshape, shape, cellsiz
             continue
         subidx_ds = _mv
         while True:
-            # next downstream subgrid cell index; NOTE use internal indices
+            # next downstream subgrid cell index; NOTE use sparse indices
             subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             if subidxs_out[idx1] == subidx1 or subidx1 == subidx:
@@ -606,7 +606,7 @@ def next_outlet(
 ):
     """Return lowres and subgrid indices of next outlet"""
     while True:
-        # next downstream subgrid cell index; NOTE use internal indices
+        # next downstream subgrid cell index; NOTE use sparse indices
         subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
         idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
         outlet = subidx1 == subidxs_out[idx1]
@@ -641,8 +641,8 @@ def com_nextidx_iter2(
     idxs_fix : ndarray of int
         lowres indices of cells which are disconnected in subgrid
     subidxs_ds : ndarray of int
-        internal subgrid indices of downstream cells
-        NOTE these are internal indices for valid cells only
+        sparse subgrid indices of downstream cells
+        NOTE these are sparse indices for valid cells only
     subidxs_dense : ndarray of int
         subgrid raster indices of vaild cells
     subuparea : ndarray of int
@@ -665,7 +665,7 @@ def com_nextidx_iter2(
     # parse nextidx
     idxs_dense, idxs_ds, _ = core_nextidx.from_array(nextidx.reshape(shape))
     idxs_us = core._idxs_us(idxs_ds)
-    # internal indices
+    # sparse indices
     n = idxs_dense.size
     idxs_sparse = np.full(size, _mv, np.uint32)
     idxs_sparse[idxs_dense] = np.array([i for i in range(n)], dtype=np.uint32)
@@ -895,7 +895,7 @@ def com_nextidx_iter2(
                         # connect lateral to next downstream subgrid outlet
                         while True:  # 4D
                             # next downstream subgrid cell index
-                            # NOTE use internal indices
+                            # NOTE use sparse indices
                             subidx1 = subidxs_dense[subidxs_ds[subidxs_sparse[subidx]]]
                             idx_ds = subidx_2_idx(subidx1, subncol, cellsize, ncol)
                             outlet = subidx1 == subidxs_out[idx_ds]
@@ -1046,7 +1046,7 @@ def com(
     Parameters
     ----------
     subidxs_ds : ndarray of int
-        internal highres indices of downstream cells
+        sparse highres indices of downstream cells
     subidxs_dense : ndarray of int
         highres raster indices of vaild cells
     subuparea : ndarray
