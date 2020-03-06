@@ -46,10 +46,10 @@ def test_upscale(d8):
         # check if in d8
         d8_lr.to_array(ftype="d8")
         pit_idxs = nextidx.flat[d8_lr.pits]
-        assert np.unique(pit_idxs).size == pit_idxs.size, name
+        assert np.unique(pit_idxs).size == pit_idxs.size, f"{name} failed"
         pitbas = basins[subidxs_out[d8_lr.pits]]
-        assert np.unique(pitbas).size == pitbas.size, name
+        assert np.unique(pitbas).size == pitbas.size, f"{name} failed"
         # check number of disconnected cells for each method
         subidxs_out0 = d8._sparse_idx(subidxs_out[d8_lr._idxs_dense])
         connect = subgrid.connected(subidxs_out0, d8_lr._idxs_ds, d8._idxs_ds)
-        assert np.sum(connect==0) == mdict["n"], name
+        assert np.sum(connect == 0) == mdict["n"], f"{name} failed"

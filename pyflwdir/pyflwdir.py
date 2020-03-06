@@ -555,7 +555,7 @@ class FlwdirRaster(object):
         gdf["pit"] = self._idxs_ds == np.arange(self.ncells)
         return gdf
 
-    def upscale(self, scale_factor, method="com", uparea=None, **kwargs):
+    def upscale(self, scale_factor, method="com2", uparea=None):
         """Upscale flow direction network to lower resolution. 
         Available methods are Connecting Outlets Method (COM) [2]_, 
         Effective Area Method (EAM) [3]_ and Double Maximum Method (DMM) [4]_.
@@ -589,7 +589,8 @@ class FlwdirRaster(object):
         ndarray of uint32
             1D raster indices of subgrid outlets
         """
-        methods = ["com", "eam", "dmm"]
+        # TODO add com2 method as default
+        methods = ["com2", "com", "eam", "dmm"]
         if self.ftype not in ["d8", "ldd"]:
             raise ValueError(
                 "The upscale method only works for D8 or LDD flow directon data."
@@ -597,6 +598,11 @@ class FlwdirRaster(object):
         if method not in methods:
             methodstr = "', '".join(methods)
             raise ValueError(f"Unknown method, select from: '{methodstr}'")
+        elif method == 'com2':
+            method = 'com'
+            kwargs = {"iter2": True}
+        elif method == 'com':
+            kwargs = {"iter2": False}
         if uparea is None:
             uparea = self.upstream_area()
         elif not np.all(uparea.shape == self.shape):

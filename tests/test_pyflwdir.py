@@ -152,16 +152,16 @@ def test_basin_bounds(d8):
 
 
 def test_upscale(d8, nextidx_data):
-    d8_lr, idxout = d8.upscale(10)
     with pytest.raises(ValueError):
         d8.upscale(10, method="unknown")  # unknown method
         # works only for D8/LDD
         pyflwdir.from_array(nextidx, ftype="nextidx").upscale(10)
         d8.upscale(10, uparea=np.ones(d8.shape).ravel())  # wrong uparea shape
+    d8_lr, idxout = d8.upscale(10)
     subcon = d8.subconnect(d8_lr, idxout)
     assert subcon.flat[d8_lr._idxs_dense].min() == 0
     assert subcon.flat[d8_lr._idxs_dense].max() == 1
-    assert np.all(subcon[subcon<0] == 255)
+    assert np.all(subcon[subcon < 0] == 255)
     subgrd = d8.subarea(d8_lr, idxout)
     assert subgrd.flat[d8_lr._idxs_dense].min() > 0
     rivlen, rivslp = d8.subriver(d8_lr, idxout, np.ones(d8.shape))
