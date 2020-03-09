@@ -4,6 +4,7 @@
 """"""
 
 import numpy as np
+from affine import Affine
 import pprint
 import pickle
 from pyflwdir import (
@@ -22,13 +23,16 @@ from pyflwdir import (
     upscale,
 )
 
-ftypes = {
+# global variables
+from affine import identity as IDENTITY
+
+FTYPES = {
     core_d8._ftype: core_d8,
     core_ldd._ftype: core_ldd,
     core_nextxy._ftype: core_nextxy,
     core_nextidx._ftype: core_nextidx,
 }
-ftypes_str = " ,".join(list(ftypes.keys()))
+AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1.0}
 
 # export
 __all__ = ["FlwdirRaster", "from_array", "load"]
@@ -41,7 +45,7 @@ __all__ = ["FlwdirRaster", "from_array", "load"]
 def _infer_ftype(flwdir):
     """infer flowdir type from data"""
     ftype = None
-    for _, fd in ftypes.items():
+    for _, fd in FTYPES.items():
         if fd.isvalid(flwdir):
             ftype = fd._ftype
             break
@@ -51,7 +55,7 @@ def _infer_ftype(flwdir):
 
 
 def from_array(
-    data, ftype="infer", check_ftype=True,
+    data, ftype="infer", check_ftype=True, transform=IDENTITY, latlon=False,
 ):
     """Flow direction raster array parsed to actionable format.
     
@@ -65,6 +69,13 @@ def from_array(
     check_ftype : bool, optional
         check if valid flow direction raster, only if ftype is not 'infer'
         (the default is True)
+    transform : affine transform
+        Two dimensional affine transform for 2D linear mapping. The default is an 
+        identity transform.
+    latlon : bool, optional
+        True if WGS84 coordinate reference system. If True it converts the cell areas 
+        from degree to metres, otherwise it assumes cell areas are in unit metres.
+
     """
     if ftype == "infer":
         ftype = _infer_ftype(data)
@@ -80,7 +91,7 @@ def from_array(
         raise ValueError("Flow direction array should be 2 dimensional")
 
     # parse data
-    fd = ftypes[ftype]
+    fd = FTYPES[ftype]
     if check_ftype and not fd.isvalid(data):
         raise ValueError(f'The flow direction type is not recognized as "{ftype}".')
     idxs_dense, idxs_ds, idxs_pit = fd.from_array(data)
@@ -92,6 +103,8 @@ def from_array(
         idxs_pit=idxs_pit,
         shape=shape,
         ftype=ftype,
+        transform=transform,
+        latlon=latlon,
     )
 
 
@@ -129,29 +142,46 @@ class FlwdirRaster(object):
     """
 
     def __init__(
-        self, idxs_dense, idxs_ds, idxs_pit, shape, ftype,
+        self,
+        idxs_dense,
+        idxs_ds,
+        idxs_pit,
+        shape,
+        ftype,
+        transform=IDENTITY,
+        latlon=False,
     ):
-        """Flow direction raster array parsed to actionable format.
+        """Flow direction raster array 
         
         Parameters
         ----------
-        data : ndarray
-            flow direction raster data
-        ftype : {'d8', 'ldd', 'nextxy', 'nextidx'}, optional
-            name of flow direction type, infer from data if 'infer'
-            (the default is 'infer')
-        check_ftype : bool, optional
-            check if valid flow direction raster, only if ftype is not 'infer'
-            (the default is True)
+        idxs_dense : ndarray of int
+            linear dense indices
+        idxs_pit, idxs_us : ndarray of int
+            linear sparse indices of pit, upstream cells
+        shape : tuple of int
+            shape of raster
+        ftype : {'d8', 'ldd', 'nextxy', 'nextidx'}
+            flow direction type
+        transform : affine transform
+            Two dimensional affine transform for 2D linear mapping. The default is an 
+            identity transform.
+        latlon : bool, optional
+            True if WGS84 coordinate reference system. If True it converts the cell 
+            areas from degree to metres, otherwise it assumes cell areas are in unit 
+            metres. The default is False.
+        
         """
-        if not ftype in ftypes.keys():
-            raise ValueError(f"Unknown ftype {ftype}. Choose from {ftypes_str}")
+        if not ftype in FTYPES.keys():
+            ftypes_str = '" ,"'.join(list(FTYPES.keys()))
+            raise ValueError(f'Unknown ftype {ftype}. Choose from: "{ftypes_str}"')
 
         # properties
         self.shape = shape
         self.size = np.multiply(*self.shape)
         self.ftype = ftype
-        self._core = ftypes[ftype]
+        self._core = FTYPES[ftype]
+        self.set_transform(transform, latlon)
 
         # data
         self._idxs_dense = idxs_dense
@@ -179,6 +209,8 @@ class FlwdirRaster(object):
         return {
             "ftype": self.ftype,
             "shape": self.shape,
+            "transform": self.transform,
+            "latlon": self.latlon,
             "idxs_dense": self._idxs_dense,
             "idxs_ds": self._idxs_ds,
             "idxs_pit": self._idxs_pit,
@@ -194,12 +226,6 @@ class FlwdirRaster(object):
             1D raster indices of pit
         """
         return self._idxs_dense[self._idxs_pit]
-
-    def dump(self, fn):
-        """Serialize object to file using pickle library.      
-        """
-        with open(fn, "wb") as handle:
-            pickle.dump(self._dict, handle, protocol=-1)
 
     @property
     def _idxs_us(self):
@@ -278,7 +304,28 @@ class FlwdirRaster(object):
         """
         if idxs_pit is not None:
             self.set_pits(idxs_pit=idxs_pit, streams=streams)
-        self._tree_ = core.network_tree(self._idxs_pit, self._idxs_us)
+        self._tree_ = tree.network_tree(self._idxs_pit, self._idxs_us)
+
+    def set_transform(self, transform, latlon=False):
+        """Set transform affine
+        
+        Parameters
+        ----------
+        transform : affine transform
+            Two dimensional affine transform for 2D linear mapping. The default is an 
+            identity transform.
+        latlon : bool, optional
+            True if WGS84 coordinate reference system. If True it converts the cell 
+            areas from degree to metres, otherwise it assumes cell areas are in unit 
+            metres. The default is False.
+        """
+        if not isinstance(transform, Affine):
+            try:
+                transform = Affine(*transform)
+            except TypeError:
+                raise ValueError("invalid transform")
+        self.transform = transform
+        self.latlon = latlon
 
     def repair(self):
         """Repairs loops by set a pit at every cell witch does not drain to 
@@ -288,6 +335,12 @@ class FlwdirRaster(object):
             # set pits for all loop indices !
             self._idxs_ds[repair_idx] = repair_idx
             self._idxs_pit = core.pit_indices[self._idxs_ds]
+
+    def dump(self, fn):
+        """Serialize object to file using pickle library.      
+        """
+        with open(fn, "wb") as handle:
+            pickle.dump(self._dict, handle, protocol=-1)
 
     def to_array(self, ftype=None):
         """Return 2D flow direction array. 
@@ -305,10 +358,10 @@ class FlwdirRaster(object):
         """
         if ftype is None:
             ftype = self.ftype
-        if ftype not in ftypes:
+        if ftype not in FTYPES:
             msg = f'The flow direction type "{ftype}" is not recognized.'
             raise ValueError(msg)
-        return ftypes[ftype].to_array(self._idxs_dense, self._idxs_ds, self.shape)
+        return FTYPES[ftype].to_array(self._idxs_dense, self._idxs_ds, self.shape)
 
     def basins(self, ids=None, idxs_pit=None):
         """Returns a basin map with a unique IDs for every basin. 
@@ -343,7 +396,7 @@ class FlwdirRaster(object):
         basids = tree.basins(self._tree, self._idxs_us, self._tree[0], ids)
         return self._densify(basids, nodata=np.uint32(0))
 
-    def basin_bounds(self, basins=None, affine=gis_utils.IDENTITY, **kwargs):
+    def basin_bounds(self, basins=None, **kwargs):
         """Returns a table with the basin boundaries. At index 0 the total bounding 
         box is given. 
         
@@ -355,11 +408,7 @@ class FlwdirRaster(object):
         basins : 2D array of uint32, optional
             2D raster with basin ids 
             (by default None; calculated on the fly)
-        affine : affine transform
-            Two dimensional affine transform for 2D linear mapping
-            (the default is an identity transform; cell area = 1)
             
-
         Returns
         -------
         pandas.DataFrame
@@ -370,7 +419,7 @@ class FlwdirRaster(object):
             basins = self.basins(**kwargs)
         elif not np.all(basins.shape == self.shape):
             raise ValueError("'basins' shape does not match with FlwdirRaster shape")
-        df = basin_utils.basin_bounds(basins, affine=affine)
+        df = basin_utils.basin_bounds(basins, transform=self.transform)
         return df
 
     def subbasins(self, idxs):
@@ -427,7 +476,7 @@ class FlwdirRaster(object):
         )
         return self._densify(pfaf, np.uint32(0))
 
-    def upstream_area(self, affine=gis_utils.IDENTITY, latlon=False, mult=1):
+    def upstream_area(self, unit="cell"):
         """Returns the upstream area map based on the flow direction map. 
         
         If latlon is True it converts the cell areas to metres, otherwise it
@@ -435,29 +484,27 @@ class FlwdirRaster(object):
         
         Parameters
         ----------
-        latlon : bool, optional
-            True if WGS84 coordinates
-            (the default is False)
-        affine : affine transform
-            Two dimensional affine transform for 2D linear mapping
-            (the default is an identity transform; cell area = 1)
-        mult : float, optional
-            Multiplication factor for unit conversion
-            (the default is 1)
+        unit : {'m2', 'ha', 'km2', 'cell'}
+            Upstream area unit.
+
         Returns
         -------
         2D array of float
             upstream area map [m2]
         """
+        if unit not in AREA_FACTORS:
+            fstr = '", "'.join(AREA_FACTORS.keys())
+            raise ValueError(f'Unknown unit. Select from "{fstr}"')
+
         uparea = tree.upstream_area(
             self._tree,
             self._idxs_us,
             self._idxs_dense,
             self.shape[1],
-            affine=affine,
-            latlon=latlon,
+            transform=IDENTITY if unit == "cell" else self.transform,
+            latlon=self.latlon,
         )
-        return self._densify(uparea * mult, nodata=-9999.0)
+        return self._densify(uparea / AREA_FACTORS[unit], nodata=-9999.0)
 
     def stream_order(self):
         """Returns the Strahler Order map [1]_. 
@@ -502,9 +549,7 @@ class FlwdirRaster(object):
         )
         return self._densify(accu_flat, nodata=nodata)
 
-    def vector(
-        self, min_order=1, xs=None, ys=None, affine=gis_utils.IDENTITY, crs=None
-    ):
+    def vector(self, min_order=1, xs=None, ys=None, crs=None):
         """Returns a GeoDataFrame with river segments. Segments are LineStrings 
         connecting cell from down to upstream. 
         
@@ -520,9 +565,6 @@ class FlwdirRaster(object):
         xs, ys : ndarray of float
             Raster with cell x, y coordinates 
             (the default is None, taking the cell center coordinates)
-        affine : affine transform
-            Two dimensional affine transform for 2D linear mapping
-            (the default is an identity transform)
         crs : str, optional 
             Coordinate reference system to use for the returned GeoDataFrame
         
@@ -541,12 +583,13 @@ class FlwdirRaster(object):
             )
         # get geoms and make geopandas dataframe
         if xs is None or ys is None:
-            xs, ys = gis_utils.idxs_to_coords(self._idxs_dense, affine, self.shape)
+            xs, ys = gis_utils.idxs_to_coords(
+                self._idxs_dense, self.transform, self.shape
+            )
         else:
             if xs.size != self.size or ys.size != self.size:
-                raise ValueError(
-                    "'xs' and/or 'ys' size does not match with  flow direction size"
-                )
+                msg = "'xs' and/or 'ys' size does not match with  flow direction size"
+                raise ValueError(msg)
             xs, ys = xs.ravel()[self._idxs_dense], ys.ravel()[self._idxs_dense]
         geoms = gis_utils.idxs_to_geoms(self._idxs_ds, xs, ys)
         gdf = gp.GeoDataFrame(geometry=geoms, crs=crs)
@@ -625,12 +668,9 @@ class FlwdirRaster(object):
             )
         return dir_lr, subidxs_out
 
-    def subarea(self, other, subidxs_out, affine=gis_utils.IDENTITY, latlon=False):
+    def subarea(self, other, subidxs_out, unit="cell"):
         """Returns the subgrid cell area, which is the specific area draining 
         to the outlet of a cell.
-
-        If latlon is True it converts the cell areas to metres, otherwise it
-        assumes the coordinate unit is metres.
         
         Parameters
         ----------
@@ -638,42 +678,36 @@ class FlwdirRaster(object):
             upscaled Flow Direction Raster
         subidxs_out : 2D array of int
             flattened raster indices of subgrid outlets
-        affine : affine transform
-            Two dimensional affine transform for 2D linear mapping
-            (the default is an identity transform; cell area = 1)
-        latlon : bool, optional
-            True if WGS84 coordinates
-            (the default is False)
-        
+        unit : {'m2', 'ha', 'km2', 'cell'}
+            Upstream area unit.
+
         Returns
         -------
         2D array of float with other.shape
             subgrid cell area [m2]
         """
+        if unit not in AREA_FACTORS:
+            fstr = '", "'.join(AREA_FACTORS.keys())
+            raise ValueError(f'Unknown unit. Select from "{fstr}"')
+
         subidxs_out0 = _check_convert_subidxs_out(subidxs_out, other)
         if np.any(subidxs_out0 == core._mv):
             raise ValueError(
                 "invalid 'subidxs_out' with missing values at valid indices."
             )
+
         subare = subgrid.cell_area(
             self._sparse_idx(subidxs_out0),
             self._idxs_dense,
             self._idxs_us,
             self.shape,
-            latlon=latlon,
-            affine=affine,
+            latlon=self.latlon,
+            transform=IDENTITY if unit == "cell" else self.transform,
         )
-        return other._densify(subare, -9999.0)
+        return other._densify(subare / AREA_FACTORS[unit], -9999.0)
 
     def subriver(
-        self,
-        other,
-        subidxs_out,
-        elevtn,
-        uparea=None,
-        min_uparea=0.0,
-        latlon=False,
-        affine=gis_utils.IDENTITY,
+        self, other, subidxs_out, elevtn, uparea=None, min_uparea=0.0,
     ):
         """Returns the subgrid river length and slope per lowres cell. The 
         subgrid river is defined by the path starting at the subgrid outlet 
@@ -682,8 +716,6 @@ class FlwdirRaster(object):
         
         A mimumum upstream area can be set to discriminate river cells.
 
-        If latlon is True it converts the cell areas to metres, otherwise it
-        assumes the coordinate unit is metres.
         
         Parameters
         ----------
@@ -700,12 +732,6 @@ class FlwdirRaster(object):
             Minimum upstream area to be consided as stream. Only used if 
             return_sublength is True. 
             (by default 0.)
-        latlon : bool, optional
-            True if WGS84 coordinates
-            (the default is False)
-        affine : affine transform
-            Two dimensional affine transform for 2D linear mapping
-            (the default is an identity transform; cell length = 1)
         
         Returns
         -------
@@ -718,7 +744,7 @@ class FlwdirRaster(object):
         if not np.all(elevtn.shape == self.shape):
             raise ValueError("'elevtn' shape does not match with FlwdirRaster shape")
         if uparea is None:
-            uparea = self.upstream_area(latlon=latlon, affine=affine)
+            uparea = self.upstream_area()
         elif not np.all(uparea.shape == self.shape):
             raise ValueError("'uparea' shape does not match with FlwdirRaster shape")
         rivlen, rivslp = subgrid.river_params(
@@ -730,8 +756,8 @@ class FlwdirRaster(object):
             subelevtn=elevtn.flat[self._idxs_dense],
             subshape=self.shape,
             min_uparea=min_uparea,
-            latlon=latlon,
-            affine=affine,
+            latlon=self.latlon,
+            transform=self.transform,
         )
         return other._densify(rivlen, -9999.0), other._densify(rivslp, -9999.0)
 
@@ -851,7 +877,7 @@ class FlwdirRaster(object):
         return data.flat[self._idxs_dense]
 
     def _sparse_idx(self, idx):
-        """Transform linear indices of dense array to sparse indices."""
+        """Transforms linear indices of dense array to sparse indices."""
         # NOTE: should we throw an error if any idx is invalid ?
         idx_sparse = core._sparse_idx(idx, self._idxs_dense, self.size)
         valid = np.logical_and(idx_sparse >= 0, idx_sparse < self.ncells)

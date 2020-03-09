@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 
 import pyflwdir
-from pyflwdir import core, core_d8, core_nextxy, core_ldd, core_nextidx
+from pyflwdir import core, core_d8, core_nextxy, core_ldd, core_nextidx, tree
 from pyflwdir.core_conversion import ldd_to_d8, d8_to_ldd
 from pyflwdir.core import _mv
 
@@ -27,8 +27,8 @@ def d8_parsed(_d8):
 @pytest.fixture
 def d8_us_tree(d8_parsed):
     idxs_us = core._idxs_us(d8_parsed[1])
-    tree = core.network_tree(d8_parsed[2], idxs_us)
-    return idxs_us, tree
+    _tree = tree.network_tree(d8_parsed[2], idxs_us)
+    return idxs_us, _tree
 
 
 @pytest.fixture
@@ -162,11 +162,11 @@ def test_downstream_length():
 def test_core_tree(d8_parsed, d8_us_tree):
     """test core.py submodule with actual flwdir data"""
     idxs_dense, idxs_ds, idxs_pit = d8_parsed
-    idxs_us, tree = d8_us_tree
+    idxs_us, _tree = d8_us_tree
     # test us indices
     assert idxs_us[idxs_us != _mv].size + idxs_pit.size == idxs_ds.size
     # test network tree
-    assert np.array([leave.size for leave in tree]).sum() == idxs_ds.size
+    assert np.array([leave.size for leave in _tree]).sum() == idxs_ds.size
 
 
 def test_core_sparse(_d8, d8_parsed):
@@ -186,7 +186,7 @@ def test_core_sparse(_d8, d8_parsed):
 
 def test_core_up_downstream(d8_parsed, d8_us_tree):
     idxs_dense, idxs_ds, idxs_pit = d8_parsed
-    idxs_us, tree = d8_us_tree
+    idxs_us, _tree = d8_us_tree
     # test upstream functions
     for idx0 in [idxs_pit[0], idxs_pit]:
         assert np.all(
@@ -200,8 +200,8 @@ def test_core_up_downstream(d8_parsed, d8_us_tree):
     idxs_us_main = core.main_upstream(idxs, idxs_us, upa)
     assert np.all(idxs_us_main == idxs_us[:, 0])
     # test all downstream indices
-    idxs = core.downstream_path(tree[-1][0], idxs_ds)
-    assert idxs.size == len(tree)
+    idxs = core.downstream_path(_tree[-1][0], idxs_ds)
+    assert idxs.size == len(_tree)
     # test downstream_mask with only stream cell at pit
     river_sparse = np.zeros(idxs_ds.size, dtype=np.bool)
     river_sparse[idxs_pit] = True
@@ -213,13 +213,13 @@ def test_core_up_downstream(d8_parsed, d8_us_tree):
 
 def test_core_window(d8_parsed, d8_us_tree):
     idxs_dense, idxs_ds, idxs_pit = d8_parsed
-    idxs_us, tree = d8_us_tree
+    idxs_us, _tree = d8_us_tree
     upa = np.zeros(idxs_ds.size)
-    idxs = core.flwdir_window(tree[2][0], 2, idxs_ds, idxs_us, upa)
+    idxs = core.flwdir_window(_tree[2][0], 2, idxs_ds, idxs_us, upa)
     assert idxs.size == 5 and np.all(idxs != _mv)
-    idxs = core.flwdir_window(tree[1][0], 2, idxs_ds, idxs_us, upa)
+    idxs = core.flwdir_window(_tree[1][0], 2, idxs_ds, idxs_us, upa)
     assert idxs.size == 5 and np.sum(idxs[-1:] == _mv)
-    idxs = core.flwdir_window(tree[-1][0], 2, idxs_ds, idxs_us, upa)
+    idxs = core.flwdir_window(_tree[-1][0], 2, idxs_ds, idxs_us, upa)
     assert idxs.size == 5 and np.all(idxs[:2] == _mv)
 
 

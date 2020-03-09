@@ -14,12 +14,14 @@ def basin_sum(data, basins):
     return ndimage.sum(data, basins, index=lbs)
 
 
-def basin_area(basins, affine=gis_utils.IDENTITY, latlon=False):
+def basin_area(basins, transform=gis_utils.IDENTITY, latlon=False):
     if latlon:
-        lon, lat = gis_utils.affine_to_coords(affine, basins.shape)
+        lon, lat = gis_utils.affine_to_coords(transform, basins.shape)
         area = gis_utils.reggrid_area(lat, lon)
     else:
-        area = np.ones(basins.shape, dtype=np.float32) * abs(affine[0] * affine[4])
+        area = np.ones(basins.shape, dtype=np.float32) * abs(
+            transform[0] * transform[4]
+        )
     return basin_sum(area, basins)
 
 
@@ -34,10 +36,10 @@ def basin_slices(basins):
     return df
 
 
-def basin_bounds(basins, affine=gis_utils.IDENTITY):
+def basin_bounds(basins, transform=gis_utils.IDENTITY):
     df = basin_slices(basins)
-    xres, yres = affine[0], affine[4]
-    lons, lats = gis_utils.affine_to_coords(affine, basins.shape)
+    xres, yres = transform[0], transform[4]
+    lons, lats = gis_utils.affine_to_coords(transform, basins.shape)
     xs = np.array([(s.start, s.stop) for s in df["xslice"]])
     ys = np.array([(s.start, s.stop) for s in df["yslice"]])
     if yres < 0:
@@ -62,8 +64,8 @@ def basin_bounds(basins, affine=gis_utils.IDENTITY):
     return df.sort_index()
 
 
-def total_basin_bounds(basins, affine=gis_utils.IDENTITY):
-    b = basin_bounds(basins, affine=affine)
+def total_basin_bounds(basins, transform=gis_utils.IDENTITY):
+    b = basin_bounds(basins, transform=transform)
     bbox = np.array(
         [b["xmin"].min(), b["ymin"].min(), b["xmax"].max(), b["ymax"].max(),]
     )

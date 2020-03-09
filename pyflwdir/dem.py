@@ -10,6 +10,12 @@ from pyflwdir.core import downstream_path, _mv
 __all__ = []
 
 
+# TODO
+def from_dem():
+    """derive flow direction from elevation data"""
+    raise NotImplementedError()
+
+
 @njit
 def adjust_elevation(idxs_ds, idxs_us, tree, elevtn_sparse):
     """Given a flow direction map, remove pits in the elevation map.

@@ -15,7 +15,7 @@ from pyflwdir import gis_utils
 __all__ = []
 _mv = np.uint32(-1)
 
-#### NETWORK TREE ####
+
 @njit
 def _idxs_us(idxs_ds):
     """Return a 2D array with upstream cell indices for each cell 
@@ -44,34 +44,6 @@ def _idxs_us(idxs_ds):
         idxs_us[i_ds][ii] = i
         n_up[i_ds] += 1
     return idxs_us
-
-
-@njit
-def network_tree(idxs_pits, idxs_us):
-    """Return network tree, a list of arrays ordered 
-    from down to upstream.
-    
-    Parameters
-    ----------
-    idxs_pit, idxs_us : ndarray of int
-        indices of pit, upstream cells
-
-    Returns
-    -------
-    Ordered indices : List of arrays 
-    """
-    # TODO: test if this works faster with single array per pit
-    tree = List()
-    tree.append(idxs_pits)
-    idxs = idxs_pits
-    # move upstream
-    while True:
-        idxs_us0 = upstream(idxs, idxs_us)
-        if idxs_us0.size == 0:  # break if no more upstream
-            break
-        tree.append(idxs_us0)  # append next leave to tree
-        idxs = idxs_us0  # next loop
-    return tree  # down- to upstream
 
 
 #### UPSTREAM  functions ####

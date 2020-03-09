@@ -24,7 +24,7 @@ def river_params(
     subshape,
     min_uparea=0.0,
     latlon=False,
-    affine=gis_utils.IDENTITY,
+    transform=gis_utils.IDENTITY,
 ):
     """Returns the subgrid river length and slope per lowres cell. The 
     subgrid river is defined by the path starting at the subgrid outlet 
@@ -53,7 +53,7 @@ def river_params(
     latlon : bool, optional
         True if WGS84 coordinates
         (the default is False)
-    affine : affine transform
+    transform : affine transform
         Two dimensional transform for 2D linear mapping
         (the default is an identity transform; cell length = 1)
 
@@ -86,7 +86,7 @@ def river_params(
                 break
             # update length
             l += core.downstream_length(
-                subidx1, subidxs_ds, subidxs_dense, subncol, latlon, affine
+                subidx1, subidxs_ds, subidxs_dense, subncol, latlon, transform
             )[1]
             # break if at upstream subgrid outlet
             if outlets[subidx1]:
@@ -109,7 +109,7 @@ def cell_area(
     subidxs_us,
     subshape,
     latlon=False,
-    affine=gis_utils.IDENTITY,
+    transform=gis_utils.IDENTITY,
 ):
     """Returns the subgrid cell area. 
     
@@ -126,7 +126,7 @@ def cell_area(
     latlon : bool, optional
         True if WGS84 coordinates
         (the default is False)
-    affine : affine transform
+    transform : affine transform
         Two dimensional transform for 2D linear mapping
         (the default is an identity transform which results 
         in an area of 1 for every cell)
@@ -137,7 +137,7 @@ def cell_area(
         subgrid cell area
     """
     subncol = subshape[1]
-    xres, yres, north = affine[0], affine[4], affine[5]
+    xres, yres, north = transform[0], transform[4], transform[5]
     area0 = abs(xres * yres)
     # binary array with outlets
     subn = subidxs_dense.size

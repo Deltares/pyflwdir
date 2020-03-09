@@ -55,8 +55,6 @@ def test_object(d8_data, ldd_data, nextxy_data, nextidx_data):
         assert fd.ftype == name
         assert fd.size == 678 * 776
         assert fd.shape == (678, 776)
-        assert fd._idxs_us_ is None
-        assert fd._tree_ is None
         npits = fd._idxs_pit.size
         nus = fd._idxs_us[fd._idxs_us != _mv].size
         nds = fd._idxs_ds.size
@@ -75,6 +73,7 @@ def test_object(d8_data, ldd_data, nextxy_data, nextidx_data):
         pyflwdir.from_array(
             np.array([2]), ftype="d8", check_ftype=True
         )  # invalid data: too small
+        pyflwdir.from_array(d8_data, ftype="d8", transform=(0, 0))  # invalid transform
 
 
 def test_toarray(d8, d8_data):
@@ -124,9 +123,12 @@ def test_upstream_area(d8):
     assert np.all(d8.accuflux(np.ones(d8.shape)) == uparea)
     # km2
     res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
-    affine = Affine(res, 0.0, west, 0.0, -res, north)
-    uparea2 = d8.upstream_area(affine=affine, latlon=True, mult=1 / 1e6)  # km2
+    transform = Affine(res, 0.0, west, 0.0, -res, north)
+    d8.set_transform(transform, latlon=True)
+    uparea2 = d8.upstream_area(unit="km2")  # km2
     assert uparea2.max().round(0) == 158957.0
+    with pytest.raises(ValueError):
+        d8.upstream_area(unit="km")  # invalid unit
 
 
 def test_basins(d8):
@@ -170,8 +172,10 @@ def test_upscale(d8, nextidx_data):
 
 
 def test_vector(d8):
-    affine = Affine(1 / 120.0, 0.0, 5 + 50 / 120.0, 0.0, -1 / 120, 51 + 117 / 120.0)
-    gdf = d8.vector(affine=affine)
+    res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
+    transform = Affine(res, 0.0, west, 0.0, -res, north)
+    d8.set_transform(transform, latlon=True)
+    gdf = d8.vector()
     assert gdf.index.size == d8.ncells
 
 

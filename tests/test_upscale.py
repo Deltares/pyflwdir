@@ -32,7 +32,7 @@ tests = {
 
 def test_upscale(d8):
     cellsize = 10
-    uparea = d8.upstream_area(latlon=False).ravel()
+    uparea = d8.upstream_area().ravel()
     basins = d8.basins().ravel()
     for name, mdict in tests.items():
         fupscale = getattr(upscale, mdict.get("method", name))

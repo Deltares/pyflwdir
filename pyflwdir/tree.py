@@ -15,6 +15,34 @@ __all__ = []
 
 
 @njit
+def network_tree(idxs_pits, idxs_us):
+    """Return network tree, a list of arrays ordered 
+    from down to upstream.
+    
+    Parameters
+    ----------
+    idxs_pit, idxs_us : ndarray of int
+        indices of pit, upstream cells
+
+    Returns
+    -------
+    Ordered indices : List of arrays 
+    """
+    # TODO: test if this works faster with single array per pit
+    tree = List()
+    tree.append(idxs_pits)
+    idxs = idxs_pits
+    # move upstream
+    while True:
+        idxs_us0 = core.upstream(idxs, idxs_us)
+        if idxs_us0.size == 0:  # break if no more upstream
+            break
+        tree.append(idxs_us0)  # append next leave to tree
+        idxs = idxs_us0  # next loop
+    return tree  # down- to upstream
+
+
+@njit
 def accuflux(tree, idxs_us, material_flat, nodata):
     """accumulate 'material' in downstream direction using 
     the network tree"""
@@ -33,12 +61,12 @@ def accuflux(tree, idxs_us, material_flat, nodata):
 
 @njit()
 def upstream_area(
-    tree, idxs_us, idxs_dense, ncol, affine=gis_utils.IDENTITY, latlon=False
+    tree, idxs_us, idxs_dense, ncol, transform=gis_utils.IDENTITY, latlon=False
 ):
     """accumulated upstream area using network tree and 
-    grid affine transform; nodata = -9999"""
+    grid transform transform; nodata = -9999"""
     # NOTE same as accuflux but works with transform to calculate area
-    xres, yres, north = affine[0], affine[4], affine[5]
+    xres, yres, north = transform[0], transform[4], transform[5]
     area0 = abs(xres * yres)
     size = idxs_us.shape[0]
     # intialize with correct dtypes
@@ -121,7 +149,7 @@ def stream_order(tree, idxs_us):
 
 # TODO
 def dist_to_mouth(
-    tree, idxs_us, idxs_dense, ncol, affine=gis_utils.IDENTITY, latlon=False
+    tree, idxs_us, idxs_dense, ncol, transform=gis_utils.IDENTITY, latlon=False
 ):
     pass
 
