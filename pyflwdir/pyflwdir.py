@@ -64,17 +64,16 @@ def from_array(
     data : ndarray
         flow direction raster data
     ftype : {'d8', 'ldd', 'nextxy', 'nextidx', 'infer'}, optional
-        name of flow direction type, infer from data if 'infer'
-        (the default is 'infer')
+        name of flow direction type, infer from data if 'infer', by default is 'infer'
     check_ftype : bool, optional
-        check if valid flow direction raster, only if ftype is not 'infer'
-        (the default is True)
+        check if valid flow direction raster if ftype is not 'infer', by default True
     transform : affine transform
-        Two dimensional affine transform for 2D linear mapping. The default is an 
+        Two dimensional affine transform for 2D linear mapping, by default using the 
         identity transform.
     latlon : bool, optional
-        True if WGS84 coordinate reference system. If True it converts the cell areas 
-        from degree to metres, otherwise it assumes cell areas are in unit metres.
+        True if WGS84 coordinate reference system, by default False. If True it 
+        converts the cell areas from degree to metres, otherwise it assumes cell areas 
+        are in unit metres.
 
     """
     if ftype == "infer":
@@ -133,8 +132,12 @@ class FlwdirRaster(object):
         flwdir raster shape
     ncells : int
         number of valid cells
+    transform : affine transform
+        Two dimensional affine transform for 2D linear mapping
+    latlon : bool
+        True if WGS84 coordinate reference system
     ftype : {'d8', 'ldd', 'nextxy', 'nextidx'}
-        flow direction type
+        name of flow direction type
     pits : ndarray of int
         linear dense raster indices of pit cells
     isvalid : bool
@@ -162,14 +165,14 @@ class FlwdirRaster(object):
         shape : tuple of int
             shape of raster
         ftype : {'d8', 'ldd', 'nextxy', 'nextidx'}
-            flow direction type
+            name of flow direction type
         transform : affine transform
-            Two dimensional affine transform for 2D linear mapping. The default is an 
-            identity transform.
+            Two dimensional affine transform for 2D linear mapping, by default using 
+            the identity transform.
         latlon : bool, optional
-            True if WGS84 coordinate reference system. If True it converts the cell 
-            areas from degree to metres, otherwise it assumes cell areas are in unit 
-            metres. The default is False.
+            True if WGS84 coordinate reference system, by default False. If True it 
+            converts the cell areas from degree to metres, otherwise it assumes cell 
+            areas are in unit metres.
         
         """
         if not ftype in FTYPES.keys():
@@ -218,14 +221,27 @@ class FlwdirRaster(object):
 
     @property
     def pits(self):
-        """Returns 1D raster indices of pits
+        """Returns linear indices of pits
         
         Returns
         -------
         1D array of int
-            1D raster indices of pit
+            linear indices of pit
         """
         return self._idxs_dense[self._idxs_pit]
+
+    @property
+    def pit_coords(self):
+        """Returns x, y coordinates of pits
+        
+        Returns
+        -------
+        xs : ndarray of float
+            x coordinates in coordinate reference system
+        ys : ndarray of float
+            y coordinates in coordinate reference system
+        """
+        return gis_utils.idxs_to_coords(self.pits, self.transform, self.shape)
 
     @property
     def _idxs_us(self):
@@ -253,57 +269,50 @@ class FlwdirRaster(object):
         """Returns True if the flow direction map is valid."""
         return core.loop_indices(self._idxs_ds, self._idxs_us).size == 0
 
-    def set_pits(self, idxs_pit=None, streams=None):
-        """Reset original pits from the flow direction raster based on 
-        `idxs_pit`.
+    def set_pits(self, idxs_pit=None, xy_pit=None, streams=None):
+        """Reset original pits from the flow direction raster based on either
+        `idxs_pit` or `xy_pit`.
         
-        If streams is given, the pits are moved to the first downstream 
-        `stream` cell.
+        If `streams` is given, the pits are moved to the first downstream True cell.
         
         Parameters
         ----------
         idxs_pit : array_like, optional
-            raster 1D indices of pits
-            (the default is None, in which case the pits are infered 
-            from flwdir data)
+            linear indices of pits, by default is None.
+        xy_pit : tuple of array of float, optional
+            x, y coordinates of pits, by default is None.
         streams : ndarray of bool, optional
             2D raster with cells flagged 'True' at stream cells, only used
-            in combination with idxs_pit.
-            (the default is None) 
+            in combination with idxs_pit or xy_pit, by default None. 
         """
+        # coordinates to linear dense indices
+        if xy_pit is not None and idxs_pit is not None:
+            raise ValueError("Either idx or xy should be provided, not both.")
+        elif xy_pit is not None:
+            idxs_pit = gis_utils.coords_to_idxs(*xy_pit, self.transform, self.shape)
+
+        # linear dense to sparse indices to
         if idxs_pit is None:
             idxs0 = core.pit_indices(self._idxs_ds)
         else:
             idxs_pit = np.asarray(idxs_pit).flatten()
             idxs0 = self._sparse_idx(idxs_pit)
-            if streams is not None:  # snap to streams
+            # snap to streams
+            if streams is not None:
                 idxs0 = core.downstream_mask(
                     idxs0, self._idxs_ds, self._sparsify(streams)
                 )
         self._idxs_pit = idxs0
         self._tree_ = None  # reset network tree
 
-    def set_tree(self, idxs_pit=None, streams=None):
+    def set_tree(self, **kwargs):
         """Setup the network tree: a list of arrays ordered from down- to 
         upstream. 
         
-        If idxs_pit is given, the tree is setup cells upstream from these 
-        points only, ignoring the pits in the original flow direction raster.
-        If streams is given, the pits are moved to the first downstream 
-        `stream` cell.
-
-        Parameters
-        ----------
-        idxs_pit : array_like, optional
-            raster 1D indices of pits
-            (the default is None, in which case the pits are infered 
-            from flwdir data)
-        streams : ndarray of bool, optional
-            2D raster with cells flagged 'True' at river/stream cells  
-            (the default is None) 
+        Additional key-word arguments are passed to the set_pits function.
         """
-        if idxs_pit is not None:
-            self.set_pits(idxs_pit=idxs_pit, streams=streams)
+        if len(kwargs) > 0:
+            self.set_pits(**kwargs)
         self._tree_ = tree.network_tree(self._idxs_pit, self._idxs_us)
 
     def set_transform(self, transform, latlon=False):
@@ -348,8 +357,7 @@ class FlwdirRaster(object):
         Parameters
         ----------
         ftype : {'d8', 'ldd', 'nextxy', 'nextidx'}, optional
-            name of flow direction type
-            (the default is None; use input ftype)
+            name of flow direction type, by default None; use input ftype.
         
         Returns
         -------
@@ -363,28 +371,25 @@ class FlwdirRaster(object):
             raise ValueError(msg)
         return FTYPES[ftype].to_array(self._idxs_dense, self._idxs_ds, self.shape)
 
-    def basins(self, ids=None, idxs_pit=None):
+    def basins(self, ids=None, **kwargs):
         """Returns a basin map with a unique IDs for every basin. 
         
         If IDs are not provided, these start from 1 and the background value is 0.
+        Additional key-word arguments are passed to the set_pits function.
         
+
         Parameters
         ----------
         ids : ndarray of uint32, optional
-            IDs of basins in some order as pits
-            (by default these are numbered from 1)
-        idxs_pit : array_like, optional
-            raster 1D indices of pits
-            (the default is None, in which case the pits are infered 
-            from flwdir data)
+            IDs of basins in some order as pits, by default numbered starting from 1.
 
         Returns
         -------
         2D array of uint32
             basin map
         """
-        if idxs_pit is not None:
-            self.set_pits(idxs_pit=idxs_pit)
+        if len(kwargs) > 0:
+            self.set_pits(**kwargs)
         if ids is None:
             ids = np.arange(self._tree[0].size, dtype=np.uint32) + 1
         else:
@@ -400,14 +405,13 @@ class FlwdirRaster(object):
         """Returns a table with the basin boundaries. At index 0 the total bounding 
         box is given. 
         
-        Kwargs are passed to the basins method which is used if no basins map is 
-        provided.
+        Additional key-word arguments are passed to the basins method which is used if 
+        no basins map is provided.
         
         Parameters
         ----------
         basins : 2D array of uint32, optional
-            2D raster with basin ids 
-            (by default None; calculated on the fly)
+            2D raster with basin ids, by default None and calculated on the fly.
             
         Returns
         -------
@@ -446,14 +450,11 @@ class FlwdirRaster(object):
         Parameters
         ----------
         depth : int, optional
-            Number of pfafsterrer layers
-            (by default 1)
+            Number of pfafsterrer layers, by default 1.
         uparea : 2D array of float, optional
-            2D raster with upstream area 
-            (by default None; calculated on the fly)
+            2D raster with upstream area, by default None; calculated on the fly.
         min_upa : float, optional
-            Minimum subbasin area
-            (by default 0.0)
+            Minimum subbasin area, by default 0.0.
         
         Returns
         -------
@@ -560,13 +561,12 @@ class FlwdirRaster(object):
         Parameters
         ----------
         min_order : int
-            Minimum Strahler Order recognized as river 
-            (the default is 1)
+            Minimum Strahler Order recognized as river, by the default 1.
         xs, ys : ndarray of float
-            Raster with cell x, y coordinates 
-            (the default is None, taking the cell center coordinates)
+            Raster with cell x, y coordinates, by default is None; infer from cell 
+            center.
         crs : str, optional 
-            Coordinate reference system to use for the returned GeoDataFrame
+            Coordinate reference system used for the returned GeoDataFrame
         
         Returns
         -------
@@ -591,7 +591,7 @@ class FlwdirRaster(object):
                 msg = "'xs' and/or 'ys' size does not match with  flow direction size"
                 raise ValueError(msg)
             xs, ys = xs.ravel()[self._idxs_dense], ys.ravel()[self._idxs_dense]
-        geoms = gis_utils.idxs_to_geoms(self._idxs_ds, xs, ys)
+        geoms = core.to_linestring(self._idxs_ds, xs, ys)
         gdf = gp.GeoDataFrame(geometry=geoms, crs=crs)
         # get additional meta data
         gdf["stream_order"] = self.stream_order().flat[self._idxs_dense]
@@ -618,12 +618,10 @@ class FlwdirRaster(object):
         ----------
         scale_factor : int
             number gridcells in resulting upscaled gridcell
-        method : {'com', 'eam', 'dmm'}
-            upscaling method
-            (by default 'com')
+        method : {'com2', 'com', 'eam', 'dmm'}
+            upscaling method, by default 'com2'
         uparea : 2D array of float, optional
-            2D raster with upstream area 
-            (by default None; calculated on the fly)
+            2D raster with upstream area, by default None; calculated on the fly.
 
         Returns
         ------
@@ -726,12 +724,10 @@ class FlwdirRaster(object):
         elevnt : 2D array of float
             elevation raster
         uparea : 2D array of float, optional
-            2D raster with upstream area, if None it is calculated 
-            (by default None)
+            2D raster with upstream area, if None it is calculated, by default None.
         min_uparea : float, optional
             Minimum upstream area to be consided as stream. Only used if 
-            return_sublength is True. 
-            (by default 0.)
+            return_sublength is True, by default 0.0
         
         Returns
         -------
@@ -824,15 +820,13 @@ class FlwdirRaster(object):
         n : int
             number of up/downstream neighbors to include
         nodata : float, optional
-            Nodata values which is ignored when calculating the average
-            (by default -9999.0)
+            Nodata values which is ignored when calculating the average, 
+            by default -9999.0.
         uparea : 2D array of float, optional
-            2D raster with upstream area, if None it is calculated 
-            (by default None)
+            2D raster with upstream area, if None it is calculated, by default None.
         min_uparea : float, optional
             Minimum upstream area to be consided as stream. Only used if 
-            return_sublength is True. 
-            (by default 0.)
+            return_sublength is True, by default 0.0
 
         Returns
         -------

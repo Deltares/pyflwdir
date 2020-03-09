@@ -9,6 +9,7 @@ from affine import Affine
 
 import pyflwdir
 from pyflwdir.core import _mv
+from pyflwdir.gis_utils import IDENTITY
 
 # read and parse data
 @pytest.fixture
@@ -43,7 +44,7 @@ def d8():
 
 
 # test object
-def test_object(d8_data, ldd_data, nextxy_data, nextidx_data):
+def test_from_array(d8_data, ldd_data, nextxy_data, nextidx_data):
     ftypes = {
         "d8": d8_data,
         "ldd": ldd_data,
@@ -53,13 +54,6 @@ def test_object(d8_data, ldd_data, nextxy_data, nextidx_data):
     for name, fdata in ftypes.items():
         fd = pyflwdir.from_array(fdata)
         assert fd.ftype == name
-        assert fd.size == 678 * 776
-        assert fd.shape == (678, 776)
-        npits = fd._idxs_pit.size
-        nus = fd._idxs_us[fd._idxs_us != _mv].size
-        nds = fd._idxs_ds.size
-        assert nus + npits == nds
-        assert fd.pits.size == 1
         assert fd.isvalid
     # make sure these raise errors
     with pytest.raises(ValueError):
@@ -74,6 +68,19 @@ def test_object(d8_data, ldd_data, nextxy_data, nextidx_data):
             np.array([2]), ftype="d8", check_ftype=True
         )  # invalid data: too small
         pyflwdir.from_array(d8_data, ftype="d8", transform=(0, 0))  # invalid transform
+
+
+def test_attrs(d8):
+    assert d8.size == 678 * 776
+    assert d8.shape == (678, 776)
+    npits = d8._idxs_pit.size
+    nus = d8._idxs_us[d8._idxs_us != _mv].size
+    nds = d8._idxs_ds.size
+    assert nus + npits == nds
+    assert d8.pits.size == 1
+    assert np.all(d8.transform == IDENTITY)
+    assert d8.latlon == False
+    assert np.all(d8.pit_coords == (81.5, 14.5))
 
 
 def test_toarray(d8, d8_data):
@@ -101,15 +108,21 @@ def test_stream_order(d8):
 def test_set_pits(d8):
     idx0 = d8.pits
     idx1 = d8._idxs_dense[0]
+    x, y = d8.pit_coords
     # all cells are True -> pit at idx1
     d8.set_pits(idxs_pit=idx1, streams=np.full(d8.shape, True, dtype=np.bool))
     assert np.all(d8.pits == idx1)
     # original pit idx0
+    d8.set_pits(xy_pit=(x, y))
+    assert np.all(d8.pits == idx0)
     d8.set_pits()
     assert np.all(d8.pits == idx0)
     # no streams -> pit at idx0
     d8.set_pits(idxs_pit=idx1, streams=np.full(d8.shape, False, dtype=np.bool))
     assert np.all(d8.pits == idx0)
+    assert np.all(
+        np.asarray(d8.pit_coords).ravel().round(6) == np.asarray([x[0], y[0]]).round(6)
+    )
 
 
 def test_upstream_area(d8):

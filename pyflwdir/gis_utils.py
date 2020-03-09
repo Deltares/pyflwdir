@@ -3,10 +3,16 @@ from numba import vectorize, njit
 import numpy as np
 import math
 from affine import identity as IDENTITY
+from affine import Affine
 
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
 
 __all__ = [
+    "transform_from_origin",
+    "transform_from_bounds",
+    "array_bounds",
+    "xy",
+    "rowcol",
     "idxs_to_coords",
     "affine_to_coords",
     "reggrid_area",
@@ -14,37 +20,187 @@ __all__ = [
     "reggrid_dx",
 ]
 
-
-def idxs_to_geoms(idxs_ds, xs, ys):
-    """Returns a list of LineString for each up- downstream connection"""
-    from shapely.geometry import LineString
-
-    geoms = list()
-    for idx0 in range(idxs_ds.size):
-        idx_ds = idxs_ds[idx0]
-        geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
-    return geoms
+## TRANSFORM
+# Adapted from https://github.com/mapbox/rasterio/blob/master/rasterio/transform.py
+# changed xy and rowcol to work directly on numpy arrays
+# avoid gdal dependency
 
 
-def idxs_to_coords(idxs, affine, shape):
+def transform_from_origin(west, north, xsize, ysize):
+    """Return an Affine transformation given upper left and pixel sizes.
+    Return an Affine transformation for a georeferenced raster given
+    the coordinates of its upper left corner `west`, `north` and pixel
+    sizes `xsize`, `ysize`.
+    """
+    return Affine.translation(west, north) * Affine.scale(xsize, -ysize)
+
+
+def transform_from_bounds(west, south, east, north, width, height):
+    """Return an Affine transformation given bounds, width and height.
+    Return an Affine transformation for a georeferenced raster given
+    its bounds `west`, `south`, `east`, `north` and its `width` and
+    `height` in number of pixels.
+    """
+    return Affine.translation(west, north) * Affine.scale(
+        (east - west) / width, (south - north) / height
+    )
+
+
+def array_bounds(height, width, transform):
+    """Return the bounds of an array given height, width, and a transform.
+    Return the `west, south, east, north` bounds of an array given
+    its height, width, and an affine transform.
+    """
+    w, n = transform.xoff, transform.yoff
+    e, s = transform * (width, height)
+    return w, s, e, n
+
+
+def xy(transform, rows, cols, offset="center"):
+    """Returns the x and y coordinates of pixels at `rows` and `cols`.
+    The pixel's center is returned by default, but a corner can be returned
+    by setting `offset` to one of `ul, ur, ll, lr`.
+
+    Parameters
+    ----------
+    transform : affine.Affine
+        Transformation from pixel coordinates to coordinate reference system.
+    rows : ndarray or int
+        Pixel rows.
+    cols : ndarray or int
+        Pixel columns.
+    offset : str, optional
+        Determines if the returned coordinates are for the center of the
+        pixel or for a corner.
+    
+    Returns
+    -------
+    xs : ndarray of float
+        x coordinates in coordinate reference system
+    ys : ndarray of float
+        y coordinates in coordinate reference system
+    """
+    rows, cols = np.asarray(rows), np.asarray(cols)
+
+    if offset == "center":
+        coff, roff = (0.5, 0.5)
+    elif offset == "ul":
+        coff, roff = (0, 0)
+    elif offset == "ur":
+        coff, roff = (1, 0)
+    elif offset == "ll":
+        coff, roff = (0, 1)
+    elif offset == "lr":
+        coff, roff = (1, 1)
+    else:
+        raise ValueError("Invalid offset")
+
+    xs, ys = transform * transform.translation(coff, roff) * (cols, rows)
+    return xs, ys
+
+
+def rowcol(transform, xs, ys, op=np.floor, precision=None):
+    """
+    Returns the rows and cols of the pixels containing (x, y) given a
+    coordinate reference system.
+    Use an epsilon, magnitude determined by the precision parameter
+    and sign determined by the op function:
+        positive for floor, negative for ceil.
+    Parameters
+    ----------
+    transform : Affine
+        Coefficients mapping pixel coordinates to coordinate reference system.
+    xs : ndarray or float
+        x values in coordinate reference system
+    ys : ndarray or float
+        y values in coordinate reference system
+    op : function {numpy.floor, numpy.ceil, numpy.round}
+        Function to convert fractional pixels to whole numbers
+    precision : int, optional
+        Decimal places of precision in indexing, as in `round()`.
+    Returns
+    -------
+    rows : ndarray of ints
+        array of row indices
+    cols : ndarray of ints
+        array of column indices
+    """
+
+    xs, ys = np.asarray(xs), np.asarray(ys)
+
+    if precision is None:
+        eps = 0.0
+    else:
+        eps = 10.0 ** -precision * (1.0 - 2.0 * op(0.1))
+
+    invtransform = ~transform
+
+    fcols, frows = invtransform * (xs + eps, ys - eps)
+    cols, rows = op(fcols).astype(int), op(frows).astype(int)
+
+    return rows, cols
+
+
+def idxs_to_coords(idxs, transform, shape):
     """Returns centered coordinates of idxs raster indices based affine.
 
     Parameters
     ----------
-    affine : affine transform
+    idxs : ndarray of int
+        linear indices
+    transform : affine transform
         Two dimensional affine transform for 2D linear mapping
     shape : tuple of int
         The height, width  of the raster.
 
     Returns
     -------
-    x, y coordinate arrays : tuple of ndarray of float
+    xs : ndarray of float
+        x coordinates in coordinate reference system
+    ys : ndarray of float
+        y coordinates in coordinate reference system
     """
     ncol = shape[1]
-    r = idxs // ncol
-    c = idxs % ncol
-    x, y = affine * (c + 0.5, r + 0.5)
-    return x, y
+    rows = idxs // ncol
+    cols = idxs % ncol
+    xs, ys = xy(transform, rows, cols, offset="center")
+    return xs, ys
+
+
+def coords_to_idxs(xs, ys, transform, shape):
+    """Returns linear indices of coordinates.
+
+    Parameters
+    ----------
+    xs : ndarray or float
+        x values in coordinate reference system
+    ys : ndarray or float
+        y values in coordinate reference system
+    transform : affine transform
+        Two dimensional affine transform for 2D linear mapping
+    shape : tuple of int
+        The height, width  of the raster.
+
+    Returns
+    -------
+    idxs : ndarray of ints
+        array of linear indices
+
+    Raises
+    ------
+    ValueError
+        if any coordinate outside domain.
+    """
+    nrow, ncol = shape
+    rows, cols = rowcol(transform, xs, ys, op=np.floor, precision=None)
+    if not np.all(
+        np.logical_and(
+            np.logical_and(rows >= 0, rows < nrow),
+            np.logical_and(cols >= 0, cols < ncol),
+        )
+    ):
+        raise ValueError("XY coordinates outside domain")
+    return rows * ncol + cols
 
 
 def affine_to_coords(affine, shape):
@@ -67,6 +223,7 @@ def affine_to_coords(affine, shape):
     return x_coords, y_coords
 
 
+## DISTANCES // AREAS
 def reggrid_dx(lats, lons):
     """returns a the cell widths (dx) for a regular grid with cell centers 
     lats & lons [m]."""
@@ -92,8 +249,6 @@ def reggrid_area(lats, lons):
     return cellarea(lats, xres, yres)[:, None] * area
 
 
-# @vectorize(
-#     ["float64(float64,float64,float64)", "float32(float32,float32,float32)"])
 @njit
 def cellarea(lat, xres, yres):
     """returns the area of cell with a given resolution (resx,resy) at a given 
@@ -104,8 +259,6 @@ def cellarea(lat, xres, yres):
     return _R ** 2 * dx * (np.sin(l2) - np.sin(l1))
 
 
-# latlon to length conversion
-# @vectorize(["float64(float64)", "float32(float32)"])
 @njit
 def degree_metres_y(lat):
     """"returns the verical length of a degree in metres at 
@@ -125,7 +278,6 @@ def degree_metres_y(lat):
     return latlen
 
 
-# @vectorize(["float64(float64)", "float32(float32)"])
 @njit
 def degree_metres_x(lat):
     """"returns the horizontal length of a degree in metres at 

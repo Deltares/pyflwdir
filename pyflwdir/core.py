@@ -436,6 +436,22 @@ def loop_indices(idxs_ds, idxs_us):
     return np.where(~no_loop)[0]
 
 
+## VECTORIZE
+def to_linestring(idxs_ds, xs, ys):
+    """Returns a list of LineString for each up- downstream connection"""
+    try:
+        from shapely.geometry import LineString
+    except ImportError:
+        msg = "The `to_linestring` method requires the additional shapely package."
+        raise ImportError(msg)
+
+    geoms = list()
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
+    return geoms
+
+
 #### internal data indexing and reordering functions ####
 @njit
 def _sparse_idx(idxs, idxs_dense, size):
