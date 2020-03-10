@@ -11,12 +11,32 @@ from pyflwdir import gis_utils
 
 # glob total area
 glob_area = 4 * np.pi * gis_utils._R ** 2
+glob_circ = 2 * np.pi * gis_utils._R
+
 
 # reggrid_dx(lats, lons)
 # reggrid_dy(lats, lons)
 # distance(lon1, lat1, lon2, lat2)
 # degree_metres_y(lat)
 # degree_metres_x(lat)
+
+
+def test_reggrid_dx():
+    # area of glob in 1 degree cells
+    lats = np.array([0.0])
+    lons = np.arange(-179.5, 180)
+    dx = gis_utils.reggrid_dx(lats, lons)
+    assert dx.shape == (lats.size, lons.size)
+    assert dx.sum().round(3) == 40075004.88
+
+
+def test_reggrid_dy():
+    # area of glob in 1 degree cells
+    lats = np.arange(-89.5, 90)
+    lons = np.array([0.0])
+    dy = gis_utils.reggrid_dy(lats, lons)
+    assert dy.shape == (lats.size, lons.size)
+    assert dy.sum().round(3) == 20003925.600
 
 
 def test_cellarea():

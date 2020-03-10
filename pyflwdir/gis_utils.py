@@ -229,7 +229,7 @@ def reggrid_dx(lats, lons):
     lats & lons [m]."""
     xres = np.abs(np.mean(np.diff(lons)))
     dx = degree_metres_x(lats) * xres
-    return dx[None, :] * np.ones((lats.size, lons.size), dtype=lats.dtype)
+    return dx[:, None] * np.ones((lats.size, lons.size), dtype=lats.dtype)
 
 
 def reggrid_dy(lats, lons):
