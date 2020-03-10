@@ -61,7 +61,7 @@ def basin_bounds(basins, transform=gis_utils.IDENTITY):
         df["xmax"].max(),
         df["ymax"].max(),
     ]
-    return df.sort_index()
+    return df[["xmin", "ymin", "xmax", "ymax"]].sort_index()
 
 
 def total_basin_bounds(basins, transform=gis_utils.IDENTITY):
