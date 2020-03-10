@@ -173,6 +173,7 @@ def test_upscale(d8, nextidx_data):
         pyflwdir.from_array(nextidx, ftype="nextidx").upscale(10)
         d8.upscale(10, uparea=np.ones(d8.shape).ravel())  # wrong uparea shape
     d8_lr, idxout = d8.upscale(10)
+    assert d8_lr.transform[0] == 10 * d8.transform[0]
     subcon = d8.subconnect(d8_lr, idxout)
     assert subcon.flat[d8_lr._idxs_dense].min() == 0
     assert subcon.flat[d8_lr._idxs_dense].max() == 1

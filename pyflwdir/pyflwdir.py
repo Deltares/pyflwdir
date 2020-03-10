@@ -658,7 +658,21 @@ class FlwdirRaster(object):
             cellsize=scale_factor,
             **kwargs,
         )
-        dir_lr = from_array(nextidx, ftype="nextidx", check_ftype=False)
+        transform_lr = Affine(
+            self.transform[0] * scale_factor,
+            self.transform[1],
+            self.transform[2],
+            self.transform[3],
+            self.transform[4] * scale_factor,
+            self.transform[5],
+        )
+        dir_lr = from_array(
+            nextidx,
+            ftype="nextidx",
+            check_ftype=False,
+            transform=transform_lr,
+            latlon=self.latlon,
+        )
         if not dir_lr.isvalid:
             raise ValueError(
                 "The upscaled flow direction network is invalid. "
