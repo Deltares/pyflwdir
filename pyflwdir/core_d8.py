@@ -76,17 +76,14 @@ def from_array(flwdir):
         r = int(idx0 // ncol + dr)
         c = int(idx0 % ncol + dc)
         pit = dr == 0 and dc == 0
-        outside = r >= nrow or c >= ncol or r < 0 or c < 0
-        # pit or outside
-        if pit or outside:
+        outside = r + dr >= nrow or c + dc >= ncol or r + dr < 0 or c + dc < 0
+        idx_ds = np.intp(idx0 + dc + dr * ncol)
+        # pit or outside or ds cell has mv
+        if pit or outside or idxs_sparse[idx_ds] == core._mv:
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
         else:
-            idx_ds = np.intp(idx0 + dc + dr * ncol)
-            i_ds = np.uint32(idxs_sparse[idx_ds])
-            if i_ds == core._mv:
-                raise ValueError("invalid D8 data")
-            idxs_ds[i] = i_ds
+            idxs_ds[i] = np.uint32(idxs_sparse[idx_ds])
     return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
 
 

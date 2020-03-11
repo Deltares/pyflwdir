@@ -56,19 +56,19 @@ def _from_array(nextx, nexty):
     i = np.uint32(0)
     for i in range(n):
         idx0 = np.intp(idxs_dense[i])
-        c = np.uint32(nextx_flat[idx0])
-        r = np.uint32(nexty_flat[idx0])
-        if r == _pv or r > nrow or c > ncol or r < 1 or c < 1:
-            # pit or ds cell is out of bounds / invalid -> set pit
+        c1 = np.uint32(nextx_flat[idx0])
+        r1 = np.uint32(nexty_flat[idx0])
+        pit = r1 == _pv or c1 == _pv
+        # convert from one- to zero-based index
+        r_ds, c_ds = r1 - 1, c1 - 1
+        idx_ds = c_ds + r_ds * ncol
+        outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
+        # pit or outside or ds cell has mv
+        if pit or outside or idxs_sparse[idx_ds] == core._mv:
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
         else:
-            r, c = r - 1, c - 1  # convert from to zero-based index
-            idx_ds = c + r * ncol
-            i_ds = idxs_sparse[idx_ds]
-            if i_ds == core._mv or i_ds == i:
-                raise ValueError("invalid NEXTXY data")
-            idxs_ds[i] = i_ds
+            idxs_ds[i] = np.uint32(idxs_sparse[idx_ds])
     return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
 
 

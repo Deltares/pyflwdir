@@ -25,6 +25,7 @@ _us = np.ones((3, 3), dtype=np.uint32) * np.uint32(4)
 )
 def from_array(nextidx):
     size = nextidx.size
+    nrow, ncol = nextidx.shape[0], nextidx.shape[-1]
     nextidx_flat = nextidx.ravel()
     # find valid dense indices
     idxs_dense = []
@@ -43,15 +44,16 @@ def from_array(nextidx):
     for i in range(n):
         idx0 = np.intp(idxs_dense[i])
         idx_ds = np.uint32(nextidx_flat[idx0])
-        if idx_ds < 0 or idx_ds >= size or idx_ds == idx0:
-            # ds cell is out of bounds / invalid or pit -> set pit
+        r_ds = idx_ds // ncol
+        c_ds = idx_ds % ncol
+        pit = idx_ds == idx0
+        outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
+        # pit or outside or ds cell has mv
+        if pit or outside or idxs_sparse[idx_ds] == core._mv:
             idxs_ds[i] = i
             pits_lst.append(np.uint32(i))
         else:
-            i_ds = idxs_sparse[idx_ds]
-            if i_ds == core._mv or i_ds == i:
-                raise ValueError("invalid NEXTIDX data")
-            idxs_ds[i] = i_ds
+            idxs_ds[i] = np.uint32(idxs_sparse[idx_ds])
     return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
 
 
