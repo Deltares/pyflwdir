@@ -505,7 +505,9 @@ class FlwdirRaster(object):
             transform=IDENTITY if unit == "cell" else self.transform,
             latlon=self.latlon,
         )
-        return self._densify(uparea / AREA_FACTORS[unit], nodata=-9999.0)
+        if unit == 'cell':
+            uparea = uparea.astype(np.int32)
+        return self._densify(uparea / AREA_FACTORS[unit], nodata=-9999)
 
     def stream_order(self):
         """Returns the Strahler Order map [1]_. 
