@@ -87,7 +87,7 @@ def test_toarray(d8, d8_data):
     assert np.all(d8.to_array() == d8_data)
 
 
-# NOTE tempdir is predefined fixture
+# NOTE tmpdir is predefined fixture
 def test_save(d8, tmpdir):
     fn = tmpdir.join("flw.pkl")
     d8.dump(fn)
@@ -130,7 +130,7 @@ def test_upstream_area(d8):
     assert uparea.min() == -9999
     assert uparea[uparea != -9999].min() == 1
     assert uparea.max() == d8.ncells  # NOTE specific to data with single pit
-    assert uparea.dtype == np.float64
+    assert uparea.dtype == np.int32
     assert np.all(uparea.shape == d8.shape)
     # compare with accuflux
     assert np.all(d8.accuflux(np.ones(d8.shape)) == uparea)
@@ -139,6 +139,7 @@ def test_upstream_area(d8):
     transform = Affine(res, 0.0, west, 0.0, -res, north)
     d8.set_transform(transform, latlon=True)
     uparea2 = d8.upstream_area(unit="km2")  # km2
+    assert uparea2.dtype == np.float64
     assert uparea2.max().round(0) == 158957.0
     with pytest.raises(ValueError):
         d8.upstream_area(unit="km")  # invalid unit

@@ -32,7 +32,7 @@ FTYPES = {
     core_nextxy._ftype: core_nextxy,
     core_nextidx._ftype: core_nextidx,
 }
-AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1.0}
+AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
 
 # export
 __all__ = ["FlwdirRaster", "from_array", "load"]
@@ -496,18 +496,19 @@ class FlwdirRaster(object):
         if unit not in AREA_FACTORS:
             fstr = '", "'.join(AREA_FACTORS.keys())
             raise ValueError(f'Unknown unit. Select from "{fstr}"')
-
-        uparea = tree.upstream_area(
+        dtype = np.int32 if unit == "cell" else np.float64
+        uparea = np.full(self.ncells, -9999, dtype=dtype)
+        tree.upstream_area(
+            uparea,
             self._tree,
             self._idxs_us,
             self._idxs_dense,
             self.shape[1],
             transform=IDENTITY if unit == "cell" else self.transform,
             latlon=self.latlon,
+            area_factor=AREA_FACTORS[unit],
         )
-        if unit == 'cell':
-            uparea = uparea.astype(np.int32)
-        return self._densify(uparea / AREA_FACTORS[unit], nodata=-9999)
+        return self._densify(uparea, nodata=-9999)
 
     def stream_order(self):
         """Returns the Strahler Order map [1]_. 

@@ -61,17 +61,25 @@ def accuflux(tree, idxs_us, material_flat, nodata):
 
 @njit()
 def upstream_area(
-    tree, idxs_us, idxs_dense, ncol, transform=gis_utils.IDENTITY, latlon=False
+    upa,
+    tree,
+    idxs_us,
+    idxs_dense,
+    ncol,
+    transform=gis_utils.IDENTITY,
+    latlon=False,
+    area_factor=1,
 ):
     """accumulated upstream area using network tree and 
     grid transform transform; nodata = -9999"""
     # NOTE same as accuflux but works with transform to calculate area
     xres, yres, north = transform[0], transform[4], transform[5]
-    area0 = abs(xres * yres)
+    area0 = abs(xres * yres) / area_factor
     size = idxs_us.shape[0]
     # intialize with correct dtypes
-    upa_ds = np.float64(0.0)
-    upa = np.full(size, -9999.0, dtype=np.float64)
+    upa_ds = upa[0] * 0
+    # upa_ds = np.float64(0.0)
+    # upa = np.full(size, -9999.0, dtype=np.float64)
     # loop over network from up- to downstream and calc upstream area
     for i in range(len(tree)):
         idxs = tree[-i - 1]  # from up- to downstream
@@ -79,14 +87,14 @@ def upstream_area(
             if latlon:
                 r = idxs_dense[idx0] // ncol
                 lat = north + (r + 0.5) * yres
-                area0 = gis_utils.cellarea(lat, xres, yres)
+                area0 = gis_utils.cellarea(lat, xres, yres) / area_factor
             upa_ds = area0
             for idx_us in idxs_us[idx0, :]:
                 if idx_us == _mv:
                     break
                 upa_ds += upa[idx_us]
-            upa[idx0] = np.float64(upa_ds)
-    return upa
+            upa[idx0] = upa_ds
+    # return upa
 
 
 @njit
