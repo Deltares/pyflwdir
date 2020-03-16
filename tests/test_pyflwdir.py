@@ -126,6 +126,11 @@ def test_set_pits(d8):
 
 
 def test_upstream_area(d8):
+    # set transform
+    res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
+    transform = Affine(res, 0.0, west, 0.0, -res, north)
+    d8.set_transform(transform, latlon=True)
+    # test with upstream grid cells
     uparea = d8.upstream_area()
     assert uparea.min() == -9999
     assert uparea[uparea != -9999].min() == 1
@@ -134,10 +139,7 @@ def test_upstream_area(d8):
     assert np.all(uparea.shape == d8.shape)
     # compare with accuflux
     assert np.all(d8.accuflux(np.ones(d8.shape)) == uparea)
-    # km2
-    res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
-    transform = Affine(res, 0.0, west, 0.0, -res, north)
-    d8.set_transform(transform, latlon=True)
+    # test upstream area in km2
     uparea2 = d8.upstream_area(unit="km2")  # km2
     assert uparea2.dtype == np.float64
     assert uparea2.max().round(0) == 158957.0

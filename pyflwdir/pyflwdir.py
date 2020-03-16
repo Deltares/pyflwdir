@@ -505,7 +505,7 @@ class FlwdirRaster(object):
             self._idxs_dense,
             self.shape[1],
             transform=IDENTITY if unit == "cell" else self.transform,
-            latlon=self.latlon,
+            latlon=False if unit == "cell" else self.latlon,
             area_factor=AREA_FACTORS[unit],
         )
         return self._densify(uparea, nodata=-9999)
