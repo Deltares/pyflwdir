@@ -73,17 +73,17 @@ def test_from_array(d8_data, ldd_data, nextxy_data, nextidx_data):
         pyflwdir.from_array(d8_data, ftype="d8", transform=(0, 0))  # invalid transform
 
 
-def test_attrs(d8):
-    assert d8.size == 678 * 776
-    assert d8.shape == (678, 776)
+def test_attrs(d8, d8_data):
+    assert d8.size == d8_data.size
+    assert d8.shape == d8_data.shape
     npits = d8._idxs_pit.size
     nus = d8._idxs_us[d8._idxs_us != _mv].size
     nds = d8._idxs_ds.size
     assert nus + npits == nds
     assert d8.pits.size == 1
     assert isinstance(d8.transform, Affine)
-    assert d8.latlon == True
-    assert np.all(d8.pit_coords == (81.5, 14.5))
+    assert isinstance(d8.latlon, bool)
+    assert isinstance(d8.pit_coords, tuple)
 
 
 def test_toarray(d8, d8_data):
@@ -159,6 +159,7 @@ def test_basins(d8):
 
 
 def test_basin_bounds(d8):
+    d8.transform = IDENTITY
     df = d8.basin_bounds(basins=np.ones(d8.shape, dtype=np.uint32))
     assert np.all(df.loc[0, ["ymax", "xmax"]].values == d8.shape)
     idxs = d8._idxs_dense[d8._tree[30]]
