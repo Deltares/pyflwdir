@@ -73,10 +73,10 @@ def from_array(flwdir):
     for idx0 in idxs_dense:
         i = np.uint32(idxs_sparse[idx0])
         dr, dc = drdc(flwdir_flat[idx0])
-        r = int(idx0 // ncol + dr)
-        c = int(idx0 % ncol + dc)
+        r_ds = int(idx0 // ncol + dr)
+        c_ds = int(idx0 % ncol + dc)
         pit = dr == 0 and dc == 0
-        outside = r + dr >= nrow or c + dc >= ncol or r + dr < 0 or c + dc < 0
+        outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
         idx_ds = np.intp(idx0 + dc + dr * ncol)
         # pit or outside or ds cell has mv
         if pit or outside or idxs_sparse[idx_ds] == core._mv:
