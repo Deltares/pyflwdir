@@ -39,6 +39,9 @@ def nextidx_data():
 @pytest.fixture
 def d8():
     flw = pyflwdir.load(r"./data/flw.pkl")
+    res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
+    transform = Affine(res, 0.0, west, 0.0, -res, north)
+    flw.set_transform(transform, latlon=True)
     flw._idxs_us  # initialize us array
     return flw
 
@@ -78,8 +81,8 @@ def test_attrs(d8):
     nds = d8._idxs_ds.size
     assert nus + npits == nds
     assert d8.pits.size == 1
-    assert np.all(d8.transform == IDENTITY)
-    assert d8.latlon == False
+    assert isinstance(d8.transform, Affine)
+    assert d8.latlon == True
     assert np.all(d8.pit_coords == (81.5, 14.5))
 
 
@@ -126,10 +129,6 @@ def test_set_pits(d8):
 
 
 def test_upstream_area(d8):
-    # set transform
-    res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
-    transform = Affine(res, 0.0, west, 0.0, -res, north)
-    d8.set_transform(transform, latlon=True)
     # test with upstream grid cells
     uparea = d8.upstream_area()
     assert uparea.min() == -9999
