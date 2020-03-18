@@ -553,7 +553,7 @@ class FlwdirRaster(object):
         )
         return self._densify(accu_flat, nodata=nodata)
 
-    def vector(self, min_order=1, xs=None, ys=None, crs=None):
+    def vectorize(self, mask=None, xs=None, ys=None, crs=None):
         """Returns a GeoDataFrame with river segments. Segments are LineStrings 
         connecting cell from down to upstream. 
         
@@ -581,9 +581,15 @@ class FlwdirRaster(object):
             import shapely
         except ImportError:
             raise ImportError(
-                "The `vector` method requires the additional "
+                "The `vectorize` method requires the additional "
                 + "shapely and geopandas packages."
             )
+        if mask is not None:
+            if mask.shape != self.shape:
+                raise ValueError("'mask' shape does not match with FlwdirRaster shape")
+            mask = mask.flat[self._idxs_dense].astype(np.bool)
+        else:
+            mask = np.full(self.ncells, True, np.bool)
         # get geoms and make geopandas dataframe
         if xs is None or ys is None:
             xs, ys = gis_utils.idxs_to_coords(
@@ -593,13 +599,13 @@ class FlwdirRaster(object):
             if xs.size != self.size or ys.size != self.size:
                 msg = "'xs' and/or 'ys' size does not match with  flow direction size"
                 raise ValueError(msg)
-            xs, ys = xs.ravel()[self._idxs_dense], ys.ravel()[self._idxs_dense]
-        geoms = core.to_linestring(self._idxs_ds, xs, ys)
+            xs, ys = xs.flat[self._idxs_dense], ys.flat[self._idxs_dense]
+        geoms = core.to_linestring(self._idxs_ds, xs, ys, mask)
         gdf = gp.GeoDataFrame(geometry=geoms, crs=crs)
         # get additional meta data
-        gdf["stream_order"] = self.stream_order().flat[self._idxs_dense]
-        gdf["pit"] = self._idxs_ds == np.arange(self.ncells)
-        return gdf
+        gdf["idxs"] = self._idxs_dense[mask]
+        gdf["pit"] = np.asarray(self._idxs_ds == np.arange(self.ncells))[mask]
+        return gdf.set_index("idxs")
 
     def upscale(self, scale_factor, method="com2", uparea=None, **kwargs):
         """Upscale flow direction network to lower resolution. 

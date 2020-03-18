@@ -437,7 +437,7 @@ def loop_indices(idxs_ds, idxs_us):
 
 
 ## VECTORIZE
-def to_linestring(idxs_ds, xs, ys):
+def to_linestring(idxs_ds, xs, ys, mask=None):
     """Returns a list of LineString for each up- downstream connection"""
     try:
         from shapely.geometry import LineString
@@ -447,6 +447,8 @@ def to_linestring(idxs_ds, xs, ys):
 
     geoms = list()
     for idx0 in range(idxs_ds.size):
+        if mask is not None and mask[idx0] != 1:
+            continue
         idx_ds = idxs_ds[idx0]
         geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
     return geoms

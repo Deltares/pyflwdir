@@ -187,12 +187,14 @@ def test_upscale(d8, nextidx_data):
     assert rivslp.flat[d8_lr._idxs_dense].min() >= 0
 
 
-def test_vector(d8):
-    res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
-    transform = Affine(res, 0.0, west, 0.0, -res, north)
-    d8.set_transform(transform, latlon=True)
-    gdf = d8.vector()
+def test_vectorize(d8):
+    gdf = d8.vectorize()
     assert gdf.index.size == d8.ncells
+    mask = d8.stream_order() >= 3
+    gdf = d8.vectorize(mask=mask)
+    assert gdf.index.size == np.sum(mask)
+    with pytest.raises(ValueError):
+        d8.vectorize(xs=np.arange(3), ys=np.arange(3))
 
 
 def test_repair(d8):
