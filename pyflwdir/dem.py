@@ -32,7 +32,7 @@ def adjust_elevation(idxs_ds, idxs_us, tree, elevtn_sparse):
                 continue
             # @ head water cell, i.e. no upstream neighbors
             # get downstream indices
-            idxs0 = downstream_all(idx0, idxs_ds)
+            idxs0 = downstream_all(idx0, idxs_ds)[0]
             # fix elevation
             elevtn_sparse[idxs0] = _adjust_elevation(elevtn_sparse[idxs0])
     return elevtn_sparse

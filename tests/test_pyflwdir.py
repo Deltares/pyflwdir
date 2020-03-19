@@ -42,7 +42,7 @@ def d8():
     res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
     transform = Affine(res, 0.0, west, 0.0, -res, north)
     flw.set_transform(transform, latlon=True)
-    flw._idxs_us  # initialize us array
+    flw._tree  # initialize us array
     return flw
 
 
@@ -205,15 +205,17 @@ def test_repair(d8):
 
 
 def test_downstream(d8):
+    idx0 = d8._idxs_dense[d8._tree[12][-1]]
     mask = np.full(d8.shape, False, np.bool)
-    assert np.all(d8.snap_downstream(d8._idxs_dense[0], mask) == d8.pits)
-    assert np.all(d8.snap_downstream(d8._idxs_dense[:2], mask) == d8.pits)
-    assert np.all(d8.trace_downstream(d8._idxs_dense[0], mask)[-1] == d8.pits)
-    paths = d8.trace_downstream(d8._idxs_dense[:2], mask)
-    assert np.all([path[-1] for path in paths] == d8.pits)
+    assert np.all(d8.snap_downstream(idx0, mask)[0] == d8.pits)
+    assert np.all(d8.trace_downstream(idx0, mask)[0][0][-1] == d8.pits)
+    assert d8.trace_downstream(idx0, max_length=0)[0][0][-1] == idx0
+    assert d8.trace_downstream(idx0, max_length=0)[1][0] == 0
     with pytest.raises(ValueError):
-        d8.snap_downstream(d8._idxs_dense[0], np.arange(2))
-        d8.trace_downstream(d8._idxs_dense[0], np.arange(2))
+        d8.snap_downstream(idx0, np.arange(2))
+        d8.trace_downstream(idx0, np.arange(2))
+        d8.trace_downstream(idx0, unit="wrong")
+        d8.trace_downstream(idx0, unit="wrong")
 
 
 def test_pfafstetter(d8):

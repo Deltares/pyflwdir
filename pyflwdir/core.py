@@ -18,16 +18,17 @@ _mv = np.uint32(-1)
 
 @njit
 def _idxs_us(idxs_ds):
-    """Return a 2D array with upstream cell indices for each cell 
+    """Returns a 2D array with upstream cell indices for each cell 
     
     Parameters
     ----------
-    idxs_ds : ndarray of int
-        indices of downstream cells
+    idxs_ds : 1D-array of uint32
+        sparse indices of downstream cells
     
     Returns
     -------
-    indices of upstream cells : ndarray of int
+    2D-array of uint32
+        indices of upstream cells
     """
     n_up = n_upstream(idxs_ds)
     d = np.int64(np.max(n_up))
@@ -49,18 +50,19 @@ def _idxs_us(idxs_ds):
 #### UPSTREAM  functions ####
 @njit
 def upstream(idx0, idxs_us):
-    """Returns the internal upstream indices.
+    """Returns the sparse upstream indices.
     
     Parameters
     ----------
-    idx0 : array_like of int
-        index of local cell(s)
-    idxs_us : ndarray of int
-        indices of upstream cells
+    idx0 : array_like of uint32
+        sparse index of start cell
+    idxs_us : 1D-array of uint32
+        sparse indices of upstream cells
 
     Returns
     -------
-    upstream indices : ndarray of int  
+    1D-array of uint32  
+        upstream indices 
     """
     idxs_us0 = idxs_us[idx0, :].ravel()
     return idxs_us0[idxs_us0 != _mv]
@@ -88,19 +90,19 @@ def main_upstream(idxs, idxs_us, uparea_sparse, upa_min=0.0):
     
     Parameters
     ----------
-    idxs : ndarray of int
-        internal indices of local cells
-    idxs_us : ndarray of int
-        internal indices of upstream cells
-    uparea_sparse : ndarray
+    idxs : 1D-array of uint32
+        sparse indices of local cells
+    idxs_us : 1D-array of uint32
+        sparse indices of upstream cells
+    uparea_sparse : 1D-array
         sparse array with upstream area values
     upa_min : float, optional 
         minimum upstream area for cell to be considered
     
-
     Returns
     -------
-    internal upstream indices : ndarray of int  
+    1D-array of uint32  
+        sparse upstream indices 
     """
     if idxs_us.shape[0] != uparea_sparse.size:
         raise ValueError("uparea_sparse has invalid size")
@@ -118,12 +120,13 @@ def n_upstream(idxs_ds):
     
     Parameters
     ----------
-    idxs_ds : ndarray of int
-        indices of downstream cells
+    idxs_ds : 1D-array of uint32
+        sparse indices of downstream cells
     
     Returns
     -------
-    number of upstream cells : ndarray of int  
+    1D-array of uint8  
+        number of upstream cells 
     """
     n = idxs_ds.size
     n_up = np.zeros(n, dtype=np.uint8)
@@ -148,26 +151,24 @@ def main_tibutaries(idx0, idxs_us, uparea_sparse, idx_end=_mv, min_upa=0, n=4):
     Parameters
     ----------
     idx0 : uint32
-        index of most downstream cell
-    idxs_us : ndarray of uint32
-        indices of upstream cells
-    uparea_sparse : ndarray
+        sparse index of start cell
+    idxs_us : 1D-array of uint32
+        sparse indices of upstream cells
+    uparea_sparse : 1D-array
         sparse array with upstream area values
     idx_end : uint32, optional
-        most upstream index
-        (by default set to missing value, i.e. no fixed most upstream cell)
+        most upstream index, by default set to missing value (no fixed most upstream cell)
     upa_min : float, optional 
         minimum upstream area for subbasin
     n : int, optional
-        number of tributaries
-        (by default 4)
+        number of tributaries, by default 4
 
     Returns
     -------
     1D array of uint32 with size n
-        indices of largest tributaries
+        sparse indices of largest tributaries
     1D array of uint32 with size n*2+1
-        indices of inter- and subbasins   
+        sparse indices of inter- and subbasins   
     """
     # use heapq to keep list of n largest tributaries
     # initialize with n (zero, mv, mv, i) tuples
@@ -228,119 +229,166 @@ def downstream(idx0, idxs_ds):
     
     Parameters
     ----------
-    idx0 : int
-        index of local cell
-    idxs_ds : ndarray of int
-        indices of downstream cells
+    idx0 : array_like of uint32
+        sparse index of start cell
+    idxs_ds : 1D-array of uint32
+        sparse indices of downstream cells
 
     Returns
     -------
-    ndarray of int  
-        downstream index
+    array_like of uint32
+        sparse downstream index
     """
     return idxs_ds[idx0]
 
 
 @njit
-def downstream_all(idx0, idxs_ds, mask_sparse=None):
-    """Returns all downstream indices. 
-    If a mask is provides the most downstream index is found where True. 
-    
+def downstream_all(
+    idx0,
+    idxs_ds,
+    mask_sparse=None,
+    max_length=None,
+    real_length=False,
+    idxs_dense=None,
+    ncol=None,
+    latlon=False,
+    affine=gis_utils.IDENTITY,
+):
+    """Returns sparse indices of all downstream cells, including the start cell, until:
+    - a pit is found OR
+    - a True cell is found in mask OR
+    - the distance from the start point is larger than max_length. 
+
     Parameters
     ----------
-    idx0 : int
-        index of start cells
-    idxs_ds : ndarray of int
-        indices of downstream cells
-    mask_sparse : ndarray of bool, optional
+    idx0 : uint32
+        sparse index of start cells
+    idxs_ds : 1D-array of uint32
+        sparse indices of downstream cells
+    mask_sparse : 1D-array of bool, optional
         True if stream cell
-
+    max_length : float, optional
+        maximum distance to move downstream, by default None
+    real_length : bool, optional
+        unit of length in meters if True, cells if False, by default False
+    idxs_dense : 1D-array of uint32
+        linear indices of dense raster
+    ncol : int
+        number of columns in raster
+    latlon : bool, optional
+        True if WGS84 coordinates, by default False
+    affine : affine transform
+        Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
+    
     Returns
     -------
-    ndarray of int  
-        array of all downstream indices
+    1D-array of uint32  
+        sparse indices of all downstream cells
+    float
+        distance between start and end cell
     """
     idxs = []
     idxs.append(np.uint32(idx0))
     at_stream = mask_sparse is not None and mask_sparse[idx0]
+    ltot = 0.0
+    l = 1.0
     while not at_stream:
         idx_ds = idxs_ds[idx0]
         if idx_ds == idx0:  # pit
             break
+        if real_length and idxs_dense is not None:
+            l = downstream_length(
+                idx0, idxs_ds, idxs_dense, ncol, latlon=latlon, affine=affine
+            )[1]
+        if max_length is not None and ltot + l > max_length:
+            break
+        ltot += l
         idx0 = idx_ds
         idxs.append(np.uint32(idx0))
         at_stream = mask_sparse is not None and mask_sparse[idx0]
-    return np.array(idxs, dtype=np.uint32)
+    return np.array(idxs, dtype=np.uint32), ltot
 
 
 @njit
-def _downstream_paths(idxs0, idxs_ds, mask_sparse=None):
-    """Returns all downstream indices."""
+def downstream_path(
+    idxs0,
+    idxs_ds,
+    mask_sparse=None,
+    max_length=None,
+    real_length=False,
+    idxs_dense=None,
+    ncol=None,
+    latlon=False,
+    affine=gis_utils.IDENTITY,
+):
+    """See downstream_all method, except this function works for a 1D-array of sparse 
+    start indices.
+
+    Returns
+    -------
+    list of 1D-array of uint32  
+        sparse indices of all downstream cells
+    1D-array of float
+        distance between start and end cell
+    """
     paths = List()
+    dists = np.zeros(idxs0.size, dtype=np.float64)
     for i in range(idxs0.size):
-        paths.append(downstream_all(idxs0[i], idxs_ds, mask_sparse))
-    return paths
-
-
-def downstream_path(idxs, idxs_ds, mask_sparse=None):
-    """Returns all downstream indices until the next pit, or if a mask is provided, 
-    until the next True cell.
-
-    Parameters
-    ----------
-    idxs : int or 1D array of int
-        index or indices of start cells
-    idxs_ds : ndarray of int
-        indices of downstream cells
-    mask_sparse : ndarray of bool, optional
-        True if stream cell
-
-    Returns
-    -------
-    (list of) ndarray of int  
-        all downstream indices 
-    """
-    idxs0 = np.atleast_1d(idxs)
-    paths = _downstream_paths(idxs0, idxs_ds, mask_sparse=mask_sparse)
-    if not isinstance(idxs, np.ndarray) or isinstance(idxs, list):
-        return paths[0]
-    else:
-        return paths
+        path, d = downstream_all(
+            idxs0[i],
+            idxs_ds,
+            mask_sparse=mask_sparse,
+            max_length=max_length,
+            real_length=real_length,
+            idxs_dense=idxs_dense,
+            ncol=ncol,
+            latlon=latlon,
+            affine=affine,
+        )
+        paths.append(path)
+        dists[i] = d
+    return paths, dists
 
 
 @njit
-def _downstream_snap(idxs0, idxs_ds, mask_sparse=None):
-    """Returns indices the next downstream True cell."""
-    idxs = idxs0.copy()
-    for i in range(idxs0.size):
-        idxs[i] = downstream_all(idxs0[i], idxs_ds, mask_sparse)[-1]
-    return idxs
-
-
-def downstream_snap(idxs, idxs_ds, mask_sparse=None):
-    """Returns the next downstream index which is either at a pit or, if provided, 
-    a True cell in mask.
+def downstream_snap(
+    idxs0,
+    idxs_ds,
+    mask_sparse=None,
+    real_length=False,
+    idxs_dense=None,
+    ncol=None,
+    latlon=False,
+    affine=gis_utils.IDENTITY,
+):
+    """Returns indices the most downstream cell where mask is True or is pit.
     
-    Parameters
-    ----------
-    idxs : int or 1D array of int
-        index or indices of start cells
-    idxs_ds : ndarray of int
-        indices of downstream cells
-    mask_sparse : ndarray of bool, optional
-        True if stream cell
-
+    See downstream_all method for paramters, except this function works for a 1D-array 
+    of sparse start indices.
+    
     Returns
     -------
-    ndarray of int  
-        next True downstream indices 
+    1D-array of uint32  
+        sparse indices of most downstream cells
+    1D-array of float
+        distance between start and end cell
     """
-    idxs0 = np.atleast_1d(idxs)
-    idxs_out = _downstream_snap(idxs0, idxs_ds, mask_sparse=mask_sparse)
-    if not isinstance(idxs, np.ndarray) or isinstance(idxs, list):
-        return idxs_out[0]
-    else:
-        return idxs_out
+    idxs = idxs0.copy()
+    dists = np.zeros(idxs0.size, dtype=np.float64)
+    for i in range(idxs0.size):
+        path, d = downstream_all(
+            idxs0[i],
+            idxs_ds,
+            mask_sparse=mask_sparse,
+            real_length=real_length,
+            idxs_dense=idxs_dense,
+            ncol=ncol,
+            latlon=latlon,
+            affine=affine,
+        )
+        idxs[i] = path[-1]
+        dists[i] = d
+    return idxs, dists
 
 
 @njit
@@ -353,32 +401,27 @@ def downstream_length(
     
     Parameters
     ----------
-    idx0 : int
-        index of local cell
-    idxs_ds : ndarray of int
-        indices of downstream cells
-    idxs_dense : ndarray of int
+    idx0 : uint32
+        sparse index of start cell
+    idxs_ds : 1D-array of uint32
+        sparse indices of downstream cells
+    idxs_dense : 1D-array of uint32
         linear indices of dense raster
     ncol : int
         number of columns in raster
     latlon : bool, optional
-        True if WGS84 coordinates
-        (the default is False)
+        True if WGS84 coordinates, by default False
     affine : affine transform
         Two dimensional transform for 2D linear mapping
-        (the default is an identity transform which 
-        results in an area of 1 for every cell)
 
     Returns
     -------
-    Tuple of int, float
-        downstream index, length
+    uint32
+        downstream index
+    float
+        length
     """
-    xres, yres, north = (
-        np.float64(affine[0]),
-        np.float64(affine[4]),
-        np.float64(affine[5]),
-    )
+    xres, yres, north = affine[0], affine[4], affine[5]
     idx1 = downstream(idx0, idxs_ds)  # next downstream
     # convert to flattened raster indices
     idx = idxs_dense[idx0]
@@ -398,8 +441,6 @@ def downstream_length(
 
 
 ##### UP/DOWNSTREAM window ####
-
-
 @njit
 def flwdir_window(idx0, n, idxs_ds, idxs_us, uparea_sparse, upa_min=0.0):
     """Returns the indices of between the nth upstream to nth downstream cell from 
@@ -427,17 +468,18 @@ def flwdir_window(idx0, n, idxs_ds, idxs_us, uparea_sparse, upa_min=0.0):
 #### PIT / LOOP INDICES ####
 @njit
 def pit_indices(idxs_ds):
-    """Returns the internal pit indices, i.e. where the 
+    """Returns the sparse pit indices, i.e. where the 
     downstream cell is equal to the local cell.
     
     Parameters
     ----------
-    idxs_ds : ndarray of int
-        internal indices of downstream cells
+    idxs_ds : 1D-array of uint32
+        sparse indices of downstream cells
 
     Returns
     -------
-    1D array of internal downstream indices : ndarray of int  
+    1D-array of uint32  
+        sparse downstream indices
     """
     idx_lst = []
     for idx0 in range(idxs_ds.size):
@@ -448,19 +490,20 @@ def pit_indices(idxs_ds):
 
 @njit
 def loop_indices(idxs_ds, idxs_us):
-    """Returns the internal loop indices, i.e. for cells
+    """Returns the sparse loop indices, i.e. for cells
     which do not have a pit at its most downstream end.
     
     Parameters
     ----------
-    idxs_ds, idxs_us : ndarray of int
-        internal indices of pit, downstream, upstream cells
+    idxs_ds, idxs_us : 1D-array of uint32
+        sparse indices of pit, downstream, upstream cells
 
     Returns
     -------
-    1D array of internal loop indices : array_like  
+    1D-array of uint32  
+        sparse loop indices 
     """
-    # internal lists
+    # sparse lists
     no_loop = idxs_ds == _mv
     idxs_ds0 = pit_indices(idxs_ds)
     if idxs_ds0.size > 0:  # no valid cells!
@@ -493,24 +536,24 @@ def to_linestring(idxs_ds, xs, ys, mask=None):
     return geoms
 
 
-#### internal data indexing and reordering functions ####
+#### sparse data indexing and reordering functions ####
 @njit
 def _sparse_idx(idxs, idxs_dense, size):
-    """Convert linear indices of dense raster to linear indices of sparse 
-    array.
+    """Convert linear indices of dense raster to sparse indices.
     
     Parameters
     ----------
-    idxs : ndarray of int
+    idxs : 1D-array of uint32
         linear indices of dense raster to be converted
-    idxs_dense : ndarray of int
+    idxs_dense : 1D-array of uint32
         linear indices of dense raster of valid cells
     size : int
         size of flwdir raster
 
     Returns
     -------
-    linear sparse indices : ndarray of int    
+    1D-array of uint32    
+        sparse indices 
     """
     # NOTE dense idxs in intp data type, sparse idxs in uint32
     # TODO: test if this can be done faster with sorted idxs array
@@ -525,20 +568,21 @@ def _sparse_idx(idxs, idxs_dense, size):
 
 @njit
 def _densify(data, idxs_dense, shape, nodata=-9999):
-    """Densify sparse array.
+    """Densify sparse 1D array.
     
     Parameters
     ----------
-    data : ndarray 
-        1D data
-    idxs_dense : ndarray of int
+    data : 1D-array 
+        1D sparse data
+    idxs_dense : 1D-array of uint32
         linear indices of dense raster
     shape : tuple of int
         shape of output raster
 
     Returns
     -------
-    2D raster data : ndarray    
+    2D-array of data dtype
+        2D raster data 
     """
     if idxs_dense.size != data.size:
         raise ValueError("data has invalid size")

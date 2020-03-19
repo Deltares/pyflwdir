@@ -298,10 +298,10 @@ class FlwdirRaster(object):
         if idxs_pit is None:
             idxs0 = core.pit_indices(self._idxs_ds)
         else:
-            idxs0 = self._sparse_idx(idxs_pit)
+            idxs0 = self._sparse_idx(np.atleast_1d(idxs_pit))
             # snap to streams
             if streams is not None:
-                idxs0 = core.downstream_snap(idxs0, self._idxs_ds, streams)
+                idxs0 = core.downstream_snap(idxs0, self._idxs_ds, streams)[0]
         self._idxs_pit = idxs0
         self._tree_ = None  # reset network tree
 
@@ -316,7 +316,7 @@ class FlwdirRaster(object):
         self._tree_ = tree.network_tree(self._idxs_pit, self._idxs_us)
 
     def set_transform(self, transform, latlon=False):
-        """Set transform affine
+        """Set transform affine.
         
         Parameters
         ----------
@@ -337,7 +337,7 @@ class FlwdirRaster(object):
         self.latlon = latlon
 
     def repair(self):
-        """Repairs loops by set a pit at every cell witch does not drain to 
+        """Repair loops by set a pit at every cell witch does not drain to 
         a pit."""
         repair_idx = core.loop_indices(self._idxs_ds, self._idxs_us)
         if repair_idx.size > 0:
@@ -346,13 +346,12 @@ class FlwdirRaster(object):
             self._idxs_pit = core.pit_indices[self._idxs_ds]
 
     def dump(self, fn):
-        """Serialize object to file using pickle library.      
-        """
+        """Serialize object to file using pickle library."""
         with open(fn, "wb") as handle:
             pickle.dump(self._dict, handle, protocol=-1)
 
     def to_array(self, ftype=None):
-        """Return 2D flow direction array. 
+        """Return 2D flow direction raster. 
         
         Parameters
         ----------
@@ -362,7 +361,7 @@ class FlwdirRaster(object):
         Returns
         -------
         2D array of int
-            Flow direction raster
+            flow direction raster
         """
         if ftype is None:
             ftype = self.ftype
@@ -371,59 +370,92 @@ class FlwdirRaster(object):
             raise ValueError(msg)
         return FTYPES[ftype].to_array(self._idxs_dense, self._idxs_ds, self.shape)
 
-    def trace_downstream(self, idxs, mask=None):
-        """Returns all downstream indices until the next pit, or if a mask is provided, 
-        until the next True cell.
+    def trace_downstream(self, idxs, mask=None, max_length=None, unit="cell"):
+        """Returns all downstream indices until:
+        - a pit is found (including) OR
+        - a True cell is found in mask (including) OR
+        - the distance from the start point is larger than max_length (not including). 
         
         Parameters
         ----------
-        idxs : int or 1D array of int
-            index or indices of start cells
+        idxs : array_like of int
+            index of start cells
         mask : ndarray of bool, optional
-            True if stream cell
+            True if stream cell.
+        max_length : float, optional
+            maximum length of trace
+        unit : {'m', 'cell'}, optional
+            Unit of length.
 
         Returns
         -------
-        (list of) ndarray of int  
-            all downstream indices 
+        list of 1D-array of int  
+            All downstream indices
+        1D-array of float
+            Length between start and end cell
         """
         if mask is not None:
             if mask.shape != self.shape:
                 raise ValueError("'mask' shape does not match with FlwdirRaster shape")
             mask = mask.flat[self._idxs_dense]
-        idxs0 = self._sparse_idx(idxs)
-        path_lst = core.downstream_path(idxs0, self._idxs_ds, mask)
-        if isinstance(path_lst, np.ndarray):
-            paths = self._idxs_dense[path_lst]
-        else:
-            paths = []
-            for path in path_lst:
-                paths.append(self._idxs_dense[path])
-        return paths
+        if unit not in ["m", "cell"]:
+            raise ValueError('Unknown unit, select from ["m", "cell"]')
+        idxs0 = self._sparse_idx(np.atleast_1d(idxs))
+        path_lst, lengths = core.downstream_path(
+            idxs0,
+            self._idxs_ds,
+            mask_sparse=mask,
+            max_length=max_length,
+            real_length=unit == "m",
+            idxs_dense=self._idxs_dense,
+            ncol=self.shape[1],
+            latlon=self.latlon,
+            affine=self.transform,
+        )
+        paths = []
+        for path in path_lst:
+            paths.append(self._idxs_dense[path])
+        return paths, lengths
 
-    def snap_downstream(self, idxs, mask=None):
-        """Returns the next downstream index which is either at a pit or, if provided, 
-        a True cell in mask.
+    def snap_downstream(self, idxs, mask, unit="cell"):
+        """Return the next downstream index where
+        - mask is True or 
+        - pit.
         
         Parameters
         ----------
-        idxs : int or 1D array of int
-            index or indices of start cells
-        mask : ndarray of bool, optional
-            True if stream cell
+        idxs : array_like of int
+            index of start cell.
+        mask : ndarray of bool
+            True at cell where to snap to
+        unit : {'m', 'cell'}, optional
+            unit of distance.
 
         Returns
         -------
-        int or ndarray of int  
-            next True downstream index or indices 
+        array_like of int  
+            next downstream index at True cell or pit
+        array_like of float
+            distance between start and snap cell.
         """
         if mask is not None:
             if mask.shape != self.shape:
                 raise ValueError("'mask' shape does not match with FlwdirRaster shape")
             mask = mask.flat[self._idxs_dense]
-        idxs0 = self._sparse_idx(idxs)
-        idxs1 = self._idxs_dense[core.downstream_snap(idxs0, self._idxs_ds, mask)]
-        return idxs1
+        if unit not in ["m", "cell"]:
+            raise ValueError('Unknown unit, select from ["m", "cell"]')
+        idxs0 = self._sparse_idx(np.atleast_1d(idxs))
+        idxs1, dist = core.downstream_snap(
+            idxs0,
+            self._idxs_ds,
+            mask_sparse=mask,
+            real_length=unit == "m",
+            idxs_dense=self._idxs_dense,
+            ncol=self.shape[1],
+            latlon=self.latlon,
+            affine=self.transform,
+        )
+        return self._idxs_dense[idxs1], dist
 
     def basins(self, ids=None, **kwargs):
         """Returns a basin map with a unique IDs for every basin. 

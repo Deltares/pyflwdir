@@ -201,28 +201,37 @@ def test_core_upstream(d8_parsed, d8_us_tree):
     assert np.all(idxs_us_main == idxs_us[:, 0])
 
 
-def test_core_downstream(d8_parsed, d8_us_tree):
+def test_core_downstream(d8_parsed, d8_us_tree, _d8):
+    nrow, ncol = _d8.shape
     idxs_dense, idxs_ds, idxs_pit = d8_parsed
     idxs_us, _tree = d8_us_tree
     # test all downstream indices
-    idxs = core.downstream_all(_tree[-1][0], idxs_ds)
-    assert idxs.size == len(_tree)
+    idxs, d = core.downstream_all(_tree[3][0], idxs_ds)
     assert np.all(idxs[-1] == idxs_pit)
+    assert d == len(idxs) - 1
     # mask all True -> return start cell
     mask = np.full(idxs_ds.size, True, np.bool)
-    idxs = core.downstream_all(_tree[-2][0], idxs_ds, mask)
-    assert np.all(idxs == _tree[-2][0])
+    idxs = core.downstream_all(_tree[3][0], idxs_ds, mask)[0]
+    assert np.all(idxs == _tree[3][0])
     # test downstream_snap
-    idxs = core.downstream_snap(np.arange(3, dtype=np.uint32), idxs_ds)
+    idxs = core.downstream_snap(_tree[12], idxs_ds)[0]
     assert np.all(idxs == idxs_pit)
-    assert core.downstream_snap(3, idxs_ds) == idxs_pit
     # mask all False -> snap to pit
     mask = np.full(idxs_ds.size, False, np.bool)
-    path = core.downstream_path(0, idxs_ds, mask)
-    assert isinstance(path, np.ndarray)
-    paths = core.downstream_path(np.arange(3, dtype=np.uint32), idxs_ds, mask)
-    assert len(paths) == 3
+    mask.flat[idxs_pit] = True
+    paths = core.downstream_path(_tree[11], idxs_ds, mask)[0]
     assert isinstance(paths[0], np.ndarray)
+    # test max length
+    max_length = 5
+    path2, d = core.downstream_path(
+        _tree[11],
+        idxs_ds,
+        max_length=max_length,
+        idxs_dense=idxs_dense,
+        ncol=ncol,
+        real_length=True,
+    )
+    assert np.max(d) < max_length
 
 
 def test_core_window(d8_parsed, d8_us_tree):
