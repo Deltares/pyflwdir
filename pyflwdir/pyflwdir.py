@@ -285,23 +285,23 @@ class FlwdirRaster(object):
             2D raster with cells flagged 'True' at stream cells, only used
             in combination with idxs_pit or xy_pit, by default None. 
         """
+        if streams is not None:
+            if streams.shape != self.shape:
+                raise ValueError("'streams' shape does not match FlwdirRaster shape")
+            streams = streams.flat[self._idxs_dense]
         # coordinates to linear dense indices
         if xy_pit is not None and idxs_pit is not None:
             raise ValueError("Either idx or xy should be provided, not both.")
         elif xy_pit is not None:
             idxs_pit = gis_utils.coords_to_idxs(*xy_pit, self.transform, self.shape)
-
         # linear dense to sparse indices to
         if idxs_pit is None:
             idxs0 = core.pit_indices(self._idxs_ds)
         else:
-            idxs_pit = np.asarray(idxs_pit).flatten()
             idxs0 = self._sparse_idx(idxs_pit)
             # snap to streams
             if streams is not None:
-                idxs0 = core.downstream_mask(
-                    idxs0, self._idxs_ds, self._sparsify(streams)
-                )
+                idxs0 = core.downstream_snap(idxs0, self._idxs_ds, streams)
         self._idxs_pit = idxs0
         self._tree_ = None  # reset network tree
 
@@ -370,6 +370,60 @@ class FlwdirRaster(object):
             msg = f'The flow direction type "{ftype}" is not recognized.'
             raise ValueError(msg)
         return FTYPES[ftype].to_array(self._idxs_dense, self._idxs_ds, self.shape)
+
+    def trace_downstream(self, idxs, mask=None):
+        """Returns all downstream indices until the next pit, or if a mask is provided, 
+        until the next True cell.
+        
+        Parameters
+        ----------
+        idxs : int or 1D array of int
+            index or indices of start cells
+        mask : ndarray of bool, optional
+            True if stream cell
+
+        Returns
+        -------
+        (list of) ndarray of int  
+            all downstream indices 
+        """
+        if mask is not None:
+            if mask.shape != self.shape:
+                raise ValueError("'mask' shape does not match with FlwdirRaster shape")
+            mask = mask.flat[self._idxs_dense]
+        idxs0 = self._sparse_idx(idxs)
+        path_lst = core.downstream_path(idxs0, self._idxs_ds, mask)
+        if isinstance(path_lst, np.ndarray):
+            paths = self._idxs_dense[path_lst]
+        else:
+            paths = []
+            for path in path_lst:
+                paths.append(self._idxs_dense[path])
+        return paths
+
+    def snap_downstream(self, idxs, mask=None):
+        """Returns the next downstream index which is either at a pit or, if provided, 
+        a True cell in mask.
+        
+        Parameters
+        ----------
+        idxs : int or 1D array of int
+            index or indices of start cells
+        mask : ndarray of bool, optional
+            True if stream cell
+
+        Returns
+        -------
+        int or ndarray of int  
+            next True downstream index or indices 
+        """
+        if mask is not None:
+            if mask.shape != self.shape:
+                raise ValueError("'mask' shape does not match with FlwdirRaster shape")
+            mask = mask.flat[self._idxs_dense]
+        idxs0 = self._sparse_idx(idxs)
+        idxs1 = self._idxs_dense[core.downstream_snap(idxs0, self._idxs_ds, mask)]
+        return idxs1
 
     def basins(self, ids=None, **kwargs):
         """Returns a basin map with a unique IDs for every basin. 
@@ -587,7 +641,7 @@ class FlwdirRaster(object):
         if mask is not None:
             if mask.shape != self.shape:
                 raise ValueError("'mask' shape does not match with FlwdirRaster shape")
-            mask = mask.flat[self._idxs_dense].astype(np.bool)
+            mask = mask.flat[self._idxs_dense]
         else:
             mask = np.full(self.ncells, True, np.bool)
         # get geoms and make geopandas dataframe
@@ -893,14 +947,17 @@ class FlwdirRaster(object):
         """Return sparse data array from dense data array."""
         return data.flat[self._idxs_dense]
 
-    def _sparse_idx(self, idx):
+    def _sparse_idx(self, idxs):
         """Transforms linear indices of dense array to sparse indices."""
-        # NOTE: should we throw an error if any idx is invalid ?
-        idx_sparse = core._sparse_idx(idx, self._idxs_dense, self.size)
+        idxs0 = np.atleast_1d(idxs)
+        idx_sparse = core._sparse_idx(idxs0, self._idxs_dense, self.size)
         valid = np.logical_and(idx_sparse >= 0, idx_sparse < self.ncells)
         if not np.all(valid):
             raise IndexError("dense index outside valid cells")
-        return idx_sparse
+        if not isinstance(idxs, np.ndarray) or isinstance(idxs, list):
+            return idx_sparse[0]
+        else:
+            return idx_sparse
 
 
 def _check_convert_subidxs_out(subidxs_out, other):

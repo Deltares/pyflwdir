@@ -184,7 +184,7 @@ def test_core_sparse(_d8, d8_parsed):
         )
 
 
-def test_core_up_downstream(d8_parsed, d8_us_tree):
+def test_core_upstream(d8_parsed, d8_us_tree):
     idxs_dense, idxs_ds, idxs_pit = d8_parsed
     idxs_us, _tree = d8_us_tree
     # test upstream functions
@@ -199,16 +199,30 @@ def test_core_up_downstream(d8_parsed, d8_us_tree):
     upa[idxs_us0] = 2.0
     idxs_us_main = core.main_upstream(idxs, idxs_us, upa)
     assert np.all(idxs_us_main == idxs_us[:, 0])
+
+
+def test_core_downstream(d8_parsed, d8_us_tree):
+    idxs_dense, idxs_ds, idxs_pit = d8_parsed
+    idxs_us, _tree = d8_us_tree
     # test all downstream indices
-    idxs = core.downstream_path(_tree[-1][0], idxs_ds)
+    idxs = core.downstream_all(_tree[-1][0], idxs_ds)
     assert idxs.size == len(_tree)
-    # test downstream_mask with only stream cell at pit
-    river_sparse = np.zeros(idxs_ds.size, dtype=np.bool)
-    river_sparse[idxs_pit] = True
-    idxs_ds_stream = core.downstream_mask(
-        np.arange(3, dtype=np.uint32), idxs_ds, river_sparse
-    )
-    assert np.all(idxs_ds_stream == idxs_pit)
+    assert np.all(idxs[-1] == idxs_pit)
+    # mask all True -> return start cell
+    mask = np.full(idxs_ds.size, True, np.bool)
+    idxs = core.downstream_all(_tree[-2][0], idxs_ds, mask)
+    assert np.all(idxs == _tree[-2][0])
+    # test downstream_snap
+    idxs = core.downstream_snap(np.arange(3, dtype=np.uint32), idxs_ds)
+    assert np.all(idxs == idxs_pit)
+    assert core.downstream_snap(3, idxs_ds) == idxs_pit
+    # mask all False -> snap to pit
+    mask = np.full(idxs_ds.size, False, np.bool)
+    path = core.downstream_path(0, idxs_ds, mask)
+    assert isinstance(path, np.ndarray)
+    paths = core.downstream_path(np.arange(3, dtype=np.uint32), idxs_ds, mask)
+    assert len(paths) == 3
+    assert isinstance(paths[0], np.ndarray)
 
 
 def test_core_window(d8_parsed, d8_us_tree):

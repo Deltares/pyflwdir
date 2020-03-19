@@ -115,6 +115,7 @@ def test_set_pits(d8):
     # all cells are True -> pit at idx1
     d8.set_pits(idxs_pit=idx1, streams=np.full(d8.shape, True, dtype=np.bool))
     assert np.all(d8.pits == idx1)
+    assert d8._tree_ is None
     # original pit idx0
     d8.set_pits(xy_pit=(x, y))
     assert np.all(d8.pits == idx0)
@@ -201,6 +202,18 @@ def test_vectorize(d8):
 def test_repair(d8):
     # TODO
     pass
+
+
+def test_downstream(d8):
+    mask = np.full(d8.shape, False, np.bool)
+    assert np.all(d8.snap_downstream(d8._idxs_dense[0], mask) == d8.pits)
+    assert np.all(d8.snap_downstream(d8._idxs_dense[:2], mask) == d8.pits)
+    assert np.all(d8.trace_downstream(d8._idxs_dense[0], mask)[-1] == d8.pits)
+    paths = d8.trace_downstream(d8._idxs_dense[:2], mask)
+    assert np.all([path[-1] for path in paths] == d8.pits)
+    with pytest.raises(ValueError):
+        d8.snap_downstream(d8._idxs_dense[0], np.arange(2))
+        d8.trace_downstream(d8._idxs_dense[0], np.arange(2))
 
 
 def test_pfafstetter(d8):

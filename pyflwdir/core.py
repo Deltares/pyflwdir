@@ -235,73 +235,112 @@ def downstream(idx0, idxs_ds):
 
     Returns
     -------
-    downstream index : ndarray of int  
+    ndarray of int  
+        downstream index
     """
     return idxs_ds[idx0]
 
 
 @njit
-def downstream_path(idx0, idxs_ds):
-    """Returns path of downstream indices
+def downstream_all(idx0, idxs_ds, mask_sparse=None):
+    """Returns all downstream indices. 
+    If a mask is provides the most downstream index is found where True. 
     
     Parameters
     ----------
     idx0 : int
-        index of local cell
+        index of start cells
     idxs_ds : ndarray of int
         indices of downstream cells
-
-    Returns
-    -------
-    ndarray of int  
-        path of downstrewam indices
-    """
-    idxs = []
-    idxs.append(idx0)
-    while True:
-        idx_ds = idxs_ds[idx0]
-        if idx0 == idx_ds:
-            break
-        idx0 = idx_ds
-        idxs.append(np.uint32(idx0))
-    return np.array(idxs, dtype=np.uint32)
-
-
-@njit
-def _downstream_mask(idx0, idxs_ds, mask_sparse):
-    """Returns index of nearest downstream True cell. For integer index"""
-    at_stream = mask_sparse[idx0]
-    while not at_stream:
-        idx_ds = idxs_ds[idx0]
-        if idx_ds == idx0:  # pit
-            break
-        idx0 = idx_ds
-        at_stream = mask_sparse[idx0]
-    return idx0
-
-
-@njit
-def downstream_mask(idxs0, idxs_ds, mask_sparse):
-    """Returns index the next downstream True cell.
-    
-    Parameters
-    ----------
-    idx0 : int
-        index of local cell
-    idxs_ds : ndarray of int
-        indices of downstream cells
-    data : ndarray of bool
+    mask_sparse : ndarray of bool, optional
         True if stream cell
 
     Returns
     -------
     ndarray of int  
-        downstream stream indices 
+        array of all downstream indices
     """
-    idx_out = np.zeros(idxs0.size, dtype=np.uint32)
+    idxs = []
+    idxs.append(np.uint32(idx0))
+    at_stream = mask_sparse is not None and mask_sparse[idx0]
+    while not at_stream:
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == idx0:  # pit
+            break
+        idx0 = idx_ds
+        idxs.append(np.uint32(idx0))
+        at_stream = mask_sparse is not None and mask_sparse[idx0]
+    return np.array(idxs, dtype=np.uint32)
+
+
+@njit
+def _downstream_paths(idxs0, idxs_ds, mask_sparse=None):
+    """Returns all downstream indices."""
+    paths = List()
     for i in range(idxs0.size):
-        idx_out[i] = _downstream_mask(np.uint32(idxs0[i]), idxs_ds, mask_sparse)
-    return idx_out
+        paths.append(downstream_all(idxs0[i], idxs_ds, mask_sparse))
+    return paths
+
+
+def downstream_path(idxs, idxs_ds, mask_sparse=None):
+    """Returns all downstream indices until the next pit, or if a mask is provided, 
+    until the next True cell.
+
+    Parameters
+    ----------
+    idxs : int or 1D array of int
+        index or indices of start cells
+    idxs_ds : ndarray of int
+        indices of downstream cells
+    mask_sparse : ndarray of bool, optional
+        True if stream cell
+
+    Returns
+    -------
+    (list of) ndarray of int  
+        all downstream indices 
+    """
+    idxs0 = np.atleast_1d(idxs)
+    paths = _downstream_paths(idxs0, idxs_ds, mask_sparse=mask_sparse)
+    if not isinstance(idxs, np.ndarray) or isinstance(idxs, list):
+        return paths[0]
+    else:
+        return paths
+
+
+@njit
+def _downstream_snap(idxs0, idxs_ds, mask_sparse=None):
+    """Returns indices the next downstream True cell."""
+    idxs = idxs0.copy()
+    for i in range(idxs0.size):
+        idxs[i] = downstream_all(idxs0[i], idxs_ds, mask_sparse)[-1]
+    return idxs
+
+
+def downstream_snap(idxs, idxs_ds, mask_sparse=None):
+    """Returns the next downstream index which is either at a pit or, if provided, 
+    a True cell in mask.
+    
+    Parameters
+    ----------
+    idxs : int or 1D array of int
+        index or indices of start cells
+    idxs_ds : ndarray of int
+        indices of downstream cells
+    mask_sparse : ndarray of bool, optional
+        True if stream cell
+
+    Returns
+    -------
+    ndarray of int  
+        next True downstream indices 
+    """
+    idxs0 = np.atleast_1d(idxs)
+    idxs_out = _downstream_snap(idxs0, idxs_ds, mask_sparse=mask_sparse)
+    if not isinstance(idxs, np.ndarray) or isinstance(idxs, list):
+        return idxs_out[0]
+    else:
+        return idxs_out
 
 
 @njit
