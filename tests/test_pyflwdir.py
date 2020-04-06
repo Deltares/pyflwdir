@@ -198,6 +198,13 @@ def test_downstream_dist(d8):
     assert np.min(dist[dist != -9999]) == 0
 
 
+def test_downstream_slope(d8):
+    slp = d8.downstream_slope(elevtn=np.ones(d8.shape))
+    assert slp[slp != -9999].max() == 0
+    slp = d8.downstream_slope(elevtn=d8.upstream_area())
+    assert slp[slp != -9999].max() < 0
+
+
 def test_vectorize(d8):
     gdf = d8.vectorize()
     assert gdf.index.size == d8.ncells

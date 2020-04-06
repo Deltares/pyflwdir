@@ -470,19 +470,30 @@ class FlwdirRaster(object):
         )
         return self._densify(dist, nodata=-9999.0)
 
+    def downstream_slope(self, elevtn, dist=None):
+        if dist is None:
+            dist = self.downstream_dist(unit="m")
+        elif not np.all(dist.shape == self.shape):
+            raise ValueError("'dist' shape does not match with FlwdirRaster shape")
+        dz = elevtn - self.downstream(elevtn)
+        return np.where(dist > 0, dz / dist, -9999)
+
     def downstream(self, arr):
         """Returns next downstream value."""
         if not np.all(arr.shape == self.shape):
             raise ValueError("'arr' shape does not match with FlwdirRaster shape")
-        arr_out = values.copy()
-        arr_out.flat[self._idxs_dense] = values.flat[self._idxs_dense[self._idxs_ds]]
+        arr_out = arr.copy()
+        arr_out.flat[self._idxs_dense] = arr.flat[self._idxs_dense[self._idxs_ds]]
         return arr_out
 
     def upstream(self, arr, mv=-9999):
         """Returns sum of next upstream values."""
         if not np.all(arr.shape == self.shape):
             raise ValueError("'arr' shape does not match with FlwdirRaster shape")
-        arr_out = upstream_sum(self._idxs_ds, arr, mv)
+        arr_out = arr.copy()
+        arr_out.flat[self._idxs_dense] = upstream_sum(
+            self._idxs_ds, arr.flat[self._idxs_dense], mv
+        )
         return arr_out
 
     def basins(self, ids=None, **kwargs):
