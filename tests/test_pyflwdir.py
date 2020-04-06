@@ -11,6 +11,8 @@ import pyflwdir
 from pyflwdir.core import _mv
 from pyflwdir.gis_utils import IDENTITY
 
+
+## TODO: replace by small data
 # read and parse data
 @pytest.fixture
 def d8_data():
@@ -42,7 +44,6 @@ def d8():
     res, west, north = 1 / 120, 5 + 50 / 120.0, 51 + 117 / 120.0
     transform = Affine(res, 0.0, west, 0.0, -res, north)
     flw.set_transform(transform, latlon=True)
-    flw._tree  # initialize us array
     return flw
 
 
@@ -187,6 +188,14 @@ def test_upscale(d8, nextidx_data):
     rivlen, rivslp = d8.subriver(d8_lr, idxout, np.ones(d8.shape))
     assert rivlen.flat[d8_lr._idxs_dense].min() >= 0  # only zeros at boundary
     assert rivslp.flat[d8_lr._idxs_dense].min() >= 0
+
+
+def test_downstream_dist(d8):
+    dist = d8.downstream_dist()
+    assert np.min(dist[dist != -9999]) == 0
+    assert np.max(dist[dist != -9999]) == 2 ** 0.5
+    dist = d8.downstream_dist(unit="m")
+    assert np.min(dist[dist != -9999]) == 0
 
 
 def test_vectorize(d8):

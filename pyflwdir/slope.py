@@ -11,9 +11,9 @@ __all__ = ["slope"]
 
 
 @njit
-def slope(dem, nodata, latlon=False, affine=gis_utils.IDENTITY):
+def slope(dem, nodata, latlon=False, transform=gis_utils.IDENTITY):
 
-    xres, yres, north = affine[0], affine[4], affine[5]
+    xres, yres, north = transform[0], transform[4], transform[5]
     slope = np.zeros(dem.shape, dtype=np.float32)
     nrow, ncol = dem.shape
 

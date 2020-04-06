@@ -63,7 +63,7 @@ def xy(transform, rows, cols, offset="center"):
 
     Parameters
     ----------
-    transform : affine.Affine
+    transform : affine transform
         Transformation from pixel coordinates to coordinate reference system.
     rows : ndarray or int
         Pixel rows.
@@ -203,6 +203,7 @@ def coords_to_idxs(xs, ys, transform, shape):
     return rows * ncol + cols
 
 
+# TODO: rename to transform_to_coords & correct upstream use in pyflwdir and hydromt
 def affine_to_coords(affine, shape):
     """Returs a raster axis with pixel center coordinates based on the affine.
 

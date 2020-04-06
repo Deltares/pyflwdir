@@ -410,7 +410,7 @@ class FlwdirRaster(object):
             idxs_dense=self._idxs_dense,
             ncol=self.shape[1],
             latlon=self.latlon,
-            affine=self.transform,
+            transform=self.transform,
         )
         paths = []
         for path in path_lst:
@@ -453,9 +453,37 @@ class FlwdirRaster(object):
             idxs_dense=self._idxs_dense,
             ncol=self.shape[1],
             latlon=self.latlon,
-            affine=self.transform,
+            transform=self.transform,
         )
         return self._idxs_dense[idxs1], dist
+
+    def downstream_dist(self, unit="cell"):
+        """Returns distance to next downstream cell."""
+        if unit not in ["m", "cell"]:
+            raise ValueError('Unknown unit, select from ["m", "cell"]')
+        dist = core.downstream_dist(
+            idxs_ds=self._idxs_ds,
+            idxs_dense=self._idxs_dense,
+            ncol=self.shape[1],
+            transform=IDENTITY if unit == "cell" else self.transform,
+            latlon=False if unit == "cell" else self.latlon,
+        )
+        return self._densify(dist, nodata=-9999.0)
+
+    def downstream(self, arr):
+        """Returns next downstream value."""
+        if not np.all(arr.shape == self.shape):
+            raise ValueError("'arr' shape does not match with FlwdirRaster shape")
+        arr_out = values.copy()
+        arr_out.flat[self._idxs_dense] = values.flat[self._idxs_dense[self._idxs_ds]]
+        return arr_out
+
+    def upstream(self, arr, mv=-9999):
+        """Returns sum of next upstream values."""
+        if not np.all(arr.shape == self.shape):
+            raise ValueError("'arr' shape does not match with FlwdirRaster shape")
+        arr_out = upstream_sum(self._idxs_ds, arr, mv)
+        return arr_out
 
     def basins(self, ids=None, **kwargs):
         """Returns a basin map with a unique IDs for every basin. 
@@ -977,6 +1005,8 @@ class FlwdirRaster(object):
 
     def _sparsify(self, data):
         """Return sparse data array from dense data array."""
+        if data.shape != self.shape:
+            raise ValueError("data shape does not match FlwdirRaster shaper")
         return data.flat[self._idxs_dense]
 
     def _sparse_idx(self, idxs):

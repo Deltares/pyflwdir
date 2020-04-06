@@ -140,22 +140,22 @@ def test_ftype_conversion():
     assert np.all(ldd_to_d8(d8_to_ldd(core_d8._ds)) == core_d8._ds)
 
 
-def test_downstream_length():
-    """test downstream length"""
+def test_downstream_dist():
+    """test downstream_dist"""
     ncol = 3
     idxs_dense, idxs_ds, _ = core_d8.from_array(core_d8._us)
     # test length
-    dy = core.downstream_length(1, idxs_ds, idxs_dense, ncol, latlon=True)[1]
-    dx = core.downstream_length(3, idxs_ds, idxs_dense, ncol, latlon=True)[1]
+    dy = core._downstream_dist(1, idxs_ds, idxs_dense, ncol, latlon=True)[1]
+    dx = core._downstream_dist(3, idxs_ds, idxs_dense, ncol, latlon=True)[1]
     for idx0 in [1, 3, 5, 7]:  # horizontal / vertical
-        assert core.downstream_length(idx0, idxs_ds, idxs_dense, ncol)[1] == 1
+        assert core._downstream_dist(idx0, idxs_ds, idxs_dense, ncol)[1] == 1
     for idx0 in [0, 2, 6, 8]:  # diagonal
-        l = core.downstream_length(idx0, idxs_ds, idxs_dense, ncol)[1]
+        l = core._downstream_dist(idx0, idxs_ds, idxs_dense, ncol)[1]
         assert l == np.hypot(1, 1)
-        l = core.downstream_length(idx0, idxs_ds, idxs_dense, ncol, latlon=True)[1]
+        l = core._downstream_dist(idx0, idxs_ds, idxs_dense, ncol, latlon=True)[1]
         assert l == np.hypot(dx, dy)
-    assert core.downstream_length(4, idxs_ds, idxs_dense, ncol)[1] == 0  # pit
-    l = core.downstream_length(4, idxs_ds, idxs_dense, ncol, latlon=True)[1]
+    assert core._downstream_dist(4, idxs_ds, idxs_dense, ncol)[1] == 0  # pit
+    l = core._downstream_dist(4, idxs_ds, idxs_dense, ncol, latlon=True)[1]
     assert l == 0  # pit
 
 

@@ -85,7 +85,7 @@ def river_params(
                 subidx1 = subidx
                 break
             # update length
-            l += core.downstream_length(
+            l += core._downstream_dist(
                 subidx1, subidxs_ds, subidxs_dense, subncol, latlon, transform
             )[1]
             # break if at upstream subgrid outlet

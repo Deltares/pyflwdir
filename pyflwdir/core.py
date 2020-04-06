@@ -49,6 +49,34 @@ def _idxs_us(idxs_ds):
 
 #### UPSTREAM  functions ####
 @njit
+def upstream_sum(idxs_ds, arr, mv):
+    """Returns sum of first upstream values 
+    
+    Parameters
+    ----------
+    idxs_ds : 1D-array of uint32
+        sparse indices of downstream cells
+    
+    Returns
+    -------
+    2D-array of uint32
+        indices of upstream cells
+    """
+    # 2D arrays of upstream index
+    arr_sum = np.full(arr.size, 0, dtype=arr.dtype)
+    for i in range(n):
+        i_ds = idxs_ds[i]
+        if i_ds == i:
+            continue
+        # valid ds cell
+        if arr[i] == mv or arr_sum[i_ds] == mv:
+            arr_sum = mv
+        else:
+            arr_sum[i_ds] += arr[i]
+    return arr_sum
+
+
+@njit
 def upstream(idx0, idxs_us):
     """Returns the sparse upstream indices.
     
@@ -252,7 +280,7 @@ def downstream_all(
     idxs_dense=None,
     ncol=None,
     latlon=False,
-    affine=gis_utils.IDENTITY,
+    transform=gis_utils.IDENTITY,
 ):
     """Returns sparse indices of all downstream cells, including the start cell, until:
     - a pit is found OR
@@ -277,7 +305,7 @@ def downstream_all(
         number of columns in raster
     latlon : bool, optional
         True if WGS84 coordinates, by default False
-    affine : affine transform
+    transform : affine transform
         Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
     
     Returns
@@ -297,8 +325,8 @@ def downstream_all(
         if idx_ds == idx0:  # pit
             break
         if real_length and idxs_dense is not None:
-            l = downstream_length(
-                idx0, idxs_ds, idxs_dense, ncol, latlon=latlon, affine=affine
+            l = _downstream_dist(
+                idx0, idxs_ds, idxs_dense, ncol, latlon=latlon, transform=transform
             )[1]
         if max_length is not None and ltot + l > max_length:
             break
@@ -319,7 +347,7 @@ def downstream_path(
     idxs_dense=None,
     ncol=None,
     latlon=False,
-    affine=gis_utils.IDENTITY,
+    transform=gis_utils.IDENTITY,
 ):
     """See downstream_all method, except this function works for a 1D-array of sparse 
     start indices.
@@ -343,7 +371,7 @@ def downstream_path(
             idxs_dense=idxs_dense,
             ncol=ncol,
             latlon=latlon,
-            affine=affine,
+            transform=transform,
         )
         paths.append(path)
         dists[i] = d
@@ -359,7 +387,7 @@ def downstream_snap(
     idxs_dense=None,
     ncol=None,
     latlon=False,
-    affine=gis_utils.IDENTITY,
+    transform=gis_utils.IDENTITY,
 ):
     """Returns indices the most downstream cell where mask is True or is pit.
     
@@ -384,7 +412,7 @@ def downstream_snap(
             idxs_dense=idxs_dense,
             ncol=ncol,
             latlon=latlon,
-            affine=affine,
+            transform=transform,
         )
         idxs[i] = path[-1]
         dists[i] = d
@@ -392,8 +420,22 @@ def downstream_snap(
 
 
 @njit
-def downstream_length(
-    idx0, idxs_ds, idxs_dense, ncol, latlon=False, affine=gis_utils.IDENTITY
+def downstream_dist(
+    idxs_ds, idxs_dense, ncol, latlon=False, transform=gis_utils.IDENTITY
+):
+    """Return the distance to the next downstream cell"""
+    dists = np.zeros(idxs_ds.size, dtype=np.float64)
+    for idx0 in range(idxs_ds.size):
+        dists[idx0] = _downstream_dist(
+            idx0, idxs_ds, idxs_dense, ncol, latlon=latlon, transform=transform
+        )[1]
+
+    return dists
+
+
+@njit
+def _downstream_dist(
+    idx0, idxs_ds, idxs_dense, ncol, latlon=False, transform=gis_utils.IDENTITY
 ):
     """Return the next downstream cell index as well 
     as the length in downstream direction assuming a 
@@ -411,7 +453,7 @@ def downstream_length(
         number of columns in raster
     latlon : bool, optional
         True if WGS84 coordinates, by default False
-    affine : affine transform
+    transform : affine transform
         Two dimensional transform for 2D linear mapping
 
     Returns
@@ -421,7 +463,7 @@ def downstream_length(
     float
         length
     """
-    xres, yres, north = affine[0], affine[4], affine[5]
+    xres, yres, north = transform[0], transform[4], transform[5]
     idx1 = downstream(idx0, idxs_ds)  # next downstream
     # convert to flattened raster indices
     idx = idxs_dense[idx0]

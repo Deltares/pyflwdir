@@ -155,15 +155,39 @@ def stream_order(tree, idxs_us):
     return strord_flat
 
 
-# TODO
-def dist_to_mouth(
-    tree, idxs_us, idxs_dense, ncol, transform=gis_utils.IDENTITY, latlon=False
+# TODO build test
+def dist_to_nearest_drain(
+    tree,
+    idxs_ds,
+    idxs_dense,
+    drain_sparse,
+    ncol,
+    transform=gis_utils.IDENTITY,
+    latlon=False,
 ):
-    pass
+    dtnd = np.zeros(drain_sparse.size, dtype=np.float64)
+    for i in range(len(tree)):
+        idxs = tree[i]  # from down- to upstream
+        for idx0 in idxs:
+            if drain_sparse[idx0] == True:
+                continue
+            dtnd[idx0] += _downstream_dist(
+                idx0, idxs_ds, idxs_dense, ncol, latlon=latlon, transform=transform
+            )[1]
+
+    return dtnd
 
 
-def hand(tree, idxs_us):
-    pass
+def height_above_nearest_drain(tree, idxs_ds, drain_sparse, elevtn_sparse):
+    hand = np.zeros(drain_sparse.size, dtype=np.float64)
+    for i in range(len(tree)):
+        idxs = tree[i]  # from down- to upstream
+        for idx0 in idxs:
+            if drain_sparse[idx0] == True:
+                hand[idx0] = elevtn_sparse[idx0]
+                continue
+            hand[idx0] += hand[idxs_ds[idx0]]
+    return hand
 
 
 # @njit # NOTE does not work atm with dicts (numba 0.48)
@@ -193,9 +217,9 @@ def pfafstetter(tree, idxs_us, uparea_sparse, min_upa, depth=1):
             else:
                 idx0 = tree[0][0]
                 pfafid = 0
-            _, idxs1 = core.main_tibutaries(
+            idxs1 = core.main_tibutaries(
                 idx0, idxs_us, uparea_sparse, idx1, min_upa0, 4
-            )
+            )[1]
             N = idxs1[idxs1 != _mv].size
             if N >= 3:  # at least three subbasins (outlet, sub, top)
                 if N < 9:
