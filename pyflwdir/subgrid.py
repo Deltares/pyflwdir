@@ -96,7 +96,7 @@ def river_params(
         # write riv length
         rivlen[idx0] = l
         # write riv slope
-        z0 = subelevtn[subidx]
+        z0 = subelevtn[subidx0]
         z1 = subelevtn[subidx1]
         rivslp[idx0] = 0.0 if l == 0 else (z1 - z0) / l
     return rivlen, rivslp
