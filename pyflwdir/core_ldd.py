@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-# Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
-# August 2019
+"""Description of LDD flow direction type and methods to convert to/from general 
+nextidx."""
 
 from numba import njit, vectorize
 import numpy as np
-from pyflwdir import core
-
+from pyflwdir import core, core_d8
 __all__ = []
 
 # LDD type
@@ -14,9 +13,7 @@ _ds = np.array([[7, 8, 9], [4, 5, 6], [1, 2, 3]], dtype=np.uint8)
 _us = np.array([[3, 2, 1], [6, 5, 4], [9, 8, 7]], dtype=np.uint8)
 _mv = np.uint8(255)
 _pv = np.uint8(5)
-_ldd_ = np.unique(np.concatenate([[_pv], [_mv], _ds.flatten()]))
-_max_depth = 8
-
+_all = np.array([7, 8, 9, 4, 5, 6, 1, 2, 3, 255], dtype=np.uint8)
 
 @njit("Tuple((int8, int8))(uint8)")
 def drdc(dd):
@@ -34,92 +31,69 @@ def drdc(dd):
         dc = np.int8(dd - 2)
     return dr, dc
 
-
-@njit("u1(u4, u4, Tuple((u8,u8)))")
-def idx_to_dd(idx0, idx_ds, shape):
-    """returns local LDD value based on current and downstream index"""
-    ncol = shape[1]
-    r = (idx_ds // ncol) - (idx0 // ncol) + 1
-    c = (idx_ds % ncol) - (idx0 % ncol) + 1
-    dd = _mv
-    if r >= 0 and r < 3 and c >= 0 and c < 3:
-        dd = _ds[r, c]
-    return dd
-
-
-@njit("Tuple((intp[:], u4[:], u4[:]))(u1[:,:])")
-def from_array(flwdir):
-    """convert 2D LDD network to 1D indices"""
-    size = flwdir.size
-    nrow, ncol = flwdir.shape[0], flwdir.shape[-1]
+@njit
+def from_array(flwdir, _mv=_mv):
+    """convert 2D LDD data to 1D next downstream indices"""
+    nrow, ncol = flwdir.shape
     flwdir_flat = flwdir.ravel()
-    # find valid dense indices
-    idxs_dense = []
-    idxs_sparse = np.full(size, core._mv, dtype=np.uint32)
-    i = np.uint32(0)
-    for idx0 in range(size):
-        if flwdir_flat[idx0] != _mv:
-            idxs_dense.append(np.intp(idx0))
-            idxs_sparse[idx0] = i
-            i += 1
-    n = i
-    # get downsteam sparse index
+    # get downsteam indices
     pits_lst = []
-    idxs_ds = np.full(n, core._mv, dtype=np.uint32)
-    # loop over sparse indices
-    i = np.uint32(0)
-    for idx0 in idxs_dense:
-        i = np.uint32(idxs_sparse[idx0])
-        dr, dc = drdc(flwdir_flat[idx0])  # NOTE only difference to D8
+    idxs_ds = np.full(flwdir.size, core._mv, dtype=np.intp)
+    n = 0
+    for idx0 in range(flwdir.size):
+        if flwdir_flat[idx0] == _mv:
+            continue
+        dr, dc = drdc(flwdir_flat[idx0])
         r_ds = int(idx0 // ncol + dr)
         c_ds = int(idx0 % ncol + dc)
         pit = dr == 0 and dc == 0
         outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
-        idx_ds = np.intp(idx0 + dc + dr * ncol)
+        idx_ds = c_ds + r_ds * ncol
         # pit or outside or ds cell has mv
-        if pit or outside or idxs_sparse[idx_ds] == core._mv:
-            idxs_ds[i] = i
-            pits_lst.append(np.uint32(i))
+        if pit or outside or flwdir_flat[idx_ds] == _mv:
+            pits_lst.append(idx0)
+            idxs_ds[idx0] = idx0
         else:
-            idxs_ds[i] = np.uint32(idxs_sparse[idx_ds])
-    return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
+            idxs_ds[idx0] = idx_ds
+        n += 1
+    return idxs_ds, np.array(pits_lst, dtype=np.intp), n
 
-
-@njit  # ("u1[:,:](intp[:], u4[:], Tuple((u8, u8)))")
-def to_array(idxs_dense, idxs_ds, shape):
-    """convert sparse downstream indices to dense LDD raster"""
-    n = idxs_dense.size
-    flwdir = np.full(shape, _mv, dtype=np.uint8).ravel()
-    for i in range(n):
-        idx0 = idxs_dense[i]
-        idx_ds = idxs_dense[idxs_ds[i]]
-        dd = idx_to_dd(idx0, idx_ds, shape)  # NOTE only difference to D8
-        if dd == _mv:
-            msg = "Invalid data. Downstream cell outside 8 neighbors."
-            raise ValueError(msg)
-        flwdir[idx0] = dd
-    return flwdir.reshape(shape)
-
-
-def isvalid(flwdir):
-    """True if 2D LDD raster is valid"""
-    return (
-        isinstance(flwdir, np.ndarray)
-        and flwdir.dtype == "uint8"
-        and flwdir.ndim == 2
-        and np.all([v in _ldd_ for v in np.unique(flwdir)])
-    )
-
-
-# @vectorize(["b1(u1)"])
 @njit
-def ispit(dd):
+def _downstream_idx(idx0, flwdir_flat, shape):
+    """Returns linear index of the donwstream neighbor; idx0 if at pit"""
+    nrow, ncol = shape
+    r0 = idx0 // ncol
+    c0 = idx0 % ncol
+    dr, dc = drdc(flwdir_flat[idx0])
+    r_ds, c_ds = r0+dr, c0+dc
+    if r_ds >= 0 and r_ds < nrow and c_ds >= 0 and c_ds < ncol:  # check bounds
+        idx_ds = c_ds + r_ds * ncol
+    else:
+        idx_ds = core._mv
+    return idx_ds
+
+# general
+@njit
+def to_array(idxs_ds, shape, _mv=_mv, _ds=_ds):
+    """convert downstream linear indices to dense D8 raster"""
+    return core_d8.to_array(idxs_ds, shape, _mv=_mv, _ds=_ds)
+
+def isvalid(flwdir, _all=_all):
+    """True if 2D LDD raster is valid"""
+    return core_d8.isvalid(flwdir, _all)
+
+@njit
+def ispit(dd, _pv=_pv):
     """True if LDD pit"""
     return dd == _pv
 
 
-# @vectorize(["b1(u1)"])
 @njit
-def isnodata(dd):
+def isnodata(dd, _mv=_mv):
     """True if LDD nodata"""
-    return dd == _mv
+    return core_d8.isnodata(dd, _mv)
+
+@njit
+def _upstream_idx(idx0, flwdir_flat, shape, _us=_us):
+    """Returns a numpy array (int64) with linear indices of upstream neighbors"""
+    return core_d8._upstream_idx(idx0, flwdir_flat, shape, _us)

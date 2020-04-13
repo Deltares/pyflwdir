@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-# Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
-# August 2019
+"""Description of NEXTXY flow direction type and methods to convert to/from general 
+nextidx. This type is mainly used for the CaMa-Flood model. Note that X (column) and Y 
+(row) coordinates are one-based."""
 
 from numba import njit, vectorize
 import numpy as np
@@ -16,7 +17,6 @@ _pv = np.int32(-9)
 _us = np.ones((2, 3, 3), dtype=np.int32) * 2
 _us[:, 1, 1] = _pv
 
-
 def from_array(flwdir):
     if not (
         (isinstance(flwdir, tuple) and len(flwdir) == 2)
@@ -28,71 +28,57 @@ def from_array(flwdir):
     nextx, nexty = flwdir  # convert [2,:,:] OR ([:,:], [:,:]) to [:,:], [:,:]
     return _from_array(nextx, nexty)
 
-
-def to_array(idxs_dense, idxs_ds, shape):
-    nextx, nexty = _to_array(idxs_dense, idxs_ds, shape)
+def to_array(idxs_ds, shape):
+    nextx, nexty = _to_array(idxs_ds, shape)
     return np.stack([nextx, nexty])
 
-
-@njit("Tuple((intp[:], u4[:], u4[:]))(i4[:,:], i4[:,:])")
-def _from_array(nextx, nexty):
+@njit
+def _from_array(nextx, nexty, _mv=_mv):
     size = nextx.size
     nrow, ncol = nextx.shape[0], nextx.shape[-1]
     nextx_flat = nextx.ravel()
     nexty_flat = nexty.ravel()
-    # find valid dense indices
-    idxs_dense = []
-    idxs_sparse = np.full(size, core._mv, dtype=np.uint32)
-    i = np.uint32(0)
-    for idx0 in range(size):
-        if nextx_flat[idx0] != _mv and nexty_flat[idx0] != _mv:
-            idxs_dense.append(np.intp(idx0))
-            idxs_sparse[idx0] = i
-            i += 1
-    n = i
     # allocate output arrays
     pits_lst = []
-    idxs_ds = np.full(n, core._mv, dtype=np.uint32)
-    i = np.uint32(0)
-    for i in range(n):
-        idx0 = np.intp(idxs_dense[i])
-        c1 = np.uint32(nextx_flat[idx0])
-        r1 = np.uint32(nexty_flat[idx0])
+    idxs_ds = np.full(nextx.size, core._mv, dtype=np.intp)
+    n = 0
+    for idx0 in range(nextx.size):
+        if nextx_flat[idx0] == _mv:
+            continue
+        c1 = nextx_flat[idx0]
+        r1 = nexty_flat[idx0]
         pit = r1 == _pv or c1 == _pv
         # convert from one- to zero-based index
         r_ds, c_ds = r1 - 1, c1 - 1
-        idx_ds = c_ds + r_ds * ncol
         outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
-        # pit or outside or ds cell has mv
-        if pit or outside or idxs_sparse[idx_ds] == core._mv:
-            idxs_ds[i] = i
-            pits_lst.append(np.uint32(i))
+        idx_ds = c_ds + r_ds * ncol
+        # pit or outside or ds cell is mv
+        if pit or outside or nextx_flat[idx_ds] == _mv:
+            pits_lst.append(idx0)
+            idxs_ds[idx0] = idx0
         else:
-            idxs_ds[i] = np.uint32(idxs_sparse[idx_ds])
-    return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
+            idxs_ds[idx0] = idx_ds
+        n += 1
+    return idxs_ds, np.array(pits_lst, dtype=np.intp), n
 
-
-@njit  # ("Tuple((i4[:,:], i4[:,:]))(intp[:], u4[:], Tuple((u8, u8)))")
-def _to_array(idxs_dense, idxs_ds, shape):
+@njit
+def _to_array(idxs_ds, shape):
     """convert 1D index to 3D NEXTXY raster"""
-    n = idxs_dense.size
     ncol = shape[1]
-    size = shape[0] * shape[1]
-    nextx = np.full(size, _mv, dtype=np.int32)
-    nexty = np.full(size, _mv, dtype=np.int32)
-    for i in range(n):
-        idx0 = idxs_dense[i]
-        idx_ds = idxs_dense[idxs_ds[i]]
-        if idx0 != idx_ds:
+    nextx = np.full(idxs_ds.size, _mv, dtype=np.int32)
+    nexty = np.full(idxs_ds.size, _mv, dtype=np.int32)
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == -1:
+            continue
+        elif idx0 == idx_ds: # pit
+            nextx[idx0] = _pv
+            nexty[idx0] = _pv
+        else:
             # convert idx_ds to one-based row / col indices
             nextx[idx0] = idx_ds % ncol + 1
             nexty[idx0] = idx_ds // ncol + 1
-        else:
-            # pit
-            nextx[idx0] = _pv
-            nexty[idx0] = _pv
     return nextx.reshape(shape), nexty.reshape(shape)
-
 
 def isvalid(flwdir):
     """True if NEXTXY raster is valid"""
@@ -112,15 +98,11 @@ def isvalid(flwdir):
         and np.all(nextx[mask] == nexty[mask])
     )
 
-
-# @vectorize(["b1(i4)", "b1(i8)"])
 @njit
 def ispit(dd):
     """True if NEXTXY pit"""
     return dd == _pv
 
-
-# @vectorize(["b1(i4)", "b1(i8)"])
 @njit
 def isnodata(dd):
     """True if NEXTXY nodata"""

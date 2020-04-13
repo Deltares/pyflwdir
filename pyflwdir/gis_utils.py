@@ -294,3 +294,59 @@ def degree_metres_x(lat):
         + (p3 * np.cos(5.0 * radlat))
     )
     return longlen
+
+
+@njit
+def distance(
+    idx0, idx1, ncol, latlon=False, transform=IDENTITY
+):
+    """Return the the length between linear indices idx0 and idx1 on a regular raster 
+    defined by the affine transform.
+    
+    Parameters
+    ----------
+    idx0, idx1 : int
+        index of start, end cell
+    ncol : int
+        number of columns in raster
+    latlon : bool, optional
+        True if WGS84 coordinates, by default False
+    transform : affine transform
+        Two dimensional transform for 2D linear mapping
+
+    Returns
+    -------
+    float
+        length
+    """
+    xres, yres, north = transform[0], transform[4], transform[5]
+    # compute delta row, col
+    r0 = idx0 // ncol
+    r1 = idx1 // ncol
+    dr = abs(r1 - r0)
+    dc = abs((idx1 % ncol) - (idx0 % ncol))
+    if latlon:  # calculate cell size in metres
+        lat = north + (r0 + r1) / 2. * yres
+        dy = 0.0 if dr == 0 else degree_metres_y(lat) * yres
+        dx = 0.0 if dc == 0 else degree_metres_x(lat) * xres
+    else:
+        dy = xres
+        dx = yres
+    return math.hypot(dy * dr, dx * dc)  # length
+
+## VECTORIZE
+def to_linestring(idxs_ds, xs, ys, mask=None):
+    """Returns a list of LineString for each up- downstream connection"""
+    try:
+        from shapely.geometry import LineString
+    except ImportError:
+        msg = "The `to_linestring` method requires the additional shapely package."
+        raise ImportError(msg)
+
+    geoms = list()
+    for idx0 in range(idxs_ds.size):
+        if mask is not None and mask[idx0] != 1:
+            continue
+        idx_ds = idxs_ds[idx0]
+        geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
+    return geoms

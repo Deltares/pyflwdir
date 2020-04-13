@@ -2,7 +2,7 @@ import pkg_resources
 
 # submodules
 from pyflwdir.pyflwdir import *
-from pyflwdir import slope
+from pyflwdir import dem, gis_utils
 
 try:
     __version__ = pkg_resources.get_distribution(__name__).version
