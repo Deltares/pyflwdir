@@ -136,7 +136,7 @@ def main_tributary(idxs_ds, idxs_us_main, uparea, upa_min=0.0):
     Returns
     -------
     1D-array of intp  
-        sparse tributary indices 
+        linear indices of tributaries 
     """
     idxs_us_trib = np.full(idxs_ds.size, _mv, dtype=idxs_ds.dtype)
     upa_main = np.full(idxs_ds.size, upa_min, dtype=uparea.dtype)
@@ -234,9 +234,9 @@ def _trace(
     Parameters
     ----------
     idx0 : int
-        sparse index of start cells
+        linear index of start cells
     idxs_nxt : 1D-array of intp
-        sparse indices of downstream or main upstream cells
+        linear indices of downstream or main upstream cells
     ncol : int
         number of columns in raster
     mask : 1D-array of bool, optional
@@ -253,7 +253,7 @@ def _trace(
     Returns
     -------
     1D-array of intp  
-        sparse indices of all downstream cells
+        linear indices of trace
     float
         distance between start and end cell
     """
@@ -307,24 +307,22 @@ def _tributaries(
     Parameters
     ----------
     idx0 : intp
-        sparse index of start cell
+        linear index of start cell
     idxs_us_main, idxs_us_trib : 1D-array of intp
-        sparse indices of main upstream and tributary cells
+        linear indices of main upstream and tributary cells
     uparea : 1D-array
-        sparse array with upstream area values
+        array with upstream area values
     idx_end : intp, optional
-        most upstream index, by default set to missing value (no fixed most upstream cell)
+        linear index of most upstream, by default missing value, i.e.: no fixed cell
     upa_min : float, optional 
-        minimum upstream area for tributary
+        minimum upstream area threshold for tributary
     n : int, optional
         number of tributaries, by default 0
 
     Returns
     -------
     1D array of intp with size n
-        sparse indices of largest tributaries
-    1D array of intp with size n*2+1
-        sparse indices of inter- and subbasins   
+        linear indices of largest tributaries
     """
     if n > 0:
         # use heapq to keep n largest
@@ -352,7 +350,6 @@ def _tributaries(
                     idxs.append(idx_trib)
         # next iter
         idx0 = idx_main
-
     # order from down to upstream
     if n > 0:
         seq = np.argsort(np.array([ntrib[i][-1] for i in range(n)]))
@@ -360,7 +357,6 @@ def _tributaries(
     else:
         idxs_out = np.array(idxs, dtype=idxs_us_main.dtype)
     return idxs_out
-
 
 @njit
 def path(
@@ -373,13 +369,12 @@ def path(
     latlon=False,
     transform=gis_utils.IDENTITY,
 ):
-    """See _trace method, except this function works for a 1D-array of sparse 
-    start indices.
+    """See _trace method, except this function works for a 1D-array linear indices.
 
     Returns
     -------
     list of 1D-array of intp  
-        sparse indices of all downstream cells
+        linear indices of path 
     1D-array of float
         distance between start and end cell
     """
@@ -414,13 +409,13 @@ def snap(
 ):
     """Returns indices the most down-/upstream cell where mask is True or is pit.
     
-    See _trace method for paramters, except this function works for a 1D-array 
-    of sparse start indices.
+    See _trace method for parameters, except this function works based on a 
+    1D-array linear indices.
     
     Returns
     -------
     1D-array of intp  
-        sparse indices of most downstream cells
+        linear indices destination cells
     1D-array of float
         distance between start and end cell
     """
