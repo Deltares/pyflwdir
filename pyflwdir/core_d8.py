@@ -5,6 +5,7 @@ nextidx."""
 from numba import njit, vectorize
 import numpy as np
 from pyflwdir import core
+
 __all__ = []
 
 # D8 type
@@ -14,6 +15,7 @@ _us = np.array([[2, 4, 8], [1, 0, 16], [128, 64, 32]], dtype=np.uint8)
 _mv = np.uint8(247)
 _pv = np.array([0, 255], dtype=np.uint8)
 _all = np.array([32, 64, 128, 16, 0, 1, 8, 4, 2, 247, 255], dtype=np.uint8)
+
 
 @njit("Tuple((int8, int8))(uint8)")
 def drdc(dd):
@@ -33,6 +35,7 @@ def drdc(dd):
             dr = np.int8(-1)
             dc = np.int8(np.log2(dd) - 6)
     return dr, dc
+
 
 @njit
 def from_array(flwdir, _mv=_mv):
@@ -61,6 +64,7 @@ def from_array(flwdir, _mv=_mv):
         n += 1
     return idxs_ds, np.array(pits_lst, dtype=np.intp), n
 
+
 @njit
 def _downstream_idx(idx0, flwdir_flat, shape):
     """Returns linear index of the donwstream neighbor; idx0 if at pit"""
@@ -68,7 +72,7 @@ def _downstream_idx(idx0, flwdir_flat, shape):
     r0 = idx0 // ncol
     c0 = idx0 % ncol
     dr, dc = drdc(flwdir_flat[idx0])
-    r_ds, c_ds = r0+dr, c0+dc
+    r_ds, c_ds = r0 + dr, c0 + dc
     if r_ds >= 0 and r_ds < nrow and c_ds >= 0 and c_ds < ncol:  # check bounds
         idx_ds = c_ds + r_ds * ncol
     else:
@@ -89,11 +93,12 @@ def to_array(idxs_ds, shape, _mv=_mv, _ds=_ds):
         dr = (idx_ds // ncol) - (idx0 // ncol)
         dc = (idx_ds % ncol) - (idx0 % ncol)
         if dr >= -1 and dr <= 1 and dc >= -1 and dc <= 1:
-            dd = _ds[dr+1, dc+1]
+            dd = _ds[dr + 1, dc + 1]
         else:
             raise ValueError("Invalid data downstream index outside 8 neighbours.")
         flwdir[idx0] = dd
     return flwdir.reshape(shape)
+
 
 def isvalid(flwdir, _all=_all):
     """True if 2D D8 raster is valid"""
@@ -104,6 +109,7 @@ def isvalid(flwdir, _all=_all):
         and check_values(flwdir, _all)
     )
 
+
 @njit
 def check_values(flwdir, _all):
     check = True
@@ -113,15 +119,18 @@ def check_values(flwdir, _all):
             break
     return check
 
+
 @njit
 def ispit(dd, _pv=_pv):
     """True if D8 pit"""
     return np.any(dd == _pv)
 
+
 @njit
 def isnodata(dd, _mv=_mv):
     """True if D8 nodata"""
     return dd == _mv
+
 
 @njit
 def _upstream_idx(idx0, flwdir_flat, shape, _us=_us):

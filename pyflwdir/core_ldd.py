@@ -5,6 +5,7 @@ nextidx."""
 from numba import njit, vectorize
 import numpy as np
 from pyflwdir import core, core_d8
+
 __all__ = []
 
 # LDD type
@@ -14,6 +15,7 @@ _us = np.array([[3, 2, 1], [6, 5, 4], [9, 8, 7]], dtype=np.uint8)
 _mv = np.uint8(255)
 _pv = np.uint8(5)
 _all = np.array([7, 8, 9, 4, 5, 6, 1, 2, 3, 255], dtype=np.uint8)
+
 
 @njit("Tuple((int8, int8))(uint8)")
 def drdc(dd):
@@ -30,6 +32,7 @@ def drdc(dd):
         dr = np.int8(1)
         dc = np.int8(dd - 2)
     return dr, dc
+
 
 @njit
 def from_array(flwdir, _mv=_mv):
@@ -58,6 +61,7 @@ def from_array(flwdir, _mv=_mv):
         n += 1
     return idxs_ds, np.array(pits_lst, dtype=np.intp), n
 
+
 @njit
 def _downstream_idx(idx0, flwdir_flat, shape):
     """Returns linear index of the donwstream neighbor; idx0 if at pit"""
@@ -65,12 +69,13 @@ def _downstream_idx(idx0, flwdir_flat, shape):
     r0 = idx0 // ncol
     c0 = idx0 % ncol
     dr, dc = drdc(flwdir_flat[idx0])
-    r_ds, c_ds = r0+dr, c0+dc
+    r_ds, c_ds = r0 + dr, c0 + dc
     if r_ds >= 0 and r_ds < nrow and c_ds >= 0 and c_ds < ncol:  # check bounds
         idx_ds = c_ds + r_ds * ncol
     else:
         idx_ds = core._mv
     return idx_ds
+
 
 # general
 @njit
@@ -78,9 +83,11 @@ def to_array(idxs_ds, shape, _mv=_mv, _ds=_ds):
     """convert downstream linear indices to dense D8 raster"""
     return core_d8.to_array(idxs_ds, shape, _mv=_mv, _ds=_ds)
 
+
 def isvalid(flwdir, _all=_all):
     """True if 2D LDD raster is valid"""
     return core_d8.isvalid(flwdir, _all)
+
 
 @njit
 def ispit(dd, _pv=_pv):
@@ -92,6 +99,7 @@ def ispit(dd, _pv=_pv):
 def isnodata(dd, _mv=_mv):
     """True if LDD nodata"""
     return core_d8.isnodata(dd, _mv)
+
 
 @njit
 def _upstream_idx(idx0, flwdir_flat, shape, _us=_us):

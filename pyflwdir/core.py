@@ -15,6 +15,7 @@ _mv = np.intp(-1)
 
 # flwdir properties
 
+
 @njit
 def rank(idxs_ds):
     """Returns the rank, i.e. the distance counted in number of cells from the outlet.
@@ -49,6 +50,7 @@ def rank(idxs_ds):
             ranks[idxs_lst.pop(-1)] = rnk
     return ranks, n
 
+
 @njit
 def upstream_count(idxs_ds):
     """Returns array with number of upstream cells per cell."""
@@ -62,7 +64,9 @@ def upstream_count(idxs_ds):
                 n_up[idx_ds] = max(n_up[idx_ds], 0) + 1
     return n_up
 
+
 # returns 2D array (n, d) with indices
+
 
 @njit
 def upstream_matrix(idxs_ds):
@@ -74,18 +78,18 @@ def upstream_matrix(idxs_ds):
     n = idxs_ds.size
     # 2D arrays of upstream index
     idxs_us = np.full((n, d), _mv, dtype=np.intp)
-    n_up[:] = np.uint8(0)
+    n_up[:] = 0
     for idx0 in range(n):
         idx_ds = idxs_ds[idx0]
-        if idx_ds == idx0:
-            continue
-        # valid ds cell
-        i = n_up[idx_ds]
-        idxs_us[idx_ds][i] = idx0
-        n_up[idx_ds] += 1
+        if idx_ds != idx0 and idx_ds != _mv:
+            i = n_up[idx_ds]
+            idxs_us[idx_ds, i] = idx0
+            n_up[idx_ds] += 1
     return idxs_us
 
+
 # returns 1D array (size == n) with indices at all locations
+
 
 @njit
 def main_upstream(idxs_ds, uparea, upa_min=0.0):
@@ -113,9 +117,10 @@ def main_upstream(idxs_ds, uparea, upa_min=0.0):
         if idx_ds == idx0 or idx_ds == _mv:  # pit or mv
             continue
         elif uparea[idx0] > upa_main[idx_ds]:
-             idxs_us_main[idx_ds] = idx0
-             upa_main[idx_ds] = uparea[idx0]
+            idxs_us_main[idx_ds] = idx0
+            upa_main[idx_ds] = uparea[idx0]
     return idxs_us_main
+
 
 @njit
 def main_tributary(idxs_ds, idxs_us_main, uparea, upa_min=0.0):
@@ -143,15 +148,16 @@ def main_tributary(idxs_ds, idxs_us_main, uparea, upa_min=0.0):
     for idx0 in range(idxs_ds.size):
         idx_ds = idxs_ds[idx0]
         # pit or mv or main upstream
-        if idx_ds == idx0 or idx_ds == _mv or idxs_us_main[idx_ds] == idx0:  
+        if idx_ds == idx0 or idx_ds == _mv or idxs_us_main[idx_ds] == idx0:
             continue
         elif uparea[idx0] > upa_main[idx_ds]:
-             idxs_us_trib[idx_ds] = idx0
-             upa_main[idx_ds] = uparea[idx0]
+            idxs_us_trib[idx_ds] = idx0
+            upa_main[idx_ds] = uparea[idx0]
     return idxs_us_trib
 
 
 # returns 1D array (size < n) with indices of specific locations
+
 
 @njit
 def pit_indices(idxs_ds):
@@ -173,6 +179,7 @@ def loop_indices(idxs_ds):
             idxs.append(idx0)
     return np.array(idxs, dtype=idxs_ds.dtype)
 
+
 @njit
 def headwater_indices(idxs_ds):
     """Returns indices of headwater cells, i.e. cells with no upstream neighbors"""
@@ -183,7 +190,9 @@ def headwater_indices(idxs_ds):
             idxs.append(idx0)
     return np.array(idxs, dtype=idxs_ds.dtype)
 
-# local functions 
+
+# local functions
+
 
 @njit
 def _d8_idx(idx0, shape):
@@ -203,6 +212,7 @@ def _d8_idx(idx0, shape):
                 idxs_lst.append(idx)
     return np.array(idxs_lst, dtype=np.intp)
 
+
 @njit
 def _upstream_d8_idx(idx0, idxs_ds, shape):
     """Returns a numpy array with linear indices of upstream neighbors.
@@ -214,6 +224,7 @@ def _upstream_d8_idx(idx0, idxs_ds, shape):
         if idxs_ds[idx] == idx0:
             idxs_lst.append(idx)
     return np.array(idxs_lst, dtype=np.intp)
+
 
 @njit
 def _trace(
@@ -274,6 +285,7 @@ def _trace(
         idxs.append(np.intp(idx0))
     return np.array(idxs, dtype=np.intp), dist
 
+
 @njit
 def _window(idx0, n, idxs_ds, idxs_us_main):
     """Returns the indices of between the nth upstream to nth downstream cell from 
@@ -297,9 +309,10 @@ def _window(idx0, n, idxs_ds, idxs_us_main):
         idxs[n - i - 1] = idx0
     return idxs
 
+
 @njit
 def _tributaries(
-    idx0, idxs_us_main, idxs_us_trib, uparea, idx_end=_mv, min_upa=0.0, n=0
+    idx0, idxs_us_main, idxs_us_trib, uparea, idx_end=_mv, upa_min=0.0, n=0
 ):
     """Return indices of tributaries upstream from idx0 and downstream
     from idx_end.
@@ -327,7 +340,7 @@ def _tributaries(
     if n > 0:
         # use heapq to keep n largest
         i = np.intp(0)
-        ntrib = [(np.float64(min_upa), _mv, _mv) for i in range(n)]
+        ntrib = [(np.float64(upa_min), _mv, _mv) for i in range(n)]
         heapq.heapify(ntrib)
     else:
         idxs = []
@@ -336,16 +349,16 @@ def _tributaries(
         idx_main = idxs_us_main[idx0]
         if idx_main == idx_end or idx_main == _mv:
             break
-        elif uparea[idx_main] < min_upa:
+        elif uparea[idx_main] < upa_min:
             break
         idx_trib = idxs_us_trib[idx0]
         if idx_trib != _mv:
             upa_trib = uparea[idx_trib]
-            if upa_trib > min_upa:
+            if upa_trib > upa_min:
                 if n > 0:
                     i += 1
                     heapq.heappushpop(ntrib, (np.float64(upa_trib), idx_trib, i))
-                    min_upa = max(min_upa, heapq.nsmallest(1, ntrib)[0][0])
+                    upa_min = max(upa_min, heapq.nsmallest(1, ntrib)[0][0])
                 else:
                     idxs.append(idx_trib)
         # next iter
@@ -357,6 +370,7 @@ def _tributaries(
     else:
         idxs_out = np.array(idxs, dtype=idxs_us_main.dtype)
     return idxs_out
+
 
 @njit
 def path(

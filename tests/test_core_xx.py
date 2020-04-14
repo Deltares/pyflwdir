@@ -8,7 +8,7 @@ from pyflwdir import core_d8, core_nextxy, core_ldd
 from pyflwdir.core_conversion import ldd_to_d8, d8_to_ldd
 
 # test data
-from test_core import flwdir_random, parsed_random
+from test_core import test_data
 
 
 @pytest.mark.parametrize("fd", [core_nextxy, core_d8, core_ldd])
@@ -58,11 +58,11 @@ def test_usds(fd):
 @pytest.mark.parametrize("fd", [core_nextxy, core_d8, core_ldd])
 def test_identical(fd):
     """test if all core_xx.py return identical results"""
-    idxs_ds0, idxs_pit0, n0 = parsed_random
-    idxs_ds, idxs_pit, n = fd.from_array(fd.to_array(idxs_ds0, flwdir_random.shape))
-    assert np.all(idxs_ds0 == idxs_ds)
-    assert np.all(idxs_pit0 == idxs_pit)
-    assert n0 == n
+    for parsed, flwdir in test_data:
+        idxs_ds0, idxs_pit0, _, _ = parsed
+        idxs_ds, idxs_pit, _ = fd.from_array(fd.to_array(idxs_ds0, flwdir.shape))
+        assert np.all(idxs_ds0 == idxs_ds)
+        assert np.all(idxs_pit0 == idxs_pit)
 
 
 def test_ftype_conversion():

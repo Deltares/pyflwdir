@@ -17,6 +17,7 @@ _pv = np.int32(-9)
 _us = np.ones((2, 3, 3), dtype=np.int32) * 2
 _us[:, 1, 1] = _pv
 
+
 def from_array(flwdir):
     if not (
         (isinstance(flwdir, tuple) and len(flwdir) == 2)
@@ -28,9 +29,11 @@ def from_array(flwdir):
     nextx, nexty = flwdir  # convert [2,:,:] OR ([:,:], [:,:]) to [:,:], [:,:]
     return _from_array(nextx, nexty)
 
+
 def to_array(idxs_ds, shape):
     nextx, nexty = _to_array(idxs_ds, shape)
     return np.stack([nextx, nexty])
+
 
 @njit
 def _from_array(nextx, nexty, _mv=_mv):
@@ -61,6 +64,7 @@ def _from_array(nextx, nexty, _mv=_mv):
         n += 1
     return idxs_ds, np.array(pits_lst, dtype=np.intp), n
 
+
 @njit
 def _to_array(idxs_ds, shape):
     """convert 1D index to 3D NEXTXY raster"""
@@ -71,7 +75,7 @@ def _to_array(idxs_ds, shape):
         idx_ds = idxs_ds[idx0]
         if idx_ds == -1:
             continue
-        elif idx0 == idx_ds: # pit
+        elif idx0 == idx_ds:  # pit
             nextx[idx0] = _pv
             nexty[idx0] = _pv
         else:
@@ -79,6 +83,7 @@ def _to_array(idxs_ds, shape):
             nextx[idx0] = idx_ds % ncol + 1
             nexty[idx0] = idx_ds // ncol + 1
     return nextx.reshape(shape), nexty.reshape(shape)
+
 
 def isvalid(flwdir):
     """True if NEXTXY raster is valid"""
@@ -98,10 +103,12 @@ def isvalid(flwdir):
         and np.all(nextx[mask] == nexty[mask])
     )
 
+
 @njit
 def ispit(dd):
     """True if NEXTXY pit"""
     return dd == _pv
+
 
 @njit
 def isnodata(dd):

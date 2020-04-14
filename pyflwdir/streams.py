@@ -3,10 +3,9 @@
 the basin indices to be ordered from down- to upstream."""
 
 from numba import njit
-from numba.typed import List
 import numpy as np
 
-# import flow direction definition
+# import local libraries
 from pyflwdir import core
 from pyflwdir import gis_utils
 
@@ -40,40 +39,10 @@ def accuflux(idxs_ds, seq, material, nodata):
     accu = material.copy()
     for idx0 in seq[::-1]:
         idx_ds = idxs_ds[idx0]
-        if idx0 == idx_ds: # pit
-            continue
-        if accu[idx_ds] != nodata and accu[idx0] != nodata:
+        if idx0 != idx_ds and accu[idx_ds] != nodata and accu[idx0] != nodata:
             accu[idx_ds] += accu[idx0]
     return accu
 
-@njit
-def fillnodata_upstream(idxs_ds, seq, data, nodata):
-    """Retuns a a copy of <data> where upstream cell with <nodata> values are filled 
-    based on the first downstream valid cell value. 
-    
-    Parameters
-    ----------
-    idxs_ds : 1D-array of intp
-        index of next downstream cell
-    seq : 1D array of int
-        ordered cell indices from down- to upstream
-    data : 1D array
-        original data with missing values
-    nodata : float, integer
-        nodata value
-    
-    Returns
-    -------
-    1D array of data.dtype
-        infilled data
-    """
-    if idxs_ds.shape != data.shape:
-        raise ValueError("Invalid data shape")
-    res = data.copy()
-    for idx0 in seq:  # down- to upstream
-        if res[idx0] == nodata:
-            res[idx0] = res[idxs_ds[idx0]]
-    return res
 
 @njit()
 def upstream_area(
@@ -114,24 +83,23 @@ def upstream_area(
     1D array of <dtype>
         accumulated upstream area
     """
-    xres, yres, north = transform[0], transform[4], transform[5]
-    area0 = abs(xres * yres) / area_factor
     # intialize uparea with correct dtype
     uparea = np.full(idxs_ds.size, nodata, dtype=dtype)
-    for idx0 in seq[::-1]: # up- to downstream
+    # local area
+    xres, yres, north = transform[0], transform[4], transform[5]
+    if latlon:
+        for idx in seq:
+            lat = north + (idx // ncol + 0.5) * yres
+            uparea[idx] = gis_utils.cellarea(lat, xres, yres) / area_factor
+    else:
+        uparea[seq] = abs(xres * yres) / area_factor
+    # accumulate upstream area
+    for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
-        if idx0 == idx_ds: # pit
-            continue
-        # local area
-        for idx in [idx0, idx_ds]:
-            if uparea[idx] == nodata:
-                if latlon:
-                    lat = north + (idx // ncol + 0.5) * yres
-                    area0 = gis_utils.cellarea(lat, xres, yres) / area_factor
-                uparea[idx] = area0
-        # accumulate upstream area
-        uparea[idx_ds] += uparea[idx0]
+        if idx0 != idx_ds:
+            uparea[idx_ds] += uparea[idx0]
     return uparea
+
 
 @njit
 def stream_order(idxs_ds, seq):
@@ -156,29 +124,27 @@ def stream_order(idxs_ds, seq):
     """
     nodata = np.uint8(-1)
     strord = np.full(idxs_ds.size, nodata, dtype=np.int8)
+    strord[seq] = 1  # initialize valid cells with stream order 1
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
-        if idx0 == idx_ds: # pit
-            continue
         sto = strord[idx0]
-        # set sto = 1 if headwater cell
-        if sto < 1:  
-            sto = np.uint8(1)
-            strord[idx0] = sto
         # update next downstream cell
-        sto_ds = strord[idx_ds]
-        if sto > sto_ds:
-            strord[idx_ds] = sto
-        elif sto == sto_ds:
-            strord[idx_ds] += 1
+        if idx0 != idx_ds:  # pit
+            sto_ds = strord[idx_ds]
+            if sto > sto_ds:
+                strord[idx_ds] = sto
+            elif sto == sto_ds:
+                strord[idx_ds] += 1
     return strord
 
-def downstream_distance(
+
+def stream_length(
     idxs_ds,
     seq,
     ncol,
     mask=None,
     latlon=False,
+    real_length=True,
     transform=gis_utils.IDENTITY,
 ):
     """Returns distance to outlet or next downstream True cell in mask
@@ -203,12 +169,16 @@ def downstream_distance(
     1D array of float
         distance to outlet or next downstream True cell
     """
-    dist = np.full(idxs_ds.size, -9999.0, dtype=np.float64)
+    mv = -9999.0
+    dist = np.full(idxs_ds.size, mv, dtype=np.float64 if real_length else np.int32)
+    dist[seq] = 0  # initialize valid cells with zero length
+    d = 1
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
+        # sum distances; skip if at pit or mask is True
         if idx0 == idx_ds or (mask is not None and mask[idx0] == True):
-            dist[idx0] == 0
             continue
-        d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
+        if real_length:
+            d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
         dist[idx0] = dist[idx_ds] + d
     return dist
