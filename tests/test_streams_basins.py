@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the pyflwdir.core_xx.py and core_conversion submodules."""
+"""Tests for the streams.py and basins.py submodules."""
 
 import pytest
 import numpy as np
@@ -10,8 +10,6 @@ _mv = core._mv
 
 # test data
 from test_core import test_data
-
-parsed, flwdir = test_data[0]
 
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
@@ -65,9 +63,9 @@ def test_stream(parsed, flwdir):
     assert np.all(sto[idxs_headwater] == 1)
     assert np.max(sto[idxs_pit]) == np.max(sto)
     assert np.all(sto[idxs_ds == _mv] == -1) and np.all(sto[idxs_ds != _mv] >= 1)
-    # stream length
+    # stream distance
     strlen = streams.stream_length(idxs_ds, seq, ncol)
     assert np.all(strlen[idxs_pit] == 0)
     assert np.max(strlen[idxs_headwater]) == np.max(strlen)
-    ranks1 = streams.stream_length(idxs_ds, seq, ncol, real_length=False)
+    ranks1 = streams.stream_distance(idxs_ds, seq, ncol, real_length=False)
     assert np.all(ranks1[ranks >= 0] == ranks[ranks >= 0])

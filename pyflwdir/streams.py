@@ -138,7 +138,7 @@ def stream_order(idxs_ds, seq):
     return strord
 
 
-def stream_length(
+def stream_distance(
     idxs_ds,
     seq,
     ncol,
