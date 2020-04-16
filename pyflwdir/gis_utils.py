@@ -69,7 +69,7 @@ def xy(transform, rows, cols, offset="center"):
         Pixel rows.
     cols : ndarray or int
         Pixel columns.
-    offset : str, optional
+    offset : {'center', 'ul', 'ur', 'll', 'lr'}
         Determines if the returned coordinates are for the center of the
         pixel or for a corner.
     
@@ -118,6 +118,7 @@ def rowcol(transform, xs, ys, op=np.floor, precision=None):
         Function to convert fractional pixels to whole numbers
     precision : int, optional
         Decimal places of precision in indexing, as in `round()`.
+    
     Returns
     -------
     rows : ndarray of ints
@@ -125,24 +126,19 @@ def rowcol(transform, xs, ys, op=np.floor, precision=None):
     cols : ndarray of ints
         array of column indices
     """
-
     xs, ys = np.asarray(xs), np.asarray(ys)
-
     if precision is None:
         eps = 0.0
     else:
         eps = 10.0 ** -precision * (1.0 - 2.0 * op(0.1))
-
     invtransform = ~transform
-
     fcols, frows = invtransform * (xs + eps, ys - eps)
     cols, rows = op(fcols).astype(int), op(frows).astype(int)
-
     return rows, cols
 
 
-def idxs_to_coords(idxs, transform, shape):
-    """Returns centered coordinates of idxs raster indices based affine.
+def idxs_to_coords(idxs, transform, shape, offset="center"):
+    """Returns coordinates of idxs raster indices based affine.
 
     Parameters
     ----------
@@ -152,6 +148,9 @@ def idxs_to_coords(idxs, transform, shape):
         Two dimensional affine transform for 2D linear mapping
     shape : tuple of int
         The height, width  of the raster.
+    offset : {'center', 'ul', 'ur', 'll', 'lr'}
+        Determines if the returned coordinates are for the center of the
+        pixel or for a corner.
 
     Returns
     -------
@@ -159,15 +158,23 @@ def idxs_to_coords(idxs, transform, shape):
         x coordinates in coordinate reference system
     ys : ndarray of float
         y coordinates in coordinate reference system
+
+    Raises
+    ------
+    IndexError
+        if any linear index outside domain.
     """
+    idxs = np.asarray(idxs).astype(np.int)
+    size = np.multiply(*shape)
+    if np.any(np.logical_or(idxs < 0, idxs >= size)):
+        raise IndexError("idxs coordinates outside domain")
     ncol = shape[1]
     rows = idxs // ncol
     cols = idxs % ncol
-    xs, ys = xy(transform, rows, cols, offset="center")
-    return xs, ys
+    return xy(transform, rows, cols, offset=offset)
 
 
-def coords_to_idxs(xs, ys, transform, shape):
+def coords_to_idxs(xs, ys, transform, shape, op=np.floor, precision=None):
     """Returns linear indices of coordinates.
 
     Parameters
@@ -180,6 +187,10 @@ def coords_to_idxs(xs, ys, transform, shape):
         Two dimensional affine transform for 2D linear mapping
     shape : tuple of int
         The height, width  of the raster.
+    op : function {numpy.floor, numpy.ceil, numpy.round}
+        Function to convert fractional pixels to whole numbers
+    precision : int, optional
+        Decimal places of precision in indexing, as in `round()`.
 
     Returns
     -------
@@ -188,18 +199,18 @@ def coords_to_idxs(xs, ys, transform, shape):
 
     Raises
     ------
-    ValueError
+    IndexError
         if any coordinate outside domain.
     """
     nrow, ncol = shape
-    rows, cols = rowcol(transform, xs, ys, op=np.floor, precision=None)
+    rows, cols = rowcol(transform, xs, ys, op=op, precision=precision)
     if not np.all(
         np.logical_and(
             np.logical_and(rows >= 0, rows < nrow),
             np.logical_and(cols >= 0, cols < ncol),
         )
     ):
-        raise ValueError("XY coordinates outside domain")
+        raise IndexError("XY coordinates outside domain")
     return rows * ncol + cols
 
 
@@ -297,9 +308,7 @@ def degree_metres_x(lat):
 
 
 @njit
-def distance(
-    idx0, idx1, ncol, latlon=False, transform=IDENTITY
-):
+def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
     """Return the the length between linear indices idx0 and idx1 on a regular raster 
     defined by the affine transform.
     
@@ -326,7 +335,7 @@ def distance(
     dr = abs(r1 - r0)
     dc = abs((idx1 % ncol) - (idx0 % ncol))
     if latlon:  # calculate cell size in metres
-        lat = north + (r0 + r1) / 2. * yres
+        lat = north + (r0 + r1) / 2.0 * yres
         dy = 0.0 if dr == 0 else degree_metres_y(lat) * yres
         dx = 0.0 if dc == 0 else degree_metres_x(lat) * xres
     else:
@@ -334,19 +343,23 @@ def distance(
         dx = yres
     return math.hypot(dy * dr, dx * dc)  # length
 
+
 ## VECTORIZE
-def to_linestring(idxs_ds, xs, ys, mask=None):
+def vectorize(idxs_ds, xs, ys, mask=None):
     """Returns a list of LineString for each up- downstream connection"""
     try:
+        import geopandas as gp
         from shapely.geometry import LineString
     except ImportError:
-        msg = "The `to_linestring` method requires the additional shapely package."
+        msg = "The `to_linestring` method requires the additional geopandas package."
         raise ImportError(msg)
 
     geoms = list()
+    idxs = list()
     for idx0 in range(idxs_ds.size):
-        if mask is not None and mask[idx0] != 1:
-            continue
         idx_ds = idxs_ds[idx0]
+        if idx_ds < 0 or (mask is not None and mask[idx0] != 1):
+            continue
         geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
-    return geoms
+        idxs.append(idx0)
+    return gp.GeoDataFrame(index=idxs, geometry=geoms)
