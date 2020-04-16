@@ -51,11 +51,11 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="eam"):
 
 @njit
 def unit_catchments(
-    idxs_out, 
-    idxs_ds, 
-    seq, 
-    ncol, 
-    latlon=False, 
+    idxs_out,
+    idxs_ds,
+    seq,
+    ncol,
+    latlon=False,
     transform=gis_utils.IDENTITY,
     area_factor=1,
     nodata=-9999.0,

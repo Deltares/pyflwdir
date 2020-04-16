@@ -12,17 +12,16 @@ from test_core import test_data
 
 _mv = core._mv
 parsed, flwdir = test_data[0]
-idxs_ds, idxs_pit, seq, _ = parsed
+idxs_ds, idxs_pit, seq, ranks = parsed
 ncol, shape = flwdir.shape[1], flwdir.shape
 upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
-elv = np.ones(idxs_ds.size, dtype=np.float32)
+elv = ranks
 
 test = [("eam", 5), ("none", 1), ("dmm", 4)]
 
 
 @pytest.mark.parametrize("method, cellsize", test)
 def test_ucatch(method, cellsize):
-    method, cellsize = test[0]
     if cellsize == 1:
         idxs_out = np.arange(idxs_ds.size)
         idxs_out[idxs_ds == _mv] = _mv
@@ -37,6 +36,8 @@ def test_ucatch(method, cellsize):
         assert np.all(uare[umap != -1] == cellsize)
         assert np.all(rivlen[upa == 1] == 0)  # headwater cells
         assert np.all(rivlen[upa > 1] >= 1)  # downstream cells
-    assert np.all(rivslp[idxs_out != _mv] == 0)  # constant elv
+        # dz == 1 (elv == ranks)
+        assert np.all(rivslp[rivlen > 0] == 1 / rivlen[rivlen > 0])
+    assert np.all(rivslp[idxs_out != -1] >= 0)
     assert umap.max() == np.where(idxs_out != _mv)[0][-1]
     assert np.all(uare[idxs_out != -1] >= 1)
