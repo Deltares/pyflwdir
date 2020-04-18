@@ -14,7 +14,7 @@ from test_core import test_data
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
 def test_uparea(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, ranks = parsed
+    idxs_ds, idxs_pit, seq, rank = [p.copy() for p in parsed]
     n, ncol = seq.size, flwdir.shape[1]
     # cell count
     nodata = -9999
@@ -27,7 +27,7 @@ def test_uparea(parsed, flwdir):
     assert np.all(upa == acc)
     # latlon is True
     lons, lats = gis_utils.affine_to_coords(gis_utils.IDENTITY, flwdir.shape)
-    area = np.where(ranks >= 0, gis_utils.reggrid_area(lats, lons).ravel(), nodata)
+    area = np.where(rank >= 0, gis_utils.reggrid_area(lats, lons).ravel(), nodata)
     acc1 = streams.accuflux(idxs_ds, seq, area, nodata)
     upa1 = streams.upstream_area(idxs_ds, seq, ncol, latlon=True)
     assert np.all(upa1 == acc1)
@@ -54,9 +54,9 @@ def test_uparea(parsed, flwdir):
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
 def test_stream(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, ranks = parsed
+    idxs_ds, idxs_pit, seq, rank = [p.copy() for p in parsed]
     n, ncol = seq.size, flwdir.shape[1]
-    idxs_ds[ranks == -1] = _mv
+    idxs_ds[rank == -1] = _mv
     # stream order
     sto = streams.stream_order(idxs_ds, seq)
     idxs_headwater = core.headwater_indices(idxs_ds)
@@ -64,8 +64,8 @@ def test_stream(parsed, flwdir):
     assert np.max(sto[idxs_pit]) == np.max(sto)
     assert np.all(sto[idxs_ds == _mv] == -1) and np.all(sto[idxs_ds != _mv] >= 1)
     # stream distance
-    strlen = streams.stream_length(idxs_ds, seq, ncol)
+    strlen = streams.stream_distance(idxs_ds, seq, ncol)
     assert np.all(strlen[idxs_pit] == 0)
     assert np.max(strlen[idxs_headwater]) == np.max(strlen)
     ranks1 = streams.stream_distance(idxs_ds, seq, ncol, real_length=False)
-    assert np.all(ranks1[ranks >= 0] == ranks[ranks >= 0])
+    assert np.all(ranks1[rank >= 0] == rank[rank >= 0])

@@ -30,8 +30,6 @@ def fillnodata_upstream(idxs_ds, seq, data, nodata):
     1D array of data.dtype
         infilled data
     """
-    if idxs_ds.shape != data.shape:
-        raise ValueError("Invalid data shape")
     res = data.copy()
     for idx0 in seq:  # down- to upstream
         if res[idx0] == nodata:
@@ -39,9 +37,10 @@ def fillnodata_upstream(idxs_ds, seq, data, nodata):
     return res
 
 
-@njit
-def basins(idxs_ds, idxs_pit, seq, ids):
-    """label basins using network tree"""
+def basins(idxs_ds, idxs_pit, seq, ids=None):
+    """return basin map"""
+    if ids is None:
+        ids = np.arange(1, idxs_pit.size + 1, dtype=np.uint32)
     basins = np.zeros(idxs_ds.size, dtype=ids.dtype)
     basins[idxs_pit] = ids
     return fillnodata_upstream(idxs_ds, seq, basins, 0)

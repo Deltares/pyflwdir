@@ -28,15 +28,6 @@ def subidx_2_idx(subidx, subncol, cellsize, ncol):
 
 
 @njit
-def ii_2_subidx(ii, idx, subncol, cellsize, ncol):
-    """Returns the highres index <subidx> based on the 
-    lowres cell index <idx> and index within that cell <ii>."""
-    r = idx // ncol * cellsize + ii // cellsize
-    c = idx % ncol * cellsize + ii % cellsize
-    return r * subncol + c
-
-
-@njit
 def in_d8(idx0, idx_ds, ncol):
     """Returns True if inside 3x3 (current and 8 neighboring) cells."""
     cond1 = abs(idx_ds - idx0) <= 1  # west, east
@@ -216,7 +207,7 @@ def dmm(subidxs_ds, subuparea, subshape, cellsize):
     subidxs_rep = dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize)
     # get next downstream lowres index
     idxs_ds = dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize)
-    return idxs_ds, subidxs_rep
+    return idxs_ds, subidxs_rep, shape
 
 
 #### EFFECTIVE AREA METHOD ####
@@ -378,7 +369,7 @@ def eam(subidxs_ds, subuparea, subshape, cellsize):
     subidxs_rep = eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize)
     # get next downstream lowres index
     idxs_ds = eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize)
-    return idxs_ds, subidxs_rep
+    return idxs_ds, subidxs_rep, shape
 
 
 #### CONNECTING OUTLETS SCALING METHOD ####
@@ -968,7 +959,7 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True):
             shape,
             cellsize,
         )
-    return idxs_ds, subidxs_out
+    return idxs_ds, subidxs_out, shape
 
 
 def com(subidxs_ds, subuparea, subshape, cellsize):
@@ -1006,7 +997,7 @@ def connected(subidxs_out, idxs_ds, subidxs_ds):
     for idx0 in range(n):
         subidx = subidxs_out[idx0]
         idx_ds = idxs_ds[idx0]
-        if idx_ds != mv and subidx != mv:
+        if idx_ds != _mv and subidx != _mv:
             while True:
                 subidx1 = subidxs_ds[subidx]  # next downstream subgrid cell index
                 if outlets[subidx1] or subidx1 == subidx:  # at outlet or at pit

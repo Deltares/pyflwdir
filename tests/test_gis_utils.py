@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for the pyflwdir.gis_utils module."""
+
 import pytest
 import numpy as np
 from pyflwdir import gis_utils as gis

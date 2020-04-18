@@ -230,7 +230,7 @@ def _upstream_d8_idx(idx0, idxs_ds, shape):
 def _trace(
     idx0,
     idxs_nxt,
-    ncol,
+    ncol=None,
     mask=None,
     max_length=None,
     real_length=False,
@@ -276,7 +276,7 @@ def _trace(
         idx1 = idxs_nxt[idx0]
         if idx1 == idx0 or idx1 == _mv:  # pit no more upstream cells
             break
-        if real_length:
+        if real_length and ncol is not None:
             d = gis_utils.distance(idx0, idx1, ncol, latlon, transform)
         if max_length is not None and dist + d > max_length:
             break
@@ -376,7 +376,7 @@ def _tributaries(
 def path(
     idxs0,
     idxs_nxt,
-    ncol,
+    ncol=None,
     mask=None,
     max_length=None,
     real_length=False,
@@ -414,7 +414,7 @@ def path(
 def snap(
     idxs0,
     idxs_nxt,
-    ncol,
+    ncol=None,
     mask=None,
     max_length=None,
     real_length=False,

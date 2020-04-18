@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-# Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
-# August 2019
+"""Methods to derive topo/hydrographical paramters from elevation data, in some cases 
+ in combination with flow direction data."""
 
 import numpy as np
 from numba import njit
+import math
 
-from pyflwdir.core import downstream_all, _mv
+from pyflwdir import gis_utils, core
+from pyflwdir.core import _mv
 
-__all__ = []
+__all__ = ["slope"]
 
 
 # TODO
@@ -17,7 +19,7 @@ def from_dem():
 
 
 @njit
-def adjust_elevation(idxs_ds, idxs_us, tree, elevtn_sparse):
+def adjust_elevation(idxs_ds, seq, elevtn):
     """Given a flow direction map, remove pits in the elevation map.
     Algorithm based on Yamazaki et al. (2012)
     
@@ -26,16 +28,16 @@ def adjust_elevation(idxs_ds, idxs_us, tree, elevtn_sparse):
     modeling, J. Hydrol., 436-437, 81-91, doi:10.1016/j.jhydrol.2012.02.045,
     2012.
     """
-    for i in range(len(tree)):
-        for idx0 in tree[-i - 1]:  # from up- to downstream
-            if idxs_us[idx0, 0] != _mv:
-                continue
+    elevtn_out = elevtn.copy()
+    n_up = core.upstream_count(idxs_ds)
+    for idx0 in seq[::-1]:  # from up- to downstream
+        if n_up[idx0] <= 0:
             # @ head water cell, i.e. no upstream neighbors
             # get downstream indices
-            idxs0 = downstream_all(idx0, idxs_ds)[0]
+            idxs0 = core._trace(idx0, idxs_ds)[0]
             # fix elevation
-            elevtn_sparse[idxs0] = _adjust_elevation(elevtn_sparse[idxs0])
-    return elevtn_sparse
+            elevtn_out[idxs0] = _adjust_elevation(elevtn_out[idxs0])
+    return elevtn_out
 
 
 @njit
@@ -97,3 +99,155 @@ def _adjust_elevation(elevtn):
                 zmax = zi
                 imax = i
     return elevtn
+
+
+@njit
+def slope(elevtn, nodata=-9999.0, latlon=False, transform=gis_utils.IDENTITY):
+    """
+
+    Parameters
+    ----------
+    elevnt : 1D array of float
+        elevation raster
+    nodata : float, optional
+        nodata value, by default -9999.0
+    latlon : bool, optional
+        True if WGS84 coordinates, by default False
+    transform : affine transform
+        Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
+
+    Returns
+    -------
+    1D array of float
+        slop
+    """
+    xres, yres, north = transform[0], transform[4], transform[5]
+    slope = np.zeros(elevtn.shape, dtype=np.float32)
+    nrow, ncol = elevtn.shape
+
+    elev = np.zeros((3, 3), dtype=elevtn.dtype)
+
+    for r in range(0, nrow):
+        for c in range(0, ncol):
+            if elevtn[r, c] != nodata:
+                # start with matrix based on central value (inside loop)
+                elev[:, :] = elevtn[r, c]
+
+                for dr in range(-1, 2):
+                    row = r + dr
+                    i = dr + 1
+                    if row >= 0 and row < nrow:
+                        for dc in range(-1, 2):
+                            col = c + dc
+                            j = dc + 1
+                            if col >= 0 and col < ncol:
+                                # fill matrix with elevation, except when nodata
+                                if elevtn[row, col] != nodata:
+                                    elev[i, j] = elevtn[row, col]
+
+                dzdx = (
+                    (elev[0, 0] + 2 * elev[1, 0] + elev[2, 0])
+                    - (elev[0, 2] + 2 * elev[1, 2] + elev[2, 2])
+                ) / (8 * abs(xres))
+                dzdy = (
+                    (elev[0, 0] + 2 * elev[0, 1] + elev[0, 2])
+                    - (elev[2, 0] + 2 * elev[2, 1] + elev[2, 2])
+                ) / (8 * abs(yres))
+
+                if latlon:
+                    lat = north + (r + 0.5) * yres
+                    deg_y = gis_utils.degree_metres_y(lat)
+                    deg_x = gis_utils.degree_metres_x(lat)
+                    slp = math.hypot(dzdx / deg_x, dzdy / deg_y)
+                else:
+                    slp = math.hypot(dzdx, dzdy)
+            else:
+                slp = nodata
+
+            slope[r, c] = slp
+
+    return slope
+
+
+def height_above_nearest_drain(idxs_ds, seq, drain, elevtn):
+    """Returns the height above the nearest drain (HAND), i.e.: the relative vertical 
+    distance (drop) to the nearest dowstream river based on drainage‐normalized 
+    topography and flowpaths. 
+
+    Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent 
+        Hydrol. Process. 30 320–33
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    drain : 1D array of bool
+        flattened drainage mask
+    elevnt : 1D array of float
+        flattened elevation raster
+
+    Returns
+    -------
+    1D array of float
+        height above nearest drain
+    """
+    hand = np.full(drain.size, -9999.0, dtype=np.float64)
+    for idx0 in seq:
+        if drain[idx0] == 1:
+            hand[idx0] = 0
+        else:
+            idx_ds = idxs_ds[idx0]
+            dz = elevtn[idx0] - elevtn[idx_ds]
+            hand[idx0] = hand[idx_ds] + dz
+    return hand
+
+
+def floodplains(idxs_ds, seq, drain, elevtn, uparea, b=0.3):
+    """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is 
+    scaled with upstream area following h ~ A**b.  
+
+    Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s 
+        floodplains Sci. Data 6 180309
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    drain : 1D array of bool
+        flattened drainage mask
+    elevnt : 1D array of float
+        flattened elevation raster [m]
+    uparea : 1D array of float
+        flattened upstream area raster [m2]
+    b : float
+        scale parameter
+
+    Returns
+    -------
+    1D array of int8
+        floodplain 
+    """
+    drainh = np.full(drain.size, -9999.0, dtype=np.float32)
+    drainz = np.full(drain.size, -9999.0, dtype=np.float32)
+    fldpln = np.full(drain.size, -1, dtype=np.int8)
+    fldpln[seq] = 0
+    for idx0 in seq:  # down- to upstream
+        if drain[idx0] == 1:
+            drainh[idx0] = uparea[idx0] ** b
+            drainz[idx0] = elevtn[idx0]
+            fldpln[idx0] = 1
+        else:
+            idx_ds = idxs_ds[idx0]
+            if fldpln[idx_ds] == 1:
+                z0 = drainz[idx_ds]
+                h0 = drainh[idx_ds]
+                dh = elevtn[idx0] - z0
+                if dh <= h0:
+                    fldpln[idx0] = 1
+                    drainz[idx0] = z0
+                    drainh[idx0] = h0
+    return fldpln

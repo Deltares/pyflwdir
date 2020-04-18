@@ -1,4 +1,6 @@
 # -- coding: utf-8 --
+""""""
+
 from numba import vectorize, njit
 import numpy as np
 import math
@@ -345,7 +347,7 @@ def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
 
 
 ## VECTORIZE
-def vectorize(idxs_ds, xs, ys, mask=None):
+def vectorize(idxs_ds, xs, ys, mask=None, crs=None):
     """Returns a list of LineString for each up- downstream connection"""
     try:
         import geopandas as gp
@@ -353,13 +355,17 @@ def vectorize(idxs_ds, xs, ys, mask=None):
     except ImportError:
         msg = "The `to_linestring` method requires the additional geopandas package."
         raise ImportError(msg)
-
     geoms = list()
     idxs = list()
+    pits = list()
     for idx0 in range(idxs_ds.size):
         idx_ds = idxs_ds[idx0]
         if idx_ds < 0 or (mask is not None and mask[idx0] != 1):
             continue
         geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
         idxs.append(idx0)
-    return gp.GeoDataFrame(index=idxs, geometry=geoms)
+        pits.append(idx_ds == idx0)
+    gdf = gp.GeoDataFrame(index=idxs, geometry=geoms, crs=crs)
+    gdf["pit"] = np.asarray(pits)
+    gdf.index.name = "idxs"
+    return gdf

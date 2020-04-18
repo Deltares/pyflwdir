@@ -20,7 +20,7 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="eam"):
     ----------
     idxs_ds : ndarray of int
         linear indices of downstream cells
-    uparea, elevtn : ndarray of float
+    uparea : ndarray of float
         flattened upstream area
     cellsize : int
         size of unit catchment measured in no. of higres cells
@@ -50,7 +50,7 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="eam"):
 
 
 @njit
-def unit_catchments(
+def area(
     idxs_out,
     idxs_ds,
     seq,
@@ -119,7 +119,7 @@ def unit_catchments(
 
 
 @njit
-def channel_length_slope(
+def channel(
     idxs_out,
     idxs_ds,
     uparea,

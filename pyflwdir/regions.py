@@ -1,4 +1,6 @@
 # -- coding: utf-8 --
+""""""
+
 from scipy import ndimage
 import pandas as pd
 import numpy as np
@@ -6,15 +8,15 @@ from numba import njit
 
 from pyflwdir import gis_utils
 
-__all__ = ["basin_bounds", "basin_slices"]
+__all__ = ["region_bounds", "region_slices"]
 
 
-def basin_sum(data, basins):
+def region_sum(data, basins):
     lbs = np.unique(basins[basins > 0])
     return ndimage.sum(data, basins, index=lbs)
 
 
-def basin_area(basins, transform=gis_utils.IDENTITY, latlon=False):
+def region_area(basins, transform=gis_utils.IDENTITY, latlon=False):
     if latlon:
         lon, lat = gis_utils.affine_to_coords(transform, basins.shape)
         area = gis_utils.reggrid_area(lat, lon)
@@ -22,10 +24,10 @@ def basin_area(basins, transform=gis_utils.IDENTITY, latlon=False):
         area = np.ones(basins.shape, dtype=np.float32) * abs(
             transform[0] * transform[4]
         )
-    return basin_sum(area, basins)
+    return region_sum(area, basins)
 
 
-def basin_slices(basins):
+def region_slices(basins):
     lbs = np.unique(basins[basins > 0])
     slices = ndimage.find_objects(basins)
     df = pd.DataFrame(
@@ -36,8 +38,8 @@ def basin_slices(basins):
     return df
 
 
-def basin_bounds(basins, transform=gis_utils.IDENTITY):
-    df = basin_slices(basins)
+def region_bounds(basins, transform=gis_utils.IDENTITY):
+    df = region_slices(basins)
     xres, yres = transform[0], transform[4]
     lons, lats = gis_utils.affine_to_coords(transform, basins.shape)
     xs = np.array([(s.start, s.stop) for s in df["xslice"]])
@@ -64,8 +66,8 @@ def basin_bounds(basins, transform=gis_utils.IDENTITY):
     return df[["xmin", "ymin", "xmax", "ymax"]].sort_index()
 
 
-def total_basin_bounds(basins, transform=gis_utils.IDENTITY):
-    b = basin_bounds(basins, transform=transform)
+def total_region_bounds(basins, transform=gis_utils.IDENTITY):
+    b = region_bounds(basins, transform=transform)
     bbox = np.array(
         [b["xmin"].min(), b["ymin"].min(), b["xmax"].max(), b["ymax"].max(),]
     )

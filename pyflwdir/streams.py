@@ -14,8 +14,8 @@ __all__ = []
 
 # general methods
 @njit
-def accuflux(idxs_ds, seq, material, nodata):
-    """Returns maps of accumulate upstream <material>
+def accuflux(idxs_ds, seq, data, nodata):
+    """Returns maps of accumulate upstream <data>
     
     Parameters
     ----------
@@ -23,20 +23,20 @@ def accuflux(idxs_ds, seq, material, nodata):
         index of next downstream cell
     seq : 1D array of int
         ordered cell indices from down- to upstream
-    material : 1D array
+    data : 1D array
         local values to be accumulated
     nodata : float, integer
         nodata value 
 
     Returns
     -------
-    1D array of material.dtype
-        accumulated upstream material
+    1D array of data.dtype
+        accumulated upstream data
     """
-    if idxs_ds.shape != material.shape:
+    if idxs_ds.shape != data.shape:
         raise ValueError("Invalid data shape")
     # intialize output with correct dtype
-    accu = material.copy()
+    accu = data.copy()
     for idx0 in seq[::-1]:
         idx_ds = idxs_ds[idx0]
         if idx0 != idx_ds and accu[idx_ds] != nodata and accu[idx0] != nodata:
@@ -143,8 +143,8 @@ def stream_distance(
     seq,
     ncol,
     mask=None,
-    latlon=False,
     real_length=True,
+    latlon=False,
     transform=gis_utils.IDENTITY,
 ):
     """Returns distance to outlet or next downstream True cell in mask
