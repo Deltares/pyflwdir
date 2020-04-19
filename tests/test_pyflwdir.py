@@ -41,7 +41,7 @@ def test_from_array_errors():
 
 
 def test_flwdirraster_errors():
-    with pytest.raises(ValueError, match='ftype "unknown" unknown'):
+    with pytest.raises(ValueError, match="Unknown flow direction type"):
         pyflwdir.FlwdirRaster(idxs_ds, d8.shape, "unknown")
     with pytest.raises(ValueError, match="Invalid transform."):
         pyflwdir.FlwdirRaster(idxs_ds, d8.shape, "d8", transform=(0, 0))
@@ -63,8 +63,8 @@ def test_flwdirraster_attrs(parsed, d8):
     assert flw.shape == d8.shape
     assert isinstance(flw._dict, dict)
     assert isinstance(flw.__str__(), str)
-    assert np.all(flw[flw.pits] == flw.pits)
-    assert isinstance(flw.pit_coords, tuple)
+    assert np.all(flw[flw.idxs_pit] == flw.idxs_pit)
+    assert isinstance(flw.xy(flw.idxs_pit), tuple)
     assert isinstance(flw.transform, Affine)
     assert isinstance(flw.latlon, bool)
     assert np.all(flw.rank.ravel() == rank)
@@ -76,23 +76,23 @@ def test_flwdirraster_attrs(parsed, d8):
 
 
 def test_add_pits():
-    idx0 = flw.pits
-    x, y = flw.pit_coords
+    idx0 = flw.idxs_pit
+    x, y = flw.xy(flw.idxs_pit)
     # all cells are True -> pit at idx1
     flw.order_cells()  # set flw._seq
-    flw.add_pits(idx=idx0, streams=np.full(d8.shape, True, dtype=np.bool))
-    assert np.all(flw.pits == idx0)
+    flw.add_pits(idxs=idx0, streams=np.full(d8.shape, True, dtype=np.bool))
+    assert np.all(flw.idxs_pit == idx0)
     assert flw._seq is None  # check if seq is deleted
     # original pit idx0
     flw.add_pits(xy=(x, y))
-    assert np.all(flw.pits == idx0)
+    assert np.all(flw.idxs_pit == idx0)
     # check some errors
     with pytest.raises(ValueError, match="size does not match"):
-        flw.add_pits(idx=idx0, streams=np.ones((1, 1)))
-    with pytest.raises(ValueError, match="Either idx or xy should be provided."):
+        flw.add_pits(idxs=idx0, streams=np.ones((1, 1)))
+    with pytest.raises(ValueError, match="Either idxs or xy should be provided."):
         flw.add_pits()
-    with pytest.raises(ValueError, match="Either idx or xy should be provided."):
-        flw.add_pits(idx=idx0, xy=(x, y))
+    with pytest.raises(ValueError, match="Either idxs or xy should be provided."):
+        flw.add_pits(idxs=idx0, xy=(x, y))
 
 
 # NOTE tmpdir is predefined fixture
@@ -111,10 +111,12 @@ def test_path_snap():
     idx1 = flw.snap(idx0)[0]
     assert np.all(flw.path(idx1, direction="up")[0][0][::-1] == path[0])
     assert np.all(flw.snap(idx1, direction="up")[0] == idx0)
+    assert np.all(flw.snap(xy=flw.xy(idx1), direction="up")[0] == idx0)
+
     # with mask
     mask = np.full(flw.shape, False, dtype=np.bool)
     path, dist = flw.path(idx0, mask=mask)
-    idx2, dist1 = flw.snap(idx0, mask=mask)
+    idx2, _ = flw.snap(idx0, mask=mask)
     assert path[0].size == dist[0] + 1
     assert idx1 == idx2[0] == path[0][-1]
     # no mask
@@ -170,19 +172,19 @@ def test_basins():
     # basins
     basins = flw.basins()
     assert basins.min() == 0
-    assert basins.max() == flw.pits.size
+    assert basins.max() == flw.idxs_pit.size
     assert basins.dtype == np.uint32
     assert np.all(basins.shape == flw.shape)
-    idx = np.arange(1, flw.pits.size + 1, dtype=np.int16)
+    idx = np.arange(1, flw.idxs_pit.size + 1, dtype=np.int16)
     assert flw.basins(ids=idx).dtype == np.int16
     # subbasins
     subbasins = flw.basins(idxs=idxs_seq[-4:])
     assert np.any(subbasins != basins)
     # errors
     with pytest.raises(ValueError, match="size does not match"):
-        flw.basins(ids=np.arange(flw.pits.size - 1))
+        flw.basins(ids=np.arange(flw.idxs_pit.size - 1))
     with pytest.raises(ValueError, match="IDs cannot contain a value zero"):
-        flw.basins(ids=np.zeros(flw.pits.size, dtype=np.int16))
+        flw.basins(ids=np.zeros(flw.idxs_pit.size, dtype=np.int16))
     # basin bounds using IDENTITY transform
     df = flw.basin_bounds()
     assert isinstance(df, pd.DataFrame)
@@ -194,8 +196,8 @@ def test_basins():
 
 
 def test_pfafstetter():
-    pfaf = flw.pfafstetter(flw.pits[0])
-    bas0 = flw.basins(flw.pits[0])
+    pfaf = flw.pfafstetter(flw.idxs_pit[0])
+    bas0 = flw.basins(flw.idxs_pit[0])
     assert np.all(pfaf[bas0 != 0] > 0)
     assert pfaf.max() <= 9
 
@@ -213,7 +215,7 @@ def test_uparea():
     # test upstream area in km2
     uparea2 = flw.upstream_area(unit="km2")
     assert uparea2.dtype == np.float64
-    assert uparea2.max() == uparea2.flat[flw.pits].max()
+    assert uparea2.max() == uparea2.flat[flw.idxs_pit].max()
     with pytest.raises(ValueError, match="Unknown unit"):
         flw.upstream_area(unit="km")
     with pytest.raises(ValueError, match="size does not match"):
@@ -225,7 +227,7 @@ def test_streams():
     strord = flw.stream_order()
     assert strord.flat[flw.mask].min() == 1
     assert strord.min() == -1
-    assert strord.max() == strord.flat[flw.pits].max()
+    assert strord.max() == strord.flat[flw.idxs_pit].max()
     assert strord.dtype == np.int8
     assert np.all(strord.shape == flw.shape)
     # vectorize

@@ -90,14 +90,13 @@ def from_array(
     fd = FTYPES[ftype]
     if check_ftype and not fd.isvalid(data):
         raise ValueError(f'The flow direction type "{ftype}" is not recognized.')
-    idxs_ds, idxs_pit, n = fd.from_array(data)
+    idxs_ds, idxs_pit, _ = fd.from_array(data)
 
     # initialize
     return FlwdirRaster(
         idxs_ds=idxs_ds,
         idxs_pit=idxs_pit,
         shape=shape,
-        ncells=n,
         ftype=ftype,
         transform=transform,
         latlon=latlon,
@@ -160,7 +159,8 @@ class FlwdirRaster(object):
         # flow direction type
         if not ftype in FTYPES.keys():
             ftypes_str = '" ,"'.join(list(FTYPES.keys()))
-            raise ValueError(f'ftype "{ftype}" unknown')
+            msg = f'Unknown flow direction type: "{ftype}", select from {ftypes_str}'
+            raise ValueError(msg)
         self.ftype = ftype
         self._core = FTYPES[ftype]
 
@@ -185,7 +185,7 @@ class FlwdirRaster(object):
         self._idxs_us_main = None
 
         # check validity
-        if self.pits.size == 0:
+        if self.idxs_pit.size == 0:
             raise ValueError("Invalid FlwdirRaster: no pits found")
 
     def __str__(self):
@@ -226,6 +226,13 @@ class FlwdirRaster(object):
         return self._seq
 
     @property
+    def idxs_pit(self):
+        """Returns linear indices of pits."""
+        if self._pit is None:
+            self._pit = core.pit_indices(self.idxs_ds)
+        return self._pit
+
+    @property
     def ncells(self):
         """Returns number of valid cells."""
         if self._ncells is None:
@@ -236,26 +243,6 @@ class FlwdirRaster(object):
     def rank(self):
         """Returns the rank, i.e. distance the outlet in no. of cells."""
         return core.rank(self.idxs_ds)[0].reshape(self.shape)
-
-    @property
-    def pits(self):
-        """Returns linear indices of pits."""
-        if self._pit is None:
-            self._pit = core.pit_indices(self.idxs_ds)
-        return self._pit
-
-    @property
-    def pit_coords(self):
-        """Returns x, y coordinates of pits.
-        
-        Returns
-        -------
-        xs : ndarray of float
-            x coordinates in coordinate reference system
-        ys : ndarray of float
-            y coordinates in coordinate reference system
-        """
-        return gis.idxs_to_coords(self.pits, self.transform, self.shape)
 
     @property
     def isvalid(self):
@@ -283,33 +270,24 @@ class FlwdirRaster(object):
             self._idxs_us_main = idxs_us_main
         return idxs_us_main
 
-    def add_pits(self, idx=None, xy=None, streams=None):
+    def add_pits(self, idxs=None, xy=None, streams=None):
         """Add pits the flow direction raster.
         If `streams` is given, the pits are snapped to the first downstream True cell.
         
         Parameters
         ----------
-        idx : array_like, optional
+        idxs : array_like, optional
             linear indices of pits, by default is None.
-        xy : tuple of array of float, optional
+        xy : tuple of array_like of float, optional
             x, y coordinates of pits, by default is None.
         streams : ndarray of bool, optional
             2D raster with cells flagged 'True' at stream cells, only used
             in combination with idx or xy, by default None. 
         """
-        # coordinates to linear dense indices
-        if (xy is not None and idx is not None) or (xy is None and idx is None):
-            raise ValueError("Either idx or xy should be provided.")
-        elif xy is not None:
-            idx = gis.coords_to_idxs(*xy, self.transform, self.shape)
-        idxs0 = np.atleast_1d(idx)
-        # snap to streams
-        streams = self._check_data(streams, "streams", optional=True)
-        if streams is not None:
-            idxs0 = self.snap(idxs0, streams)[0]
+        idxs1 = self._check_idxs_xy(idxs, xy, streams)
         # add pits
-        self.idxs_ds[idxs0] = idxs0
-        self._pit = np.unique(np.concatenate([self.pits, idxs0]))
+        self.idxs_ds[idxs1] = idxs1
+        self._pit = np.unique(np.concatenate([self.idxs_pit, idxs1]))
         # reset order, ncells and upstream cell indices
         self._seq = None
         self._ncells = None
@@ -371,18 +349,41 @@ class FlwdirRaster(object):
             raise ValueError(f'ftype "{ftype}" unknown')
         return flwdir
 
+    ### spatial methods ###
+
+    def index(self, xs, ys):
+        """convert x, y coordinates to linear indices"""
+        return gis.coords_to_idxs(xs, ys, self.transform, self.shape)
+
+    def xy(self, idxs):
+        """convert linear indices to x, y coordinates"""
+        return gis.idxs_to_coords(idxs, self.transform, self.shape)
+
     ### LOCAL METHODS ###
 
-    def path(self, idxs, mask=None, max_length=None, unit="cell", direction="down"):
-        """Returns path of indices in down- or upstream direction until: 
-        1) a pit is found (including) or now more upstream cells; or
+    def path(
+        self,
+        idxs=None,
+        xy=None,
+        mask=None,
+        max_length=None,
+        unit="cell",
+        direction="down",
+    ):
+        """Returns paths of indices in down- or upstream direction from the starting
+        points until: 
+        1) a pit is found (including) or now more upstream cells are found; or
         2) a True cell is found in mask (including); or
         3) the max_length threshold is exceeded. 
         
+        To define starting points, either idxs or xy should be provided.
+
         Parameters
         ----------
-        idxs : array_like of int
-            linear index of start cells
+        idxs : array_like, optional
+            linear indices of starting point, by default is None.
+        xy : tuple of array_like of float, optional
+            x, y coordinates of starting point, by default is None.
         mask : ndarray of bool, optional
             True if stream cell.
         max_length : float, optional
@@ -403,16 +404,12 @@ class FlwdirRaster(object):
         if unit not in ["m", "cell"]:
             raise ValueError(f'Unknown unit: {unit}, select from ["m", "cell"].')
         direction = str(direction).lower()
-        if direction == "up":
-            idxs_nxt = self.idxs_us_main
-        elif direction == "down":
-            idxs_nxt = self.idxs_ds
-        else:
+        if direction not in ["up", "down"]:
             msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
             raise ValueError(msg)
         paths, dist = core.path(
-            np.atleast_1d(idxs),
-            idxs_nxt,
+            idxs0=self._check_idxs_xy(idxs, xy),
+            idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             mask=self._check_data(mask, "mask", optional=True),
             max_length=max_length,
             real_length=unit == "m",
@@ -422,16 +419,30 @@ class FlwdirRaster(object):
         )
         return paths, dist
 
-    def snap(self, idxs, mask=None, max_length=None, unit="cell", direction="down"):
-        """Returns the last index in down- or upstream direction where: 
-        1) a pit is found (including) or now more upstream cells; or
+    def snap(
+        self,
+        idxs=None,
+        xy=None,
+        mask=None,
+        max_length=None,
+        unit="cell",
+        direction="down",
+    ):
+        """Returns the last index in down- or upstream direction from the starting 
+        points where: 
+        
+        1) a pit is found (including) or now more upstream cells are found; or
         2) a True cell is found in mask (including)
         3) the max_length threshold is exceeded. 
         
+        To define starting points, either idxs or xy should be provided.
+
         Parameters
         ----------
-        idxs : array_like of int
-            linear index of start cell.
+        idxs : array_like, optional
+            linear indices of starting point, by default is None.
+        xy : tuple of array_like of float, optional
+            x, y coordinates of starting point, by default is None.
         mask : ndarray of bool
             True at cell where to snap to
         max_length : float, optional
@@ -452,16 +463,12 @@ class FlwdirRaster(object):
         if unit not in ["m", "cell"]:
             raise ValueError(f'Unknown unit: {unit}, select from ["m", "cell"].')
         direction = str(direction).lower()
-        if direction == "up":
-            idxs_nxt = self.idxs_us_main
-        elif direction == "down":
-            idxs_nxt = self.idxs_ds
-        else:
+        if direction not in ["up", "down"]:
             msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
             raise ValueError(msg)
         idxs1, dist = core.snap(
-            np.atleast_1d(idxs),
-            idxs_nxt,
+            idxs0=self._check_idxs_xy(idxs, xy),
+            idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             mask=self._check_data(mask, "mask", optional=True),
             max_length=max_length,
             real_length=unit == "m",
@@ -547,15 +554,22 @@ class FlwdirRaster(object):
 
     ### BASINS ###
 
-    def basins(self, idxs=None, ids=None):
+    def basins(self, idxs=None, xy=None, ids=None, **kwargs):
         """Returns a (sub)basin map with a unique ID for every (sub)basin. 
-        To return a subbasin map linear indices of subbasin outlets should be provided. 
-        By default, (sub)basin IDs start from 1 and the background value is 0.
+        
+        To return a subbasin map either linear indices or x,y coordinates of subbasin 
+        outlets should be provided. Additional key-word arguments are passed to the 
+        snap method to snap the outlets to a downstream stream.
+        
+        By default, if IDs are not provided (sub)basin IDs start from 1. As the the 
+        background value of the basins map is zero, the IDs may not contain zeros.
         
         Parameters
         ----------
-        idxs : ndarray of int
-            linear indices of subbasin outlets
+        idxs : array_like, optional
+            linear indices of sub(basin) outlets, by default is None.
+        xy : tuple of array_like of float, optional
+            x, y coordinates of sub(basin) outlets, by default is None.
         ids : ndarray of uint32, optional
             IDs of (sub)basins in same order as idxs, by default None
 
@@ -564,10 +578,10 @@ class FlwdirRaster(object):
         2D array of uint32
             (sub)basin map
         """
-        if idxs is None:  # full basins
-            idxs = self.pits
+        if idxs is None and xy is None:  # full basins
+            idxs = self.idxs_pit
         else:
-            idxs = np.atleast_1d(idxs)
+            idxs = self._check_idxs_xy(idxs, xy, **kwargs)
         if ids is not None:
             ids = np.atleast_1d(ids).ravel()
             if ids.size != idxs.size:
@@ -581,8 +595,8 @@ class FlwdirRaster(object):
         """Returns a table with the basin boundaries. At index 0 the total bounding 
         box is given. 
         
-        Additional key-word arguments are passed to the basins method which is used if 
-        no basins map is provided.
+        Additional key-word arguments are passed to the basins method which is used to
+        create a basins map if none is provided.
         
         Parameters
         ----------
@@ -1073,3 +1087,15 @@ class FlwdirRaster(object):
         elif not np.atleast_1d(data).size == self.size:
             raise ValueError(f'"{name}" size does not match with FlwdirRaster size')
         return np.atleast_1d(data).ravel()
+
+    def _check_idxs_xy(self, idxs, xy, streams=None):
+        if (xy is not None and idxs is not None) or (xy is None and idxs is None):
+            raise ValueError("Either idxs or xy should be provided.")
+        elif xy is not None:
+            idxs = self.index(*xy)
+        idxs = np.atleast_1d(idxs).ravel()
+        # snap to streams
+        streams = self._check_data(streams, "streams", optional=True)
+        if streams is not None:
+            idxs = self.snap(idxs=idxs, mask=streams)[0]
+        return idxs
