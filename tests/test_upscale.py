@@ -8,18 +8,17 @@ import numpy as np
 
 # local
 from pyflwdir import upscale, core_d8, core, streams, basins
-
-# large test data
-flwdir = np.fromfile(r"./data/d8.bin", dtype=np.uint8).reshape((678, 776))
-tests = [("dmm", 1073), ("eam", 406), ("com", 138), ("com2", 54)]
-idxs_ds, idxs_pit, _ = core_d8.from_array(flwdir)
-rank, n = core.rank(idxs_ds)
-seq = np.argsort(rank)[-n:]
-cellsize = 10
-
-# small test data
 from test_core import test_data
 
+# # large test data
+# flwdir = np.fromfile(r"./data/d8.bin", dtype=np.uint8).reshape((678, 776))
+# tests = [("dmm", 1073), ("eam", 406), ("com", 138), ("com2", 54)]
+# idxs_ds, idxs_pit, _ = core_d8.from_array(flwdir)
+# rank, n = core.rank(idxs_ds)
+# seq = np.argsort(rank)[-n:]
+# cellsize = 10
+
+# small test data
 parsed, flwdir = test_data[0]
 idxs_ds, idxs_pit, seq, _ = [p.copy() for p in parsed]
 cellsize = 5
