@@ -3,17 +3,34 @@ Change Log
 ###########
 
 
+0.3.0
+*****
+Improved
+--------
+* simplified data layout based on linear downstream cell indices and a ordered sequence or down- to upstream cell indices.
+
+Added
+-----
+* hand - height above neares drain based on Nobre et al. (2016)
+* floodplains - flood plain delineation based on Nardi et al. (2019)
+* snap/path - methods to follow a streamline in up-  or downstream direction
+
 0.2.0
-************
+*****
+
+Added
+-----
+* suport for multiple flow direction types
 
 Improved
------
+--------
 
-* upscale - The upscaling method now reduces the errors by forcing more rivers to connect on highres map.
+* upscale - Connecting outlets method is born
 
 
 0.1.0
-************
+*****
+
 Added
 -----
 

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-# Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
-# August 2019
-"""Convert between different flwdir types"""
+"""Methods to convert between different flwdir types"""
 
 from numba import njit
 import numpy as np

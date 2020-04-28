@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
-# August 2019
+"""Description of D8 flow direction type and methods to convert to/from general 
+nextidx."""
 
 from numba import njit, vectorize
 import numpy as np
@@ -14,8 +14,7 @@ _ds = np.array([[32, 64, 128], [16, 0, 1], [8, 4, 2]], dtype=np.uint8)
 _us = np.array([[2, 4, 8], [1, 0, 16], [128, 64, 32]], dtype=np.uint8)
 _mv = np.uint8(247)
 _pv = np.array([0, 255], dtype=np.uint8)
-_d8_ = np.unique(np.concatenate([_pv, np.array([_mv]), _ds.flatten()]))
-_max_depth = 8
+_all = np.array([32, 64, 128, 16, 0, 1, 8, 4, 2, 247, 255], dtype=np.uint8)
 
 
 @njit("Tuple((int8, int8))(uint8)")
@@ -38,144 +37,116 @@ def drdc(dd):
     return dr, dc
 
 
-@njit("u1(u4, u4, Tuple((u8,u8)))")
-def idx_to_dd(idx0, idx_ds, shape):
-    """returns local D8 value based on current and downstream index"""
-    ncol = shape[1]
-    r = (idx_ds // ncol) - (idx0 // ncol) + 1
-    c = (idx_ds % ncol) - (idx0 % ncol) + 1
-    dd = _mv
-    if r >= 0 and r < 3 and c >= 0 and c < 3:
-        dd = _ds[r, c]
-    return dd
-
-
-@njit("Tuple((intp[:], u4[:], u4[:]))(u1[:,:])")
-def from_array(flwdir):
-    """convert 2D D8 network to 1D indices"""
-    size = flwdir.size
-    nrow, ncol = flwdir.shape[0], flwdir.shape[-1]
+@njit
+def from_array(flwdir, _mv=_mv):
+    """convert 2D D8 data to 1D next downstream indices"""
+    nrow, ncol = flwdir.shape
     flwdir_flat = flwdir.ravel()
-    # find valid dense indices
-    idxs_dense = []
-    idxs_sparse = np.full(size, core._mv, dtype=np.uint32)
-    i = np.uint32(0)
-    for idx0 in range(size):
-        if flwdir_flat[idx0] != _mv:
-            idxs_dense.append(np.intp(idx0))
-            idxs_sparse[idx0] = i
-            i += 1
-    n = i
-    # get downsteam sparse index
+    # get downsteam indices
     pits_lst = []
-    idxs_ds = np.full(n, core._mv, dtype=np.uint32)
-    # loop over sparse indices
-    for idx0 in idxs_dense:
-        i = np.uint32(idxs_sparse[idx0])
+    idxs_ds = np.full(flwdir.size, core._mv, dtype=np.intp)
+    n = 0
+    for idx0 in range(flwdir.size):
+        if flwdir_flat[idx0] == _mv:
+            continue
         dr, dc = drdc(flwdir_flat[idx0])
         r_ds = int(idx0 // ncol + dr)
         c_ds = int(idx0 % ncol + dc)
         pit = dr == 0 and dc == 0
         outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
-        idx_ds = np.intp(idx0 + dc + dr * ncol)
+        idx_ds = c_ds + r_ds * ncol
         # pit or outside or ds cell has mv
-        if pit or outside or idxs_sparse[idx_ds] == core._mv:
-            idxs_ds[i] = i
-            pits_lst.append(np.uint32(i))
+        if pit or outside or flwdir_flat[idx_ds] == _mv:
+            pits_lst.append(idx0)
+            idxs_ds[idx0] = idx0
         else:
-            idxs_ds[i] = np.uint32(idxs_sparse[idx_ds])
-    return np.array(idxs_dense), idxs_ds, np.array(pits_lst)
+            idxs_ds[idx0] = idx_ds
+        n += 1
+    return idxs_ds, np.array(pits_lst, dtype=np.intp), n
 
 
-@njit  # ("u1[:,:](intp[:], u4[:], Tuple((u8, u8)))")
-def to_array(idxs_dense, idxs_ds, shape):
-    """convert sparse downstream indices to dense D8 raster"""
-    n = idxs_dense.size
-    flwdir = np.full(shape, _mv, dtype=np.uint8).ravel()
-    for i in range(n):
-        idx0 = idxs_dense[i]
-        idx_ds = idxs_dense[idxs_ds[i]]
-        dd = idx_to_dd(idx0, idx_ds, shape)
-        if dd == _mv:
-            msg = "Invalid data. Downstream cell outside 8 neighbors."
-            raise ValueError(msg)
+@njit
+def _downstream_idx(idx0, flwdir_flat, shape):
+    """Returns linear index of the donwstream neighbor; idx0 if at pit"""
+    nrow, ncol = shape
+    r0 = idx0 // ncol
+    c0 = idx0 % ncol
+    dr, dc = drdc(flwdir_flat[idx0])
+    r_ds, c_ds = r0 + dr, c0 + dc
+    if r_ds >= 0 and r_ds < nrow and c_ds >= 0 and c_ds < ncol:  # check bounds
+        idx_ds = c_ds + r_ds * ncol
+    else:
+        idx_ds = core._mv
+    return idx_ds
+
+
+# general
+@njit
+def to_array(idxs_ds, shape, _mv=_mv, _ds=_ds):
+    """convert downstream linear indices to dense D8 raster"""
+    ncol = shape[1]
+    flwdir = np.full(idxs_ds.size, _mv, dtype=np.uint8)
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == core._mv:
+            continue
+        dr = (idx_ds // ncol) - (idx0 // ncol)
+        dc = (idx_ds % ncol) - (idx0 % ncol)
+        if dr >= -1 and dr <= 1 and dc >= -1 and dc <= 1:
+            dd = _ds[dr + 1, dc + 1]
+        else:
+            raise ValueError("Invalid data downstream index outside 8 neighbours.")
         flwdir[idx0] = dd
     return flwdir.reshape(shape)
 
 
-# core d8 functions
-def isvalid(flwdir):
+def isvalid(flwdir, _all=_all):
     """True if 2D D8 raster is valid"""
     return (
         isinstance(flwdir, np.ndarray)
         and flwdir.dtype == "uint8"
         and flwdir.ndim == 2
-        and np.all([v in _d8_ for v in np.unique(flwdir)])
+        and check_values(flwdir, _all)
     )
 
 
-# @vectorize(["b1(u1)"])
 @njit
-def ispit(dd):
+def check_values(flwdir, _all):
+    check = True
+    for dd in flwdir.ravel():
+        if np.all(_all != dd):
+            check = False
+            break
+    return check
+
+
+@njit
+def ispit(dd, _pv=_pv):
     """True if D8 pit"""
     return np.any(dd == _pv)
 
 
-# @vectorize(["b1(u1)"])
 @njit
-def isnodata(dd):
+def isnodata(dd, _mv=_mv):
     """True if D8 nodata"""
     return dd == _mv
 
 
-####################################################
-# # NOTE functions below are used in upscale d8 only
-
-
 @njit
-def downstream(idx0, flwdir_flat, shape, dd=_mv):
-    """returns numpy array (int64) with indices of donwstream neighbors on a D8 grid.
-    At a pit the current index is returned
-    
-    D8 format
-    1:E 2:SE, 4:S, 8:SW, 16:W, 32:NW, 64:N, 128:NE, 0:mouth, -1/255: inland pit, -9/247: undefined (ocean)
-    """
-    nrow, ncol = shape
-    # FIXME: i don't like this extra if statement. can we do this differently?
-    if dd == _mv:
-        dd = flwdir_flat[idx0]
-    r0 = idx0 // ncol
-    c0 = idx0 % ncol
-    dr, dc = drdc(dd)
-    idx = np.int64(-1)
-    if (
-        not (r0 == 0 and dr == -1)
-        and not (c0 == 0 and dc == -1)
-        and not (r0 == nrow - 1 and dr == 1)
-        and not (c0 == ncol - 1 and dc == 1)
-    ):
-        idx = idx0 + dc + dr * ncol
-    return idx
-
-
-@njit
-def upstream(idx0, flwdir_flat, shape):
-    """returns a numpy array (int64) with indices of upstream neighbors on a D8 grid
-    if it leaves the domain a negative D8 value indicating the side where it leaves the domain is returned"""
+def _upstream_idx(idx0, flwdir_flat, shape, _us=_us):
+    """Returns a numpy array (int64) with linear indices of upstream neighbors"""
     nrow, ncol = shape
     # assume c-style row-major
     r = idx0 // ncol
     c = idx0 % ncol
-    idx = np.int64(-1)
-    us_idxs = list()
+    idxs_lst = list()
     for dr in range(-1, 2):
-        row = r + dr
         for dc in range(-1, 2):
-            col = c + dc
             if dr == 0 and dc == 0:  # skip pit -> return empty array
                 continue
-            elif row >= 0 and row < nrow and col >= 0 and col < ncol:  # check bounds
-                idx = np.int64(row * ncol + col)
+            r_us, c_us = r + dr, c + dc
+            if r_us >= 0 and r_us < nrow and c_us >= 0 and c_us < ncol:  # check bounds
+                idx = r_us * ncol + c_us
                 if flwdir_flat[idx] == _us[dr + 1, dc + 1]:
-                    us_idxs.append(idx)
-    return np.array(us_idxs, dtype=np.int64)
+                    idxs_lst.append(idx)
+    return np.array(idxs_lst, dtype=np.intp)

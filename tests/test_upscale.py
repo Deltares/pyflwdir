@@ -1,55 +1,50 @@
 # -*- coding: utf-8 -*-
-# Author: Dirk Eilander (contact: dirk.eilander@deltares.nl)
-# August 2019
-"""Tests for the pyflwdir module.
-"""
+"""Tests for the pyflwdir.upscael module."""
+
 import pytest
 from affine import Affine
 import time
 import numpy as np
 
 # local
-import pyflwdir
-from pyflwdir import upscale, subgrid
+from pyflwdir import upscale, core_d8, core, streams, basins
+from test_core import test_data
+
+# # large test data
+# flwdir = np.fromfile(r"./data/d8.bin", dtype=np.uint8).reshape((678, 776))
+# tests = [("dmm", 1073), ("eam", 406), ("com", 138), ("com2", 54)]
+# idxs_ds, idxs_pit, _ = core_d8.from_array(flwdir)
+# rank, n = core.rank(idxs_ds)
+# seq = np.argsort(rank)[-n:]
+# cellsize = 10
+
+# small test data
+parsed, flwdir = test_data[0]
+idxs_ds, idxs_pit, seq, _ = [p.copy() for p in parsed]
+cellsize = 5
+tests = [("dmm", 7), ("eam", 3), ("com", 1), ("com2", 0)]
+
+# caculate upstream area and basin
+upa = streams.upstream_area(idxs_ds, seq, flwdir.shape[1], dtype=np.int32)
+ids = np.arange(1, idxs_pit.size + 1, dtype=np.int)
+bas = basins.basins(idxs_ds, idxs_pit, seq, ids)
+
+# configure tests with different upscale methods
+@pytest.mark.parametrize("name, discon", tests)
+def test_upscale(name, discon):
+    fupscale = getattr(upscale, name)
+    idxs_ds1, idxs_out, shape1 = fupscale(idxs_ds, upa, flwdir.shape, cellsize)
+    assert core.loop_indices(idxs_ds1).size == 0
+    pit_idxs = core.pit_indices(idxs_ds1)
+    assert np.unique(idxs_out[pit_idxs]).size == pit_idxs.size
+    pit_bas = bas[idxs_out[pit_idxs]]
+    assert np.unique(pit_bas).size == pit_bas.size
+    # check number of disconnected cells for each method
+    connect = upscale.connected(idxs_out, idxs_ds1, idxs_ds)
+    assert np.sum(connect == 0) == discon
 
 
-@pytest.fixture
-def d8():
-    flw = pyflwdir.load(r"./data/flw.pkl")
-    flw._idxs_us  # initialize us array
-    return flw
-
-
-# configure tests with different options
-# n is number of disconnected cells per method
-tests = {
-    "dmm": {"n": 1073},
-    "eam": {"n": 406},
-    "com": {"kwargs": {"iter2": False}, "n": 138},
-    "com2": {"method": "com", "n": 54},
-}
-
-
-def test_upscale(d8):
-    cellsize = 10
-    uparea = d8.upstream_area().ravel()
-    basins = d8.basins().ravel()
-    for name, mdict in tests.items():
-        fupscale = getattr(upscale, mdict.get("method", name))
-        kwargs = mdict.get("kwargs", {})
-        nextidx, subidxs_out = fupscale(
-            d8._idxs_ds, d8._idxs_dense, uparea, d8.shape, cellsize, **kwargs
-        )
-        d8_lr = pyflwdir.from_array(nextidx, ftype="nextidx", check_ftype=True)
-        subidxs_out = subidxs_out.ravel()
-        assert d8_lr.isvalid
-        # check if in d8
-        d8_lr.to_array(ftype="d8")
-        pit_idxs = nextidx.flat[d8_lr.pits]
-        assert np.unique(pit_idxs).size == pit_idxs.size, f"{name} failed"
-        pitbas = basins[subidxs_out[d8_lr.pits]]
-        assert np.unique(pitbas).size == pitbas.size, f"{name} failed"
-        # check number of disconnected cells for each method
-        subidxs_out0 = d8._sparse_idx(subidxs_out[d8_lr._idxs_dense])
-        connect = subgrid.connected(subidxs_out0, d8_lr._idxs_ds, d8._idxs_ds)
-        assert np.sum(connect == 0) == mdict["n"], f"{name} failed"
+# TODO: extend tests
+def test_map():
+    upscale.map_celledge(idxs_ds, flwdir.shape, cellsize)
+    upscale.map_effare(idxs_ds, flwdir.shape, cellsize)
