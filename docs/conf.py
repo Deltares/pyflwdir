@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(here, "..")))
 
 project = "pyflwdir"
 copyright = "Deltares"
-author = "Dirk Eilander, Willem van Verseveld"
+author = "Dirk Eilander"
 
 # The full version, including alpha/beta/rc tags
 release = pkg_resources.get_distribution("pyflwdir").version
@@ -50,6 +50,9 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.todo",
     "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx",
+    "IPython.sphinxext.ipython_directive",
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -69,7 +72,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = "en"
+# language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -82,6 +85,10 @@ pygments_style = "sphinx"
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+# -- Options for IPython output -------------------------------------------
+# continue doc build and only print warnings/errors in examples
+ipython_savefig_dir = './'
+# ipython_warning_is_error = False
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -101,7 +108,7 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_context = {
-    "css_files": ["_static/theme_overrides.css",],  # override wide tables in RTD theme
+    "css_files": ["_templates/theme_overrides.css",],  # override wide tables in RTD theme
 }
 
 # Custom sidebar templates, must be a dictionary that maps document names
@@ -167,7 +174,22 @@ texinfo_documents = [
         u"pyflwdir Documentation",
         author,
         "pyflwdir",
-        "Fast flow direction operators in pure Python.",
+        "Fast methods to work with hydro- and topography data in pure Python.",
         "Miscellaneous",
     ),
 ]
+
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3/", None),
+    "geopandas": ("https://geopandas.org/", None),
+    # "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
+    # "iris": ("https://scitools.org.uk/iris/docs/latest", None),
+    # "numpy": ("https://docs.scipy.org/doc/numpy", None),
+    # "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    # "numba": ("https://numba.pydata.org/numba-doc/latest", None),
+    # "matplotlib": ("https://matplotlib.org", None),
+    # "dask": ("https://docs.dask.org/en/latest", None),
+    # "cftime": ("https://unidata.github.io/cftime", None),
+    # "xarray": ("https://xarray.pydata.org/en/stable", None)
+}

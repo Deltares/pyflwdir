@@ -11,7 +11,7 @@ with open("README.rst") as readme_file:
 
 setup(
     name="pyflwdir",
-    description="Fast flow direction operators in pure Python",
+    description="Fast methods to work with hydro- and topography data in pure Python.",
     long_description=readme + "\n\n",
     url="https://gitlab.com/deltares/wflow/pyflwdir/",
     author="Dirk Eilander",
@@ -34,7 +34,7 @@ setup(
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Hydrology",
-        "License :: OSI Approved :: MMIT License",
+        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

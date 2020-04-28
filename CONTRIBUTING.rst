@@ -4,7 +4,7 @@ documentation improvements, enhancements, and ideas are welcome. Here's how we w
 Code of Conduct
 ---------------
 
-First of all: the Rasterio project has a code of conduct. Please read the
+First of all: the pyflwdir project has a code of conduct. Please read the
 CODE_OF_CONDUCT.txt file, it's important to all of us.
 
 Rights
@@ -106,26 +106,27 @@ Development Environment
 
 Developing pyflwdir requires Python >= 3.6. We prefer developing with the most recent 
 version of Python. We strongly encourage you to develop in a seperate conda environment.
-All Python dependencies can be found in `environment.yml <environment.yml>`__.
+All Python dependencies required to develop pyflwdir can be found in `environment.yml <environment.yml>`__.
 
 Initial Setup
 ^^^^^^^^^^^^^
 
-First, clone pyflwdir's ``git`` repo:
+First, clone pyflwdir's ``git`` repo and navigate into the repository:
 
 .. code-block:: console
 
     $ git clone git@gitlab.com:deltares/wflow/pyflwdir.git
     $ cd pyflwdir
 
-Then, we make and activate a new pyflwdir conda environment:
+Then, make and activate a new pyflwdir conda environment based on the environment.yml 
+file contained in the repository:
 
 .. code-block:: console
 
     $ conda env create -f environment.yml
     $ conda activate pyflwdir
 
-Finally, we build and install pyflwdir:
+Finally, build and install pyflwdir:
 
 .. code-block:: console
 
@@ -134,8 +135,8 @@ Finally, we build and install pyflwdir:
 Running the tests
 ^^^^^^^^^^^^^^^^^
 
-Pyflwdir's tests live in ``tests <tests/>`` and generally match the main
-package layout. Test should be run from the tests folder.
+Pyflwdir's tests live in the tests folder and generally match the main package layout. 
+Test should be run from the tests folder.
 
 To run the entire suite and the code coverage report:
 

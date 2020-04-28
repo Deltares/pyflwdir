@@ -9,17 +9,18 @@ channels:
 dependencies:
   - affine
   - black
+  - cartopy
   - geopandas
+  - ipython
+  - matplotlib
   - numba>=0.48
   - numpy
   - pandas
   - pytest
   - pytest-cov
   - pytest-benchmark
-  - python=3.6
+  - python>=3.6
   - scipy
   - setuptools_scm
   - sphinx
   - sphinx_rtd_theme
-  
-

@@ -1,28 +1,40 @@
-.. pyflwdir documentation master file, created by
-   sphinx-quickstart on Thu Jun 21 11:07:11 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+===============================================================================
+pyflwdir: Fast methods to work with hydro- and topography data in pure Python.
+===============================================================================
 
-pyflwdir: pure python flow direction operators
-==============================================
+Intro
+-----
 
-Documentation
--------------
+This package contains a series of methods to work with hydro- and topographical 
+gridded datasets, which are key to many workflows in many earth siences. 
 
-**Getting Started**
 
-**User Guide**
-
-**API Reference & Help**
-
-* :doc:`api`
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: API Reference & Help
+  :maxdepth: 1
+  :caption: Getting Started
 
-   api
+  Installation <installation>
+
+.. toctree::
+  :maxdepth: 1
+  :caption: User Guide
+  
+  Flow direction data <flwdir>
+
+.. toctree::
+  :maxdepth: 1
+  :caption: Reference Guide
+
+  FlwdirRaster reference <reference>
+  Changelog <changelog>
+
+
+.. toctree::
+  :maxdepth: 1
+  :caption: Developer
+
+  Contributing to PyFlwDir <contributing>
 
 Indices and tables
 ------------------
