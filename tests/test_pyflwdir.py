@@ -24,7 +24,8 @@ _mv = core._mv
 
 @pytest.mark.parametrize("flwdir, ftype", [(d8, "d8"), (nextxy, "nextxy"),])
 def test_from_to_array(flwdir, ftype):
-    flw = pyflwdir.from_array(flwdir)
+    mask = np.ones(flwdir.shape)
+    flw = pyflwdir.from_array(flwdir, mask=mask)
     assert flw.ftype == ftype
     assert np.all(pyflwdir.from_array(flw.to_array()).idxs_ds == flw.idxs_ds)
 
@@ -38,6 +39,8 @@ def test_from_array_errors():
         pyflwdir.from_array(d8.ravel(), ftype="d8")
     with pytest.raises(ValueError, match="is not recognized."):
         pyflwdir.from_array(d8, ftype="ldd", check_ftype=True)
+    with pytest.raises(ValueError, match="shape does not match"):
+        pyflwdir.from_array(d8, mask=np.ones((1, 1)))
 
 
 def test_flwdirraster_errors():
@@ -66,6 +69,7 @@ def test_flwdirraster_attrs(parsed, d8):
     assert np.all(flw[flw.idxs_pit] == flw.idxs_pit)
     assert isinstance(flw.xy(flw.idxs_pit), tuple)
     assert isinstance(flw.transform, Affine)
+    assert isinstance(flw.bounds, np.ndarray)
     assert isinstance(flw.latlon, bool)
     assert np.all(flw.rank.ravel() == rank)
     assert flw.ncells == seq.size
@@ -142,7 +146,7 @@ def test_path_snap():
 
 def test_downstream():
     idxs = np.arange(flw.size, dtype=np.intp)
-    assert np.all(flw.downstream(idxs).flat[flw.mask] == flw.idxs_ds[flw.mask])
+    assert np.all(flw.downstream(idxs).ravel()[flw.mask] == flw.idxs_ds[flw.mask])
     with pytest.raises(ValueError, match="size does not match"):
         flw.downstream(np.ones((1, 1)))
 
@@ -159,7 +163,6 @@ def test_moving_average():
     data = np.random.random(flw.shape)
     data_smooth = flw.moving_average(data, n=1, weights=np.ones(flw.shape))
     assert np.all(data_smooth == flw.moving_average(data, n=1))
-    assert data_smooth.flat[flw.mask].max() < data.flat[flw.mask].max()
     idxs = flw.path(idxs_seq[-1], max_length=2)[0][0]
     assert np.isclose(np.mean(data.flat[idxs]), data_smooth.flat[idxs[1]])
     with pytest.raises(ValueError, match="size does not match"):
@@ -308,9 +311,7 @@ def test_dem():
     with pytest.raises(ValueError, match="size does not match"):
         flw.hand(np.ones((1, 1)), elevtn_new)
     # floodplain
-    fldpln = flw.floodplains(drain, elevtn_new, b=1)
+    fldpln = flw.floodplains(elevtn_new, uparea=drain, upa_min=1, b=1)
     assert np.all(fldpln.flat[flw.mask] == 1)
     with pytest.raises(ValueError, match="size does not match"):
-        flw.floodplains(drain, np.ones((1, 1)))
-    with pytest.raises(ValueError, match="size does not match"):
-        flw.floodplains(np.ones((1, 1)), elevtn_new)
+        flw.floodplains(np.ones((1, 1)))

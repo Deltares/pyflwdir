@@ -11,25 +11,27 @@ from pyflwdir import gis_utils
 __all__ = ["region_bounds", "region_slices"]
 
 
-def region_sum(data, basins):
-    lbs = np.unique(basins[basins > 0])
-    return ndimage.sum(data, basins, index=lbs)
+def region_sum(data, regions):
+    lbs = np.unique(regions[regions > 0])
+    return ndimage.sum(data, regions, index=lbs)
 
 
-def region_area(basins, transform=gis_utils.IDENTITY, latlon=False):
+def region_area(regions, transform=gis_utils.IDENTITY, latlon=False):
     if latlon:
-        lon, lat = gis_utils.affine_to_coords(transform, basins.shape)
+        lon, lat = gis_utils.affine_to_coords(transform, regions.shape)
         area = gis_utils.reggrid_area(lat, lon)
     else:
-        area = np.ones(basins.shape, dtype=np.float32) * abs(
+        area = np.ones(regions.shape, dtype=np.float32) * abs(
             transform[0] * transform[4]
         )
-    return region_sum(area, basins)
+    return region_sum(area, regions)
 
 
-def region_slices(basins):
-    lbs = np.unique(basins[basins > 0])
-    slices = ndimage.find_objects(basins)
+def region_slices(regions):
+    lbs = np.unique(regions[regions > 0])
+    if lbs.size == 0:
+        raise ValueError("No regions found in data")
+    slices = ndimage.find_objects(regions)
     df = pd.DataFrame(
         index=lbs,
         data=[s for s in slices if s is not None],
@@ -38,10 +40,10 @@ def region_slices(basins):
     return df
 
 
-def region_bounds(basins, transform=gis_utils.IDENTITY):
-    df = region_slices(basins)
+def region_bounds(regions, transform=gis_utils.IDENTITY):
+    df = region_slices(regions)
     xres, yres = transform[0], transform[4]
-    lons, lats = gis_utils.affine_to_coords(transform, basins.shape)
+    lons, lats = gis_utils.affine_to_coords(transform, regions.shape)
     xs = np.array([(s.start, s.stop) for s in df["xslice"]])
     ys = np.array([(s.start, s.stop) for s in df["yslice"]])
     if yres < 0:
@@ -66,8 +68,8 @@ def region_bounds(basins, transform=gis_utils.IDENTITY):
     return df[["xmin", "ymin", "xmax", "ymax"]].sort_index()
 
 
-def total_region_bounds(basins, transform=gis_utils.IDENTITY):
-    b = region_bounds(basins, transform=transform)
+def total_region_bounds(regions, transform=gis_utils.IDENTITY):
+    b = region_bounds(regions, transform=transform)
     bbox = np.array(
         [b["xmin"].min(), b["ymin"].min(), b["xmax"].max(), b["ymax"].max(),]
     )

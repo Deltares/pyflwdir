@@ -51,7 +51,12 @@ def _infer_ftype(flwdir):
 
 
 def from_array(
-    data, ftype="infer", check_ftype=True, transform=gis.IDENTITY, latlon=False,
+    data,
+    ftype="infer",
+    check_ftype=True,
+    mask=None,
+    transform=gis.IDENTITY,
+    latlon=False,
 ):
     """Flow direction raster array parsed to actionable format.
     
@@ -63,6 +68,8 @@ def from_array(
         name of flow direction type, infer from data if 'infer', by default is 'infer'
     check_ftype : bool, optional
         check if valid flow direction raster if ftype is not 'infer', by default True
+    mask : ndarray of bool, optional
+        True for valid cells. Can be used to mask out subbasins.
     transform : affine transform
         Two dimensional affine transform for 2D linear mapping, by default using the 
         identity transform.
@@ -90,6 +97,10 @@ def from_array(
     fd = FTYPES[ftype]
     if check_ftype and not fd.isvalid(data):
         raise ValueError(f'The flow direction type "{ftype}" is not recognized.')
+    if mask is not None:
+        if mask.shape != data.shape:
+            raise ValueError(f'"mask" shape does not match with data shape')
+        data = np.where(mask != 0, data, fd._mv)
     idxs_ds, idxs_pit, _ = fd.from_array(data)
 
     # initialize
@@ -175,7 +186,7 @@ class FlwdirRaster(object):
         self.set_transform(transform, latlon)
 
         # data
-        self.idxs_ds = idxs_ds
+        self._idxs_ds = idxs_ds
         self._pit = idxs_pit
         self._seq = idxs_seq
         self._ncells = ncells
@@ -210,8 +221,14 @@ class FlwdirRaster(object):
         }
 
     @property
+    def idxs_ds(self):
+        """Linear indices of downstream cell."""
+        return self._idxs_ds
+
+    @property
     def idxs_us_main(self):
-        """Returns indices of main upstream cell"""
+        """Linear indices of main upstream cell, i.e. the upstream cell with the 
+        largest contributing area."""
         if self._idxs_us_main is None:
             idxs_us_main = self.main_upstream()
         else:
@@ -220,38 +237,38 @@ class FlwdirRaster(object):
 
     @property
     def idxs_seq(self):
-        """Returns linear indices ordered from down- to upstream."""
+        """Linear indices of valid cells ordered from down- to upstream."""
         if self._seq is None:
             self.order_cells()
         return self._seq
 
     @property
     def idxs_pit(self):
-        """Returns linear indices of pits."""
+        """Linear indices of pits/outlets."""
         if self._pit is None:
             self._pit = core.pit_indices(self.idxs_ds)
         return self._pit
 
     @property
     def ncells(self):
-        """Returns number of valid cells."""
+        """Number of valid cells."""
         if self._ncells is None:
             self._ncells = int(np.sum(self.rank >= 0))
         return self._ncells
 
     @property
     def rank(self):
-        """Returns the rank, i.e. distance the outlet in no. of cells."""
+        """Cell Rank, i.e. distance to the outlet in no. of cells."""
         return core.rank(self.idxs_ds)[0].reshape(self.shape)
 
     @property
     def isvalid(self):
-        """Returns True if the flow direction map is valid."""
+        """True if the flow direction map is valid."""
         return np.all(self.rank != -1)
 
     @property
     def mask(self):
-        """Returns boolean array of valid cells in flow direction raster."""
+        """Boolean array of valid cells in flow direction raster."""
         return self.idxs_ds != _mv
 
     ### SET/MODIFY PROPERTIES ###
@@ -351,13 +368,48 @@ class FlwdirRaster(object):
 
     ### spatial methods ###
 
-    def index(self, xs, ys):
-        """convert x, y coordinates to linear indices"""
-        return gis.coords_to_idxs(xs, ys, self.transform, self.shape)
+    def index(self, xs, ys, **kwargs):
+        """Returns linear cell indices based on x, y coordinates.
+        
+        Parameters
+        ----------
+        xs, ys : ndarray of float
+            x, y coordinates.
 
-    def xy(self, idxs):
-        """convert linear indices to x, y coordinates"""
-        return gis.idxs_to_coords(idxs, self.transform, self.shape)
+        Returns
+        -------
+        idxs : ndarray of int
+            linear cell indices        
+        """
+        return gis.coords_to_idxs(xs, ys, self.transform, self.shape, **kwargs)
+
+    def xy(self, idxs, **kwargs):
+        """Returns x, y coordinates of the cell center based on linear cell indices.
+        
+        Parameters
+        ----------
+        idxs : ndarray of int
+            linear cell indices 
+
+        Returns
+        -------
+        xs : ndarray of float
+            x coordinates.
+        ys : ndarray of float
+            y coordinates.
+        """
+        return gis.idxs_to_coords(idxs, self.transform, self.shape, **kwargs)
+
+    @property
+    def bounds(self):
+        """Returns the raster bounding box [xmin, ymin, xmax, ymax]."""
+        return np.array(gis.array_bounds(*self.shape, self.transform), dtype=np.float64)
+
+    @property
+    def extent(self):
+        """Returns the raster extent in cartopy format [xmin, xmax, ymin, ymax]."""
+        xmin, ymin, xmax, ymax = self.bounds
+        return np.array([xmin, xmax, ymin, ymax], dtype=np.float64)
 
     ### LOCAL METHODS ###
 
@@ -612,7 +664,7 @@ class FlwdirRaster(object):
             basins = self.basins(**kwargs)
         elif basins.size != self.size:
             raise ValueError('"basins" size does not match with FlwdirRaster size')
-        return regions.region_bounds(basins=basins, transform=self.transform)
+        return regions.region_bounds(basins, transform=self.transform)
 
     def pfafstetter(self, idx0, depth=1, uparea=None, upa_min=0.0):
         """Returns the pfafstetter coding for a single basin.
@@ -626,7 +678,7 @@ class FlwdirRaster(object):
         uparea : 2D array of float, optional
             2D raster with upstream area, by default None; calculated on the fly.
         upa_min : float, optional
-            Minimum subbasin area, by default 0.0.
+            Minimum upstream area theshold for subbasins, by default 0.0.
         
         Returns
         -------
@@ -966,8 +1018,7 @@ class FlwdirRaster(object):
         uparea : 2D array of float, optional
             upstream area, if None (default) it is calculated.
         upa_min : float, optional
-            Minimum upstream area to be consided as stream. Only used if 
-            return_sublength is True, by default 0.0
+            minimum upstream area threshold for streams. 
         
         Returns
         -------
@@ -1043,23 +1094,23 @@ class FlwdirRaster(object):
         )
         return hand.reshape(self.shape)
 
-    def floodplains(self, drain, elevtn, uparea=None, b=0.3):
+    def floodplains(self, elevtn, uparea=None, upa_min=1000, b=0.3):
         """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is 
-        scaled with upstream area following h ~ A**b.  
+        scaled with upstream area (A) following h ~ A**b.  
 
         Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s 
             floodplains Sci. Data 6 180309
 
         Parameters
         ----------
-        drain : 2D array of bool
-            drainage mask
         elevnt : 2D array of float
             elevation raster [m]
         uparea : 2D array of float, optional
-            upstream area raster [m2], by default calculated on the fly
+            upstream area raster [km2], by default calculated on the fly
         b : float, optional
             scale parameter, by default 0.3
+        upa_min : float, optional
+            minimum upstream area threshold for streams. 
 
         Returns
         -------
@@ -1069,9 +1120,9 @@ class FlwdirRaster(object):
         fldpln = dem.floodplains(
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
-            drain=self._check_data(drain, "drain"),
             elevtn=self._check_data(elevtn, "elevtn"),
-            uparea=self._check_data(uparea, "uparea", unit="m2"),
+            uparea=self._check_data(uparea, "uparea", unit="km2"),
+            upa_min=upa_min,
             b=b,
         )
         return fldpln.reshape(self.shape)

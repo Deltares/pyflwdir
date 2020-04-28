@@ -31,7 +31,7 @@ def adjust_elevation(idxs_ds, seq, elevtn):
     elevtn_out = elevtn.copy()
     n_up = core.upstream_count(idxs_ds)
     for idx0 in seq[::-1]:  # from up- to downstream
-        if n_up[idx0] <= 0:
+        if n_up[idx0] == 0:
             # @ head water cell, i.e. no upstream neighbors
             # get downstream indices
             idxs0 = core._trace(idx0, idxs_ds)[0]
@@ -194,17 +194,16 @@ def height_above_nearest_drain(idxs_ds, seq, drain, elevtn):
         height above nearest drain
     """
     hand = np.full(drain.size, -9999.0, dtype=np.float64)
+    hand[seq] = 0.0
     for idx0 in seq:
-        if drain[idx0] == 1:
-            hand[idx0] = 0
-        else:
+        if drain[idx0] != 1:
             idx_ds = idxs_ds[idx0]
             dz = elevtn[idx0] - elevtn[idx_ds]
             hand[idx0] = hand[idx_ds] + dz
     return hand
 
 
-def floodplains(idxs_ds, seq, drain, elevtn, uparea, b=0.3):
+def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
     """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is 
     scaled with upstream area following h ~ A**b.  
 
@@ -217,12 +216,12 @@ def floodplains(idxs_ds, seq, drain, elevtn, uparea, b=0.3):
         index of next downstream cell
     seq : 1D array of int
         ordered cell indices from down- to upstream
-    drain : 1D array of bool
-        flattened drainage mask
     elevnt : 1D array of float
         flattened elevation raster [m]
     uparea : 1D array of float
-        flattened upstream area raster [m2]
+        flattened upstream area raster [km2]
+    upa_min : float, optional
+        minimum upstream area threshold for streams. 
     b : float
         scale parameter
 
@@ -231,12 +230,12 @@ def floodplains(idxs_ds, seq, drain, elevtn, uparea, b=0.3):
     1D array of int8
         floodplain 
     """
-    drainh = np.full(drain.size, -9999.0, dtype=np.float32)
-    drainz = np.full(drain.size, -9999.0, dtype=np.float32)
-    fldpln = np.full(drain.size, -1, dtype=np.int8)
+    drainh = np.full(uparea.size, -9999.0, dtype=np.float32)
+    drainz = np.full(uparea.size, -9999.0, dtype=np.float32)
+    fldpln = np.full(uparea.size, -1, dtype=np.int8)
     fldpln[seq] = 0
     for idx0 in seq:  # down- to upstream
-        if drain[idx0] == 1:
+        if uparea[idx0] >= upa_min:
             drainh[idx0] = uparea[idx0] ** b
             drainz[idx0] = elevtn[idx0]
             fldpln[idx0] = 1
