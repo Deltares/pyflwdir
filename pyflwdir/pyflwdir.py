@@ -591,7 +591,7 @@ class FlwdirRaster(object):
         if dflat.size != self.size:
             raise ValueError("Data size does not match with FlwdirRaster size.")
         if weights is None:
-            weights = np.ones(self.size, dtype=np.float16)
+            weights = np.ones(self.size, dtype=np.float32)
         elif np.atleast_1d(weights).size != self.size:
             raise ValueError("Weights size does not match with FlwdirRaster size.")
         data_out = arithmetics.moving_average(
@@ -1028,7 +1028,7 @@ class FlwdirRaster(object):
             subgrid river slope [m/m]
         """
         if elevtn is None:
-            elevtn = np.zeros(self.size, dtype=np.float16)
+            elevtn = np.zeros(self.size, dtype=np.float32)
         if idxs_out is None:
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
         rivlen, rivslp = unitcatchments.channel(
