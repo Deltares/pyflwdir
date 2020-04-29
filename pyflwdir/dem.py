@@ -7,7 +7,8 @@ from numba import njit
 import math
 
 from pyflwdir import gis_utils, core
-from pyflwdir.core import _mv
+
+_mv = core._mv
 
 __all__ = ["slope"]
 
@@ -19,7 +20,7 @@ def from_dem():
 
 
 @njit
-def adjust_elevation(idxs_ds, seq, elevtn):
+def adjust_elevation(idxs_ds, seq, elevtn, mv=_mv):
     """Given a flow direction map, remove pits in the elevation map.
     Algorithm based on Yamazaki et al. (2012)
     
@@ -29,12 +30,12 @@ def adjust_elevation(idxs_ds, seq, elevtn):
     2012.
     """
     elevtn_out = elevtn.copy()
-    n_up = core.upstream_count(idxs_ds)
+    n_up = core.upstream_count(idxs_ds, mv=mv)
     for idx0 in seq[::-1]:  # from up- to downstream
         if n_up[idx0] == 0:
             # @ head water cell, i.e. no upstream neighbors
             # get downstream indices
-            idxs0 = core._trace(idx0, idxs_ds)[0]
+            idxs0 = core._trace(idx0, idxs_ds, mv=mv)[0]
             # fix elevation
             elevtn_out[idxs0] = _adjust_elevation(elevtn_out[idxs0])
     return elevtn_out

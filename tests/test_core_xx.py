@@ -59,8 +59,9 @@ def test_usds(fd):
 def test_identical(fd):
     """test if all core_xx.py return identical results"""
     for parsed, flwdir in test_data:
-        idxs_ds0, idxs_pit0, _, _ = parsed
-        idxs_ds, idxs_pit, _ = fd.from_array(fd.to_array(idxs_ds0, flwdir.shape))
+        idxs_ds0, idxs_pit0, _, _, mv = parsed
+        flwdir0 = fd.to_array(idxs_ds0, flwdir.shape, mv=mv)
+        idxs_ds, idxs_pit, _ = fd.from_array(flwdir0, dtype=idxs_ds0.dtype)
         assert np.all(idxs_ds0 == idxs_ds)
         assert np.all(idxs_pit0 == idxs_pit)
 

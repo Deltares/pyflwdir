@@ -3,12 +3,11 @@
 
 import pytest
 import numpy as np
-from pyflwdir import core, dem, streams
+from pyflwdir import dem, streams
 from test_core import test_data
 
 parsed, flwdir = test_data[0]
-idxs_ds, idxs_pit, seq, rank = parsed
-_mv = core._mv
+idxs_ds, idxs_pit, seq, rank, mv = parsed
 
 
 def test_dem_adjust():

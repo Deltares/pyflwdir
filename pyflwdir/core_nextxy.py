@@ -30,8 +30,8 @@ def from_array(flwdir, dtype=np.intp):
     return _from_array(nextx, nexty, dtype=dtype)
 
 
-def to_array(idxs_ds, shape):
-    nextx, nexty = _to_array(idxs_ds, shape)
+def to_array(idxs_ds, shape, mv=core._mv):
+    nextx, nexty = _to_array(idxs_ds, shape, mv=mv)
     return np.stack([nextx, nexty])
 
 
@@ -66,14 +66,14 @@ def _from_array(nextx, nexty, _mv=_mv, dtype=np.intp):
 
 
 @njit
-def _to_array(idxs_ds, shape):
+def _to_array(idxs_ds, shape, mv=core._mv):
     """convert 1D index to 3D NEXTXY raster"""
     ncol = shape[1]
     nextx = np.full(idxs_ds.size, _mv, dtype=np.int32)
     nexty = np.full(idxs_ds.size, _mv, dtype=np.int32)
     for idx0 in range(idxs_ds.size):
         idx_ds = idxs_ds[idx0]
-        if idx_ds == -1:
+        if idx_ds == mv:
             continue
         elif idx0 == idx_ds:  # pit
             nextx[idx0] = _pv

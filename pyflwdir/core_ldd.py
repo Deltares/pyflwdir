@@ -63,7 +63,7 @@ def from_array(flwdir, _mv=_mv, dtype=np.intp):
 
 
 @njit
-def _downstream_idx(idx0, flwdir_flat, shape):
+def _downstream_idx(idx0, flwdir_flat, shape, mv=core._mv):
     """Returns linear index of the donwstream neighbor; idx0 if at pit"""
     nrow, ncol = shape
     r0 = idx0 // ncol
@@ -73,15 +73,28 @@ def _downstream_idx(idx0, flwdir_flat, shape):
     if r_ds >= 0 and r_ds < nrow and c_ds >= 0 and c_ds < ncol:  # check bounds
         idx_ds = c_ds + r_ds * ncol
     else:
-        idx_ds = core._mv
+        idx_ds = mv
     return idx_ds
 
 
 # general
 @njit
-def to_array(idxs_ds, shape, _mv=_mv, _ds=_ds):
+def to_array(idxs_ds, shape, mv=core._mv):
     """convert downstream linear indices to dense D8 raster"""
-    return core_d8.to_array(idxs_ds, shape, _mv=_mv, _ds=_ds)
+    ncol = shape[1]
+    flwdir = np.full(idxs_ds.size, _mv, dtype=np.uint8)
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == mv:
+            continue
+        dr = (idx_ds // ncol) - (idx0 // ncol)
+        dc = (idx_ds % ncol) - (idx0 % ncol)
+        if dr >= -1 and dr <= 1 and dc >= -1 and dc <= 1:
+            dd = _ds[dr + 1, dc + 1]
+        else:
+            raise ValueError("Invalid data downstream index outside 8 neighbours.")
+        flwdir[idx0] = dd
+    return flwdir.reshape(shape)
 
 
 def isvalid(flwdir, _all=_all):

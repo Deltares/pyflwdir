@@ -6,10 +6,8 @@ from numba import njit
 import numpy as np
 
 # import local libraries
-from pyflwdir import core
 from pyflwdir import gis_utils
 
-_mv = core._mv
 __all__ = []
 
 # general methods

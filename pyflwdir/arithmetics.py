@@ -45,7 +45,7 @@ def _mean(data, nodata):
 
 
 @njit
-def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0):
+def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_mv):
     """Take the moving weighted average over the flow direction network.
     
     Parameters
@@ -74,14 +74,14 @@ def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0):
         if data[idx0] == nodata:
             continue
         idxs = core._window(idx0, n, idxs_ds, idxs_us_main)
-        idxs = idxs[idxs != _mv]
+        idxs = idxs[idxs != mv]
         if idxs.size > 0:
             data_out[idx0] = _average(data[idxs], weights[idxs], nodata)
     return data_out
 
 
 @njit
-def upstream_sum(idxs_ds, data, nodata=-9999.0):
+def upstream_sum(idxs_ds, data, nodata=-9999.0, mv=_mv):
     """Returns sum of first upstream values 
     
     Parameters
@@ -98,7 +98,7 @@ def upstream_sum(idxs_ds, data, nodata=-9999.0):
     arr_sum = np.full(data.size, 0, dtype=data.dtype)
     for idx0 in range(data.size):
         idx_ds = idxs_ds[idx0]
-        if idx_ds != _mv and idx_ds != idx0:
+        if idx_ds != mv and idx_ds != idx0:
             if data[idx0] == nodata or data[idx_ds] == nodata:
                 arr_sum[idx0] = nodata
             else:

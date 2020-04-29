@@ -11,7 +11,7 @@ _mv = core._mv
 __all__ = []
 
 
-def outlets(idxs_ds, uparea, cellsize, shape, method="eam"):
+def outlets(idxs_ds, uparea, cellsize, shape, method="eam", mv=_mv):
     """Returns linear indices of unit catchment outlet cells.
 
     For more information about the methods see upscale script.
@@ -40,10 +40,10 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="eam"):
     # get outlets cells
     args = (idxs_ds, uparea, shape, shape_out, cellsize)
     if method.lower() == "dmm":
-        idxs_out = upscale.dmm_exitcell(*args)
+        idxs_out = upscale.dmm_exitcell(*args, mv=mv)
     elif method.lower() == "eam":
-        idxs_rep = upscale.eam_repcell(*args)
-        idxs_out = upscale.com_outlets(idxs_rep, *args)
+        idxs_rep = upscale.eam_repcell(*args, mv=mv)
+        idxs_out = upscale.com_outlets(idxs_rep, *args, mv=mv)
     else:
         raise ValueError(f'Method {method} unknown, choose from ["eam", "dmm"]')
     return idxs_out, shape_out
@@ -60,6 +60,7 @@ def area(
     area_factor=1,
     nodata=-9999.0,
     dtype=np.float64,
+    mv=_mv,
 ):
     """Returns the unit catchment map (highres) and area (lowres) [m2]. 
     
@@ -96,25 +97,26 @@ def area(
     xres, yres, north = transform[0], transform[4], transform[5]
     area0 = abs(xres * yres)
     # initialize outputs
-    ucatch_map = np.full(idxs_ds.size, -1, dtype=np.int32)
+    ucatch_map = np.full(idxs_ds.size, 0, dtype=idxs_ds.dtype)
     ucatch_are = np.full(idxs_out.size, nodata, dtype=dtype)
     for i in range(idxs_out.size):
         idx0 = idxs_out[i]
-        if idx0 != _mv:
-            ucatch_map[idx0] = i
-            ucatch_are[i] = 0
+        if idx0 != mv:
+            ucatch_map[idx0] = i + 1
+            if latlon:
+                lat = north + (idx0 // ncol + 0.5) * yres
+                area0 = gis_utils.cellarea(lat, xres, yres) / area_factor
+            ucatch_are[i] = area0
     for idx0 in seq:  # down- to upstream
-        if latlon:
-            lat = north + (idx0 // ncol + 0.5) * yres
-            area0 = gis_utils.cellarea(lat, xres, yres) / area_factor
         idx_ds = idxs_ds[idx0]
         ucat0 = ucatch_map[idx0]
-        if ucat0 != -1:
-            ucatch_are[ucat0] += area0
-        elif idx_ds != idx0:
-            ucat = ucatch_map[idx_ds]
-            ucatch_map[idx0] = ucat
-            ucatch_are[ucat] += area0
+        ucat_ds = ucatch_map[idx_ds]
+        if ucat0 == 0 and ucat_ds != 0:
+            if latlon:
+                lat = north + (idx0 // ncol + 0.5) * yres
+                area0 = gis_utils.cellarea(lat, xres, yres) / area_factor
+            ucatch_map[idx0] = ucat_ds
+            ucatch_are[ucat_ds - 1] += area0
     return ucatch_map, ucatch_are
 
 
@@ -128,6 +130,7 @@ def channel(
     upa_min=0.0,
     latlon=False,
     transform=gis_utils.IDENTITY,
+    mv=_mv,
 ):
     """Returns the channel length and slope per channel segment which is defined by the 
     path starting at the outlet cell moving upstream following the upstream cells with 
@@ -160,11 +163,11 @@ def channel(
         channel section slope [m/m] 
     """
     # get indices of main upstream cells
-    idxs_us_main = core.main_upstream(idxs_ds, uparea, upa_min=upa_min)
+    idxs_us_main = core.main_upstream(idxs_ds, uparea, upa_min=upa_min, mv=mv)
     # temp binary array with outlets
     outlets = np.array([np.bool(0) for _ in range(idxs_ds.size)])
     for idx0 in idxs_out:
-        if idx0 != _mv:
+        if idx0 != mv:
             outlets[idx0] = np.bool(1)
     # allocate output
     rivlen = np.full(idxs_out.size, -9999.0, dtype=np.float64)
@@ -172,13 +175,13 @@ def channel(
     # loop over outlet cell indices
     for i in range(idxs_out.size):
         idx0 = idxs_out[i]
-        if idx0 == _mv:
+        if idx0 == mv:
             continue
         l = np.float64(0.0)
         idx = idx0
         while True:
             idx1 = idxs_us_main[idx]
-            if idx1 == _mv:
+            if idx1 == mv:
                 idx1 = idx
                 break
             # update length

@@ -19,7 +19,6 @@ idxs_seq = test_core.seq0
 d8 = test_core.flwdir0
 nextxy = core_nextxy.to_array(idxs_ds, d8.shape)
 flw = pyflwdir.FlwdirRaster(idxs_ds.copy(), d8.shape, "d8", idxs_pit=idxs_pit.copy())
-_mv = core._mv
 
 
 @pytest.mark.parametrize("flwdir, ftype", [(d8, "d8"), (nextxy, "nextxy"),])
@@ -60,10 +59,11 @@ def test_flwdirraster_errors():
 
 @pytest.mark.parametrize("parsed, d8", test_core.test_data)
 def test_flwdirraster_attrs(parsed, d8):
-    idxs_ds, idxs_pit, seq, rank = parsed
+    idxs_ds, idxs_pit, seq, rank, mv = parsed
     flw = pyflwdir.FlwdirRaster(
         idxs_ds.copy(), d8.shape, "d8", idxs_pit=idxs_pit.copy()
     )
+    assert flw._mv == mv
     assert flw.size == d8.size
     assert flw.shape == d8.shape
     assert isinstance(flw._dict, dict)
@@ -154,7 +154,7 @@ def test_downstream():
 
 
 def test_sum_upstream():
-    n_up = core.upstream_count(flw.idxs_ds)
+    n_up = core.upstream_count(flw.idxs_ds, flw._mv)
     data = np.ones(flw.shape, dtype=np.int32)
     assert np.all(flw.upstream_sum(data).flat[flw.mask] == n_up[flw.mask])
     with pytest.raises(ValueError, match="size does not match"):
@@ -278,12 +278,12 @@ def test_ucat():
     ucat, ugrd = flw.ucat_area(idxs_out)
     assert ugrd.shape == idxs_out.shape
     assert ucat.shape == flw.shape
-    assert ugrd[idxs_out != -1].min() > 0
-    assert ugrd[idxs_out != -1].min() > 0
+    assert ugrd[idxs_out != flw._mv].min() > 0
+    assert ugrd[idxs_out != flw._mv].min() > 0
     rivlen, rivslp = flw.ucat_channel(idxs_out)
     assert rivlen.shape == idxs_out.shape
-    assert rivlen[idxs_out != -1].min() >= 0  # only zeros at boundary
-    assert np.all(rivslp[idxs_out != -1] == 0)
+    assert rivlen[idxs_out != flw._mv].min() >= 0  # only zeros at boundary
+    assert np.all(rivslp[idxs_out != flw._mv] == 0)
     rivlen, rivslp = flw.ucat_channel()
     assert rivlen.shape == flw.shape
     with pytest.raises(ValueError, match="Unknown method"):

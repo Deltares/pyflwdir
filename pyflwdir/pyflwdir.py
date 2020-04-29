@@ -29,7 +29,6 @@ FTYPES = {
     core_nextxy._ftype: core_nextxy,
 }
 AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
-_mv = core._mv
 
 # export
 __all__ = ["FlwdirRaster", "from_array", "load"]
@@ -101,7 +100,14 @@ def from_array(
         if mask.shape != data.shape:
             raise ValueError(f'"mask" shape does not match with data shape')
         data = np.where(mask != 0, data, fd._mv)
-    dtype = np.int32 if data.size < 2147483647 else np.intp
+
+    if data.size < 2147483647:
+        dtype = np.int32
+    elif data.size < 4294967295 - 1:
+        dtype = np.uint32
+    else:
+        dtype = np.intp
+
     idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
 
     # initialize
@@ -191,6 +197,8 @@ class FlwdirRaster(object):
         self._pit = idxs_pit
         self._seq = idxs_seq
         self._ncells = ncells
+        # either -1 or 4294967295 if dtype == np.uint32
+        self._mv = core._mv.astype(idxs_ds.dtype)
 
         # set placeholders only used if cache if True
         self.cache = cache
@@ -260,7 +268,7 @@ class FlwdirRaster(object):
     @property
     def rank(self):
         """Cell Rank, i.e. distance to the outlet in no. of cells."""
-        return core.rank(self.idxs_ds)[0].reshape(self.shape)
+        return core.rank(self.idxs_ds, mv=self._mv)[0].reshape(self.shape)
 
     @property
     def isvalid(self):
@@ -270,7 +278,7 @@ class FlwdirRaster(object):
     @property
     def mask(self):
         """Boolean array of valid cells in flow direction raster."""
-        return self.idxs_ds != _mv
+        return self.idxs_ds != self._mv
 
     ### SET/MODIFY PROPERTIES ###
 
@@ -278,18 +286,18 @@ class FlwdirRaster(object):
         """Order cells from down- to upstream."""
         if method == "sort":
             # slow for large arrays
-            rnk, n = core.rank(self.idxs_ds)
+            rnk, n = core.rank(self.idxs_ds, mv=self._mv)
             self._seq = np.argsort(rnk)[-n:].astype(self.idxs_ds.dtype)
         elif method == "walk":
             # faster for large arrays, but also takes lots of memory
-            self._seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self.shape)
+            self._seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self.shape, self._mv)
         else:
             raise ValueError(f'Invalid method {method}, select from ["walk", "sort"]')
         self._ncells = self._seq.size
 
     def main_upstream(self, uparea=None, cache=None):
         idxs_us_main = core.main_upstream(
-            idxs_ds=self.idxs_ds, uparea=self._check_data(uparea, "uparea")
+            idxs_ds=self.idxs_ds, uparea=self._check_data(uparea, "uparea"), mv=self._mv
         )
         if cache or (cache is None and self.cache):
             self._idxs_us_main = idxs_us_main
@@ -341,7 +349,7 @@ class FlwdirRaster(object):
 
     def repair_loops(self):
         """Repair loops by setting a pit at every cell which does not drain to a pit."""
-        repair_idx = core.loop_indices(self.idxs_ds)
+        repair_idx = core.loop_indices(self.idxs_ds, mv=self._mv)
         if repair_idx.size > 0:
             # set pits for all loop indices !
             self.add_pits(repair_idx)
@@ -369,7 +377,7 @@ class FlwdirRaster(object):
         if ftype is None:
             ftype = self.ftype
         if ftype in FTYPES:
-            flwdir = FTYPES[ftype].to_array(self.idxs_ds, self.shape)
+            flwdir = FTYPES[ftype].to_array(self.idxs_ds, self.shape, mv=self._mv)
         else:
             raise ValueError(f'ftype "{ftype}" unknown')
         return flwdir
@@ -476,6 +484,7 @@ class FlwdirRaster(object):
             ncol=self.shape[1],
             latlon=self.latlon,
             transform=self.transform,
+            mv=self._mv,
         )
         return paths, dist
 
@@ -535,6 +544,7 @@ class FlwdirRaster(object):
             ncol=self.shape[1],
             latlon=self.latlon,
             transform=self.transform,
+            mv=self._mv,
         )
         return idxs1, dist
 
@@ -554,7 +564,9 @@ class FlwdirRaster(object):
             downstream data
         """
         dflat = self._check_data(data, "data")
-        return np.where(self.mask, dflat[self.idxs_ds], dflat).reshape(data.shape)
+        data_out = dflat.copy()
+        data_out[self.mask] = dflat[self.idxs_ds[self.mask]]
+        return data_out
 
     def upstream_sum(self, data, mv=-9999):
         """Returns sum of next upstream values.
@@ -572,7 +584,10 @@ class FlwdirRaster(object):
             sum of upstream data
         """
         data_out = arithmetics.upstream_sum(
-            idxs_ds=self.idxs_ds, data=self._check_data(data, "data"), nodata=mv
+            idxs_ds=self.idxs_ds,
+            data=self._check_data(data, "data"),
+            nodata=mv,
+            mv=self._mv,
         )
         return data_out.reshape(data.shape)
 
@@ -609,6 +624,7 @@ class FlwdirRaster(object):
             idxs_ds=self.idxs_ds,
             idxs_us_main=self.idxs_us_main,
             nodata=nodata,
+            mv=self._mv,
         )
         return data_out.reshape(data.shape)
 
@@ -700,6 +716,7 @@ class FlwdirRaster(object):
             uparea=self._check_data(uparea, "uparea"),
             upa_min=upa_min,
             depth=depth,
+            mv=self._mv,
         )
         return pfaf.reshape(self.shape)
 
@@ -843,6 +860,7 @@ class FlwdirRaster(object):
             ys=self._check_data(ys, "ys"),
             mask=self._check_data(mask, "mask", optional=True),
             crs=crs,
+            mv=self._mv,
         )
         return df
 
@@ -895,6 +913,7 @@ class FlwdirRaster(object):
             subuparea=self._check_data(uparea, "uparea"),
             subshape=self.shape,
             cellsize=scale_factor,
+            mv=self._mv,
             **kwargs,
         )
         transform1 = Affine(
@@ -937,7 +956,10 @@ class FlwdirRaster(object):
         2D array of int8 with other.shape
             valid subgrid connection
         """
-        subcon = upscale.connected(idxs_out.ravel(), other.idxs_ds, self.idxs_ds)
+        assert self._mv == other._mv
+        subcon = upscale.connected(
+            idxs_out.ravel(), other.idxs_ds, self.idxs_ds, mv=self._mv
+        )
         return subcon.reshape(other.shape)
 
     ### UNIT CATCHMENT ###
@@ -972,6 +994,7 @@ class FlwdirRaster(object):
             cellsize=int(cellsize),
             shape=self.shape,
             method="eam",
+            mv=self._mv,
         )
         return idxs_out.reshape(shape1)
 
@@ -1004,6 +1027,7 @@ class FlwdirRaster(object):
             area_factor=AREA_FACTORS[unit],
             nodata=np.int32(-9999) if unit == "cell" else np.float64(-9999),
             dtype=np.int32 if unit == "cell" else np.float64,
+            mv=self._mv,
         )
         return ucat_map.reshape(self.shape), ucat_are.reshape(idxs_out.shape)
 
@@ -1048,6 +1072,7 @@ class FlwdirRaster(object):
             upa_min=upa_min,
             latlon=self.latlon,
             transform=self.transform,
+            mv=self._mv,
         )
         return rivlen.reshape(idxs_out.shape), rivslp.reshape(idxs_out.shape)
 
@@ -1071,6 +1096,7 @@ class FlwdirRaster(object):
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
             elevtn=self._check_data(elevtn, "elevtn"),
+            mv=self._mv,
         )
         return elevtn_out.reshape(elevtn.shape)
 

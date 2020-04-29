@@ -48,14 +48,14 @@ def cell_edge(subidx, ncol, cellsize):
 
 
 @njit
-def map_celledge(subidxs_ds, subshape, cellsize):
+def map_celledge(subidxs_ds, subshape, cellsize, mv=_mv):
     """Returns a map with ones on highres cells of lowres cell edges"""
     ncol = subshape[1]
     # allocate output array
     edges = np.full(subidxs_ds.size, -1, dtype=np.int8)
     # loop over valid indices
     for subidx in range(subidxs_ds.size):
-        if subidxs_ds[subidx] == _mv:
+        if subidxs_ds[subidx] == mv:
             continue
         if cell_edge(subidx, ncol, cellsize):
             edges[subidx] = np.int8(1)
@@ -65,7 +65,7 @@ def map_celledge(subidxs_ds, subshape, cellsize):
 
 
 @njit
-def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize):
+def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
     """Returns exit highres cell indices of lowres cells according to the 
     double maximum method (DMM). 
     
@@ -90,12 +90,12 @@ def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize):
     subncol = subshape[1]
     nrow, ncol = shape
     # allocate output
-    subidxs_rep = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
+    subidxs_rep = np.full(nrow * ncol, mv, dtype=subidxs_ds.dtype)
     uparea = np.zeros(nrow * ncol, dtype=subuparea.dtype)
     # loop over valid indices
     for subidx in range(subidxs_ds.size):
         subidx_ds = subidxs_ds[subidx]
-        if subidx_ds == _mv:
+        if subidx_ds == mv:
             continue
         # NOTE including pits in the edge area is different from the original
         ispit = subidx_ds == subidx
@@ -113,7 +113,7 @@ def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize):
 
 
 @njit
-def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize):
+def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     """Returns next downstream lowres index by tracing a representative cell 
     to where it leaves a buffered area around the lowres cell according to the 
     double maximum method (DMM). 
@@ -141,12 +141,12 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize):
     nrow, ncol = shape
     R = cellsize / 2
     # allocate output
-    idxs_ds = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
+    idxs_ds = np.full(nrow * ncol, mv, dtype=subidxs_ds.dtype)
     # loop over rep cell indices
     for idx0 in range(subidxs_rep.size):
         subidx = subidxs_rep[idx0]
         idx = idx0
-        if subidx == _mv:
+        if subidx == mv:
             continue
         # highres coordinates at center of offset lowres cell
         dr = (subidx // subncol) % cellsize // R
@@ -171,7 +171,7 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize):
     return idxs_ds
 
 
-def dmm(subidxs_ds, subuparea, subshape, cellsize):
+def dmm(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
     """Returns the upscaled next downstream index based on the 
     double maximum method (DMM) [1].
 
@@ -204,9 +204,9 @@ def dmm(subidxs_ds, subuparea, subshape, cellsize):
     ncol = int(np.ceil(subncol / cellsize))
     shape = nrow, ncol
     # get representative cells
-    subidxs_rep = dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize)
+    subidxs_rep = dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv)
     # get next downstream lowres index
-    idxs_ds = dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize)
+    idxs_ds = dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv)
     return idxs_ds, subidxs_rep, shape
 
 
@@ -226,14 +226,14 @@ def effective_area(subidx, subncol, cellsize):
 
 
 @njit
-def map_effare(subidxs_ds, subshape, cellsize):
+def map_effare(subidxs_ds, subshape, cellsize, mv=_mv):
     """Returns a map with ones on highres cells of lowres effective area."""
     subncol = subshape[1]
     # allocate output
     effare = np.full(subidxs_ds.size, -1, dtype=np.int8)
     # loop over valid indices
     for subidx in range(subidxs_ds.size):
-        if subidxs_ds[subidx] == _mv:
+        if subidxs_ds[subidx] == mv:
             continue
         if effective_area(subidx, subncol, cellsize):
             effare[subidx] = np.int8(1)
@@ -243,7 +243,7 @@ def map_effare(subidxs_ds, subshape, cellsize):
 
 
 @njit
-def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize):
+def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
     """Returns representative highres cell indices of lowres cells
     according to the effective area method. 
     
@@ -267,12 +267,12 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize):
     subncol = subshape[1]
     nrow, ncol = shape
     # allocate output
-    subidxs_rep = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
+    subidxs_rep = np.full(nrow * ncol, mv, dtype=subidxs_ds.dtype)
     uparea = np.zeros(nrow * ncol, dtype=subuparea.dtype)
     # loop over valid indices
     for subidx in range(subidxs_ds.size):
         subidx_ds = subidxs_ds[subidx]
-        if subidx_ds == _mv:
+        if subidx_ds == mv:
             continue
         # NOTE including pits is different from the original EAM
         ispit = subidx_ds == subidx
@@ -290,7 +290,7 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize):
 
 
 @njit
-def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize):
+def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     """Returns next downstream lowres index by tracing a representative cell to 
     the next downstream effective area according to the effective area method. 
     
@@ -314,11 +314,11 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize):
     subnrow, subncol = subshape
     nrow, ncol = shape
     # allocate output
-    idxs_ds = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
+    idxs_ds = np.full(nrow * ncol, mv, dtype=subidxs_ds.dtype)
     # loop over rep cell indices
     for idx0 in range(subidxs_rep.size):
         subidx = subidxs_rep[idx0]
-        if subidx == _mv:
+        if subidx == mv:
             continue
         while True:
             # next downstream highres cell index
@@ -335,7 +335,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize):
     return idxs_ds
 
 
-def eam(subidxs_ds, subuparea, subshape, cellsize):
+def eam(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
     """Returns the upscaled next downstream index based on the 
     effective area method (EAM) [1].
 
@@ -366,16 +366,23 @@ def eam(subidxs_ds, subuparea, subshape, cellsize):
     ncol = int(np.ceil(subncol / cellsize))
     shape = nrow, ncol
     # get representative cells
-    subidxs_rep = eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize)
+    subidxs_rep = eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv)
     # get next downstream lowres index
-    idxs_ds = eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize)
+    idxs_ds = eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv)
     return idxs_ds, subidxs_rep, shape
 
 
 #### CONNECTING OUTLETS SCALING METHOD ####
 @njit
 def com_outlets(
-    subidxs_rep, subidxs_ds, subuparea, subshape, shape, cellsize, min_stream_len=0,
+    subidxs_rep,
+    subidxs_ds,
+    subuparea,
+    subshape,
+    shape,
+    cellsize,
+    min_stream_len=0,
+    mv=_mv,
 ):
     """Returns highres outlet cell indices of lowres cells which are located
     at the edge of the lowres cell downstream of the representative cell
@@ -410,15 +417,15 @@ def com_outlets(
     subnrow, subncol = subshape
     nrow, ncol = shape
     # allocate output
-    subidxs_out = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
+    subidxs_out = np.full(nrow * ncol, mv, dtype=subidxs_ds.dtype)
     # loop over rep cell indices
     for idx0 in range(subidxs_rep.size):
         subidx = subidxs_rep[idx0]
-        if subidx == _mv:
+        if subidx == mv:
             continue
         if min_stream_len > 0:
             subupa = subuparea[subidx]
-            subidx_prev_stream = _mv
+            subidx_prev_stream = mv
             stream_len = 0
         while True:
             # next downstream highres cell index
@@ -435,7 +442,7 @@ def com_outlets(
                 if (
                     min_stream_len > 0
                     and stream_len <= min_stream_len
-                    and subidx_prev_stream != _mv
+                    and subidx_prev_stream != mv
                 ):
                     subidx = subidx_prev_stream
                 break
@@ -449,7 +456,7 @@ def com_outlets(
 
 
 @njit
-def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize):
+def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     """Returns next downstream lowres index according to connecting outlets 
     method (COM). Every outlet highres cell is traced to the next downstream 
     highres outlet cell. If this lays outside d8, we fallback to the next 
@@ -476,14 +483,14 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize):
     subnrow, subncol = subshape
     nrow, ncol = shape
     # allocate output
-    idxs_ds = np.full(nrow * ncol, _mv, dtype=subidxs_ds.dtype)
+    idxs_ds = np.full(nrow * ncol, mv, dtype=subidxs_ds.dtype)
     idxs_fix_lst = list()
     # loop over outlet cell indices
     for idx0 in range(subidxs_out.size):
         subidx = subidxs_out[idx0]
-        if subidx == _mv:
+        if subidx == mv:
             continue
-        subidx_ds = _mv
+        subidx_ds = mv
         while True:
             # next downstream highres cell index
             subidx1 = subidxs_ds[subidx]
@@ -499,11 +506,11 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize):
                     if subidxs_out[idx1] != subidx1:
                         idxs_fix_lst.append(np.uint32(idx0))  # flag index
                 break
-            if subidx_ds == _mv and effective_area(subidx1, subncol, cellsize):
+            if subidx_ds == mv and effective_area(subidx1, subncol, cellsize):
                 subidx_ds = subidx1  # first pass effective area
             # next iter
             subidx = subidx1
-        # assert subidx_ds != _mv
+        # assert subidx_ds != mv
         idxs_ds[idx0] = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
     return idxs_ds, np.array(idxs_fix_lst, dtype=np.uint32)
 
@@ -528,7 +535,15 @@ def next_outlet(
 
 @njit
 def com_nextidx_iter2(
-    idxs_fix, idxs_ds, subidxs_out, subidxs_ds, subuparea, subshape, shape, cellsize,
+    idxs_fix,
+    idxs_ds,
+    subidxs_out,
+    subidxs_ds,
+    subuparea,
+    subshape,
+    shape,
+    cellsize,
+    mv=_mv,
 ):
     """Second iteration to fix cells which are not connected in highres.
     
@@ -595,7 +610,7 @@ def com_nextidx_iter2(
                         else:
                             connected = True
                     # check if valid cell
-                    if idxs_ds[idx0] != _mv:
+                    if idxs_ds[idx0] != mv:
                         subidxs_lst.append(subidx)  # append highres outlet index
                         idxs_lst.append(idx0)  # append lowres index
                     # if at original outlet cell of idx0 -> update idx_ds0
@@ -899,7 +914,7 @@ def com_nextidx_iter2(
     return idxs_ds, subidxs_out
 
 
-def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True):
+def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, mv=_mv):
     """Returns the upscaled next downstream index based on the 
     connecting outlets method (COM).
 
@@ -934,40 +949,56 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True):
     shape = nrow, ncol
     # STEP 1
     # get representative cells
-    subidxs_rep = eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize)
+    subidxs_rep = eam_repcell(
+        subidxs_ds=subidxs_ds,
+        subuparea=subuparea,
+        subshape=subshape,
+        shape=shape,
+        cellsize=cellsize,
+        mv=mv,
+    )
     # get highres outlet cells
     subidxs_out = com_outlets(
-        subidxs_rep,
-        subidxs_ds,
-        subuparea,
-        subshape,
-        shape,
-        cellsize,
+        subidxs_rep=subidxs_rep,
+        subidxs_ds=subidxs_ds,
+        subuparea=subuparea,
+        subshape=subshape,
+        shape=shape,
+        cellsize=cellsize,
         min_stream_len=min_stream_len,
+        mv=mv,
     )
     # get next downstream lowres index
-    idxs_ds, idxs_fix = com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize)
+    idxs_ds, idxs_fix = com_nextidx(
+        subidxs_out=subidxs_out,
+        subidxs_ds=subidxs_ds,
+        subshape=subshape,
+        shape=shape,
+        cellsize=cellsize,
+        mv=mv,
+    )
     # STEP 2 try fixing invalid highres connections
     if iter2:
         idxs_ds, subidxs_out = com_nextidx_iter2(
-            idxs_fix,
-            idxs_ds,
-            subidxs_out,
-            subidxs_ds,
-            subuparea,
-            subshape,
-            shape,
-            cellsize,
+            idxs_fix=idxs_fix,
+            idxs_ds=idxs_ds,
+            subidxs_out=subidxs_out,
+            subidxs_ds=subidxs_ds,
+            subuparea=subuparea,
+            subshape=subshape,
+            shape=shape,
+            cellsize=cellsize,
+            mv=mv,
         )
     return idxs_ds, subidxs_out, shape
 
 
-def com(subidxs_ds, subuparea, subshape, cellsize):
-    return com2(subidxs_ds, subuparea, subshape, cellsize, iter2=False)
+def com(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
+    return com2(subidxs_ds, subuparea, subshape, cellsize, iter2=False, mv=mv)
 
 
 @njit
-def connected(subidxs_out, idxs_ds, subidxs_ds):
+def connected(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
     """Returns an array with ones (zeros) if sugrid outlet/representative cells are 
     connected (disconnected) in D8, cells with missing values are set to -1. 
     
@@ -989,7 +1020,10 @@ def connected(subidxs_out, idxs_ds, subidxs_ds):
     # binary array with outlets
     subn = subidxs_ds.size
     outlets = np.array([np.bool(0) for _ in range(subn)])
-    outlets[subidxs_out] = True
+    for subidx in subidxs_out:
+        if subidx == mv:
+            continue
+        outlets[subidx] = True
     # allocate output. intialize 'True' map
     n = idxs_ds.size
     connect_map = np.full(n, 1, np.uint8)
@@ -997,7 +1031,7 @@ def connected(subidxs_out, idxs_ds, subidxs_ds):
     for idx0 in range(n):
         subidx = subidxs_out[idx0]
         idx_ds = idxs_ds[idx0]
-        if idx_ds != _mv and subidx != _mv:
+        if idx_ds != mv and subidx != mv:
             while True:
                 subidx1 = subidxs_ds[subidx]  # next downstream subgrid cell index
                 if outlets[subidx1] or subidx1 == subidx:  # at outlet or at pit

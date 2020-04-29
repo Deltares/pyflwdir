@@ -6,15 +6,13 @@ import numpy as np
 
 from pyflwdir import streams, basins, core, gis_utils
 
-_mv = core._mv
-
 # test data
 from test_core import test_data
 
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
 def test_uparea(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, rank = [p.copy() for p in parsed]
+    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
     n, ncol = seq.size, flwdir.shape[1]
     # cell count
     nodata = -9999
@@ -38,7 +36,7 @@ def test_uparea(parsed, flwdir):
     assert np.all(np.unique(bas[bas != 0]) == ids)  # nodata == 0
     # pfafstetter
     idx0 = idxs_pit[np.argsort(upa[idxs_pit])[-1]]
-    pfaf = basins.pfafstetter(idx0, idxs_ds, seq, upa, upa_min=0, depth=2)
+    pfaf = basins.pfafstetter(idx0, idxs_ds, seq, upa, upa_min=0, depth=2, mv=mv)
     if pfaf.max() > 10:
         pfaf = pfaf // 10
     pfafmax = pfaf.max()
@@ -54,15 +52,15 @@ def test_uparea(parsed, flwdir):
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
 def test_stream(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, rank = [p.copy() for p in parsed]
+    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
     n, ncol = seq.size, flwdir.shape[1]
-    idxs_ds[rank == -1] = _mv
+    idxs_ds[rank == -1] = mv
     # stream order
     sto = streams.stream_order(idxs_ds, seq)
-    idxs_headwater = core.headwater_indices(idxs_ds)
+    idxs_headwater = core.headwater_indices(idxs_ds, mv=mv)
     assert np.all(sto[idxs_headwater] == 1)
     assert np.max(sto[idxs_pit]) == np.max(sto)
-    assert np.all(sto[idxs_ds == _mv] == -1) and np.all(sto[idxs_ds != _mv] >= 1)
+    assert np.all(sto[idxs_ds == mv] == -1) and np.all(sto[idxs_ds != mv] >= 1)
     # stream distance
     strlen = streams.stream_distance(idxs_ds, seq, ncol)
     assert np.all(strlen[idxs_pit] == 0)

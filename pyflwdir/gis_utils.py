@@ -347,7 +347,7 @@ def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
 
 
 ## VECTORIZE
-def vectorize(idxs_ds, xs, ys, mask=None, crs=None):
+def vectorize(idxs_ds, xs, ys, mask=None, crs=None, mv=np.intp(-1)):
     """Returns a list of LineString for each up- downstream connection"""
     try:
         import geopandas as gp
@@ -360,7 +360,7 @@ def vectorize(idxs_ds, xs, ys, mask=None, crs=None):
     pits = list()
     for idx0 in range(idxs_ds.size):
         idx_ds = idxs_ds[idx0]
-        if idx_ds < 0 or (mask is not None and mask[idx0] != 1):
+        if idx_ds == mv or (mask is not None and mask[idx0] != 1):
             continue
         geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
         idxs.append(idx0)

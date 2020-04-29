@@ -20,7 +20,7 @@ from test_core import test_data
 
 # small test data
 parsed, flwdir = test_data[0]
-idxs_ds, idxs_pit, seq, _ = [p.copy() for p in parsed]
+idxs_ds, idxs_pit, seq, _, mv = [p.copy() for p in parsed]
 cellsize = 5
 tests = [("dmm", 7), ("eam", 3), ("com", 1), ("com2", 0)]
 
@@ -33,18 +33,19 @@ bas = basins.basins(idxs_ds, idxs_pit, seq, ids)
 @pytest.mark.parametrize("name, discon", tests)
 def test_upscale(name, discon):
     fupscale = getattr(upscale, name)
-    idxs_ds1, idxs_out, shape1 = fupscale(idxs_ds, upa, flwdir.shape, cellsize)
-    assert core.loop_indices(idxs_ds1).size == 0
+    idxs_ds1, idxs_out, shape1 = fupscale(idxs_ds, upa, flwdir.shape, cellsize, mv=mv)
+    assert idxs_ds.dtype == idxs_ds1.dtype
+    assert core.loop_indices(idxs_ds1, mv=mv).size == 0
     pit_idxs = core.pit_indices(idxs_ds1)
     assert np.unique(idxs_out[pit_idxs]).size == pit_idxs.size
     pit_bas = bas[idxs_out[pit_idxs]]
     assert np.unique(pit_bas).size == pit_bas.size
     # check number of disconnected cells for each method
-    connect = upscale.connected(idxs_out, idxs_ds1, idxs_ds)
+    connect = upscale.connected(idxs_out, idxs_ds1, idxs_ds, mv=mv)
     assert np.sum(connect == 0) == discon
 
 
 # TODO: extend tests
 def test_map():
-    upscale.map_celledge(idxs_ds, flwdir.shape, cellsize)
-    upscale.map_effare(idxs_ds, flwdir.shape, cellsize)
+    upscale.map_celledge(idxs_ds, flwdir.shape, cellsize, mv=mv)
+    upscale.map_effare(idxs_ds, flwdir.shape, cellsize, mv=mv)
