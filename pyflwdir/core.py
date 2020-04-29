@@ -77,7 +77,7 @@ def upstream_matrix(idxs_ds):
     d = int(np.max(n_up))
     n = idxs_ds.size
     # 2D arrays of upstream index
-    idxs_us = np.full((n, d), _mv, dtype=np.intp)
+    idxs_us = np.full((n, d), _mv, dtype=idxs_ds.dtype)
     n_up[:] = 0
     for idx0 in range(n):
         idx_ds = idxs_ds[idx0]
@@ -140,7 +140,7 @@ def main_upstream(idxs_ds, uparea, upa_min=0.0):
     
     Returns
     -------
-    1D-array of intp  
+    1D-array of int
         main upstream indices 
     """
     idxs_us_main = np.full(idxs_ds.size, _mv, dtype=idxs_ds.dtype)
@@ -162,9 +162,9 @@ def main_tributary(idxs_ds, idxs_us_main, uparea, upa_min=0.0):
     
     Parameters
     ----------
-    idxs_ds : 1D-array of intp
+    idxs_ds : 1D-array of int
         index of next downstream cell
-    idxs_us_main : 1D-array of intp
+    idxs_us_main : 1D-array of int
         index of main upstream cell
     uparea : 1D-array
         upstream area values
@@ -173,7 +173,7 @@ def main_tributary(idxs_ds, idxs_us_main, uparea, upa_min=0.0):
     
     Returns
     -------
-    1D-array of intp  
+    1D-array of int
         linear indices of tributaries 
     """
     idxs_us_trib = np.full(idxs_ds.size, _mv, dtype=idxs_ds.dtype)
@@ -256,7 +256,7 @@ def _upstream_d8_idx(idx0, idxs_ds, shape):
     for idx in _d8_idx(idx0, shape):
         if idxs_ds[idx] == idx0:
             idxs_lst.append(idx)
-    return np.array(idxs_lst, dtype=np.intp)
+    return np.array(idxs_lst, dtype=idxs_ds.dtype)
 
 
 @njit
@@ -279,7 +279,7 @@ def _trace(
     ----------
     idx0 : int
         linear index of start cells
-    idxs_nxt : 1D-array of intp
+    idxs_nxt : 1D-array of int
         linear indices of downstream or main upstream cells
     ncol : int
         number of columns in raster
@@ -296,13 +296,13 @@ def _trace(
     
     Returns
     -------
-    1D-array of intp  
+    1D-array of int  
         linear indices of trace
     float
         distance between start and end cell
     """
     idxs = []
-    idxs.append(np.intp(idx0))
+    idxs.append(idx0)
     dist = 0.0
     d = 1.0
     while mask is None or (mask is not None and mask[idx0] == False):
@@ -315,8 +315,8 @@ def _trace(
             break
         dist += d
         idx0 = idx1
-        idxs.append(np.intp(idx0))
-    return np.array(idxs, dtype=np.intp), dist
+        idxs.append(idx0)
+    return np.array(idxs, dtype=idxs_nxt.dtype), dist
 
 
 @njit
@@ -352,13 +352,13 @@ def _tributaries(
     
     Parameters
     ----------
-    idx0 : intp
+    idx0 : int
         linear index of start cell
-    idxs_us_main, idxs_us_trib : 1D-array of intp
+    idxs_us_main, idxs_us_trib : 1D-array of int
         linear indices of main upstream and tributary cells
     uparea : 1D-array
         array with upstream area values
-    idx_end : intp, optional
+    idx_end : int, optional
         linear index of most upstream, by default missing value, i.e.: no fixed cell
     upa_min : float, optional 
         minimum upstream area threshold for tributary
@@ -367,7 +367,7 @@ def _tributaries(
 
     Returns
     -------
-    1D array of intp with size n
+    1D array of int with size n
         linear indices of largest tributaries
     """
     if n > 0:
@@ -420,7 +420,7 @@ def path(
 
     Returns
     -------
-    list of 1D-array of intp  
+    list of 1D-array of int
         linear indices of path 
     1D-array of float
         distance between start and end cell
@@ -461,7 +461,7 @@ def snap(
     
     Returns
     -------
-    1D-array of intp  
+    1D-array of int
         linear indices destination cells
     1D-array of float
         distance between start and end cell

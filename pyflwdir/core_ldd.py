@@ -35,13 +35,13 @@ def drdc(dd):
 
 
 @njit
-def from_array(flwdir, _mv=_mv):
+def from_array(flwdir, _mv=_mv, dtype=np.intp):
     """convert 2D LDD data to 1D next downstream indices"""
     nrow, ncol = flwdir.shape
     flwdir_flat = flwdir.ravel()
     # get downsteam indices
     pits_lst = []
-    idxs_ds = np.full(flwdir.size, core._mv, dtype=np.intp)
+    idxs_ds = np.full(flwdir.size, core._mv, dtype=dtype)
     n = 0
     for idx0 in range(flwdir.size):
         if flwdir_flat[idx0] == _mv:
@@ -59,7 +59,7 @@ def from_array(flwdir, _mv=_mv):
         else:
             idxs_ds[idx0] = idx_ds
         n += 1
-    return idxs_ds, np.array(pits_lst, dtype=np.intp), n
+    return idxs_ds, np.array(pits_lst, dtype=dtype), n
 
 
 @njit
@@ -102,6 +102,6 @@ def isnodata(dd, _mv=_mv):
 
 
 @njit
-def _upstream_idx(idx0, flwdir_flat, shape, _us=_us):
+def _upstream_idx(idx0, flwdir_flat, shape, _us=_us, dtype=np.intp):
     """Returns a numpy array (int64) with linear indices of upstream neighbors"""
-    return core_d8._upstream_idx(idx0, flwdir_flat, shape, _us)
+    return core_d8._upstream_idx(idx0, flwdir_flat, shape, _us, dtype=dtype)

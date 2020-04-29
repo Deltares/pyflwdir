@@ -18,7 +18,7 @@ _us = np.ones((2, 3, 3), dtype=np.int32) * 2
 _us[:, 1, 1] = _pv
 
 
-def from_array(flwdir):
+def from_array(flwdir, dtype=np.intp):
     if not (
         (isinstance(flwdir, tuple) and len(flwdir) == 2)
         or (
@@ -27,7 +27,7 @@ def from_array(flwdir):
     ):
         raise TypeError("NEXTXY flwdir data not understood")
     nextx, nexty = flwdir  # convert [2,:,:] OR ([:,:], [:,:]) to [:,:], [:,:]
-    return _from_array(nextx, nexty)
+    return _from_array(nextx, nexty, dtype=dtype)
 
 
 def to_array(idxs_ds, shape):
@@ -36,14 +36,14 @@ def to_array(idxs_ds, shape):
 
 
 @njit
-def _from_array(nextx, nexty, _mv=_mv):
+def _from_array(nextx, nexty, _mv=_mv, dtype=np.intp):
     size = nextx.size
     nrow, ncol = nextx.shape[0], nextx.shape[-1]
     nextx_flat = nextx.ravel()
     nexty_flat = nexty.ravel()
     # allocate output arrays
     pits_lst = []
-    idxs_ds = np.full(nextx.size, core._mv, dtype=np.intp)
+    idxs_ds = np.full(nextx.size, core._mv, dtype=dtype)
     n = 0
     for idx0 in range(nextx.size):
         if nextx_flat[idx0] == _mv:
@@ -62,7 +62,7 @@ def _from_array(nextx, nexty, _mv=_mv):
         else:
             idxs_ds[idx0] = idx_ds
         n += 1
-    return idxs_ds, np.array(pits_lst, dtype=np.intp), n
+    return idxs_ds, np.array(pits_lst, dtype=dtype), n
 
 
 @njit

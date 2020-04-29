@@ -101,7 +101,8 @@ def from_array(
         if mask.shape != data.shape:
             raise ValueError(f'"mask" shape does not match with data shape')
         data = np.where(mask != 0, data, fd._mv)
-    idxs_ds, idxs_pit, _ = fd.from_array(data)
+    dtype = np.int32 if data.size < 2147483647 else np.intp
+    idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
 
     # initialize
     return FlwdirRaster(
@@ -186,18 +187,9 @@ class FlwdirRaster(object):
         self.set_transform(transform, latlon)
 
         # data
-        self._int32 = self.size < 2147483647
-        self._idxs_ds = idxs_ds.astype(np.int32) if self._int32 else idxs_ds
-        self._pit = (
-            idxs_pit.astype(np.int32)
-            if self._int32 and (idxs_pit is not None)
-            else idxs_pit
-        )
-        self._seq = (
-            idxs_seq.astype(np.int32)
-            if self._int32 and (idxs_seq is not None)
-            else idxs_seq
-        )
+        self._idxs_ds = idxs_ds
+        self._pit = idxs_pit
+        self._seq = idxs_seq
         self._ncells = ncells
 
         # set placeholders only used if cache if True
@@ -285,13 +277,14 @@ class FlwdirRaster(object):
     def order_cells(self, method="sort"):
         """Order cells from down- to upstream."""
         if method == "sort":
+            # slow for large arrays
             rnk, n = core.rank(self.idxs_ds)
-            idxs_seq = np.argsort(rnk)[-n:]  # slow for large arrays
+            self._seq = np.argsort(rnk)[-n:].astype(self.idxs_ds.dtype)
         elif method == "walk":
-            idxs_seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self.shape)
+            # faster for large arrays, but also takes lots of memory
+            self._seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self.shape)
         else:
             raise ValueError(f'Invalid method {method}, select from ["walk", "sort"]')
-        self._seq = idxs_seq.astype(np.int32) if self._int32 else idxs_seq
         self._ncells = self._seq.size
 
     def main_upstream(self, uparea=None, cache=None):
