@@ -88,6 +88,39 @@ def upstream_matrix(idxs_ds):
     return idxs_us
 
 
+@njit
+def idxs_seq(idxs_ds, idxs_pit, shape):
+    """Returns indices ordered from down- to upstream.
+
+    Parameters
+    ----------
+    idxs_ds, idxs_pit : 1D-array of int
+        linear index of next downstream, pit cell
+
+    Returns
+    -------
+    seq : 1D-array of int
+        ordered linear indices of valid cells from down- to upstream.
+    """
+    i, j = 0, 0
+    idxs_us = upstream_matrix(idxs_ds)
+    idxs_seq = np.full(idxs_ds.size, _mv, idxs_ds.dtype)
+    for idx in idxs_pit:
+        idxs_seq[j] = idx
+        j += 1
+    while i < idxs_seq.size:
+        idx0 = idxs_seq[i]
+        if idx0 == _mv:
+            break
+        for idx in idxs_us[idx0, :]:
+            if idx == _mv:
+                break
+            idxs_seq[j] = idx
+            j += 1
+        i += 1
+    return idxs_seq[:i]
+
+
 # returns 1D array (size == n) with indices at all locations
 
 

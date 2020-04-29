@@ -239,7 +239,7 @@ class FlwdirRaster(object):
     def idxs_seq(self):
         """Linear indices of valid cells ordered from down- to upstream."""
         if self._seq is None:
-            self.order_cells()
+            self.order_cells(method="walk" if self.ftype != "nextxy" else "sort")
         return self._seq
 
     @property
@@ -273,11 +273,17 @@ class FlwdirRaster(object):
 
     ### SET/MODIFY PROPERTIES ###
 
-    def order_cells(self):
+    def order_cells(self, method="walk"):
         """Order cells from down- to upstream."""
-        rnk, n = core.rank(self.idxs_ds)
-        self._seq = np.argsort(rnk)[-n:]
-        self._ncells = n
+        if method == "sort":
+            rnk, n = core.rank(self.idxs_ds)
+            self._seq = np.argsort(rnk)[-n:]  # slow for large arrays
+            self._ncells = n
+        elif method == "walk":
+            self._seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self.shape)
+            self._ncells = self._seq.size
+        else:
+            raise ValueError(f'Invalid method {method}, select from ["walk", "sort"]')
 
     def main_upstream(self, uparea=None, cache=None):
         idxs_us_main = core.main_upstream(

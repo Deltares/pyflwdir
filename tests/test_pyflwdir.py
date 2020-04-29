@@ -28,6 +28,8 @@ def test_from_to_array(flwdir, ftype):
     flw = pyflwdir.from_array(flwdir, mask=mask)
     assert flw.ftype == ftype
     assert np.all(pyflwdir.from_array(flw.to_array()).idxs_ds == flw.idxs_ds)
+    with pytest.raises(ValueError, match="Invalid method"):
+        flw.order_cells(method="???")
 
 
 def test_from_array_errors():
@@ -73,7 +75,7 @@ def test_flwdirraster_attrs(parsed, d8):
     assert isinstance(flw.latlon, bool)
     assert np.all(flw.rank.ravel() == rank)
     assert flw.ncells == seq.size
-    assert np.all(flw.idxs_seq == seq)
+    assert np.all(np.diff(rank.flat[flw.idxs_seq]) >= 0)
     flw.repair_loops()
     assert flw.isvalid
     assert np.sum(flw.mask) == flw.ncells

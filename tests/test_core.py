@@ -77,6 +77,9 @@ def test_upstream(parsed, flwdir):
     # upstream matrix
     idxs_us = core.upstream_matrix(idxs_ds)
     assert np.sum(idxs_us != _mv) == seq.size - idxs_pit.size
+    # ordered
+    seq2 = core.idxs_seq(idxs_ds, idxs_pit, flwdir.shape)
+    assert np.all(np.diff(rank.flat[seq2]) >= 0)
     # headwater
     idxs_headwater = core.headwater_indices(idxs_ds)
     assert np.all(n_up[idxs_headwater] == 0)
