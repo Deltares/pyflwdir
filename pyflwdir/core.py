@@ -99,8 +99,8 @@ def idxs_seq(idxs_ds, idxs_pit, shape):
 
     Returns
     -------
-    seq : 1D-array of int
-        ordered linear indices of valid cells from down- to upstream.
+    idxs_seq : ndarray of int, optional
+        linear indices of valid cells ordered from down- to upstream
     """
     i, j = 0, 0
     idxs_us = upstream_matrix(idxs_ds)
@@ -384,7 +384,7 @@ def _tributaries(
             break
         elif uparea[idx_main] < upa_min:
             break
-        idx_trib = idxs_us_trib[idx0]
+        idx_trib = np.intp(idxs_us_trib[idx0])
         if idx_trib != _mv:
             upa_trib = uparea[idx_trib]
             if upa_trib > upa_min:

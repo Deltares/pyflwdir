@@ -154,7 +154,7 @@ class FlwdirRaster(object):
             name of flow direction type
         idxs_pit : ndarray of int, optional
             linear indices of pit
-        idxs_pit : ndarray of int, optional
+        idxs_seq : ndarray of int, optional
             linear indices of valid cells ordered from down- to upstream
         ncells : integer
             number of valid cells
@@ -186,9 +186,18 @@ class FlwdirRaster(object):
         self.set_transform(transform, latlon)
 
         # data
-        self._idxs_ds = idxs_ds
-        self._pit = idxs_pit
-        self._seq = idxs_seq
+        self._int32 = self.size < 2147483647
+        self._idxs_ds = idxs_ds.astype(np.int32) if self._int32 else idxs_ds
+        self._pit = (
+            idxs_pit.astype(np.int32)
+            if self._int32 and (idxs_pit is not None)
+            else idxs_pit
+        )
+        self._seq = (
+            idxs_seq.astype(np.int32)
+            if self._int32 and (idxs_seq is not None)
+            else idxs_seq
+        )
         self._ncells = ncells
 
         # set placeholders only used if cache if True
@@ -273,17 +282,17 @@ class FlwdirRaster(object):
 
     ### SET/MODIFY PROPERTIES ###
 
-    def order_cells(self, method="walk"):
+    def order_cells(self, method="sort"):
         """Order cells from down- to upstream."""
         if method == "sort":
             rnk, n = core.rank(self.idxs_ds)
-            self._seq = np.argsort(rnk)[-n:]  # slow for large arrays
-            self._ncells = n
+            idxs_seq = np.argsort(rnk)[-n:]  # slow for large arrays
         elif method == "walk":
-            self._seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self.shape)
-            self._ncells = self._seq.size
+            idxs_seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self.shape)
         else:
             raise ValueError(f'Invalid method {method}, select from ["walk", "sort"]')
+        self._seq = idxs_seq.astype(np.int32) if self._int32 else idxs_seq
+        self._ncells = self._seq.size
 
     def main_upstream(self, uparea=None, cache=None):
         idxs_us_main = core.main_upstream(
