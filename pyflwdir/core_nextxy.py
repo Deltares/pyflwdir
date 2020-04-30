@@ -52,7 +52,7 @@ def _from_array(nextx, nexty, _mv=_mv, dtype=np.intp):
         r1 = nexty_flat[idx0]
         pit = r1 == _pv or c1 == _pv
         # convert from one- to zero-based index
-        r_ds, c_ds = r1 - 1, c1 - 1
+        r_ds, c_ds = np.intp(r1 - 1), np.intp(c1 - 1)
         outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
         idx_ds = c_ds + r_ds * ncol
         # pit or outside or ds cell is mv
