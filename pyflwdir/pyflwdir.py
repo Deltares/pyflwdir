@@ -754,9 +754,8 @@ class FlwdirRaster(object):
         )
         return uparea.reshape(self.shape)
 
-    def accuflux(self, data, nodata=-9999):
+    def accuflux(self, data, nodata=-9999, direction="up"):
         """Return accumulated data values along the flow direction map.
-        
 
         Parameters
         ----------
@@ -764,18 +763,32 @@ class FlwdirRaster(object):
             values
         nodata : int or float
             Missing data value for cells outside domain
+        direction : {'up', 'down'}, optional
+            direction in which to accumulate data, by default upstream
 
         Returns
         -------
         2D array with data.dtype
             accumulated values
         """
-        accu = streams.accuflux(
-            idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
-            data=self._check_data(data, "data"),
-            nodata=nodata,
-        )
+        if direction == "up":
+            accu = streams.accuflux(
+                idxs_ds=self.idxs_ds,
+                seq=self.idxs_seq,
+                data=self._check_data(data, "data"),
+                nodata=nodata,
+            )
+        elif direction == "down":
+            accu = streams.accuflux_ds(
+                idxs_ds=self.idxs_ds,
+                seq=self.idxs_seq,
+                data=self._check_data(data, "data"),
+                nodata=nodata,
+            )
+        else:
+            raise ValueError(
+                'Unknown flow direction: {direction}, select from ["up", "down"].'
+            )
         return accu.reshape(data.shape)
 
     ### STREAMS ####

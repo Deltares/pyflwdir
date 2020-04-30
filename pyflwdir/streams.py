@@ -31,14 +31,41 @@ def accuflux(idxs_ds, seq, data, nodata):
     1D array of data.dtype
         accumulated upstream data
     """
-    if idxs_ds.shape != data.shape:
-        raise ValueError("Invalid data shape")
     # intialize output with correct dtype
     accu = data.copy()
-    for idx0 in seq[::-1]:
+    for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
         if idx0 != idx_ds and accu[idx_ds] != nodata and accu[idx0] != nodata:
             accu[idx_ds] += accu[idx0]
+    return accu
+
+
+@njit
+def accuflux_ds(idxs_ds, seq, data, nodata):
+    """Returns maps of accumulate downstream <data>
+    
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    data : 1D array
+        local values to be accumulated
+    nodata : float, integer
+        nodata value 
+
+    Returns
+    -------
+    1D array of data.dtype
+        accumulated upstream data
+    """
+    # intialize output with correct dtype
+    accu = data.copy()
+    for idx0 in seq:  # down- to upstream
+        idx_ds = idxs_ds[idx0]
+        if idx0 != idx_ds and accu[idx_ds] != nodata and accu[idx0] != nodata:
+            accu[idx0] += accu[idx_ds]
     return accu
 
 

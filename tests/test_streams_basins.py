@@ -62,6 +62,10 @@ def test_stream(parsed, flwdir):
     assert np.max(sto[idxs_pit]) == np.max(sto)
     assert np.all(sto[idxs_ds == mv] == -1) and np.all(sto[idxs_ds != mv] >= 1)
     # stream distance
+    data = np.zeros(idxs_ds.size, dtype=np.int32)
+    data[rank > 0] = 1
+    strlen0 = streams.accuflux_ds(idxs_ds, seq, data, -1)
+    assert np.all(rank[rank >= 0] == strlen0[rank >= 0])
     strlen = streams.stream_distance(idxs_ds, seq, ncol)
     assert np.all(strlen[idxs_pit] == 0)
     assert np.max(strlen[idxs_headwater]) == np.max(strlen)

@@ -225,6 +225,8 @@ def test_uparea():
         flw.upstream_area(unit="km")
     with pytest.raises(ValueError, match="size does not match"):
         flw.accuflux(np.ones((1, 1)))
+    with pytest.raises(ValueError, match="Unknown flow direction"):
+        flw.accuflux(np.ones((1, 1)), direction="???")
 
 
 def test_streams():
@@ -246,9 +248,16 @@ def test_streams():
     with pytest.raises(ValueError, match="size does not match"):
         flw.vectorize(mask=np.ones((1, 1)))
     # stream distance
-    dist = flw.stream_distance(mask=np.ones(flw.shape, dtype=np.bool))
+    data = np.zeros(flw.shape, dtype=np.int32)
+    data[flw.rank > 0] = 1
+    dist0 = flw.accuflux(data, direction="down")
+    assert dist0.dtype == np.int32
+    dist = flw.stream_distance()
     assert dist.dtype == np.int32
     assert np.all(dist.shape == flw.shape)
+    assert np.all(dist0[dist != -9999] <= dist[dist != -9999])
+    dist = flw.stream_distance(mask=np.ones(flw.shape, dtype=np.bool))
+    assert np.all(dist[dist != -9999] == 0)
     dist = flw.stream_distance(unit="m")
     assert dist.dtype == np.float64
     with pytest.raises(ValueError, match="Unknown unit"):
