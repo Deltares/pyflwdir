@@ -971,7 +971,10 @@ class FlwdirRaster(object):
         """
         assert self._mv == other._mv
         subcon = upscale.connected(
-            idxs_out.ravel(), other.idxs_ds, self.idxs_ds, mv=self._mv
+            other._check_data(idxs_out, "idxs_out"),
+            other.idxs_ds,
+            self.idxs_ds,
+            mv=self._mv,
         )
         return subcon.reshape(other.shape)
 
@@ -1006,7 +1009,7 @@ class FlwdirRaster(object):
             uparea=self._check_data(uparea, "uparea"),
             cellsize=int(cellsize),
             shape=self.shape,
-            method="eam",
+            method=method,
             mv=self._mv,
         )
         return idxs_out.reshape(shape1)
@@ -1182,6 +1185,8 @@ class FlwdirRaster(object):
             return data
         elif data is None and name == "uparea":
             data = self.upstream_area(**kwargs)
+        elif data is None and name == "basins":
+            data = self.basins(**kwargs)
         elif not np.atleast_1d(data).size == self.size:
             raise ValueError(f'"{name}" size does not match with FlwdirRaster size')
         return np.atleast_1d(data).ravel()
