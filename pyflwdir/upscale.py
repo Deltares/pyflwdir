@@ -277,9 +277,9 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
         # NOTE including pits is different from the original EAM
         ispit = subidx_ds == subidx
         eff_area = effective_area(subidx, subncol, cellsize)
-        idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
         # check upstream area if cell ispit or at effective area
         if ispit or eff_area:
+            idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
             upa0 = uparea[idx]
             upa = subuparea[subidx]
             # cell with largest upstream area is representative cell
@@ -381,7 +381,7 @@ def com_outlets(
     subshape,
     shape,
     cellsize,
-    min_stream_len=0,
+    min_stream_len=1,
     mv=_mv,
 ):
     """Returns highres outlet cell indices of lowres cells which are located
@@ -573,10 +573,8 @@ def com_nextidx_iter2(
     highres linear indices of outlet cells
         ndarray of int  
     """
-    subnrow, subncol = subshape
-    subsize = subnrow * subncol
-    nrow, ncol = shape
-    size = nrow * ncol
+    subncol = subshape[1]
+    ncol = shape[1]
     # loop over unconnected cells from up to downstream
     seq = np.argsort(subuparea[subidxs_out[idxs_fix]])
     for i0 in seq:  # @0A lowres fix index loop
@@ -589,40 +587,36 @@ def com_nextidx_iter2(
         subidxs_lst = list()
         connected = False
         # read outlet index and move into the next lowres cell to initialize
-        subidx = subidxs_out[idx00]
         idx_ds0 = idxs_ds[idx00]  # original next downstream cell
-        subidx = subidxs_ds[subidx]
+        subidx = subidxs_ds[subidxs_out[idx00]]  # next highres cell
         idx0 = subidx_2_idx(subidx, subncol, cellsize, ncol)
         while True:  # @1A while noy connected to original downstream cell
-            while True:  # @1B highres loop - while not at outlet
-                subidx1 = subidxs_ds[subidx]
-                idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
-                pit = subidx1 == subidx
-                if pit or idx0 != idx1:  # check pit or outlet
-                    # connected if:
-                    # - next downstream lowres cell not in path &
-                    # - current highres outlet cell same as original next outlet
-                    if pit:
+            # while True:  # @1B highres loop - while not at outlet
+            subidx1 = subidxs_ds[subidx]
+            idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
+            pit = subidx1 == subidx
+            if pit or idx0 != idx1:  # check pit or outlet
+                # connected if:
+                # - next downstream lowres cell not in path &
+                # - current highres outlet cell same as original next outlet
+                if pit:
+                    connected = True
+                elif subidx == subidxs_out[idx_ds0]:
+                    if idx_ds0 in idxs_lst:
+                        pass
+                    else:
                         connected = True
-                    elif subidx == subidxs_out[idx_ds0]:
-                        if idx_ds0 in idxs_lst:
-                            pass
-                        else:
-                            connected = True
-                    # check if valid cell
-                    if idxs_ds[idx0] != mv:
-                        subidxs_lst.append(subidx)  # append highres outlet index
-                        idxs_lst.append(idx0)  # append lowres index
-                    # if at original outlet cell of idx0 -> update idx_ds0
-                    if subidx == subidxs_out[idx0]:
-                        idx_ds0 = idxs_ds[idx0]
-                    break  # @1B
-                # next iter @1B
-                subidx = subidx1
+                # check if valid cell
+                if idxs_ds[idx0] != mv:
+                    subidxs_lst.append(subidx)  # append highres outlet index
+                    idxs_lst.append(idx0)  # append lowres index
+                # if at original outlet cell of idx0 -> update idx_ds0
+                if subidx == subidxs_out[idx0]:
+                    idx_ds0 = idxs_ds[idx0]
+                idx0 = idx1
             if connected:  # with original ds highres cell
                 break  # @1A
             # next iter @1A
-            idx0 = idx1
             subidx = subidx1
         if connected and subidx == subidxs_out[idxs_ds[idx00]]:
             # connection at first outlet -> already fixed
@@ -901,15 +895,70 @@ def com_nextidx_iter2(
 
         # if next downstream in idx_out_lst we've created a loop
         loop = idxs_ds[idx1] in idx_out_lst
-        if nextiter or loop:
-            # print('failed -', idx00)
-            if loop:
-                # unroll edits
-                for i in range(len(idx0_lst)):
-                    idxs_ds[idx0_lst[-1 - i]] = idx_ds0_lst[-1 - i]
-                for i in range(len(idx_out_lst)):
-                    subidxs_out[idx_out_lst[i]] = subidx0_out_lst[i]
-            continue  # @0A
+        if loop:
+            # unroll edits
+            nextiter = True
+            for i in range(len(idx0_lst)):
+                idxs_ds[idx0_lst[-1 - i]] = idx_ds0_lst[-1 - i]
+            for i in range(len(idx_out_lst)):
+                subidxs_out[idx_out_lst[i]] = subidx0_out_lst[i]
+
+        # if no success select next downstream cell based on minimum distance where
+        # the stream join downstream
+        if nextiter:
+            subidx = subidxs_out[idx00]
+            subidx_ds0 = subidxs_out[idxs_ds[idx00]]
+            # find confluences
+            confl = []
+            upa = subuparea[subidx]
+            while True:
+                subidx_ds = subidxs_ds[subidx]
+                upa_ds = subuparea[subidx_ds]
+                if upa_ds > 1.1 * upa or subidx_ds == subidx:  # confluence
+                    confl.append(subidx_ds)
+                    upa_max = upa_ds
+                if subidx_ds == subidx or subidx_ds == subidx_ds0:
+                    break
+                # next iter
+                subidx = subidx_ds
+                upa = upa_ds
+            if subidx_ds == subidx_ds0:
+                continue  # @0A
+            max_dist = len(confl)
+            # for neighbors find distance where streams join downstream
+            for idx0 in core._d8_idx(idx00, shape).astype(idxs_ds.dtype):
+                # check for loops
+                idx = idx0
+                i = 0
+                subidx = subidxs_out[idx0]
+                while True:
+                    idx_ds = idxs_ds[idx]
+                    if idx_ds == idx00:  # loop
+                        break
+                    elif idx == idx_ds or i == 10:  #  no loop
+                        break
+                    # next iter
+                    idx = idx_ds
+                    i += 1
+                if idx_ds == idx00:  # loop
+                    continue
+                # check if downstream joint of streams
+                upa = subuparea[subidx]
+                dist = 0
+                while dist < max_dist * 2:
+                    subidx_ds = subidxs_ds[subidx]
+                    upa_ds = subuparea[subidx_ds]
+                    if upa_ds > 1.1 * upa or subidx_ds == subidx:  # confluence
+                        dist += 1
+                        if subidx_ds in confl and confl.index(subidx_ds) <= max_dist:
+                            idxs_ds[idx00] = idx0
+                            max_dist = confl.index(subidx_ds)
+                            break
+                    if subidx_ds == subidx or upa_ds > upa_max:
+                        break
+                    # next iter
+                    subidx = subidx_ds
+                    upa = upa_ds
 
     return idxs_ds, subidxs_out
 
