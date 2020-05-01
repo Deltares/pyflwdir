@@ -929,13 +929,12 @@ def com_nextidx_iter2(
             for idx0 in core._d8_idx(idx00, shape).astype(idxs_ds.dtype):
                 # check for loops
                 idx = idx0
-                i = 0
                 subidx = subidxs_out[idx0]
                 while True:
                     idx_ds = idxs_ds[idx]
                     if idx_ds == idx00:  # loop
                         break
-                    elif idx == idx_ds or i == 10:  #  no loop
+                    elif idx == idx_ds:  #  no loop
                         break
                     # next iter
                     idx = idx_ds
