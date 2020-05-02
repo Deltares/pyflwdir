@@ -71,9 +71,9 @@ def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
     
     Parameters
     ----------
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
-    subuparea : ndarray of int
+    subuparea : 1D-array of int
         highres flattened upstream area array
     subshape : tuple of int
         highres raster shape
@@ -120,9 +120,9 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     
     Parameters
     ----------
-    subidxs_rep : ndarray of int
+    subidxs_rep : 1D-array of int
         highres linear indices of representative cells
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
     subshape : tuple of int
         highres raster shape
@@ -133,7 +133,7 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
 
     Returns
     -------
-    ndarray of int
+    1D-array of int
         lowres linear indices of next downstream cell
     """
     subnrow, subncol = subshape
@@ -182,9 +182,9 @@ def dmm(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
     
     Parameters
     ----------
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
-    subuparea : ndarray of int
+    subuparea : 1D-array of int
         highres flattened upstream area array
     subshape : tuple of int
         highres raster shape
@@ -194,9 +194,9 @@ def dmm(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
     Returns
     -------
     lowres linear indices of next downstream 
-        ndarray of int
+        1D-array of int
     highres linear indices of representative cells
-        ndarray of int
+        1D-array of int
     """
     # calculate new size
     subnrow, subncol = subshape
@@ -249,9 +249,9 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
     
     Parameters
     ----------
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
-    subuparea : ndarray of int
+    subuparea : 1D-array of int
         highres flattened upstream area array
     subshape : tuple of int
         highres raster shape
@@ -262,7 +262,7 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
 
     Returns
     -------
-    highres representative cell indices : ndarray with size shape[0]*shape[1]
+    highres representative cell indices : 1D-array with size shape[0]*shape[1]
     """
     subncol = subshape[1]
     nrow, ncol = shape
@@ -296,9 +296,9 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     
     Parameters
     ----------
-    subidxs_rep : ndarray of int
+    subidxs_rep : 1D-array of int
         highres linear indices of representative subgird cells
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
     subshape : tuple of int
         highres raster shape
@@ -309,7 +309,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
 
     Returns
     -------
-    lowres linear indices of next downstream cell : ndarray    
+    lowres linear indices of next downstream cell : 1D-array    
     """
     subnrow, subncol = subshape
     nrow, ncol = shape
@@ -344,9 +344,9 @@ def eam(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
     
     Parameters
     ----------
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
-    subuparea : ndarray of int
+    subuparea : 1D-array of int
         highres flattened upstream area array
     subshape : tuple of int
         highres raster shape
@@ -356,9 +356,9 @@ def eam(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
     Returns
     -------
     lowres linear indices of next downstream
-        ndarray of int
+        1D-array of int
     highres linear indices of representative cells
-        ndarray of int
+        1D-array of int
     """
     # calculate new size
     subnrow, subncol = subshape
@@ -393,11 +393,11 @@ def com_outlets(
     
     Parameters
     ----------
-    subidxs_rep : ndarray of int
+    subidxs_rep : 1D-array of int
         highres linear indices of representative cells with size shape[0]*shape[1]
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
-    subuparea : ndarray of int
+    subuparea : 1D-array of int
         highres flattened upstream area array
     subshape : tuple of int
         highres raster shape
@@ -412,7 +412,7 @@ def com_outlets(
     Returns
     -------
     raster with highres linear indices of outlets
-        ndarray of int
+        1D-array of int
     """
     subnrow, subncol = subshape
     nrow, ncol = shape
@@ -464,9 +464,9 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     
     Parameters
     ----------
-    subidxs_out : ndarray of int
+    subidxs_out : 1D-array of int
         highres linear indices of outlet cells with size shape[0]*shape[1]
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
     subshape : tuple of int
         highres raster shape
@@ -478,7 +478,7 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     Returns
     -------
     lowres linear indices of next downstream, disconnected cells 
-        Tuple of ndarray    
+        Tuple of 1D-array    
     """
     subnrow, subncol = subshape
     nrow, ncol = shape
@@ -543,21 +543,22 @@ def com_nextidx_iter2(
     subshape,
     shape,
     cellsize,
+    subbasins=None,
     mv=_mv,
 ):
     """Second iteration to fix cells which are not connected in highres.
     
     Parameters
     ----------
-    idxs_fix : ndarray of int
+    idxs_fix : 1D-array of int
         lowres linear indices of cells which are disconnected in highres
-    idxs_ds : ndarray of int
+    idxs_ds : 1D-array of int
         lowres linear indices of next downstream cell
-    subidxs_out : ndarray of int
+    subidxs_out : 1D-array of int
         highres linear indices of outlet cells with size shape[0]*shape[1]
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
-    subuparea : ndarray of int
+    subuparea : 1D-array of int
         highres flattened upstream area array
     subshape : tuple of int
         highres (highres) raster shape
@@ -565,13 +566,15 @@ def com_nextidx_iter2(
         lowres raster shape
     cellsize : int
         size of lowres cell measured in higres cells
+    subuparea : 1D-array of int, optional
+        highres flattened basin map
 
     Returns
     -------
     lowres linear indices of next downstream 
-        ndarray of int
+        1D-array of int
     highres linear indices of outlet cells
-        ndarray of int  
+        1D-array of int  
     """
     subncol = subshape[1]
     ncol = shape[1]
@@ -907,10 +910,12 @@ def com_nextidx_iter2(
         # the stream join downstream
         if nextiter:
             subidx = subidxs_out[idx00]
-            subidx_ds0 = subidxs_out[idxs_ds[idx00]]
+            idx_ds0 = idxs_ds[idx00]
+            subidx_ds0 = subidxs_out[idx_ds0]
             # find confluences
             confl = []
             upa = subuparea[subidx]
+            bas0 = 0 if subbasins is None else subbasins[subidx]
             while True:
                 subidx_ds = subidxs_ds[subidx]
                 upa_ds = subuparea[subidx_ds]
@@ -930,17 +935,22 @@ def com_nextidx_iter2(
                 # check for loops
                 idx = idx0
                 subidx = subidxs_out[idx0]
-                while True:
-                    idx_ds = idxs_ds[idx]
-                    if idx_ds == idx00:  # loop
-                        break
-                    elif idx == idx_ds:  #  no loop
-                        break
-                    # next iter
-                    idx = idx_ds
-                    i += 1
-                if idx_ds == idx00:  # loop
+                bas = 0 if subbasins is None else subbasins[subidx]
+                if bas != bas0:
                     continue
+                if idx0 != idx_ds0:  # check for loops
+                    i = 0
+                    while True:
+                        idx_ds = idxs_ds[idx]
+                        if idx_ds == idx00:  # loop
+                            break
+                        elif idx == idx_ds or i == 100:  #  no loop
+                            break
+                        # next iter
+                        idx = idx_ds
+                    if idx_ds == idx00:  # loop
+                        continue
+                    i += 1
                 # check if downstream joint of streams
                 upa = subuparea[subidx]
                 dist = 0
@@ -962,15 +972,15 @@ def com_nextidx_iter2(
     return idxs_ds, subidxs_out
 
 
-def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, mv=_mv):
+def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, subbasins=None, mv=_mv):
     """Returns the upscaled next downstream index based on the 
     connecting outlets method (COM).
 
     Parameters
     ----------
-    subidxs_ds : ndarray of int
+    subidxs_ds : 1D-array of int
         highres linear indices of downstream cells
-    subuparea : ndarray
+    subuparea : 1D-array
         highres flattened upstream area array
     subshape : tuple of int
         highres raster shape
@@ -978,13 +988,15 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, mv=_mv):
         size of lowres cell measured in higres cells
     iter2 : bool
         second iteration to improve highres connections
+    subbasins : 1D-array
+        highres flattened basin map
 
     Returns
     -------
     lowres linear indices of next downstream
-        ndarray of int
+        1D-array of int
     highres linear indices of outlet cells
-        ndarray of int
+        1D-array of int
     """
     # min_stream_len : int
     #     minimum length (pixels) between outlet and previous confluence
@@ -1036,6 +1048,7 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, mv=_mv):
             subshape=subshape,
             shape=shape,
             cellsize=cellsize,
+            subbasins=subbasins,
             mv=mv,
         )
     return idxs_ds, subidxs_out, shape
@@ -1052,11 +1065,11 @@ def connected(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
     
     Parameters
     ----------
-    subidxs_out : ndarray of int with same size as idxs_ds
+    subidxs_out : 1D-array of int with same size as idxs_ds
         linear (highres) indices of unit catchment outlet cells
-    idxs_ds : ndarray of int with same size as subidxs_out
+    idxs_ds : 1D-array of int with same size as subidxs_out
         linear lowres indices of next downstream cell
-    subidxs_out, subidxs_ds : ndarray of int
+    subidxs_out, subidxs_ds : 1D-array of int
         linear highres indices of outlet, next downstream cells
 
     Returns
