@@ -912,10 +912,11 @@ def com_nextidx_iter2(
             subidx = subidxs_out[idx00]
             idx_ds0 = idxs_ds[idx00]
             subidx_ds0 = subidxs_out[idx_ds0]
+            upa0 = subuparea[subidx]
+            bas0 = 0 if subbasins is None else subbasins[subidx]
             # find confluences
             confl = []
-            upa = subuparea[subidx]
-            bas0 = 0 if subbasins is None else subbasins[subidx]
+            upa = upa0
             while True:
                 subidx_ds = subidxs_ds[subidx]
                 upa_ds = subuparea[subidx_ds]
@@ -930,6 +931,7 @@ def com_nextidx_iter2(
             if subidx_ds == subidx_ds0:
                 continue  # @0A
             max_dist = len(confl)
+            upa1 = np.inf
             # for neighbors find distance where streams join downstream
             for idx0 in core._d8_idx(idx00, shape).astype(idxs_ds.dtype):
                 # check for loops
@@ -938,7 +940,7 @@ def com_nextidx_iter2(
                 bas = 0 if subbasins is None else subbasins[subidx]
                 if bas != bas0:
                     continue
-                if idx0 != idx_ds0:  # check for loops
+                if idx != idx_ds0:  # check for loops
                     i = 0
                     while True:
                         idx_ds = idxs_ds[idx]
@@ -948,20 +950,27 @@ def com_nextidx_iter2(
                             break
                         # next iter
                         idx = idx_ds
-                    if idx_ds == idx00:  # loop
-                        continue
+                    if idx_ds == idx00 or subuparea[subidxs_out[idx_ds]] < upa0:
+                        continue  # loop or no garuentee for no loop
                     i += 1
-                # check if downstream joint of streams
-                upa = subuparea[subidx]
-                dist = 0
-                while dist < max_dist * 2:
+                # check if highres streams join downstream
+                upa0 = subuparea[subidx]
+                upa = upa0
+                d1 = 0
+                while d1 < max_dist * 2:
                     subidx_ds = subidxs_ds[subidx]
                     upa_ds = subuparea[subidx_ds]
                     if upa_ds > 1.1 * upa or subidx_ds == subidx:  # confluence
-                        dist += 1
+                        d1 += 1
                         if subidx_ds in confl and confl.index(subidx_ds) <= max_dist:
-                            idxs_ds[idx00] = idx0
-                            max_dist = confl.index(subidx_ds)
+                            # distance from idx00 in no of confluences
+                            # select neighbor with smallest distance and
+                            # smallest upstream area if same distance
+                            d0 = confl.index(subidx_ds)
+                            if d0 < max_dist or (d0 == max_dist and upa0 < upa1):
+                                idxs_ds[idx00] = idx0
+                                max_dist = d0
+                                upa1 = upa0
                             break
                     if subidx_ds == subidx or upa_ds > upa_max:
                         break
