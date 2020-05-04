@@ -931,7 +931,7 @@ def com_nextidx_iter2(
             if subidx_ds == subidx_ds0:
                 continue  # @0A
             max_dist = len(confl)
-            upa1 = np.inf
+            max_upa = np.inf
             # for neighbors find distance where streams join downstream
             for idx0 in core._d8_idx(idx00, shape).astype(idxs_ds.dtype):
                 # check for loops
@@ -954,8 +954,8 @@ def com_nextidx_iter2(
                         continue  # loop or no garuentee for no loop
                     i += 1
                 # check if highres streams join downstream
-                upa0 = subuparea[subidx]
-                upa = upa0
+                upa1 = subuparea[subidx]
+                upa = upa1
                 d1 = 0
                 while d1 < max_dist * 2:
                     subidx_ds = subidxs_ds[subidx]
@@ -967,10 +967,10 @@ def com_nextidx_iter2(
                             # select neighbor with smallest distance and
                             # smallest upstream area if same distance
                             d0 = confl.index(subidx_ds)
-                            if d0 < max_dist or (d0 == max_dist and upa0 < upa1):
+                            if d0 < max_dist or (d0 == max_dist and upa1 < max_upa):
                                 idxs_ds[idx00] = idx0
                                 max_dist = d0
-                                upa1 = upa0
+                                max_upa = upa1
                             break
                     if subidx_ds == subidx or upa_ds > upa_max:
                         break
