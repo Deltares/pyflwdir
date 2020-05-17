@@ -301,6 +301,8 @@ def test_ucat():
         flw.ucat_area(idxs_out, unit="km")
     with pytest.raises(ValueError, match="size does not match"):
         flw.ucat_channel(idxs_out, elevtn=np.ones((1, 1)))
+    with pytest.raises(ValueError, match="Unknown flow direction"):
+        flw.ucat_channel(idxs_out, direction="unknown")
 
 
 def test_dem():

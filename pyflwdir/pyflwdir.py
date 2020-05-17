@@ -958,9 +958,11 @@ class FlwdirRaster(object):
         return flw1, idxs_out.reshape(shape1)
 
     def upscale_connect(self, other, idxs_out):
-        """Returns array with ones where the upscaled flow directions are connected 
-        by stream paths in the highres (subgrid) flow direction map. Cells with missing 
-        flow direction data have a value -1.
+        """Returns an array with ones where the upscaled flow directions are connected.
+        We define a target cell to be connected if the outlet pixel of the downstream 
+        target cell is the first outlet pixel downstream from its own outlet pixel. 
+        
+        Cells with missing flow direction data have a value -1. 
         
         Parameters
         ----------
@@ -971,7 +973,7 @@ class FlwdirRaster(object):
         
         Returns
         -------
-        2D array of int8 with other.shape
+        subcon : 2D array of int8 with other.shape
             valid subgrid connection
         """
         assert self._mv == other._mv
@@ -1052,7 +1054,9 @@ class FlwdirRaster(object):
         )
         return ucat_map.reshape(self.shape), ucat_are.reshape(idxs_out.shape)
 
-    def ucat_channel(self, idxs_out=None, elevtn=None, uparea=None, upa_min=0.0):
+    def ucat_channel(
+        self, idxs_out=None, elevtn=None, uparea=None, direction="up", upa_min=0.0
+    ):
         """Returns the unit catchment river length [m] and slope [m/m] per lowres cell. 
         The unit catchment river is defined by the path starting at the unit catchment
         outlet cell moving upstream following the upstream subgrid cells with the 
@@ -1080,15 +1084,19 @@ class FlwdirRaster(object):
         2D array of float with other.shape
             subgrid river slope [m/m]
         """
+        direction = str(direction).lower()
+        if direction not in ["up", "down"]:
+            msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
+            raise ValueError(msg)
         if elevtn is None:
             elevtn = np.zeros(self.size, dtype=np.float32)
         if idxs_out is None:
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
         rivlen, rivslp = unitcatchments.channel(
             idxs_out=idxs_out.ravel(),
-            idxs_ds=self.idxs_ds,
-            uparea=self._check_data(uparea, "uparea"),
+            idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             elevtn=self._check_data(elevtn, "elevtn"),
+            uparea=self._check_data(uparea, "uparea"),
             ncol=self.shape[1],
             upa_min=upa_min,
             latlon=self.latlon,

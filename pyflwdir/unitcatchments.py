@@ -123,9 +123,9 @@ def area(
 @njit
 def channel(
     idxs_out,
-    idxs_ds,
-    uparea,
+    idxs_nxt,
     elevtn,
+    uparea,
     ncol,
     upa_min=0.0,
     latlon=False,
@@ -142,8 +142,8 @@ def channel(
     ----------
     idxs_out : ndarray of int
         linear indices of unit catchment outlet cells
-    idxs_ds : ndarray of int
-        linear indices of downstream cells
+    idxs_nxt : ndarray of int
+        linear indices of downstream / main_upstream cells
     uparea, elevtn : ndarray of float
         flattened upstream area, elevation
     ncol : int
@@ -162,10 +162,8 @@ def channel(
     1D array of float
         channel section slope [m/m] 
     """
-    # get indices of main upstream cells
-    idxs_us_main = core.main_upstream(idxs_ds, uparea, upa_min=upa_min, mv=mv)
     # temp binary array with outlets
-    outlets = np.array([np.bool(0) for _ in range(idxs_ds.size)])
+    outlets = np.array([np.bool(0) for _ in range(idxs_nxt.size)])
     for idx0 in idxs_out:
         if idx0 != mv:
             outlets[idx0] = np.bool(1)
@@ -180,8 +178,8 @@ def channel(
         l = np.float64(0.0)
         idx = idx0
         while True:
-            idx1 = idxs_us_main[idx]
-            if idx1 == mv:
+            idx1 = idxs_nxt[idx]
+            if idx1 == mv or idx1 == idx or uparea[idx1] < upa_min:
                 idx1 = idx
                 break
             # update length
