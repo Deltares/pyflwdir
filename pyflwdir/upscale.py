@@ -1135,6 +1135,7 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, subbasins=None, 
         # sort from up to downstream
         seq = np.argsort(subuparea[subidxs_out[idxs_fix]])
         idxs_fix = idxs_fix[seq]
+        # iter2 to fix disconnected outlets
         idxs_ds, subidxs_out = com_nextidx_iter2(
             idxs_fix=idxs_fix,
             idxs_ds=idxs_ds,
@@ -1146,6 +1147,7 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, subbasins=None, 
             cellsize=cellsize,
             mv=mv,
         )
+        # iter3 to minimize upstream area error
         idxs_ds, subidxs_out = com_nextidx_iter3(
             idxs_fix=idxs_fix,
             idxs_ds=idxs_ds,

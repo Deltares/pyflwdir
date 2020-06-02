@@ -36,7 +36,7 @@ def test_upscale(name, discon):
     fupscale = getattr(upscale, name)
     kwargs = dict()
     if name == "com2":
-        kwargs.update(subbasins=bas)
+        kwargs.update(subbasins=bas)  # only argument in com2
     idxs_ds1, idxs_out, shape1 = fupscale(
         idxs_ds, upa, flwdir.shape, cellsize, mv=mv, **kwargs
     )
