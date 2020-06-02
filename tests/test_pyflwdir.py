@@ -267,7 +267,7 @@ def test_streams():
 
 
 def test_upscale():
-    flw1, idxs_out = flw.upscale(5, method="dmm", basins=flw.basins())
+    flw1, idxs_out = flw.upscale(5, method="dmm")
     assert flw1.transform[0] == 5 * flw.transform[0]
     assert flw1.ftype == flw.ftype
     subcon = flw.upscale_connect(flw1, idxs_out)

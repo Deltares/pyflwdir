@@ -10,11 +10,10 @@ import numpy as np
 from pyflwdir import upscale, core_d8, core, streams, basins
 from test_core import test_data
 
-# large test data
-# flwdir = np.fromfile(r"../data/d8.bin", dtype=np.uint8).reshape((678, 776))
-# tests = [("dmm", 1073), ("eam", 406), ("com", 138), ("com2", 54)][-1:]
+# # large test data
+# flwdir = np.fromfile(r"./data/d8.bin", dtype=np.uint8).reshape((678, 776))
+# tests = [("dmm", 1073), ("eam", 406), ("com", 138), ("com2", 54)]
 # idxs_ds, idxs_pit, _ = core_d8.from_array(flwdir)
-# mv = np.array([-1]).astype(idxs_ds.dtype)[0]
 # rank, n = core.rank(idxs_ds)
 # seq = np.argsort(rank)[-n:]
 # cellsize = 10
@@ -34,12 +33,7 @@ bas = basins.basins(idxs_ds, idxs_pit, seq, ids)
 @pytest.mark.parametrize("name, discon", tests)
 def test_upscale(name, discon):
     fupscale = getattr(upscale, name)
-    kwargs = dict()
-    if name == "com2":
-        kwargs.update(subbasins=bas)
-    idxs_ds1, idxs_out, shape1 = fupscale(
-        idxs_ds, upa, flwdir.shape, cellsize, mv=mv, **kwargs
-    )
+    idxs_ds1, idxs_out, shape1 = fupscale(idxs_ds, upa, flwdir.shape, cellsize, mv=mv)
     assert np.multiply(*shape1) == idxs_ds1.size
     assert idxs_ds.dtype == idxs_ds1.dtype
     assert core.loop_indices(idxs_ds1, mv=mv).size == 0

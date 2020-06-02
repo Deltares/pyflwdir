@@ -235,7 +235,7 @@ def _d8_idx(idx0, shape):
     idxs_lst = list()
     for dr in range(-1, 2):
         for dc in range(-1, 2):
-            if dr == 0 and dc == 0:
+            if dr == 0 and dc == 0:  # skip pit -> return empty array
                 continue
             r_us, c_us = r + dr, c + dc
             if r_us >= 0 and r_us < nrow and c_us >= 0 and c_us < ncol:  # check bounds
