@@ -10,11 +10,10 @@ import numpy as np
 from pyflwdir import upscale, core_d8, core, streams, basins
 from test_core import test_data
 
-# large test data
-# flwdir = np.fromfile(r"../data/d8.bin", dtype=np.uint8).reshape((678, 776))
-# tests = [("dmm", 1073), ("eam", 406), ("com", 138), ("com2", 54)][-1:]
+# # large test data
+# flwdir = np.fromfile(r"./data/d8.bin", dtype=np.uint8).reshape((678, 776))
+# tests = [("dmm", 1073), ("eam", 406), ("com", 138), ("com2", 54)]
 # idxs_ds, idxs_pit, _ = core_d8.from_array(flwdir)
-# mv = np.array([-1]).astype(idxs_ds.dtype)[0]
 # rank, n = core.rank(idxs_ds)
 # seq = np.argsort(rank)[-n:]
 # cellsize = 10
