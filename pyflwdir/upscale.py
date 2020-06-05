@@ -983,7 +983,7 @@ def new_outlet(
             subidx = subidx_ds
         n = len(path)
         idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
-        if n > minlen and in_d8(idx0, idx1, ncol):
+        if n > minlen and in_d8(idx0, idx1, ncol) and idx1 != idx0:
             upa0 = subuparea[subidxs[i]]
             subidx_out = subidxs[i]
             idx_ds = idx1
@@ -1119,26 +1119,32 @@ def com_minimize_error(
     minlen = cellsize * 0.25
     minupa = cellsize ** 2 * 0.25
     args = (subidxs_ds, subuparea, ncol, subncol, cellsize, minlen, minupa, mv)
-    idxs_fix = []
+    idxs_fix, idxs_pit = [], []
     for idx0 in range(idxs_ds.size):
         idx_ds = idxs_ds[idx0]
         if idx_ds == mv:
             continue
-        subidx = subidxs_out[idx0]
+        subidx0 = subidxs_out[idx0]
+        subidx = subidx0
         while True:
             subidx_ds = subidxs_ds[subidx]
             if subidx == subidx_ds or streams[subidx_ds] >= 0:
                 if subidx_ds != subidxs_out[idx_ds]:
                     if subidx == subidx_ds:
-                        # pit -> reset outlet (NOTE: might be outside cell!)
-                        idxs_ds[idx0] = idx0
-                        subidxs_out[idx0] = subidx_ds
-                        streams[subidx_ds] = idx0
+                        idxs_pit.append((subuparea[subidx0], idx0, subidx_ds))
                     else:
                         idxs_fix.append(idx0)
                 break
             subidx = subidx_ds
-    # loop over cells
+    # loop over pit cells from large to small:
+    while len(idxs_pit) > 0:
+        _, idx0, subidx_ds = idxs_pit.pop(idxs_pit.index(max(idxs_pit)))
+        if streams[subidx_ds] < 0:
+            # pit -> reset outlet (NOTE: might be outside cell!)
+            idxs_ds[idx0] = idx0
+            subidxs_out[idx0] = subidx_ds
+            streams[subidx_ds] = idx0
+    # loop over other cells
     for _ in range(5):
         idxs_fix_out = []
         for idx0 in idxs_fix:
