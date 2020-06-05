@@ -33,12 +33,7 @@ bas = basins.basins(idxs_ds, idxs_pit, seq, ids)
 @pytest.mark.parametrize("name, discon", tests)
 def test_upscale(name, discon):
     fupscale = getattr(upscale, name)
-    kwargs = dict()
-    if name == "com2":
-        kwargs.update(subbasins=bas)  # only argument in com2
-    idxs_ds1, idxs_out, shape1 = fupscale(
-        idxs_ds, upa, flwdir.shape, cellsize, mv=mv, **kwargs
-    )
+    idxs_ds1, idxs_out, shape1 = fupscale(idxs_ds, upa, flwdir.shape, cellsize, mv=mv)
     assert np.multiply(*shape1) == idxs_ds1.size
     assert idxs_ds.dtype == idxs_ds1.dtype
     assert core.loop_indices(idxs_ds1, mv=mv).size == 0

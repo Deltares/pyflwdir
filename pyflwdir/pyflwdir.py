@@ -879,7 +879,7 @@ class FlwdirRaster(object):
 
     ### UPSCALE FLOW DIRECTIONOS ###
 
-    def upscale(self, scale_factor, method="com2", uparea=None, basins=None, **kwargs):
+    def upscale(self, scale_factor, method="com2", uparea=None, **kwargs):
         """Upscale flow direction network to lower resolution. 
         Available methods are Connecting Outlets Method (COM) [2]_, 
         Effective Area Method (EAM) [3]_ and Double Maximum Method (DMM) [4]_.
@@ -923,8 +923,6 @@ class FlwdirRaster(object):
         if method not in methods:
             methodstr = "', '".join(methods)
             raise ValueError(f"Unknown method: {method}, select from: '{methodstr}'")
-        if method == "com2":
-            kwargs.update(subbasins=self._check_data(basins, "basins", optional=True))
         # upscale flow directions
         idxs_ds1, idxs_out, shape1 = getattr(upscale, method)(
             subidxs_ds=self.idxs_ds,

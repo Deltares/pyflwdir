@@ -48,42 +48,6 @@ def cell_edge(subidx, subncol, cellsize):
 
 
 @njit
-def outlet_cells(idx, subidxs_ds, ncol, subncol, cellsize):
-    """Returns subgrid cells at the edge of a lowres cells with the next downstream
-    subgrid cell outside of that lowress cell."""
-    subidxs = []
-    subnrow = subidxs_ds.size / subncol
-    r_ul = (idx // ncol) * cellsize
-    c_ul = (idx % ncol) * cellsize
-    r_ll = ((idx // ncol) + 1) * cellsize - 1
-    c_ur = ((idx % ncol) + 1) * cellsize - 1
-    subidx_ul = r_ul * subncol + c_ul
-    subidx_ll = r_ll * subncol + c_ul
-    subidx_ur = r_ul * subncol + c_ur
-    for i in range(min(cellsize, subncol - c_ul)):
-        subidx = subidx_ul + i
-        if subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
-            subidxs.append(subidx)
-        if r_ll < subnrow:
-            subidx = subidx_ll + i
-            if subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
-                subidxs.append(subidx)
-    for i in range(1, min(cellsize - 1, subnrow - r_ul)):
-        subidx = subidx_ul + i * subncol
-        if subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
-            subidxs.append(subidx)
-        if c_ur < subncol:
-            subidx = subidx_ur + i * subncol
-            if subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
-                subidxs.append(subidx)
-    for subidx in subidxs:
-        if not cell_edge(subidx, subncol, cellsize):
-            print(idx, subidx)
-            assert False
-    return subidxs
-
-
-@njit
 def map_celledge(subidxs_ds, subshape, cellsize, mv=_mv):
     """Returns a map with ones on highres cells of lowres cell edges"""
     subncol = subshape[1]
@@ -538,7 +502,7 @@ def next_outlet(
 
 
 @njit
-def com_nextidx_iter2(
+def com_relocate_outlets(
     idxs_fix,
     idxs_ds,
     subidxs_out,
@@ -549,7 +513,7 @@ def com_nextidx_iter2(
     cellsize,
     mv=_mv,
 ):
-    """Second iteration to relocate subgrid outlet cells in order to connect the
+    """Relocate subgrid outlet cells in order to connect the
     subgrid outlets of disconnected cells.
     
     Parameters
@@ -570,6 +534,7 @@ def com_nextidx_iter2(
         lowres raster shape
     cellsize : int
         size of lowres cell measured in higres cells
+    minupa : float
 
     Returns
     -------
@@ -580,11 +545,41 @@ def com_nextidx_iter2(
     """
     _, subncol = subshape
     _, ncol = shape
+
+    if idxs_fix is None:
+        # binary array with outlets
+        outlets = np.array([np.bool(0) for _ in range(subidxs_ds.size)])
+        for subidx in subidxs_out:
+            if subidx == mv:
+                continue
+            outlets[subidx] = True
+        # find disconnected cells
+        idxs_fix_lst = []
+        for idx0 in range(idxs_ds.size):
+            idx_ds = idxs_ds[idx0]
+            if idx_ds == mv:
+                continue
+            subidx = subidxs_out[idx0]
+            while True:
+                subidx_ds = subidxs_ds[subidx]
+                if subidx == subidx_ds or outlets[subidx_ds]:
+                    if subidx_ds != subidxs_out[idx_ds]:
+                        if subidx == subidx_ds:
+                            pass
+                        else:
+                            idxs_fix_lst.append(idx0)
+                    break
+                subidx = subidx_ds
+        idxs_fix1 = np.array(idxs_fix_lst, dtype=idxs_ds.dtype)
+    else:
+        idxs_fix1 = idxs_fix
+
     # loop over unconnected cells from up to downstream
-    seq = np.argsort(subuparea[subidxs_out[idxs_fix]])
+    idxs_fix_out = []
+    seq = np.argsort(subuparea[subidxs_out[idxs_fix1]])
     for i0 in seq:  # @0A lowres fix index loop
         nextiter = False
-        idx00 = idxs_fix[i0]
+        idx00 = idxs_fix1[i0]
         # print(idx00)
 
         # STEP 1: get downstream path with highres outlet indices
@@ -600,7 +595,7 @@ def com_nextidx_iter2(
             subidx1 = subidxs_ds[subidx]
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             pit = subidx1 == subidx
-            if pit or idx0 != idx1:  # check pit or outlet
+            if pit or idx0 != idx1:  # pit or outlet
                 # connected if:
                 # - next downstream lowres cell not in path &
                 # - current highres outlet cell same as original next outlet
@@ -631,7 +626,7 @@ def com_nextidx_iter2(
 
         # STEP 2: find original upstream connections
         idxs_us_lst = list()
-        idxs_ds0 = np.unique(np.array(idxs_lst, dtype=idxs_fix.dtype))
+        idxs_ds0 = np.unique(np.array(idxs_lst, dtype=idxs_ds.dtype))
         for idx_ds in idxs_ds0:  # @2A lowres us connections loop
             for idx0 in core._upstream_d8_idx(idx_ds, idxs_ds, shape):
                 # skip upstream nodes wich are on path of step 1
@@ -697,7 +692,7 @@ def com_nextidx_iter2(
             idx_ds0_lst = list()
             idx0_lst = list()
             idx0 = idx00
-            j0, k0 = 0, 0
+            j0, k0 = 0, 0  # index last set pot. outlet, lateral inflow
             for j in range(noutlets):  # @4A lowres connecting loop
                 if nextiter:
                     continue
@@ -831,7 +826,7 @@ def com_nextidx_iter2(
                                 # the original outlet has zero upstream cells
                                 # and the next downstream outlet is unchanged
                                 idx_us0 = core._upstream_d8_idx(idx_ds0, idxs_ds, shape)
-                                # next sugbrid outlet from
+                                # next subgrid outlet from
                                 _, idx_ds00, outlet0 = next_outlet(
                                     subidx,
                                     subidxs_ds,
@@ -901,6 +896,7 @@ def com_nextidx_iter2(
         # if next downstream in idx_out_lst we've created a loop
         loop = idxs_ds[idx1] in idx_out_lst
         if loop:
+            # print("loop", idx00)
             # unroll edits
             nextiter = True
             for i in range(len(idx0_lst)):
@@ -908,106 +904,269 @@ def com_nextidx_iter2(
             for i in range(len(idx_out_lst)):
                 subidxs_out[idx_out_lst[i]] = subidx0_out_lst[i]
 
-    return idxs_ds, subidxs_out
+        if nextiter or loop:
+            idxs_fix_out.append(idx00)
+
+    return idxs_ds, subidxs_out, np.array(idxs_fix_out, dtype=idxs_ds.dtype)
 
 
 @njit
-def com_nextidx_iter3(
-    idxs_fix,
+def outlet_cells(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
+    """Returns subgrid cells at the edge of a lowres cells with the next downstream
+    subgrid cell outside of that lowres cell."""
+    subidxs = []
+    subnrow = subidxs_ds.size / subncol
+    r_ul = (idx // ncol) * cellsize
+    c_ul = (idx % ncol) * cellsize
+    r_ll = ((idx // ncol) + 1) * cellsize - 1
+    c_ur = ((idx % ncol) + 1) * cellsize - 1
+    subidx_ul = r_ul * subncol + c_ul
+    subidx_ll = r_ll * subncol + c_ul
+    subidx_ur = r_ul * subncol + c_ur
+    for i in range(min(cellsize, subncol - c_ul)):
+        subidx = subidx_ul + i
+        if all or subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
+            subidxs.append(subidx)
+        if r_ll < subnrow:
+            subidx = subidx_ll + i
+            if all or subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
+                subidxs.append(subidx)
+    for i in range(1, min(cellsize - 1, subnrow - r_ul)):
+        subidx = subidx_ul + i * subncol
+        if all or subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
+            subidxs.append(subidx)
+        if c_ur < subncol:
+            subidx = subidx_ur + i * subncol
+            if all or subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
+                subidxs.append(subidx)
+
+    return subidxs
+
+
+@njit
+def new_outlet(
+    idx0,
+    subidx0,
+    streams,
     idxs_ds,
     subidxs_out,
     subidxs_ds,
-    subbasins,
+    subuparea,
+    ncol,
+    subncol,
+    cellsize,
+    minlen=0,
+    minupa=0,
+    mv=_mv,
+):
+    """Returns an alternative outlet subgrid cell which is connected to neighboring
+    outlet cell in d8, not located on any existing stream, with a minimum downstream 
+    length of <minlen> and upstream area of <minupa>. This method can be 
+    applied to lowres head water cells (i.e. without upstream neighbors)."""
+    # streams array: outlets cell indices (>=0) and streams (-1); nodata value is -9
+    path0 = np.full(1, mv, dtype=subidxs_ds.dtype)
+    subidx_out = mv
+    idx_ds = mv
+    upa0 = minupa
+    streams[subidx0] = -1
+    subidxs = outlet_cells(idx0, subidxs_ds, ncol, subncol, cellsize)
+    for i in range(len(subidxs)):
+        subidx = subidxs[i]
+        if streams[subidx] != -9 or subuparea[subidx] <= upa0:
+            continue
+        path = []
+        while True:
+            subidx_ds = subidxs_ds[subidx]
+            path.append(subidx_ds)
+            if streams[subidx_ds] >= 0 or subidx == subidx_ds:
+                break
+            subidx = subidx_ds
+        n = len(path)
+        idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
+        if n > minlen and in_d8(idx0, idx1, ncol):
+            upa0 = subuparea[subidxs[i]]
+            subidx_out = subidxs[i]
+            idx_ds = idx1
+            path0 = np.array(path, dtype=subidxs_ds.dtype)
+
+    # update streams, idxs_ds, subidxs_out
+    if idx_ds != mv:
+        idxs_ds[idx0] = idx_ds
+        subidxs_out[idx0] = subidx_out
+        streams[subidx_out] = idx0
+        for subidx in path0:
+            streams[subidx] = max(streams[subidx], -1)
+    else:
+        streams[subidx0] = idx0  # restore
+
+    return streams, idxs_ds, subidxs_out, idx_ds != mv
+
+
+@njit
+def com_optimize_rivlen(
+    idxs_ds,
+    subidxs_out,
+    subidxs_ds,
     subuparea,
     subshape,
     shape,
     cellsize,
+    minlen=0,
+    minupa=0,
     mv=_mv,
 ):
-    """Third iteration to minimize the number of cells with an upstream area error when
-    disconnected.
-    
-    Parameters
-    ----------
-    idxs_fix : 1D-array of int
-        lowres linear indices of cells which are disconnected in highres
-    idxs_ds : 1D-array of int
-        lowres linear indices of next downstream cell
-    subidxs_out : 1D-array of int
-        highres linear indices of outlet cells with size shape[0]*shape[1]
-    subidxs_ds : 1D-array of int
-        highres linear indices of downstream cells
-    subbasins : 1D-array of int
-        highres flattened basins map array
-    subuparea : 1D-array of int
-        highres flattened upstream area array
-    subshape : tuple of int
-        highres (highres) raster shape
-    shape : tuple of int
-        lowres raster shape
-    cellsize : int
-        size of lowres cell measured in higres cells
-
-    Returns
-    -------
-    lowres linear indices of next downstream 
-        1D-array of int
-    highres linear indices of outlet cells
-        1D-array of int  
-    """
+    """Reduces the number of cells with smaller than <minlen> downstream 
+    subgrid length by finding an alternative outlet for that cell or the next downstream 
+    cell."""
     _, subncol = subshape
     _, ncol = shape
-    # binary array with outlets
-    subn = subidxs_ds.size
-    outlets = np.full(subn, mv, dtype=idxs_ds.dtype)
-    for idx0 in range(idxs_ds.size):
-        subidx = subidxs_out[idx0]
+    args = (subidxs_ds, subuparea, ncol, subncol, cellsize, minlen, minupa, mv)
+    # array with outlets (>=0) and streams (-1); nodata value is -9
+    assert subidxs_out.size <= 2147483648
+    streams = np.full(subidxs_ds.size, -9, dtype=np.int32)
+    for idx in range(subidxs_out.size):
+        subidx = subidxs_out[idx]
         if subidx == mv:
             continue
-        outlets[subidx] = idx0
+        streams[subidx] = idx
+    # find short ds len cells
+    idxs_fix = []
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == mv:
+            continue
+        subidx = subidxs_out[idx0]
+        path = []
+        while True:
+            subidx_ds = subidxs_ds[subidx]
+            if subidx == subidx_ds:
+                break
+            path.append(subidx_ds)
+            if subidx_ds == subidxs_out[idx_ds]:
+                if len(path) <= minlen:
+                    idxs_fix.append(idx0)
+                break
+            subidx = subidx_ds
+        for subidx in path:
+            streams[subidx] = max(streams[subidx], -1)
+    # repair
+    for _ in range(5):
+        idxs_fix_out = []
+        for idx0 in idxs_fix:
+            # current outlet 0
+            subidx0 = subidxs_out[idx0]
+            subidx1 = subidxs_out[idxs_ds[idx0]]
+            idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
+            idx0_us = core._upstream_d8_idx(idx0, idxs_ds, shape)
+            idx0_us_ind8 = np.array([in_d8(idx, idx1, ncol) for idx in idx0_us])
+            # replace outlet 0 if all upstream cells are connected to outlet 1
+            if idx0_us.size == 0 or np.all(idx0_us_ind8):
+                streams, idxs_ds, subidxs_out, success = new_outlet(
+                    idx0, subidx0, streams, idxs_ds, subidxs_out, *args
+                )
+                if success:
+                    for idx in idx0_us:
+                        idxs_ds[idx] = idx1
+                    continue
+            # move to next downstream outlet 2; make sure it is connected
+            subidx = subidx1
+            while True:
+                subidx_ds = subidxs_ds[subidx]
+                if streams[subidx_ds] >= 0 or subidx == subidx_ds:
+                    break
+                subidx = subidx_ds
+            subidx2 = subidx_ds
+            idx2 = subidx_2_idx(subidx2, subncol, cellsize, ncol)
+            if idx2 != idxs_ds[idx1] or subidx == subidx_ds:
+                continue
+            idx1_us = core._upstream_d8_idx(idx1, idxs_ds, shape)
+            idx1_us_ind8 = np.array([in_d8(idx, idx2, ncol) for idx in idx1_us])
+            # replace outlet 1 if all upstream cells are connected to outlet 2
+            if np.all(idx1_us_ind8):
+                streams, idxs_ds, subidxs_out, success = new_outlet(
+                    idx1, subidx1, streams, idxs_ds, subidxs_out, *args
+                )
+                if success:
+                    for idx in idx1_us:
+                        idxs_ds[idx] = idx2
+                    continue
+            idxs_fix_out.append(idx0)
+        if len(idxs_fix_out) == len(idxs_fix) or len(idxs_fix_out) == 0:
+            break
+        idxs_fix = idxs_fix_out
+
+    return idxs_ds, subidxs_out, streams
+
+
+@njit
+def com_minimize_error(
+    streams,
+    idxs_ds,
+    subidxs_out,
+    subidxs_ds,
+    subuparea,
+    subshape,
+    shape,
+    cellsize,
+    minlen=0,
+    minupa=0,
+    mv=_mv,
+):
+    """Reduces the number of cells with an upstream area error by finding the neighbor
+    with the shortest distance to a cell where both streams have merged."""
+    _, subncol = subshape
+    _, ncol = shape
+    minlen = cellsize * 0.25
+    minupa = cellsize ** 2 * 0.25
+    args = (subidxs_ds, subuparea, ncol, subncol, cellsize, minlen, minupa, mv)
+    idxs_fix = []
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == mv:
+            continue
+        subidx = subidxs_out[idx0]
+        while True:
+            subidx_ds = subidxs_ds[subidx]
+            if subidx == subidx_ds or streams[subidx_ds] >= 0:
+                if subidx_ds != subidxs_out[idx_ds]:
+                    if subidx == subidx_ds:
+                        # pit -> reset outlet (NOTE: might be outside cell!)
+                        idxs_ds[idx0] = idx0
+                        subidxs_out[idx0] = subidx_ds
+                        streams[subidx_ds] = idx0
+                    else:
+                        idxs_fix.append(idx0)
+                break
+            subidx = subidx_ds
     # loop over cells
     for _ in range(5):
         idxs_fix_out = []
         for idx0 in idxs_fix:
             fixed = False
             subidx0 = subidxs_out[idx0]
-            subidx_ds0 = subidxs_out[idxs_ds[idx0]]
-            if subbasins is not None:
-                bas0 = subbasins[subidx0]
             upa0 = subuparea[subidx0]
             # save path of cells with outlet pixel downstream of current outlet pixel
             idxs = []
             subidx = subidx0
             while True:
                 subidx_ds = subidxs_ds[subidx]
-                if outlets[subidx_ds] != mv:
-                    if len(idxs) == 0 and subidx_ds == subidx_ds0:
-                        fixed = True
-                        break  # already fixed
-                    idxs.append(outlets[subidx_ds])
-                    if len(idxs) == 100:  # max 100 cells
+                if streams[subidx_ds] >= 0:
+                    idx1 = streams[subidx_ds]
+                    idxs.append(idx1)
+                    if len(idxs) == 100 or (len(idxs) == 1 and in_d8(idx0, idx1, ncol)):
                         break
                 if subidx_ds == subidx:
                     break
                 # next iter
                 subidx = subidx_ds
-            if fixed:
-                continue
-            if len(idxs) == 0 and subidx_ds != subidx_ds0 and subidx_ds == subidx:
-                # pit -> reset outlet
-                idxs_ds[idx0] = idx0
-                subidxs_out[idx0] = subidx_ds
-                outlets[subidx0] = mv
-                outlets[subidx_ds] = idx0
-                fixed = True
-            elif len(idxs) > 0:
-                # minimize total cells with upa error
-                max_dist = 999999
-                idxs_d8 = core._d8_idx(idx0, shape)
-                if subbasins is not None:
-                    bas_d8 = subbasins[subidxs_out[idxs_d8]]
-                    same_bas = bas_d8 == bas0
-                    idxs_d8 = idxs_d8[same_bas]
+            # minimize total cells with upa error
+            max_dist = 999999
+            idxs_d8 = core._d8_idx(idx0, shape)
+            if np.all(idxs_ds[idxs_d8] != idx0):
+                streams, idxs_ds, subidxs_out, fixed = new_outlet(
+                    idx0, subidx0, streams, idxs_ds, subidxs_out, *args
+                )
+            if not fixed:
                 for idx1 in idxs_d8:
                     subidx1 = subidxs_out[idx1]
                     upa1 = subuparea[subidx1]
@@ -1026,52 +1185,25 @@ def com_nextidx_iter3(
                             break
                         # next iter
                         idx = idx_ds
-                if subbasins is not None and not np.any(same_bas):
-                    # no neighbors in same basin -> reset outlet cell
-                    idxs_d8 = core._d8_idx(idx0, shape)
-                    bas_unique = [b for b in np.unique(bas_d8)]
-                    subidx_d8 = [subidxs_out[idx] for idx in idxs_d8]
-                    upa_bas = np.zeros(len(bas_unique), dtype=subuparea.dtype)
-                    subidxs_bas = np.zeros(len(bas_unique), dtype=subidxs_out.dtype)
-                    idxs_ds_bas = np.zeros(len(bas_unique), dtype=idxs_ds.dtype)
-                    subidxs = outlet_cells(idx0, subidxs_ds, ncol, subncol, cellsize)
-                    for subidx0 in subidxs:
-                        bas = subbasins[subidx0]
-                        if bas in bas_unique:
-                            upa = subuparea[subidx0]
-                            ibas = bas_unique.index(bas)
-                            if upa > upa_bas[ibas]:
-                                subidx = subidx0
-                                while True:
-                                    subidx_ds = subidxs_ds[subidx]
-                                    if outlets[subidx_ds] != mv or subidx == subidx_ds:
-                                        if subidx_ds in subidx_d8:
-                                            upa_bas[ibas] = upa
-                                            idx_ds = idxs_d8[subidx_d8.index(subidx_ds)]
-                                            idxs_ds_bas[ibas] = idx_ds
-                                            subidxs_bas[ibas] = subidx0
-                                        break
-                                    # next iter
-                                    subidx = subidx_ds
-                    if np.any(upa_bas > 0):
-                        ibas = np.argsort(upa_bas)[
-                            -1
-                        ]  # outlet with largest upstream area
-                        idxs_ds[idx0] = idxs_ds_bas[ibas]
-                        outlets[subidxs_out[idx0]] = mv
-                        outlets[subidxs_bas[ibas]] = idx0
-                        subidxs_out[idx0] = subidxs_bas[ibas]
-                        fixed = True
             if not fixed:
                 idxs_fix_out.append(idx0)
         if len(idxs_fix_out) == len(idxs_fix) or len(idxs_fix_out) == 0:
             break
-        idxs_fix = np.array(idxs_fix_out, dtype=idxs_fix.dtype)
+        idxs_fix = idxs_fix_out
 
     return idxs_ds, subidxs_out
 
 
-def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, subbasins=None, mv=_mv):
+def com2(
+    subidxs_ds,
+    subuparea,
+    subshape,
+    cellsize,
+    iter=True,
+    minlen=None,
+    minupa=None,
+    mv=_mv,
+):
     """Returns the upscaled next downstream index based on the 
     connecting outlets method (COM).
 
@@ -1085,10 +1217,16 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, subbasins=None, 
         highres raster shape
     cellsize : int
         size of lowres cell measured in higres cells
-    iter2 : bool
-        second iteration to improve highres connections
-    subbasins : 1D-array
-        highres flattened basin map
+    iter : bool
+        If True apply iterative procedures to relocate outletes, optimize river lengths
+        and minimize upstream area errors in order to improve the overal upscaled flow 
+        direction quality. By default True.
+    minlen : float, optional
+        Minimum downstream subgrid distance between outlet cells. Used to minimize the 
+        number of cells with a downstream subgrid distance below this treshold. By 
+        default cellsize * 0.25.
+    minupa : float, optional
+        Minimum upstream area for head water cells. By default cellsize^2 * 0.25.
 
     Returns
     -------
@@ -1102,6 +1240,8 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, subbasins=None, 
     nrow = int(np.ceil(subnrow / cellsize))
     ncol = int(np.ceil(subncol / cellsize))
     shape = nrow, ncol
+    minlen = cellsize * 0.25 if minlen is None else minlen
+    minupa = cellsize ** 2 * 0.25 if minupa is None else minupa
     # STEP 1
     # get representative cells
     subidxs_rep = eam_repcell(
@@ -1131,13 +1271,23 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, subbasins=None, 
         cellsize=cellsize,
         mv=mv,
     )
-    if iter2:
-        # sort from up to downstream
-        seq = np.argsort(subuparea[subidxs_out[idxs_fix]])
-        idxs_fix = idxs_fix[seq]
-        # iter2 to fix disconnected outlets
-        idxs_ds, subidxs_out = com_nextidx_iter2(
-            idxs_fix=idxs_fix,
+    if iter:
+        for _ in range(5):
+            idxs_ds, subidxs_out, idxs_fix1 = com_relocate_outlets(
+                idxs_fix=idxs_fix,
+                idxs_ds=idxs_ds,
+                subidxs_out=subidxs_out,
+                subidxs_ds=subidxs_ds,
+                subuparea=subuparea,
+                subshape=subshape,
+                shape=shape,
+                cellsize=cellsize,
+                mv=mv,
+            )
+            if idxs_fix1.size == 0 or idxs_fix1.size == idxs_fix.size:
+                break
+            idxs_fix = idxs_fix1
+        idxs_ds, subidxs_out, streams = com_optimize_rivlen(
             idxs_ds=idxs_ds,
             subidxs_out=subidxs_out,
             subidxs_ds=subidxs_ds,
@@ -1145,26 +1295,28 @@ def com2(subidxs_ds, subuparea, subshape, cellsize, iter2=True, subbasins=None, 
             subshape=subshape,
             shape=shape,
             cellsize=cellsize,
+            minlen=minlen,
+            minupa=minupa,
             mv=mv,
         )
-        # iter3 to minimize upstream area error
-        idxs_ds, subidxs_out = com_nextidx_iter3(
-            idxs_fix=idxs_fix,
+        idxs_ds, subidxs_out = com_minimize_error(
+            streams=streams,
             idxs_ds=idxs_ds,
             subidxs_out=subidxs_out,
             subidxs_ds=subidxs_ds,
-            subbasins=subbasins,
             subuparea=subuparea,
             subshape=subshape,
             shape=shape,
             cellsize=cellsize,
+            minlen=minlen,
+            minupa=minupa,
             mv=mv,
         )
     return idxs_ds, subidxs_out, shape
 
 
 def com(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
-    return com2(subidxs_ds, subuparea, subshape, cellsize, iter2=False, mv=mv)
+    return com2(subidxs_ds, subuparea, subshape, cellsize, iter=False, mv=mv)
 
 
 @njit
