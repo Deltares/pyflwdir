@@ -182,9 +182,11 @@ def channel(
             continue
         l = np.float64(0.0)
         # mean width; including starting outlet; excluding final outlet
-        if rivwth is not None:
-            w = np.float64(rivwth[idx0])
-            n = 1
+        w = np.float64(0.0)
+        n = 0
+        if rivwth is not None and rivwth[idx0] > 0:
+            w += np.float64(rivwth[idx0])
+            n += 1
         idx = idx0
         while True:
             idx1 = idxs_nxt[idx]
@@ -213,6 +215,6 @@ def channel(
             z1 = elevtn[idx1]
             rivslp1[i] = 0.0 if l == 0 else (z1 - z0) / l
         # arithmetic mean channel width
-        if rivwth is not None:
+        if n > 0:
             rivwth1[i] = w / n
     return rivlen1, rivslp1, rivwth1
