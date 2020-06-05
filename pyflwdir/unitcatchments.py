@@ -215,6 +215,6 @@ def channel(
             z1 = elevtn[idx1]
             rivslp1[i] = 0.0 if l == 0 else (z1 - z0) / l
         # arithmetic mean channel width
-        if n > 0:
-            rivwth1[i] = w / n
+        if rivwth is not None:
+            rivwth1[i] = 0 if n == 0 else w / n
     return rivlen1, rivslp1, rivwth1
