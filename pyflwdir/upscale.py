@@ -452,7 +452,7 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     nrow, ncol = shape
     # allocate output
     idxs_ds = np.full(nrow * ncol, mv, dtype=subidxs_ds.dtype)
-    idxs_fix_lst = list()
+    idxs_fix = list()
     # loop over outlet cell indices
     for idx0 in range(subidxs_out.size):
         subidx = subidxs_out[idx0]
@@ -467,12 +467,12 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
                 # at outlet or pit
                 if not in_d8(idx0, idx1, ncol):  # outside d8 neighbors
                     # flag index, use first pass ea
-                    idxs_fix_lst.append(idx0)
+                    idxs_fix.append(idx0)
                 else:
                     subidx_ds = subidx1
                     # incorrect ds connection where pit
                     if subidxs_out[idx1] != subidx1:
-                        idxs_fix_lst.append(idx0)  # flag index
+                        idxs_fix.append(idx0)  # flag index
                 break
             if subidx_ds == mv and effective_area(subidx1, subncol, cellsize):
                 subidx_ds = subidx1  # first pass effective area
@@ -480,7 +480,7 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
             subidx = subidx1
         # assert subidx_ds != mv
         idxs_ds[idx0] = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
-    return idxs_ds, np.array(idxs_fix_lst, dtype=subidxs_ds.dtype)
+    return idxs_ds, np.array(idxs_fix, dtype=subidxs_ds.dtype)
 
 
 @njit
@@ -503,15 +503,7 @@ def next_outlet(
 
 @njit
 def com_relocate_outlets(
-    idxs_fix,
-    idxs_ds,
-    subidxs_out,
-    subidxs_ds,
-    subuparea,
-    subshape,
-    shape,
-    cellsize,
-    mv=_mv,
+    idxs_ds, subidxs_out, subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv,
 ):
     """Relocate subgrid outlet cells in order to connect the
     subgrid outlets of disconnected cells.
@@ -545,42 +537,55 @@ def com_relocate_outlets(
     """
     _, subncol = subshape
     _, ncol = shape
+    # array with outlets (>=0)
+    # TODO create outside iteration
+    assert subidxs_out.size <= 2147483648
+    outlets = np.full(subidxs_ds.size, -9, dtype=np.int32)
+    for idx in range(subidxs_out.size):
+        subidx = subidxs_out[idx]
+        if subidx == mv:
+            continue
+        outlets[subidx] = idx
 
-    if idxs_fix is None:
-        # binary array with outlets
-        outlets = np.array([np.bool(0) for _ in range(subidxs_ds.size)])
-        for subidx in subidxs_out:
-            if subidx == mv:
-                continue
-            outlets[subidx] = True
-        # find disconnected cells
-        idxs_fix_lst = []
-        for idx0 in range(idxs_ds.size):
-            idx_ds = idxs_ds[idx0]
-            if idx_ds == mv:
-                continue
-            subidx = subidxs_out[idx0]
-            while True:
-                subidx_ds = subidxs_ds[subidx]
-                if subidx == subidx_ds or outlets[subidx_ds]:
-                    if subidx_ds != subidxs_out[idx_ds]:
-                        if subidx == subidx_ds:
-                            pass
-                        else:
-                            idxs_fix_lst.append(idx0)
-                    break
-                subidx = subidx_ds
-        idxs_fix1 = np.array(idxs_fix_lst, dtype=idxs_ds.dtype)
-    else:
-        idxs_fix1 = idxs_fix
+    # find disconnected cells
+    idxs_fix, idxs_pit = [], []
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == mv:
+            continue
+        subidx0 = subidxs_out[idx0]
+        subidx = subidx0
+        while True:
+            subidx_ds = subidxs_ds[subidx]
+            if outlets[subidx_ds] >= 0 or subidx == subidx_ds:
+                if subidx_ds != subidxs_out[idx_ds]:
+                    if subidx == subidx_ds:
+                        idxs_pit.append((subuparea[subidx0], idx0, subidx_ds))
+                    else:
+                        idxs_fix.append(idx0)
+                break
+            subidx = subidx_ds
 
-    # loop over unconnected cells from up to downstream
+    # loop over pit cells from large to small upstream area:
+    while len(idxs_pit) > 0:
+        _, idx0, subidx_ds = idxs_pit.pop(idxs_pit.index(max(idxs_pit)))
+        idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
+        if outlets[subidx_ds] < 0 and in_d8(idx0, idx1, ncol):
+            # pit -> reset outlet (NOTE: new outlet might be in neighboring lowres cell!)
+            idxs_ds[idx0] = idx0
+            outlets[subidxs_out[idx0]] = -9
+            outlets[subidx_ds] = idx0
+            subidxs_out[idx0] = subidx_ds
+        else:
+            assert idxs_ds[idx0] != idx0
+            idxs_fix.append(idx0)
+
+    # loop over disconnected cells from up- to downstream
     idxs_fix_out = []
-    seq = np.argsort(subuparea[subidxs_out[idxs_fix1]])
+    seq = np.argsort(subuparea[subidxs_out[np.array(idxs_fix, dtype=idxs_ds.dtype)]])
     for i0 in seq:  # @0A lowres fix index loop
         nextiter = False
-        idx00 = idxs_fix1[i0]
-        # print(idx00)
+        idx00 = idxs_fix[i0]
 
         # STEP 1: get downstream path with highres outlet indices
         idxs_lst = list()
@@ -588,14 +593,20 @@ def com_relocate_outlets(
         connected = False
         # read outlet index and move into the next lowres cell to initialize
         idx_ds0 = idxs_ds[idx00]  # original next downstream cell
-        subidx = subidxs_ds[subidxs_out[idx00]]  # next highres cell
-        idx0 = subidx_2_idx(subidx, subncol, cellsize, ncol)
+        idx0 = idx00
+        subidx = subidxs_out[idx00]
+        while idx0 == idx00:
+            subidx1 = subidxs_ds[subidx]
+            if subidx1 == subidx or outlets[subidx1] >= 0:
+                break
+            idx0 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
+            subidx = subidx1
         while True:  # @1A while noy connected to original downstream cell
             # while True:  # @1B highres loop - while not at outlet
             subidx1 = subidxs_ds[subidx]
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             pit = subidx1 == subidx
-            if pit or idx0 != idx1:  # pit or outlet
+            if pit or idx0 != idx1 or outlets[subidx] >= 0:  # pit or (potential) outlet
                 # connected if:
                 # - next downstream lowres cell not in path &
                 # - current highres outlet cell same as original next outlet
@@ -618,7 +629,7 @@ def com_relocate_outlets(
                 break  # @1A
             # next iter @1A
             subidx = subidx1
-        if connected and subidx == subidxs_out[idxs_ds[idx00]]:
+        if connected and subidx == subidxs_out[idx_ds0]:
             # connection at first outlet -> already fixed
             continue  # @0A
         elif not connected:
@@ -643,7 +654,7 @@ def com_relocate_outlets(
             idx0 = idxs_us_lst[i]
             subidx = subidxs_out[idx0]
             connected = False
-            j0, j1 = 0, 0  # start and end connection to path
+            j0, j1 = 0, 0  # start and end index of connection to path
             # move into next cell to initialize
             subidx = subidxs_ds[subidx]
             idx = idx0
@@ -651,7 +662,8 @@ def com_relocate_outlets(
             while True and ii <= 10:  # @3B find connecting outlet in subidxs_lst
                 subidx1 = subidxs_ds[subidx]
                 idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
-                if subidx == subidx1 or idx != idx1:  # if pit OR outlet
+                # if pit OR (potential) outlet
+                if subidx == subidx1 or idx != idx1 or outlets[subidx] >= 0:
                     if not connected:
                         ii += 1
                     for j in range(j0, noutlets):  # @3C check outlet loop
@@ -700,29 +712,14 @@ def com_relocate_outlets(
                 subidx_out1 = subidxs_lst[j]
                 # check if not connected to ds pit
                 if subidx_out1 == subidxs_ds[subidx_out1] and len(idx_out_lst) == 0:
-                    idxs_pit = np.where(subidxs_out == subidx_out1)[0]
-                    if idxs_pit.size == 1 and in_d8(idx0, idxs_pit[0], ncol):
-                        # previous (smaller) branch already claimed pit
-                        if idxs_ds[idx0] != idxs_pit[0]:
-                            idx_ds0_lst.append(idxs_ds[idx0])
-                            idx0_lst.append(idx0)
-                            idx_ds_lst.append(idxs_pit[0])
-                            idxs_ds[idx0] = idxs_pit[0]
-                            # print('pit - connect', idx0, idxs_pit[0])
-                        break  # @4A
-                    elif idxs_pit.size == 0:
-                        # set pit and move outlet to neighboring cell
-                        # NOTE pit outlet outside lowres cell !
-                        if idxs_ds[idx0] != idx0:
-                            idx_ds0_lst.append(idxs_ds[idx0])
-                            idx0_lst.append(idx0)
-                            idx_ds_lst.append(idx0)
-                            idxs_ds[idx0] = idx0
-                            # print('pit', idx0, idx0)
-                        idx_out_lst.append(idx0)
-                        subidx0_out_lst.append(subidxs_out[idx0])
-                        subidxs_out[idx0] = subidx_out1
-                        # print('pit - outlet', idx0)
+                    idx_pit = outlets[subidx_out1]
+                    assert idx_pit >= 0
+                    if in_d8(idx0, idx_pit, ncol) and idxs_ds[idx0] != idx_pit:
+                        idx_ds0_lst.append(idxs_ds[idx0])
+                        idx0_lst.append(idx0)
+                        idx_ds_lst.append(idx_pit)
+                        idxs_ds[idx0] = idx_pit
+                        # print('pit - connect', idx0, idxs_pit[0])
                         break  # @4A
                     else:
                         nextiter = True
@@ -907,7 +904,7 @@ def com_relocate_outlets(
         if nextiter or loop:
             idxs_fix_out.append(idx00)
 
-    return idxs_ds, subidxs_out, np.array(idxs_fix_out, dtype=idxs_ds.dtype)
+    return idxs_ds, subidxs_out, np.array(idxs_fix_out, dtype=idxs_ds.dtype), outlets
 
 
 @njit
@@ -1004,6 +1001,7 @@ def new_outlet(
 
 @njit
 def com_optimize_rivlen(
+    streams,
     idxs_ds,
     subidxs_out,
     subidxs_ds,
@@ -1022,13 +1020,13 @@ def com_optimize_rivlen(
     _, ncol = shape
     args = (subidxs_ds, subuparea, ncol, subncol, cellsize, minlen, minupa, mv)
     # array with outlets (>=0) and streams (-1); nodata value is -9
-    assert subidxs_out.size <= 2147483648
-    streams = np.full(subidxs_ds.size, -9, dtype=np.int32)
-    for idx in range(subidxs_out.size):
-        subidx = subidxs_out[idx]
-        if subidx == mv:
-            continue
-        streams[subidx] = idx
+    # assert subidxs_out.size <= 2147483648
+    # streams = np.full(subidxs_ds.size, -9, dtype=np.int32)
+    # for idx in range(subidxs_out.size):
+    #     subidx = subidxs_out[idx]
+    #     if subidx == mv:
+    #         continue
+    #     streams[subidx] = idx
     # find short ds len cells
     idxs_fix = []
     for idx0 in range(idxs_ds.size):
@@ -1116,8 +1114,6 @@ def com_minimize_error(
     with the shortest distance to a cell where both streams have merged."""
     _, subncol = subshape
     _, ncol = shape
-    minlen = cellsize * 0.25
-    minupa = cellsize ** 2 * 0.25
     args = (subidxs_ds, subuparea, ncol, subncol, cellsize, minlen, minupa, mv)
     idxs_fix, idxs_pit = [], []
     for idx0 in range(idxs_ds.size):
@@ -1128,21 +1124,17 @@ def com_minimize_error(
         subidx = subidx0
         while True:
             subidx_ds = subidxs_ds[subidx]
-            if subidx == subidx_ds or streams[subidx_ds] >= 0:
+            if streams[subidx_ds] >= 0 or subidx == subidx_ds:
                 if subidx_ds != subidxs_out[idx_ds]:
                     if subidx == subidx_ds:
                         idxs_pit.append((subuparea[subidx0], idx0, subidx_ds))
-                    else:
-                        idxs_fix.append(idx0)
+                    idxs_fix.append(idx0)
                 break
             subidx = subidx_ds
     # loop over pit cells from large to small:
     while len(idxs_pit) > 0:
         _, idx0, subidx_ds = idxs_pit.pop(idxs_pit.index(max(idxs_pit)))
         if streams[subidx_ds] < 0:
-            # pit -> reset outlet (NOTE: might be outside cell!)
-            idxs_ds[idx0] = idx0
-            subidxs_out[idx0] = subidx_ds
             streams[subidx_ds] = idx0
     # loop over other cells
     for _ in range(5):
@@ -1279,8 +1271,7 @@ def com2(
     )
     if iter:
         for _ in range(5):
-            idxs_ds, subidxs_out, idxs_fix1 = com_relocate_outlets(
-                idxs_fix=idxs_fix,
+            idxs_ds, subidxs_out, idxs_fix1, streams = com_relocate_outlets(
                 idxs_ds=idxs_ds,
                 subidxs_out=subidxs_out,
                 subidxs_ds=subidxs_ds,
@@ -1294,6 +1285,7 @@ def com2(
                 break
             idxs_fix = idxs_fix1
         idxs_ds, subidxs_out, streams = com_optimize_rivlen(
+            streams=streams,
             idxs_ds=idxs_ds,
             subidxs_out=subidxs_out,
             subidxs_ds=subidxs_ds,

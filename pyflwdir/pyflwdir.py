@@ -1082,7 +1082,7 @@ class FlwdirRaster(object):
         uparea : 2D array of float, optional
             upstream area, if None (default) it is calculated.
         upa_min : float, optional
-            minimum upstream area threshold for streams. 
+            minimum upstream area threshold for streams [km2]. 
         
         Returns
         -------
@@ -1097,12 +1097,13 @@ class FlwdirRaster(object):
             raise ValueError(msg)
         if idxs_out is None:
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
+        upa_kwargs = dict(optional=upa_min == 0, unit="km2")
         rivlen1, rivslp1, rivwth1 = unitcatchments.channel(
             idxs_out=idxs_out.ravel(),
             idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             elevtn=self._check_data(elevtn, "elevtn", optional=True),
             rivwth=self._check_data(rivwth, "rivwth", optional=True),
-            uparea=self._check_data(uparea, "uparea", optional=upa_min == 0),
+            uparea=self._check_data(uparea, "uparea", **upa_kwargs),
             ncol=self.shape[1],
             upa_min=upa_min,
             latlon=self.latlon,
@@ -1180,7 +1181,7 @@ class FlwdirRaster(object):
         b : float, optional
             scale parameter, by default 0.3
         upa_min : float, optional
-            minimum upstream area threshold for streams. 
+            minimum upstream area threshold for streams [km2]. 
 
         Returns
         -------
