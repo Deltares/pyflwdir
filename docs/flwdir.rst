@@ -4,14 +4,9 @@
    :suppress:
 
     import matplotlib
-    import matplotlib.pyplot as plt
-    import cartopy.crs as ccrs
-    import numpy as np
     # set matplotlib parameters
     matplotlib.rcParams['savefig.bbox'] = 'tight'
     matplotlib.rcParams['savefig.dpi'] = 128
-    plt.style.use('seaborn-whitegrid')
-    plt.close('all')
 
 Flow direction data
 ===================
@@ -80,6 +75,10 @@ First we setup a helper make some quick plots later.
 
 .. ipython:: python
 
+    import matplotlib.pyplot as plt
+    plt.style.use('seaborn-whitegrid')
+    import cartopy.crs as ccrs
+    import numpy as np
     def quickplot(gdfs=[], maps=[], hillshade=True):
         """Create quick plots of geospatial data."""
         fig = plt.figure()
@@ -148,7 +147,7 @@ we trace three point sources along a maximum distance of 400 km.
     mask = np.zeros(flw.shape, dtype=np.bool)
     for i, path in enumerate(paths):
         mask.flat[path] = 1
-    # which we than use to vectorize an plot 
+    # which we then use to vectorize an plot 
     gdf_paths = flw.vectorize(mask=mask)
     @savefig flow_paths.png width=60%
     quickplot([streams, (gdf_paths, dict(color='blue'))], maps=[], hillshade=True);
