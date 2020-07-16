@@ -879,7 +879,7 @@ class FlwdirRaster(object):
 
     ### UPSCALE FLOW DIRECTIONOS ###
 
-    def upscale(self, scale_factor, method="com2", uparea=None, basins=None, **kwargs):
+    def upscale(self, scale_factor, method="com2", uparea=None, **kwargs):
         """Upscale flow direction network to lower resolution. 
         Available methods are Connecting Outlets Method (COM) [2]_, 
         Effective Area Method (EAM) [3]_ and Double Maximum Method (DMM) [4]_.
@@ -923,8 +923,6 @@ class FlwdirRaster(object):
         if method not in methods:
             methodstr = "', '".join(methods)
             raise ValueError(f"Unknown method: {method}, select from: '{methodstr}'")
-        if method == "com2":
-            kwargs.update(subbasins=self._check_data(basins, "basins", optional=True))
         # upscale flow directions
         idxs_ds1, idxs_out, shape1 = getattr(upscale, method)(
             subidxs_ds=self.idxs_ds,
@@ -1055,12 +1053,19 @@ class FlwdirRaster(object):
         return ucat_map.reshape(self.shape), ucat_are.reshape(idxs_out.shape)
 
     def ucat_channel(
-        self, idxs_out=None, elevtn=None, uparea=None, direction="up", upa_min=0.0
+        self,
+        idxs_out=None,
+        elevtn=None,
+        rivwth=None,
+        uparea=None,
+        direction="up",
+        upa_min=0.0,
     ):
-        """Returns the unit catchment river length [m] and slope [m/m] per lowres cell. 
-        The unit catchment river is defined by the path starting at the unit catchment
-        outlet cell moving upstream following the upstream subgrid cells with the 
-        largest upstream area until it reaches the next upstream outlet cell. 
+        """Returns the river length [m], slope [m/m] and mean width for a unit catchment 
+        channel section. The channel section is defined by the path starting at the unit 
+        catchment outlet cell moving upstream following the upstream subgrid cells with 
+        the largest upstream area (default) or downstream until it reaches the next 
+        outlet cell. 
         
         A mimumum upstream area threshold can be set to discriminate river cells.
         
@@ -1072,10 +1077,12 @@ class FlwdirRaster(object):
             direction.
         elevnt : 2D array of float, optional
             elevation raster, required to calculate slope
+        rivwth : 2D array of float, optional
+            river width raster, required to calculate mean width
         uparea : 2D array of float, optional
             upstream area, if None (default) it is calculated.
         upa_min : float, optional
-            minimum upstream area threshold for streams. 
+            minimum upstream area threshold for streams [km2]. 
         
         Returns
         -------
@@ -1088,22 +1095,23 @@ class FlwdirRaster(object):
         if direction not in ["up", "down"]:
             msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
             raise ValueError(msg)
-        if elevtn is None:
-            elevtn = np.zeros(self.size, dtype=np.float32)
         if idxs_out is None:
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
-        rivlen, rivslp = unitcatchments.channel(
+        upa_kwargs = dict(optional=upa_min == 0, unit="km2")
+        rivlen1, rivslp1, rivwth1 = unitcatchments.channel(
             idxs_out=idxs_out.ravel(),
             idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
-            elevtn=self._check_data(elevtn, "elevtn"),
-            uparea=self._check_data(uparea, "uparea"),
+            elevtn=self._check_data(elevtn, "elevtn", optional=True),
+            rivwth=self._check_data(rivwth, "rivwth", optional=True),
+            uparea=self._check_data(uparea, "uparea", **upa_kwargs),
             ncol=self.shape[1],
             upa_min=upa_min,
             latlon=self.latlon,
             transform=self.transform,
             mv=self._mv,
         )
-        return rivlen.reshape(idxs_out.shape), rivslp.reshape(idxs_out.shape)
+        shape = idxs_out.shape
+        return rivlen1.reshape(shape), rivslp1.reshape(shape), rivwth1.reshape(shape)
 
     ### ELEVATION ###
 
@@ -1173,7 +1181,7 @@ class FlwdirRaster(object):
         b : float, optional
             scale parameter, by default 0.3
         upa_min : float, optional
-            minimum upstream area threshold for streams. 
+            minimum upstream area threshold for streams [km2]. 
 
         Returns
         -------

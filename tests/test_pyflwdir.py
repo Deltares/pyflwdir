@@ -267,7 +267,7 @@ def test_streams():
 
 
 def test_upscale():
-    flw1, idxs_out = flw.upscale(5, method="dmm")
+    flw1, idxs_out = flw.upscale(5, method="dmm")  # single method
     assert flw1.transform[0] == 5 * flw.transform[0]
     assert flw1.ftype == flw.ftype
     subcon = flw.upscale_connect(flw1, idxs_out)
@@ -289,11 +289,11 @@ def test_ucat():
     assert ucat.shape == flw.shape
     assert ugrd[idxs_out != flw._mv].min() > 0
     assert ugrd[idxs_out != flw._mv].min() > 0
-    rivlen, rivslp = flw.ucat_channel(idxs_out)
+    rivlen, rivslp, _ = flw.ucat_channel(idxs_out)
     assert rivlen.shape == idxs_out.shape
     assert rivlen[idxs_out != flw._mv].min() >= 0  # only zeros at boundary
-    assert np.all(rivslp[idxs_out != flw._mv] == 0)
-    rivlen, rivslp = flw.ucat_channel()
+    assert np.all(rivslp[idxs_out != flw._mv] == -9999)
+    rivlen, _, _ = flw.ucat_channel()
     assert rivlen.shape == flw.shape
     with pytest.raises(ValueError, match="Unknown method"):
         flw.ucat_outlets(5, method="unkown")
