@@ -124,11 +124,13 @@ def area(
 def channel(
     idxs_out,
     idxs_nxt,
+    idxs_prev,
     elevtn,
     rivwth,
     uparea,
     ncol,
     upa_min=0.0,
+    len_min=0.0,
     latlon=False,
     transform=gis_utils.IDENTITY,
     mv=_mv,
@@ -144,14 +146,18 @@ def channel(
     ----------
     idxs_out : ndarray of int
         linear indices of unit catchment outlet cells
-    idxs_nxt : ndarray of int
-        linear indices of downstream / main_upstream cells
+    idxs_nxt, idxs_prev : ndarray of int
+        linear indices of next and previous cells, if moving upstream next is the main 
+        upstream cell index, else the next downstream cell index and vice versa.
     uparea, elevtn, rivwth : ndarray of float, optional
         flattened upstream area [km2], elevation [m], river width [m]
     ncol : int
         number of columns in raster
     upa_min : float, optional 
         minimum upstream area threshold [km2], requires uparea
+    len_min : float, optional
+        minimum river length threshold [m] to caculate a slope, if the river is shorter
+        it is extended in both directions until this requirement is met.
     latlon : bool, optional
         True if WGS84 coordinates, by default False
     transform : affine transform
@@ -209,7 +215,42 @@ def channel(
             idx = idx1
         # write channel length
         rivlen1[i] = l
-        # write channel slope
+        # extend reach if shorter than len_min to caculate slope and/or width
+        slope_or_width = elevtn is not None or rivwth is not None
+        while l < len_min and slope_or_width:
+            # extend in nxt direction
+            idx = idx1
+            idx1 = idxs_nxt[idx]
+            if (
+                idx1 == mv
+                or idx1 == idx
+                or (uparea is not None and uparea[idx1] < upa_min)
+            ):
+                idx1 = idx
+            if idx != idx:
+                l += gis_utils.distance(idx, idx1, ncol, latlon, transform)
+                if rivwth is not None and rivwth[idx1] > 0:  # use only valid values
+                    w += rivwth[idx1]
+                    n += 1
+                if l >= len_min:
+                    break
+            # extend in prev direction
+            _idx = idx0
+            idx0 = idxs_prev[_idx]
+            if (
+                idx0 == mv
+                or idx0 == _idx
+                or (uparea is not None and uparea[idx0] < upa_min)
+            ):
+                idx0 = _idx
+            if idx0 != _idx:
+                l += gis_utils.distance(_idx, idx0, ncol, latlon, transform)
+                if rivwth is not None and rivwth[idx0] > 0:  # use only valid values
+                    w += rivwth[idx0]
+                    n += 1
+            if idx == idx1 and _idx == idx0:
+                break # break if no more up or downstream cells
+        # mean channel slope
         if elevtn is not None:
             z0 = elevtn[idx0]
             z1 = elevtn[idx1]

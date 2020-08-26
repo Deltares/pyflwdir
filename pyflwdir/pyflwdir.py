@@ -1060,6 +1060,7 @@ class FlwdirRaster(object):
         uparea=None,
         direction="up",
         upa_min=0.0,
+        len_min=0.0,
     ):
         """Returns the river length [m], slope [m/m] and mean width for a unit catchment 
         channel section. The channel section is defined by the path starting at the unit 
@@ -1083,7 +1084,11 @@ class FlwdirRaster(object):
             upstream area, if None (default) it is calculated.
         upa_min : float, optional
             minimum upstream area threshold for streams [km2]. 
-        
+        len_min : float, optional
+            minimum river length reach to caculate a slope, if the river reach is shorter
+            it is extended in both direction until this requirement is met for calculating 
+            the river slope.
+
         Returns
         -------
         2D array of float with other.shape
@@ -1101,11 +1106,13 @@ class FlwdirRaster(object):
         rivlen1, rivslp1, rivwth1 = unitcatchments.channel(
             idxs_out=idxs_out.ravel(),
             idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
+            idxs_prev=self.idxs_us_main if direction == "down" else self.idxs_ds,
             elevtn=self._check_data(elevtn, "elevtn", optional=True),
             rivwth=self._check_data(rivwth, "rivwth", optional=True),
             uparea=self._check_data(uparea, "uparea", **upa_kwargs),
             ncol=self.shape[1],
             upa_min=upa_min,
+            len_min=len_min,
             latlon=self.latlon,
             transform=self.transform,
             mv=self._mv,
