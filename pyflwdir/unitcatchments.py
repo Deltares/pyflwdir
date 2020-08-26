@@ -249,7 +249,7 @@ def channel(
                     w += rivwth[idx0]
                     n += 1
             if idx == idx1 and _idx == idx0:
-                break # break if no more up or downstream cells
+                break  # break if no more up or downstream cells
         # mean channel slope
         if elevtn is not None:
             z0 = elevtn[idx0]
