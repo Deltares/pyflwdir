@@ -227,13 +227,14 @@ def channel(
                 or (uparea is not None and uparea[idx1] < upa_min)
             ):
                 idx1 = idx
-            if idx != idx:
+            if idx1 != idx:
                 l += gis_utils.distance(idx, idx1, ncol, latlon, transform)
                 if rivwth is not None and rivwth[idx1] > 0:  # use only valid values
                     w += rivwth[idx1]
                     n += 1
-                if l >= len_min:
-                    break
+            # break if min length reached
+            if l >= len_min:
+                break
             # extend in prev direction
             _idx = idx0
             idx0 = idxs_prev[_idx]
@@ -248,13 +249,14 @@ def channel(
                 if rivwth is not None and rivwth[idx0] > 0:  # use only valid values
                     w += rivwth[idx0]
                     n += 1
+            # break if no more up or downstream cells
             if idx == idx1 and _idx == idx0:
-                break  # break if no more up or downstream cells
+                break
         # mean channel slope
         if elevtn is not None:
             z0 = elevtn[idx0]
             z1 = elevtn[idx1]
-            rivslp1[i] = 0.0 if l == 0 else (z1 - z0) / l
+            rivslp1[i] = 0.0 if l == 0 else abs(z1 - z0) / l
         # arithmetic mean channel width
         if rivwth is not None:
             rivwth1[i] = 0 if n == 0 else w / n
