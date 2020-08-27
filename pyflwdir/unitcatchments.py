@@ -215,49 +215,43 @@ def channel(
             idx = idx1
         # write channel length
         rivlen1[i] = l
-        # extend reach if shorter than len_min to caculate slope and/or width
-        slope_or_width = elevtn is not None or rivwth is not None
-        while l < len_min and slope_or_width:
-            # extend in nxt direction
-            idx = idx1
-            idx1 = idxs_nxt[idx]
-            if (
-                idx1 == mv
-                or idx1 == idx
-                or (uparea is not None and uparea[idx1] < upa_min)
-            ):
-                idx1 = idx
-            if idx1 != idx:
-                l += gis_utils.distance(idx, idx1, ncol, latlon, transform)
-                if rivwth is not None and rivwth[idx1] > 0:  # use only valid values
-                    w += rivwth[idx1]
-                    n += 1
-            # break if min length reached
-            if l >= len_min:
-                break
-            # extend in prev direction
-            _idx = idx0
-            idx0 = idxs_prev[_idx]
-            if (
-                idx0 == mv
-                or idx0 == _idx
-                or (uparea is not None and uparea[idx0] < upa_min)
-            ):
-                idx0 = _idx
-            if idx0 != _idx:
-                l += gis_utils.distance(_idx, idx0, ncol, latlon, transform)
-                if rivwth is not None and rivwth[idx0] > 0:  # use only valid values
-                    w += rivwth[idx0]
-                    n += 1
-            # break if no more up or downstream cells
-            if idx == idx1 and _idx == idx0:
-                break
-        # mean channel slope
-        if elevtn is not None:
-            z0 = elevtn[idx0]
-            z1 = elevtn[idx1]
-            rivslp1[i] = 0.0 if l == 0 else abs(z1 - z0) / l
         # arithmetic mean channel width
         if rivwth is not None:
             rivwth1[i] = 0 if n == 0 else w / n
+        # channel slope
+        if elevtn is not None:
+            # extend reach if shorter than len_min to caculate slope
+            while l < len_min:
+                # extend in nxt direction
+                idx = idx1
+                idx1 = idxs_nxt[idx]
+                if (
+                    idx1 == mv
+                    or idx1 == idx
+                    or (uparea is not None and uparea[idx1] < upa_min)
+                ):
+                    idx1 = idx
+                if idx1 != idx:
+                    l += gis_utils.distance(idx, idx1, ncol, latlon, transform)
+                # break if min length reached
+                if l >= len_min:
+                    break
+                # extend in prev direction
+                _idx = idx0
+                idx0 = idxs_prev[_idx]
+                if (
+                    idx0 == mv
+                    or idx0 == _idx
+                    or (uparea is not None and uparea[idx0] < upa_min)
+                ):
+                    idx0 = _idx
+                if idx0 != _idx:
+                    l += gis_utils.distance(_idx, idx0, ncol, latlon, transform)
+                # break if no more up or downstream cells
+                if idx == idx1 and _idx == idx0:
+                    break
+            # write absolute mean channel slope
+            z0 = elevtn[idx0]
+            z1 = elevtn[idx1]
+            rivslp1[i] = 0.0 if l == 0 else abs(z1 - z0) / l
     return rivlen1, rivslp1, rivwth1
