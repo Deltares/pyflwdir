@@ -4,7 +4,7 @@
 import pytest
 import numpy as np
 
-from pyflwdir import unitcatchments as ucat
+from pyflwdir import subgrid as ucat
 from pyflwdir import core, streams
 
 # test data

@@ -17,7 +17,7 @@ from pyflwdir import (
     dem,
     gis_utils,
     regions,
-    unitcatchments,
+    subgird,
     upscale,
     streams,
 )
@@ -1009,7 +1009,7 @@ class FlwdirRaster(object):
         if method not in methods:
             methodstr = "', '".join(methods)
             raise ValueError(f"Unknown method: {method}, select from: '{methodstr}'")
-        idxs_out, shape1 = unitcatchments.outlets(
+        idxs_out, shape1 = subgird.outlets(
             idxs_ds=self.idxs_ds,
             uparea=self._check_data(uparea, "uparea"),
             cellsize=int(cellsize),
@@ -1038,7 +1038,7 @@ class FlwdirRaster(object):
         if unit not in AREA_FACTORS:
             fstr = '", "'.join(AREA_FACTORS.keys())
             raise ValueError(f'Unknown unit: {unit}, select from "{fstr}"')
-        ucat_map, ucat_are = unitcatchments.area(
+        ucat_map, ucat_are = subgird.area(
             idxs_out.ravel(),
             self.idxs_ds,
             self.idxs_seq,
@@ -1103,7 +1103,7 @@ class FlwdirRaster(object):
         if idxs_out is None:
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
         upa_kwargs = dict(optional=upa_min == 0, unit="km2")
-        rivlen1, rivslp1, rivwth1 = unitcatchments.channel(
+        rivlen1, rivslp1, rivwth1 = subgird.channel(
             idxs_out=idxs_out.ravel(),
             idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             idxs_prev=self.idxs_us_main if direction == "down" else self.idxs_ds,
