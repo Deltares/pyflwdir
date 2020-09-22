@@ -66,9 +66,9 @@ def map_celledge(subidxs_ds, subshape, cellsize, mv=_mv):
 
 @njit
 def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
-    """Returns exit highres cell indices of lowres cells according to the 
-    double maximum method (DMM). 
-    
+    """Returns exit highres cell indices of lowres cells according to the
+    double maximum method (DMM).
+
     Parameters
     ----------
     subidxs_ds : 1D-array of int
@@ -84,7 +84,7 @@ def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
 
     Returns
     -------
-    1D array of int 
+    1D array of int
         highres indices of representative cells
     """
     _, subncol = subshape
@@ -114,10 +114,10 @@ def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
 
 @njit
 def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
-    """Returns next downstream lowres index by tracing a representative cell 
-    to where it leaves a buffered area around the lowres cell according to the 
-    double maximum method (DMM). 
-    
+    """Returns next downstream lowres index by tracing a representative cell
+    to where it leaves a buffered area around the lowres cell according to the
+    double maximum method (DMM).
+
     Parameters
     ----------
     subidxs_rep : 1D-array of int
@@ -171,14 +171,14 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
 
 
 def dmm(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
-    """Returns the upscaled next downstream index based on the 
+    """Returns the upscaled next downstream index based on the
     double maximum method (DMM) [1].
 
-    ...[1] Olivera F, Lear M S, Famiglietti J S and Asante K 2002 
-    "Extracting low-resolution river networks from high-resolution digital 
-    elevation models" Water Resour. Res. 38 13-1-13–8 
+    ...[1] Olivera F, Lear M S, Famiglietti J S and Asante K 2002
+    "Extracting low-resolution river networks from high-resolution digital
+    elevation models" Water Resour. Res. 38 13-1-13–8
     Online: http://doi.wiley.com/10.1029/2001WR000726
-    
+
     Parameters
     ----------
     subidxs_ds : 1D-array of int
@@ -192,7 +192,7 @@ def dmm(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
 
     Returns
     -------
-    lowres linear indices of next downstream 
+    lowres linear indices of next downstream
         1D-array of int
     highres linear indices of representative cells
         1D-array of int
@@ -244,8 +244,8 @@ def map_effare(subidxs_ds, subshape, cellsize, mv=_mv):
 @njit
 def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
     """Returns representative highres cell indices of lowres cells
-    according to the effective area method. 
-    
+    according to the effective area method.
+
     Parameters
     ----------
     subidxs_ds : 1D-array of int
@@ -290,9 +290,9 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
 
 @njit
 def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
-    """Returns next downstream lowres index by tracing a representative cell to 
-    the next downstream effective area according to the effective area method. 
-    
+    """Returns next downstream lowres index by tracing a representative cell to
+    the next downstream effective area according to the effective area method.
+
     Parameters
     ----------
     subidxs_rep : 1D-array of int
@@ -308,7 +308,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
 
     Returns
     -------
-    lowres linear indices of next downstream cell : 1D-array    
+    lowres linear indices of next downstream cell : 1D-array
     """
     _, subncol = subshape
     nrow, ncol = shape
@@ -335,12 +335,12 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
 
 
 def eam(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
-    """Returns the upscaled next downstream index based on the 
+    """Returns the upscaled next downstream index based on the
     effective area method (EAM) [1].
 
-    ...[1] Yamazaki D, Masutomi Y, Oki T and Kanae S 2008 
+    ...[1] Yamazaki D, Masutomi Y, Oki T and Kanae S 2008
     "An Improved Upscaling Method to Construct a Global River Map" APHW
-    
+
     Parameters
     ----------
     subidxs_ds : 1D-array of int
@@ -374,12 +374,18 @@ def eam(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
 #### CONNECTING OUTLETS SCALING METHOD ####
 @njit
 def com_outlets(
-    subidxs_rep, subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv,
+    subidxs_rep,
+    subidxs_ds,
+    subuparea,
+    subshape,
+    shape,
+    cellsize,
+    mv=_mv,
 ):
     """Returns highres outlet cell indices of lowres cells which are located
     at the edge of the lowres cell downstream of the representative cell
-    according to the connecting outlets method (COM). 
-    
+    according to the connecting outlets method (COM).
+
     Parameters
     ----------
     subidxs_rep : 1D-array of int
@@ -425,11 +431,11 @@ def com_outlets(
 
 @njit
 def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
-    """Returns next downstream lowres index according to connecting outlets 
-    method (COM). Every outlet highres cell is traced to the next downstream 
-    highres outlet cell. If this lays outside d8, we fallback to the next 
+    """Returns next downstream lowres index according to connecting outlets
+    method (COM). Every outlet highres cell is traced to the next downstream
+    highres outlet cell. If this lays outside d8, we fallback to the next
     downstream effective area.
-    
+
     Parameters
     ----------
     subidxs_out : 1D-array of int
@@ -445,8 +451,8 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
 
     Returns
     -------
-    lowres linear indices of next downstream, disconnected cells 
-        Tuple of 1D-array    
+    lowres linear indices of next downstream, disconnected cells
+        Tuple of 1D-array
     """
     _, subncol = subshape
     nrow, ncol = shape
@@ -485,7 +491,12 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
 
 @njit
 def next_outlet(
-    subidx, subidxs_ds, subidxs_out, subncol, cellsize, ncol,
+    subidx,
+    subidxs_ds,
+    subidxs_out,
+    subncol,
+    cellsize,
+    ncol,
 ):
     """Returns lowres and highres indices of next outlet"""
     while True:
@@ -515,7 +526,7 @@ def com_relocate_outlets(
 ):
     """Relocate subgrid outlet cells in order to connect the
     subgrid outlets of disconnected cells.
-    
+
     Parameters
     ----------
     idxs_fix : 1D-array of int
@@ -538,10 +549,10 @@ def com_relocate_outlets(
 
     Returns
     -------
-    lowres linear indices of next downstream 
+    lowres linear indices of next downstream
         1D-array of int
     highres linear indices of outlet cells
-        1D-array of int  
+        1D-array of int
     """
     _, subncol = subshape
     _, ncol = shape
@@ -960,8 +971,8 @@ def new_outlet(
     mv=_mv,
 ):
     """Returns an alternative outlet subgrid cell which is connected to neighboring
-    outlet cell in d8, not located on any existing stream, with a minimum downstream 
-    length of <minlen> and upstream area of <minupa>. This method can be 
+    outlet cell in d8, not located on any existing stream, with a minimum downstream
+    length of <minlen> and upstream area of <minupa>. This method can be
     applied to lowres head water cells (i.e. without upstream neighbors)."""
     # streams array: outlets cell indices (>=0) and streams (-1); nodata value is -9
     path0 = np.full(1, mv, dtype=subidxs_ds.dtype)
@@ -1015,8 +1026,8 @@ def com_optimize_rivlen(
     minupa=0,
     mv=_mv,
 ):
-    """Reduces the number of cells with smaller than <minlen> downstream 
-    subgrid length by finding an alternative outlet for that cell or the next downstream 
+    """Reduces the number of cells with smaller than <minlen> downstream
+    subgrid length by finding an alternative outlet for that cell or the next downstream
     cell."""
     _, subncol = subshape
     _, ncol = shape
@@ -1203,7 +1214,7 @@ def com2(
     minupa=None,
     mv=_mv,
 ):
-    """Returns the upscaled next downstream index based on the 
+    """Returns the upscaled next downstream index based on the
     connecting outlets method (COM).
 
     Parameters
@@ -1218,11 +1229,11 @@ def com2(
         size of lowres cell measured in higres cells
     iter : bool
         If True apply iterative procedures to relocate outletes, optimize river lengths
-        and minimize upstream area errors in order to improve the overal upscaled flow 
+        and minimize upstream area errors in order to improve the overal upscaled flow
         direction quality. By default True.
     minlen : float, optional
-        Minimum downstream subgrid distance between outlet cells. Used to minimize the 
-        number of cells with a downstream subgrid distance below this treshold. By 
+        Minimum downstream subgrid distance between outlet cells. Used to minimize the
+        number of cells with a downstream subgrid distance below this treshold. By
         default cellsize * 0.25.
     minupa : float, optional
         Minimum upstream area for head water cells. By default cellsize^2 * 0.25.
@@ -1320,9 +1331,9 @@ def com(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
 
 @njit
 def connected(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
-    """Returns an array with ones (zeros) if sugrid outlet/representative cells are 
-    connected (disconnected) in D8, cells with missing values are set to -1. 
-    
+    """Returns an array with ones (zeros) if sugrid outlet/representative cells are
+    connected (disconnected) in D8, cells with missing values are set to -1.
+
     Parameters
     ----------
     subidxs_out : 1D-array of int with same size as idxs_ds

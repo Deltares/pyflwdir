@@ -74,7 +74,7 @@ def xy(transform, rows, cols, offset="center"):
     offset : {'center', 'ul', 'ur', 'll', 'lr'}
         Determines if the returned coordinates are for the center of the
         pixel or for a corner.
-    
+
     Returns
     -------
     xs : ndarray of float
@@ -120,7 +120,7 @@ def rowcol(transform, xs, ys, op=np.floor, precision=None):
         Function to convert fractional pixels to whole numbers
     precision : int, optional
         Decimal places of precision in indexing, as in `round()`.
-    
+
     Returns
     -------
     rows : ndarray of ints
@@ -239,7 +239,7 @@ def affine_to_coords(affine, shape):
 
 ## DISTANCES // AREAS
 def reggrid_dx(lats, lons):
-    """returns a the cell widths (dx) for a regular grid with cell centers 
+    """returns a the cell widths (dx) for a regular grid with cell centers
     lats & lons [m]."""
     xres = np.abs(np.mean(np.diff(lons)))
     dx = degree_metres_x(lats) * xres
@@ -247,7 +247,7 @@ def reggrid_dx(lats, lons):
 
 
 def reggrid_dy(lats, lons):
-    """returns a the cell heights (dy) for a regular grid with cell centers 
+    """returns a the cell heights (dy) for a regular grid with cell centers
     lats & lons [m]."""
     yres = np.abs(np.mean(np.diff(lats)))
     dy = degree_metres_y(lats) * yres
@@ -255,7 +255,7 @@ def reggrid_dy(lats, lons):
 
 
 def reggrid_area(lats, lons):
-    """returns a the cell area for a regular grid with cell centres 
+    """returns a the cell area for a regular grid with cell centres
     lats & lons [m2]."""
     xres = np.abs(np.mean(np.diff(lons)))
     yres = np.abs(np.mean(np.diff(lats)))
@@ -265,7 +265,7 @@ def reggrid_area(lats, lons):
 
 @njit
 def cellarea(lat, xres, yres):
-    """returns the area of cell with a given resolution (resx,resy) at a given 
+    """returns the area of cell with a given resolution (resx,resy) at a given
     cell center latitude [m2]."""
     l1 = np.radians(lat - np.abs(yres) / 2.0)
     l2 = np.radians(lat + np.abs(yres) / 2.0)
@@ -275,7 +275,7 @@ def cellarea(lat, xres, yres):
 
 @njit
 def degree_metres_y(lat):
-    """"returns the verical length of a degree in metres at 
+    """ "returns the verical length of a degree in metres at
     a given latitude."""
     m1 = 111132.92  # latitude calculation term 1
     m2 = -559.82  # latitude calculation term 2
@@ -294,7 +294,7 @@ def degree_metres_y(lat):
 
 @njit
 def degree_metres_x(lat):
-    """"returns the horizontal length of a degree in metres at 
+    """ "returns the horizontal length of a degree in metres at
     a given latitude."""
     p1 = 111412.84  # longitude calculation term 1
     p2 = -93.5  # longitude calculation term 2
@@ -311,9 +311,9 @@ def degree_metres_x(lat):
 
 @njit
 def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
-    """Return the the length between linear indices idx0 and idx1 on a regular raster 
+    """Return the the length between linear indices idx0 and idx1 on a regular raster
     defined by the affine transform.
-    
+
     Parameters
     ----------
     idx0, idx1 : int
@@ -362,7 +362,14 @@ def vectorize(idxs_ds, xs, ys, mask=None, crs=None, mv=np.intp(-1)):
         idx_ds = idxs_ds[idx0]
         if idx_ds == mv or (mask is not None and mask[idx0] != 1):
             continue
-        geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
+        geoms.append(
+            LineString(
+                [
+                    (xs[idx0], ys[idx0]),
+                    (xs[idx_ds], ys[idx_ds]),
+                ]
+            )
+        )
         idxs.append(idx0)
         pits.append(idx_ds == idx0)
     gdf = gp.GeoDataFrame(index=idxs, geometry=geoms, crs=crs)

@@ -47,13 +47,13 @@ def _mean(data, nodata):
 @njit
 def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_mv):
     """Take the moving weighted average over the flow direction network.
-    
+
     Parameters
     ----------
     data : 1D (sparse) array
         values to be averaged
     weights : 1D (sparse) array
-        weights 
+        weights
     n : int
         number of up/downstream neighbors to include
     idxs_ds, idxs_us_main : array of int
@@ -61,8 +61,8 @@ def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_
     upa_min : float, optional
         Minimum upstream area for upstream neighbors to be considered, by default 0.0
     nodata : float, optional
-        Nodata values which is ignored when calculating the average, by default -9999.0
-    
+        Nodata value which is ignored when calculating the average, by default -9999.0
+
     Returns
     -------
     1D array
@@ -82,13 +82,13 @@ def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_
 
 @njit
 def upstream_sum(idxs_ds, data, nodata=-9999.0, mv=_mv):
-    """Returns sum of first upstream values 
-    
+    """Returns sum of first upstream values
+
     Parameters
     ----------
     idxs_ds : 1D-array of uint32
         sparse indices of downstream cells
-    
+
     Returns
     -------
     2D-array of uint32

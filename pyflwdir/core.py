@@ -18,8 +18,7 @@ _mv = np.intp(-1)
 
 @njit
 def rank(idxs_ds, mv=_mv):
-    """Returns the rank, i.e. the distance counted in number of cells from the outlet.
-    """
+    """Returns the rank, i.e. the distance counted in number of cells from the outlet."""
     ranks = np.full(idxs_ds.size, -9999, dtype=np.int32)
     n = 0
     idxs_lst = []
@@ -68,7 +67,7 @@ def upstream_count(idxs_ds, mv=_mv):
 
 @njit
 def upstream_matrix(idxs_ds, mv=_mv):
-    """Returns a 2D array with upstream cell indices for each cell. 
+    """Returns a 2D array with upstream cell indices for each cell.
     The shape of the array is (idxs_ds.size, max number of upstream cells per cell).
     """
     n_up = upstream_count(idxs_ds, mv=mv)
@@ -124,22 +123,22 @@ def idxs_seq(idxs_ds, idxs_pit, shape, mv=_mv):
 
 @njit
 def main_upstream(idxs_ds, uparea, upa_min=0.0, mv=_mv):
-    """Returns the index of the upstream cell with the largest uparea, 
+    """Returns the index of the upstream cell with the largest uparea,
     -1 if no upstream cells (i.e. at headwater).
-    
+
     Parameters
     ----------
     idxs_ds : 1D-array of int
         index of next downstream cell
     uparea : 1D-array
         upstream area
-    upa_min : float, optional 
+    upa_min : float, optional
         minimum upstream area threshold
-    
+
     Returns
     -------
     1D-array of int
-        main upstream indices 
+        main upstream indices
     """
     idxs_us_main = np.full(idxs_ds.size, mv, dtype=idxs_ds.dtype)
     upa_main = np.full(idxs_ds.size, upa_min, dtype=uparea.dtype)
@@ -155,9 +154,9 @@ def main_upstream(idxs_ds, uparea, upa_min=0.0, mv=_mv):
 
 @njit
 def main_tributary(idxs_ds, idxs_us_main, uparea, upa_min=0.0, mv=_mv):
-    """Returns the index of the upstream cell with 
+    """Returns the index of the upstream cell with
     the second largest upstream area, i.e. the largest tributary.
-    
+
     Parameters
     ----------
     idxs_ds : 1D-array of int
@@ -166,13 +165,13 @@ def main_tributary(idxs_ds, idxs_us_main, uparea, upa_min=0.0, mv=_mv):
         index of main upstream cell
     uparea : 1D-array
         upstream area values
-    upa_min : float, optional 
+    upa_min : float, optional
         minimum upstream area threshold
-    
+
     Returns
     -------
     1D-array of int
-        linear indices of tributaries 
+        linear indices of tributaries
     """
     idxs_us_trib = np.full(idxs_ds.size, mv, dtype=idxs_ds.dtype)
     upa_main = np.full(idxs_ds.size, upa_min, dtype=uparea.dtype)
@@ -247,8 +246,8 @@ def _d8_idx(idx0, shape):
 @njit
 def _upstream_d8_idx(idx0, idxs_ds, shape):
     """Returns a numpy array with linear indices of upstream neighbors.
-    NOTE: This method only works for D8 type of flow direciton data. If upstream 
-    neighbours our outside the dirict 8 neighbors the returned array  will be 
+    NOTE: This method only works for D8 type of flow direciton data. If upstream
+    neighbours our outside the dirict 8 neighbors the returned array  will be
     incomplete."""
     idxs_lst = list()
     for idx in _d8_idx(idx0, shape):
@@ -272,7 +271,7 @@ def _trace(
     """Returns indices of downstream cells, including the start cell, until:
     - a pit (downstream) / no upstream cell is found (upstream)
     - a True cell is found in mask OR
-    - the distance from the start point is larger than max_length. 
+    - the distance from the start point is larger than max_length.
 
     Parameters
     ----------
@@ -292,10 +291,10 @@ def _trace(
         True if WGS84 coordinates, by default False
     transform : affine transform
         Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
-    
+
     Returns
     -------
-    1D-array of int  
+    1D-array of int
         linear indices of trace
     float
         distance between start and end cell
@@ -320,7 +319,7 @@ def _trace(
 
 @njit
 def _window(idx0, n, idxs_ds, idxs_us_main, mv=_mv):
-    """Returns the indices of between the nth upstream to nth downstream cell from 
+    """Returns the indices of between the nth upstream to nth downstream cell from
     the current cell. Upstream cells are with based on the  _main_upstream method."""
     idxs = np.full(n * 2 + 1, mv, idxs_ds.dtype)
     idxs[n] = idx0
@@ -348,7 +347,7 @@ def _tributaries(
 ):
     """Return indices of tributaries upstream from idx0 and downstream
     from idx_end.
-    
+
     Parameters
     ----------
     idx0 : int
@@ -359,7 +358,7 @@ def _tributaries(
         array with upstream area values
     idx_end : int, optional
         linear index of most upstream, by default missing value, i.e.: no fixed cell
-    upa_min : float, optional 
+    upa_min : float, optional
         minimum upstream area threshold for tributary
     n : int, optional
         number of tributaries, by default 0
@@ -421,7 +420,7 @@ def path(
     Returns
     -------
     list of 1D-array of int
-        linear indices of path 
+        linear indices of path
     1D-array of float
         distance between start and end cell
     """
@@ -457,10 +456,10 @@ def snap(
     mv=_mv,
 ):
     """Returns indices the most down-/upstream cell where mask is True or is pit.
-    
-    See _trace method for parameters, except this function works based on a 
+
+    See _trace method for parameters, except this function works based on a
     1D-array linear indices.
-    
+
     Returns
     -------
     1D-array of int

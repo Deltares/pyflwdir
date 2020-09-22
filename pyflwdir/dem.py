@@ -23,9 +23,9 @@ def from_dem():
 def adjust_elevation(idxs_ds, seq, elevtn, mv=_mv):
     """Given a flow direction map, remove pits in the elevation map.
     Algorithm based on Yamazaki et al. (2012)
-    
-    Yamazaki, D., Baugh, C. A., Bates, P. D., Kanae, S., Alsdorf, D. E. and 
-    Oki, T.: Adjustment of a spaceborne DEM for use in floodplain hydrodynamic 
+
+    Yamazaki, D., Baugh, C. A., Bates, P. D., Kanae, S., Alsdorf, D. E. and
+    Oki, T.: Adjustment of a spaceborne DEM for use in floodplain hydrodynamic
     modeling, J. Hydrol., 436-437, 81-91, doi:10.1016/j.jhydrol.2012.02.045,
     2012.
     """
@@ -171,11 +171,11 @@ def slope(elevtn, nodata=-9999.0, latlon=False, transform=gis_utils.IDENTITY):
 
 
 def height_above_nearest_drain(idxs_ds, seq, drain, elevtn):
-    """Returns the height above the nearest drain (HAND), i.e.: the relative vertical 
-    distance (drop) to the nearest dowstream river based on drainage‐normalized 
-    topography and flowpaths. 
+    """Returns the height above the nearest drain (HAND), i.e.: the relative vertical
+    distance (drop) to the nearest dowstream river based on drainage‐normalized
+    topography and flowpaths.
 
-    Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent 
+    Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent
         Hydrol. Process. 30 320–33
 
     Parameters
@@ -205,10 +205,10 @@ def height_above_nearest_drain(idxs_ds, seq, drain, elevtn):
 
 
 def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
-    """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is 
-    scaled with upstream area following h ~ A**b.  
+    """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is
+    scaled with upstream area following h ~ A**b.
 
-    Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s 
+    Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s
         floodplains Sci. Data 6 180309
 
     Parameters
@@ -222,14 +222,14 @@ def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
     uparea : 1D array of float
         flattened upstream area raster [km2]
     upa_min : float, optional
-        minimum upstream area threshold for streams. 
+        minimum upstream area threshold for streams.
     b : float
         scale parameter
 
     Returns
     -------
     1D array of int8
-        floodplain 
+        floodplain
     """
     drainh = np.full(uparea.size, -9999.0, dtype=np.float32)
     drainz = np.full(uparea.size, -9999.0, dtype=np.float32)

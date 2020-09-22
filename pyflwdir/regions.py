@@ -71,6 +71,11 @@ def region_bounds(regions, transform=gis_utils.IDENTITY):
 def total_region_bounds(regions, transform=gis_utils.IDENTITY):
     b = region_bounds(regions, transform=transform)
     bbox = np.array(
-        [b["xmin"].min(), b["ymin"].min(), b["xmax"].max(), b["ymax"].max(),]
+        [
+            b["xmin"].min(),
+            b["ymin"].min(),
+            b["xmax"].max(),
+            b["ymax"].max(),
+        ]
     )
     return bbox
