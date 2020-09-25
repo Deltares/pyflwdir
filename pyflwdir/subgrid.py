@@ -172,7 +172,7 @@ def channel_length(
         idx = idx0
         while True:
             idx1 = idxs_nxt[idx]
-            if idx1 == mv or idx1 == idx or (mask is not None and mask[idx1]):
+            if idx1 == mv or idx1 == idx or (mask is not None and mask[idx1] == False):
                 idx1 = idx
                 break
             # update length
@@ -241,7 +241,7 @@ def channel_average(
                 idx1 == mv
                 or idx1 == idx
                 or outlets[idx1]
-                or (mask is not None and mask[idx1])
+                or (mask is not None and mask[idx1] == False)
             ):
                 break
             idxs.append(idx1)
@@ -309,7 +309,7 @@ def channel_slope(
         # move upstream on subgrid to set idx1 (upstream end)
         while l1 < length / 2:
             idx_us = idxs_us_main[idx1]
-            if idx_us == mv or (mask is not None and mask[idx_us]):
+            if idx_us == mv or (mask is not None and mask[idx_us] == False):
                 break
             l1 += gis_utils.distance(idx1, idx_us, ncol, latlon, transform)
             # next iter
@@ -317,7 +317,7 @@ def channel_slope(
         # move downstream on subgrid to set idx0 (downsteam end)
         while l0 < length / 2 and (l0 + l1) < length:
             idx_ds = idxs_ds[idx0]
-            if idx_ds == idx0 or (mask is not None and mask[idx0]):
+            if idx_ds == idx0 or (mask is not None and mask[idx0] == False):
                 break
             l0 += gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
             # next iter

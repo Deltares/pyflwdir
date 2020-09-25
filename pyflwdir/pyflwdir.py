@@ -1103,7 +1103,6 @@ class FlwdirRaster(object):
         elevtn,
         length=1000,
         mask=None,
-        direction="up",
     ):
         """Returns the subgrid river slope [m/m] estimated at unit catchment outlet
         pixel. he slope is estimated from the elevation difference between length/2
