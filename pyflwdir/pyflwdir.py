@@ -1052,11 +1052,13 @@ class FlwdirRaster(object):
         )
         return ucat_map.reshape(self.shape), ucat_are.reshape(idxs_out.shape)
 
+    def ucat_channel(self, **kwargs):
+        raise DeprecationWarning(
+            "Use subgrid_rivlen and subgrid_rivslp method instead."
+        )
+
     def subgrid_rivlen(
-        self,
-        idxs_out,
-        mask=None,
-        direction="up",
+        self, idxs_out, mask=None, direction="up",
     ):
         """Returns the subgrid river length [m] based on unit catchment outlet locations.
         A cell's subgrid river is defined by the path starting at the unit
@@ -1098,11 +1100,7 @@ class FlwdirRaster(object):
         return rivlen.reshape(shape)
 
     def subgrid_rivslp(
-        self,
-        idxs_out,
-        elevtn,
-        length=1000,
-        mask=None,
+        self, idxs_out, elevtn, length=1000, mask=None,
     ):
         """Returns the subgrid river slope [m/m] estimated at unit catchment outlet
         pixel. he slope is estimated from the elevation difference between length/2
@@ -1144,13 +1142,7 @@ class FlwdirRaster(object):
         return rivslp.reshape(shape)
 
     def subgrid_rivavg(
-        self,
-        idxs_out,
-        data,
-        weights=None,
-        nodata=-9999.0,
-        mask=None,
-        direction="up",
+        self, idxs_out, data, weights=None, nodata=-9999.0, mask=None, direction="up",
     ):
         """Returns the average value over the subgrid river, based on unit catchment outlet
         locations. The subgrid river is defined by the path starting at the unit
