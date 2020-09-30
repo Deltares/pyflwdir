@@ -11,9 +11,9 @@ all = []
 
 @njit
 def fillnodata_upstream(idxs_ds, seq, data, nodata):
-    """Retuns a a copy of <data> where upstream cell with <nodata> values are filled 
-    based on the first downstream valid cell value. 
-    
+    """Retuns a a copy of <data> where upstream cell with <nodata> values are filled
+    based on the first downstream valid cell value.
+
     Parameters
     ----------
     idxs_ds : 1D-array of intp
@@ -24,7 +24,7 @@ def fillnodata_upstream(idxs_ds, seq, data, nodata):
         original data with missing values
     nodata : float, integer
         nodata value
-    
+
     Returns
     -------
     1D array of data.dtype
@@ -50,9 +50,9 @@ def basins(idxs_ds, idxs_pit, seq, ids=None):
 # @njit # NOTE does not work atm with dicts (numba 0.48)
 def pfafstetter(idx0, idxs_ds, seq, uparea, upa_min=0, depth=1, mv=_mv):
     """pfafstetter coding for single basin
-    
-    Verdin K . and Verdin J . 1999 A topological system for delineation 
-    and codification of the Earth’s river basins J. Hydrol. 218 1–12 
+
+    Verdin K . and Verdin J . 1999 A topological system for delineation
+    and codification of the Earth’s river basins J. Hydrol. 218 1–12
     Online: https://linkinghub.elsevier.com/retrieve/pii/S0022169499000116
     """
     #

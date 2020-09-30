@@ -14,7 +14,7 @@ __all__ = []
 @njit
 def accuflux(idxs_ds, seq, data, nodata):
     """Returns maps of accumulate upstream <data>
-    
+
     Parameters
     ----------
     idxs_ds : 1D-array of intp
@@ -24,7 +24,7 @@ def accuflux(idxs_ds, seq, data, nodata):
     data : 1D array
         local values to be accumulated
     nodata : float, integer
-        nodata value 
+        nodata value
 
     Returns
     -------
@@ -43,7 +43,7 @@ def accuflux(idxs_ds, seq, data, nodata):
 @njit
 def accuflux_ds(idxs_ds, seq, data, nodata):
     """Returns maps of accumulate downstream <data>
-    
+
     Parameters
     ----------
     idxs_ds : 1D-array of intp
@@ -53,7 +53,7 @@ def accuflux_ds(idxs_ds, seq, data, nodata):
     data : 1D array
         local values to be accumulated
     nodata : float, integer
-        nodata value 
+        nodata value
 
     Returns
     -------
@@ -80,10 +80,10 @@ def upstream_area(
     nodata=-9999.0,
     dtype=np.float64,
 ):
-    """Returns the accumulated upstream area, invalid cells are assinged a the nodata 
+    """Returns the accumulated upstream area, invalid cells are assinged a the nodata
     value. The arae is calculated using the transform. If latlon is True, the resolution
     is interpreted in degree and transformed to m2.
-    
+
     Parameters
     ----------
     idxs_ds : 1D-array of intp
@@ -98,7 +98,7 @@ def upstream_area(
         two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
     area_factor : float, optional
         multiplication factor for unit conversion, by default 1
-    nodata : float, optional 
+    nodata : float, optional
         nodata value, by default -9999.0
     dtype : numpy.dtype, optional
         data output type, by default numpy.float64
@@ -128,11 +128,11 @@ def upstream_area(
 
 @njit
 def stream_order(idxs_ds, seq):
-    """"Returns the cell stream order, invalid cells are assinged a nodata value of -1
-        
-    The smallest streams, which are the cells with no upstream cells, get 
-    order 1. Where two channels of order 1 join, a channel of order 2 
-    results downstream. In general, where two channels of order i join, 
+    """ "Returns the cell stream order, invalid cells are assinged a nodata value of -1
+
+    The smallest streams, which are the cells with no upstream cells, get
+    order 1. Where two channels of order 1 join, a channel of order 2
+    results downstream. In general, where two channels of order i join,
     a channel of order i+1 results
 
     Parameters
@@ -173,7 +173,7 @@ def stream_distance(
     transform=gis_utils.IDENTITY,
 ):
     """Returns distance to outlet or next downstream True cell in mask
-    
+
     Parameters
     ----------
     idxs_ds : 1D-array of intp
@@ -188,7 +188,7 @@ def stream_distance(
         True if WGS84 coordinates, by default False
     transform : affine transform
         Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
-    
+
     Returns
     -------
     1D array of float

@@ -21,7 +21,9 @@ nextxy = core_nextxy.to_array(idxs_ds, d8.shape)
 flw = pyflwdir.FlwdirRaster(idxs_ds.copy(), d8.shape, "d8", idxs_pit=idxs_pit.copy())
 
 
-@pytest.mark.parametrize("flwdir, ftype", [(d8, "d8"), (nextxy, "nextxy"),])
+@pytest.mark.parametrize(
+    "flwdir, ftype", [(d8, "d8"), (nextxy, "nextxy"),],
+)
 def test_from_to_array(flwdir, ftype):
     mask = np.ones(flwdir.shape)
     flw = pyflwdir.from_array(flwdir, mask=mask)
@@ -283,26 +285,30 @@ def test_upscale():
 
 
 def test_ucat():
+    elevtn = flw.rank
     idxs_out = flw.ucat_outlets(5)
     ucat, ugrd = flw.ucat_area(idxs_out)
+    rivlen = flw.subgrid_rivlen(idxs_out)
+    rivslp = flw.subgrid_rivslp(idxs_out, elevtn, length=1)
+    rivwth = flw.subgrid_rivavg(idxs_out, np.ones(flw.shape))
     assert ugrd.shape == idxs_out.shape
     assert ucat.shape == flw.shape
     assert ugrd[idxs_out != flw._mv].min() > 0
     assert ugrd[idxs_out != flw._mv].min() > 0
-    rivlen, rivslp, _ = flw.ucat_channel(idxs_out)
     assert rivlen.shape == idxs_out.shape
     assert rivlen[idxs_out != flw._mv].min() >= 0  # only zeros at boundary
-    assert np.all(rivslp[idxs_out != flw._mv] == -9999)
-    rivlen, _, _ = flw.ucat_channel()
-    assert rivlen.shape == flw.shape
+    assert np.all(rivslp[idxs_out != flw._mv] > 0)
+    assert np.all(rivwth[idxs_out != flw._mv] == 1)
+    rivlen1 = flw.subgrid_rivlen(idxs_out=None)
+    assert rivlen1.shape == flw.shape
     with pytest.raises(ValueError, match="Unknown method"):
         flw.ucat_outlets(5, method="unkown")
     with pytest.raises(ValueError, match="Unknown unit"):
         flw.ucat_area(idxs_out, unit="km")
     with pytest.raises(ValueError, match="size does not match"):
-        flw.ucat_channel(idxs_out, elevtn=np.ones((1, 1)))
+        flw.subgrid_rivslp(idxs_out, elevtn=np.ones((1, 1)))
     with pytest.raises(ValueError, match="Unknown flow direction"):
-        flw.ucat_channel(idxs_out, direction="unknown")
+        flw.subgrid_rivlen(idxs_out, direction="unknown")
 
 
 def test_dem():
