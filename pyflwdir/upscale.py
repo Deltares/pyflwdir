@@ -374,13 +374,7 @@ def eam(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
 #### CONNECTING OUTLETS SCALING METHOD ####
 @njit
 def com_outlets(
-    subidxs_rep,
-    subidxs_ds,
-    subuparea,
-    subshape,
-    shape,
-    cellsize,
-    mv=_mv,
+    subidxs_rep, subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv,
 ):
     """Returns highres outlet cell indices of lowres cells which are located
     at the edge of the lowres cell downstream of the representative cell
@@ -491,12 +485,7 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
 
 @njit
 def next_outlet(
-    subidx,
-    subidxs_ds,
-    subidxs_out,
-    subncol,
-    cellsize,
-    ncol,
+    subidx, subidxs_ds, subidxs_out, subncol, cellsize, ncol,
 ):
     """Returns lowres and highres indices of next outlet"""
     while True:

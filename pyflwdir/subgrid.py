@@ -189,13 +189,7 @@ def channel_length(
 
 @njit
 def channel_average(
-    idxs_out,
-    idxs_nxt,
-    data,
-    weights,
-    mask=None,
-    nodata=-9999.0,
-    mv=_mv,
+    idxs_out, idxs_nxt, data, weights, mask=None, nodata=-9999.0, mv=_mv,
 ):
     """Returns the mean channel value. The channel is defined by the flow path starting
     at the outlet pixel of each cell moving up- or downstream until it reaches the next

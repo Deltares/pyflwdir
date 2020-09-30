@@ -22,11 +22,7 @@ flw = pyflwdir.FlwdirRaster(idxs_ds.copy(), d8.shape, "d8", idxs_pit=idxs_pit.co
 
 
 @pytest.mark.parametrize(
-    "flwdir, ftype",
-    [
-        (d8, "d8"),
-        (nextxy, "nextxy"),
-    ],
+    "flwdir, ftype", [(d8, "d8"), (nextxy, "nextxy"),],
 )
 def test_from_to_array(flwdir, ftype):
     mask = np.ones(flwdir.shape)
