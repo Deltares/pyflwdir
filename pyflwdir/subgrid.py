@@ -12,7 +12,7 @@ _mv = core._mv
 __all__ = []
 
 
-def outlets(idxs_ds, uparea, cellsize, shape, method="com", mv=_mv):
+def outlets(idxs_ds, uparea, cellsize, shape, method="eam_plus", mv=_mv):
     """Returns linear indices of unit catchment outlet cells.
 
     For more information about the methods see upscale script.
@@ -27,8 +27,8 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="com", mv=_mv):
         size of unit catchment measured in no. of higres cells
     shape : tuple of int
         raster shape
-    method : {"eam", "dmm"}, optional
-        method to derive outlet cell indices, by default 'eam'
+    method : {"eam_plus", "dmm"}, optional
+        method to derive outlet cell indices, by default 'eam_plus'
 
     Returns
     -------
@@ -42,11 +42,11 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="com", mv=_mv):
     args = (idxs_ds, uparea, shape, shape_out, cellsize)
     if method.lower() == "dmm":
         idxs_out = upscale.dmm_exitcell(*args, mv=mv)
-    elif method.lower() == "com":
+    elif method.lower() == "eam_plus":
         idxs_rep = upscale.eam_repcell(*args, mv=mv)
-        idxs_out = upscale.com_outlets(idxs_rep, *args, mv=mv)
+        idxs_out = upscale.ihu_outlets(idxs_rep, *args, mv=mv)
     else:
-        raise ValueError(f'Method {method} unknown, choose from ["eam", "dmm"]')
+        raise ValueError(f'Method {method} unknown, choose from ["eam_plus", "dmm"]')
     return idxs_out, shape_out
 
 
@@ -189,7 +189,13 @@ def channel_length(
 
 @njit
 def channel_average(
-    idxs_out, idxs_nxt, data, weights, mask=None, nodata=-9999.0, mv=_mv,
+    idxs_out,
+    idxs_nxt,
+    data,
+    weights,
+    mask=None,
+    nodata=-9999.0,
+    mv=_mv,
 ):
     """Returns the mean channel value. The channel is defined by the flow path starting
     at the outlet pixel of each cell moving up- or downstream until it reaches the next
@@ -340,11 +346,11 @@ def channel(
     transform=gis_utils.IDENTITY,
     mv=_mv,
 ):
-    """Returns the channel length and slope per channel segment which is defined by the 
-    path starting at the outlet cell moving upstream following the upstream cells with 
-    the largest upstream area until it reaches the next upstream outlet cell. 
-    
-    A mimumum upstream area threshold <upa_min> can be set to define subgrid channel 
+    """Returns the channel length and slope per channel segment which is defined by the
+    path starting at the outlet cell moving upstream following the upstream cells with
+    the largest upstream area until it reaches the next upstream outlet cell.
+
+    A mimumum upstream area threshold <upa_min> can be set to define subgrid channel
     cells.
 
     Parameters
@@ -352,13 +358,13 @@ def channel(
     idxs_out : ndarray of int
         linear indices of unit catchment outlet cells
     idxs_nxt, idxs_prev : ndarray of int
-        linear indices of next and previous cells, if moving upstream next is the main 
+        linear indices of next and previous cells, if moving upstream next is the main
         upstream cell index, else the next downstream cell index and vice versa.
     uparea, elevtn, rivwth : ndarray of float, optional
         flattened upstream area [km2], elevation [m], river width [m]
     ncol : int
         number of columns in raster
-    upa_min : float, optional 
+    upa_min : float, optional
         minimum upstream area threshold [km2], requires uparea
     len_min : float, optional
         minimum river length threshold [m] to caculate a slope, if the river is shorter
@@ -373,9 +379,9 @@ def channel(
     rivlen1 : 1D array of float
         channel section length [m]
     rivslp1 : 1D array of float
-        channel section slope [m/m] 
+        channel section slope [m/m]
     rivwth1 : 1D array of float
-        mean channel section width [m] 
+        mean channel section width [m]
     """
     # temp binary array with outlets
     outlets = np.array([np.bool(0) for _ in range(idxs_nxt.size)])

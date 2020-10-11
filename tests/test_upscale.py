@@ -22,7 +22,7 @@ from test_core import test_data
 parsed, flwdir = test_data[0]
 idxs_ds, idxs_pit, seq, _, mv = [p.copy() for p in parsed]
 cellsize = 5
-tests = [("dmm", 7), ("eam", 3), ("com", 1), ("com2", 0)]
+tests = [("dmm", 7), ("eam", 3), ("eam_plus", 1), ("ihu", 0)]
 
 # caculate upstream area and basin
 upa = streams.upstream_area(idxs_ds, seq, flwdir.shape[1], dtype=np.int32)

@@ -373,12 +373,18 @@ def eam(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
 
 #### CONNECTING OUTLETS SCALING METHOD ####
 @njit
-def com_outlets(
-    subidxs_rep, subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv,
+def ihu_outlets(
+    subidxs_rep,
+    subidxs_ds,
+    subuparea,
+    subshape,
+    shape,
+    cellsize,
+    mv=_mv,
 ):
     """Returns highres outlet cell indices of lowres cells which are located
     at the edge of the lowres cell downstream of the representative cell
-    according to the connecting outlets method (COM).
+    according to the iterative hydrography upscaling method (IHU).
 
     Parameters
     ----------
@@ -424,9 +430,9 @@ def com_outlets(
 
 
 @njit
-def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
-    """Returns next downstream lowres index according to connecting outlets
-    method (COM). Every outlet highres cell is traced to the next downstream
+def ihu_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
+    """Returns next downstream lowres index according to the iterative hydrography
+    upscaling method (IHU). Every outlet highres cell is traced to the next downstream
     highres outlet cell. If this lays outside d8, we fallback to the next
     downstream effective area.
 
@@ -485,7 +491,12 @@ def com_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
 
 @njit
 def next_outlet(
-    subidx, subidxs_ds, subidxs_out, subncol, cellsize, ncol,
+    subidx,
+    subidxs_ds,
+    subidxs_out,
+    subncol,
+    cellsize,
+    ncol,
 ):
     """Returns lowres and highres indices of next outlet"""
     while True:
@@ -502,7 +513,7 @@ def next_outlet(
 
 
 @njit
-def com_relocate_outlets(
+def ihu_relocate_outlets(
     idxs_fix,
     idxs_ds,
     subidxs_out,
@@ -1003,7 +1014,7 @@ def new_outlet(
 
 
 @njit
-def com_optimize_rivlen(
+def ihu_optimize_rivlen(
     idxs_ds,
     subidxs_out,
     subidxs_ds,
@@ -1104,7 +1115,7 @@ def com_optimize_rivlen(
 
 
 @njit
-def com_minimize_error(
+def ihu_minimize_error(
     streams,
     idxs_ds,
     subidxs_out,
@@ -1193,7 +1204,7 @@ def com_minimize_error(
     return idxs_ds, subidxs_out
 
 
-def com2(
+def ihu(
     subidxs_ds,
     subuparea,
     subshape,
@@ -1204,7 +1215,7 @@ def com2(
     mv=_mv,
 ):
     """Returns the upscaled next downstream index based on the
-    connecting outlets method (COM).
+    iterative hydrography upscaling (IHU).
 
     Parameters
     ----------
@@ -1252,7 +1263,7 @@ def com2(
         mv=mv,
     )
     # get highres outlet cells
-    subidxs_out = com_outlets(
+    subidxs_out = ihu_outlets(
         subidxs_rep=subidxs_rep,
         subidxs_ds=subidxs_ds,
         subuparea=subuparea,
@@ -1262,7 +1273,7 @@ def com2(
         mv=mv,
     )
     # get next downstream lowres index
-    idxs_ds, idxs_fix = com_nextidx(
+    idxs_ds, idxs_fix = ihu_nextidx(
         subidxs_out=subidxs_out,
         subidxs_ds=subidxs_ds,
         subshape=subshape,
@@ -1272,7 +1283,7 @@ def com2(
     )
     if iter:
         for _ in range(5):
-            idxs_ds, subidxs_out, idxs_fix1 = com_relocate_outlets(
+            idxs_ds, subidxs_out, idxs_fix1 = ihu_relocate_outlets(
                 idxs_fix=idxs_fix,
                 idxs_ds=idxs_ds,
                 subidxs_out=subidxs_out,
@@ -1286,7 +1297,7 @@ def com2(
             if idxs_fix1.size == 0 or idxs_fix1.size == idxs_fix.size:
                 break
             idxs_fix = idxs_fix1
-        idxs_ds, subidxs_out, streams = com_optimize_rivlen(
+        idxs_ds, subidxs_out, streams = ihu_optimize_rivlen(
             idxs_ds=idxs_ds,
             subidxs_out=subidxs_out,
             subidxs_ds=subidxs_ds,
@@ -1298,7 +1309,7 @@ def com2(
             minupa=minupa,
             mv=mv,
         )
-        idxs_ds, subidxs_out = com_minimize_error(
+        idxs_ds, subidxs_out = ihu_minimize_error(
             streams=streams,
             idxs_ds=idxs_ds,
             subidxs_out=subidxs_out,
@@ -1314,8 +1325,8 @@ def com2(
     return idxs_ds, subidxs_out, shape
 
 
-def com(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
-    return com2(subidxs_ds, subuparea, subshape, cellsize, iter=False, mv=mv)
+def eam_plus(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
+    return ihu(subidxs_ds, subuparea, subshape, cellsize, iter=False, mv=mv)
 
 
 @njit
