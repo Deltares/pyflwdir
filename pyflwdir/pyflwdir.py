@@ -6,6 +6,7 @@ from affine import Affine
 import pprint
 import pickle
 import logging
+import warning
 from pyflwdir import gis_utils as gis
 from pyflwdir import (
     arithmetics,
@@ -1052,10 +1053,80 @@ class FlwdirRaster(object):
         )
         return ucat_map.reshape(self.shape), ucat_are.reshape(idxs_out.shape)
 
-    def ucat_channel(self, **kwargs):
-        raise DeprecationWarning(
-            "Use subgrid_rivlen and subgrid_rivslp method instead."
+    #TODO remove in v0.5
+    def ucat_channel(
+        self,
+        idxs_out=None,
+        elevtn=None,
+        rivwth=None,
+        uparea=None,
+        direction="up",
+        upa_min=0.0,
+        len_min=0.0,
+    ):
+        """NOTE: this method will be deprecated from v0.5
+        
+        Returns the river length [m], slope [m/m] and mean width for a unit catchment 
+        channel section. The channel section is defined by the path starting at the unit 
+        catchment outlet cell moving upstream following the upstream subgrid cells with 
+        the largest upstream area (default) or downstream until it reaches the next 
+        outlet cell. 
+        
+        A mimumum upstream area threshold can be set to discriminate river cells.
+        
+        Parameters
+        ----------
+        idxs_out : 2D array of int, optional
+            linear indices of unit catchment outlets, if None (default) all valid 
+            indices will be passed computing the cell length and slope in upstream
+            direction.
+        elevnt : 2D array of float, optional
+            elevation raster, required to calculate slope
+        rivwth : 2D array of float, optional
+            river width raster, required to calculate mean width
+        uparea : 2D array of float, optional
+            upstream area, if None (default) it is calculated.
+        upa_min : float, optional
+            minimum upstream area threshold for streams [km2]. 
+        len_min : float, optional
+            minimum river length reach to caculate a slope, if the river reach is shorter
+            it is extended in both direction until this requirement is met for calculating 
+            the river slope.
+
+        Returns
+        -------
+        2D array of float with other.shape
+            subgrid river length [m]
+        2D array of float with other.shape
+            subgrid river slope [m/m]
+        """
+        warning.warn(
+            "Ucat_channel will be deprecated in v0.5. Use subgrid_rivlen and subgrid_rivslp instead.",
+            PendingDeprecationWarning,
         )
+        direction = str(direction).lower()
+        if direction not in ["up", "down"]:
+            msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
+            raise ValueError(msg)
+        if idxs_out is None:
+            idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
+        upa_kwargs = dict(optional=upa_min == 0, unit="km2")
+        rivlen1, rivslp1, rivwth1 = subgrid.channel(
+            idxs_out=idxs_out.ravel(),
+            idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
+            idxs_prev=self.idxs_us_main if direction == "down" else self.idxs_ds,
+            elevtn=self._check_data(elevtn, "elevtn", optional=True),
+            rivwth=self._check_data(rivwth, "rivwth", optional=True),
+            uparea=self._check_data(uparea, "uparea", **upa_kwargs),
+            ncol=self.shape[1],
+            upa_min=upa_min,
+            len_min=len_min,
+            latlon=self.latlon,
+            transform=self.transform,
+            mv=self._mv,
+        )
+        shape = idxs_out.shape
+        return rivlen1.reshape(shape), rivslp1.reshape(shape), rivwth1.reshape(shape)
 
     def subgrid_rivlen(
         self, idxs_out, mask=None, direction="up",
