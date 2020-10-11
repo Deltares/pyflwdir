@@ -16,7 +16,7 @@ upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
 idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
 elv = rank
 
-test = [("com", 5), ("", 1), ("dmm", 4)]
+test = [("eam_plus", 5), ("", 1), ("dmm", 4)]
 
 
 @pytest.mark.parametrize("method, cellsize", test)

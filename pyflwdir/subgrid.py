@@ -12,7 +12,7 @@ _mv = core._mv
 __all__ = []
 
 
-def outlets(idxs_ds, uparea, cellsize, shape, method="com", mv=_mv):
+def outlets(idxs_ds, uparea, cellsize, shape, method="eam_plus", mv=_mv):
     """Returns linear indices of unit catchment outlet cells.
 
     For more information about the methods see upscale script.
@@ -27,8 +27,8 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="com", mv=_mv):
         size of unit catchment measured in no. of higres cells
     shape : tuple of int
         raster shape
-    method : {"eam", "dmm"}, optional
-        method to derive outlet cell indices, by default 'eam'
+    method : {"eam_plus", "dmm"}, optional
+        method to derive outlet cell indices, by default 'eam_plus'
 
     Returns
     -------
@@ -42,11 +42,11 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="com", mv=_mv):
     args = (idxs_ds, uparea, shape, shape_out, cellsize)
     if method.lower() == "dmm":
         idxs_out = upscale.dmm_exitcell(*args, mv=mv)
-    elif method.lower() == "com":
+    elif method.lower() == "eam_plus":
         idxs_rep = upscale.eam_repcell(*args, mv=mv)
-        idxs_out = upscale.com_outlets(idxs_rep, *args, mv=mv)
+        idxs_out = upscale.ihu_outlets(idxs_rep, *args, mv=mv)
     else:
-        raise ValueError(f'Method {method} unknown, choose from ["eam", "dmm"]')
+        raise ValueError(f'Method {method} unknown, choose from ["eam_plus", "dmm"]')
     return idxs_out, shape_out
 
 
@@ -189,7 +189,13 @@ def channel_length(
 
 @njit
 def channel_average(
-    idxs_out, idxs_nxt, data, weights, mask=None, nodata=-9999.0, mv=_mv,
+    idxs_out,
+    idxs_nxt,
+    data,
+    weights,
+    mask=None,
+    nodata=-9999.0,
+    mv=_mv,
 ):
     """Returns the mean channel value. The channel is defined by the flow path starting
     at the outlet pixel of each cell moving up- or downstream until it reaches the next
@@ -322,3 +328,141 @@ def channel_slope(
         z1 = elevtn[idx1]
         rivslp[i] = 0.0 if l == 0 else abs(z1 - z0) / l
     return rivslp
+
+
+# TODO remove in v0.5
+@njit
+def channel(
+    idxs_out,
+    idxs_nxt,
+    idxs_prev,
+    elevtn,
+    rivwth,
+    uparea,
+    ncol,
+    upa_min=0.0,
+    len_min=0.0,
+    latlon=False,
+    transform=gis_utils.IDENTITY,
+    mv=_mv,
+):
+    """Returns the channel length and slope per channel segment which is defined by the
+    path starting at the outlet cell moving upstream following the upstream cells with
+    the largest upstream area until it reaches the next upstream outlet cell.
+
+    A mimumum upstream area threshold <upa_min> can be set to define subgrid channel
+    cells.
+
+    Parameters
+    ----------
+    idxs_out : ndarray of int
+        linear indices of unit catchment outlet cells
+    idxs_nxt, idxs_prev : ndarray of int
+        linear indices of next and previous cells, if moving upstream next is the main
+        upstream cell index, else the next downstream cell index and vice versa.
+    uparea, elevtn, rivwth : ndarray of float, optional
+        flattened upstream area [km2], elevation [m], river width [m]
+    ncol : int
+        number of columns in raster
+    upa_min : float, optional
+        minimum upstream area threshold [km2], requires uparea
+    len_min : float, optional
+        minimum river length threshold [m] to caculate a slope, if the river is shorter
+        it is extended in both directions until this requirement is met.
+    latlon : bool, optional
+        True if WGS84 coordinates, by default False
+    transform : affine transform
+        Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
+
+    Returns
+    -------
+    rivlen1 : 1D array of float
+        channel section length [m]
+    rivslp1 : 1D array of float
+        channel section slope [m/m]
+    rivwth1 : 1D array of float
+        mean channel section width [m]
+    """
+    # temp binary array with outlets
+    outlets = np.array([np.bool(0) for _ in range(idxs_nxt.size)])
+    for idx0 in idxs_out:
+        if idx0 != mv:
+            outlets[idx0] = np.bool(1)
+    # allocate output
+    rivlen1 = np.full(idxs_out.size, -9999.0, dtype=np.float32)
+    rivslp1 = np.full(idxs_out.size, -9999.0, dtype=np.float32)
+    rivwth1 = np.full(idxs_out.size, -9999.0, dtype=np.float32)
+    # loop over outlet cell indices
+    for i in range(idxs_out.size):
+        idx0 = idxs_out[i]
+        if idx0 == mv:
+            continue
+        l = np.float64(0.0)
+        # mean width; including starting outlet; excluding final outlet
+        w = np.float64(0.0)
+        n = 0
+        if rivwth is not None and rivwth[idx0] > 0:
+            w += np.float64(rivwth[idx0])
+            n += 1
+        idx = idx0
+        while True:
+            idx1 = idxs_nxt[idx]
+            if (
+                idx1 == mv
+                or idx1 == idx
+                or (uparea is not None and uparea[idx1] < upa_min)
+            ):
+                idx1 = idx
+                break
+            # update length
+            l += gis_utils.distance(idx, idx1, ncol, latlon, transform)
+            # break if at up/downstream stream outlet
+            if outlets[idx1]:
+                break
+            if rivwth is not None and rivwth[idx1] > 0:  # use only valid values
+                w += rivwth[idx1]
+                n += 1
+            # next iter
+            idx = idx1
+        # write channel length
+        rivlen1[i] = l
+        # arithmetic mean channel width
+        if rivwth is not None:
+            rivwth1[i] = 0 if n == 0 else w / n
+        # channel slope
+        if elevtn is not None:
+            # extend reach if shorter than len_min to caculate slope
+            while l < len_min:
+                # extend in nxt direction
+                idx = idx1
+                idx1 = idxs_nxt[idx]
+                if (
+                    idx1 == mv
+                    or idx1 == idx
+                    or (uparea is not None and uparea[idx1] < upa_min)
+                ):
+                    idx1 = idx
+                if idx1 != idx:
+                    l += gis_utils.distance(idx, idx1, ncol, latlon, transform)
+                # break if min length reached
+                if l >= len_min:
+                    break
+                # extend in prev direction
+                _idx = idx0
+                idx0 = idxs_prev[_idx]
+                if (
+                    idx0 == mv
+                    or idx0 == _idx
+                    or (uparea is not None and uparea[idx0] < upa_min)
+                ):
+                    idx0 = _idx
+                if idx0 != _idx:
+                    l += gis_utils.distance(_idx, idx0, ncol, latlon, transform)
+                # break if no more up or downstream cells
+                if idx == idx1 and _idx == idx0:
+                    break
+            # write absolute mean channel slope
+            z0 = elevtn[idx0]
+            z1 = elevtn[idx1]
+            rivslp1[i] = 0.0 if l == 0 else abs(z1 - z0) / l
+    return rivlen1, rivslp1, rivwth1

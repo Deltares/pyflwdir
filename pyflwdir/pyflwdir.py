@@ -6,6 +6,7 @@ from affine import Affine
 import pprint
 import pickle
 import logging
+import warnings
 from pyflwdir import gis_utils as gis
 from pyflwdir import (
     arithmetics,
@@ -879,9 +880,9 @@ class FlwdirRaster(object):
 
     ### UPSCALE FLOW DIRECTIONOS ###
 
-    def upscale(self, scale_factor, method="com2", uparea=None, **kwargs):
+    def upscale(self, scale_factor, method="ihu", uparea=None, **kwargs):
         """Upscale flow direction network to lower resolution.
-        Available methods are Connecting Outlets Method (COM) [2]_,
+        Available methods are Iterative hydrography upscaling method (IHU) [2]_,
         Effective Area Method (EAM) [3]_ and Double Maximum Method (DMM) [4]_.
 
         Note: This method only works for D8 or LDD flow directon data.
@@ -899,13 +900,13 @@ class FlwdirRaster(object):
         ----------
         scale_factor : int
             number gridcells in resulting upscaled gridcell
-        method : {'com2', 'com', 'eam', 'dmm'}
-            upscaling method, by default 'com2'
+        method : {'ihu', 'eam_plus', 'eam', 'dmm'}
+            upscaling method, by default 'ihu'
         uparea : 2D array of float or int, optional
             2D raster with upstream area, by default None; calculated on the fly.
         uparea : 2D array of int, optional
             2D raster with basin IDs, by default None. If provided it is used as an
-            additional constrain to the com2 method to increase the upscaling speed.
+            additional constrain to the IHU method to increase the upscaling speed.
 
         Returns
         ------
@@ -918,11 +919,15 @@ class FlwdirRaster(object):
             raise ValueError(
                 "The upscale method only works for D8 or LDD flow directon data."
             )
-        methods = ["com2", "com", "eam", "dmm"]
+        methods = ["ihu", "eam_plus", "com2", "com", "eam", "dmm"]
         method = str(method).lower()
         if method not in methods:
             methodstr = "', '".join(methods)
             raise ValueError(f"Unknown method: {method}, select from: '{methodstr}'")
+        if "com" in method.lower():
+            method_new = {"com": "eam_plus", "com2": "ihu"}.get(method.lower())
+            warnings.warn(f"{method} renamed to {method_new}.", DeprecationWarning)
+            method = method_new
         # upscale flow directions
         idxs_ds1, idxs_out, shape1 = getattr(upscale, method)(
             subidxs_ds=self.idxs_ds,
@@ -985,7 +990,7 @@ class FlwdirRaster(object):
 
     ### UNIT CATCHMENT ###
 
-    def ucat_outlets(self, cellsize, uparea=None, method="com"):
+    def ucat_outlets(self, cellsize, uparea=None, method="eam_plus"):
         """Returns linear indices of unit catchment outlet pixel.
 
         For more information about the methods see upscale script.
@@ -996,15 +1001,15 @@ class FlwdirRaster(object):
             size of unit catchment measured in no. of higres cells
         uparea : 2D array of float, optional
             upstream area
-        method : {"com", "dmm"}, optional
-            method to derive outlet cell indices, by default 'com'
+        method : {"eam_plus", "dmm"}, optional
+            method to derive outlet cell indices, by default 'eam_plus'
 
         Returns
         -------
         idxs_out : 2D array of int
             linear indices of unit catchment outlet cells
         """
-        methods = ["com", "dmm"]
+        methods = ["eam_plus", "dmm"]
         method = str(method).lower()
         if method not in methods:
             methodstr = "', '".join(methods)
@@ -1052,13 +1057,86 @@ class FlwdirRaster(object):
         )
         return ucat_map.reshape(self.shape), ucat_are.reshape(idxs_out.shape)
 
-    def ucat_channel(self, **kwargs):
-        raise DeprecationWarning(
-            "Use subgrid_rivlen and subgrid_rivslp method instead."
+    # TODO remove in v0.5
+    def ucat_channel(
+        self,
+        idxs_out=None,
+        elevtn=None,
+        rivwth=None,
+        uparea=None,
+        direction="up",
+        upa_min=0.0,
+        len_min=0.0,
+    ):
+        """NOTE: this method will be deprecated from v0.5
+
+        Returns the river length [m], slope [m/m] and mean width for a unit catchment
+        channel section. The channel section is defined by the path starting at the unit
+        catchment outlet cell moving upstream following the upstream subgrid cells with
+        the largest upstream area (default) or downstream until it reaches the next
+        outlet cell.
+
+        A mimumum upstream area threshold can be set to discriminate river cells.
+
+        Parameters
+        ----------
+        idxs_out : 2D array of int, optional
+            linear indices of unit catchment outlets, if None (default) all valid
+            indices will be passed computing the cell length and slope in upstream
+            direction.
+        elevnt : 2D array of float, optional
+            elevation raster, required to calculate slope
+        rivwth : 2D array of float, optional
+            river width raster, required to calculate mean width
+        uparea : 2D array of float, optional
+            upstream area, if None (default) it is calculated.
+        upa_min : float, optional
+            minimum upstream area threshold for streams [km2].
+        len_min : float, optional
+            minimum river length reach to caculate a slope, if the river reach is shorter
+            it is extended in both direction until this requirement is met for calculating
+            the river slope.
+
+        Returns
+        -------
+        2D array of float with other.shape
+            subgrid river length [m]
+        2D array of float with other.shape
+            subgrid river slope [m/m]
+        """
+        warnings.warn(
+            "Ucat_channel will be deprecated in v0.5. Use subgrid_rivlen and subgrid_rivslp instead.",
+            PendingDeprecationWarning,
         )
+        direction = str(direction).lower()
+        if direction not in ["up", "down"]:
+            msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
+            raise ValueError(msg)
+        if idxs_out is None:
+            idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
+        upa_kwargs = dict(optional=upa_min == 0, unit="km2")
+        rivlen1, rivslp1, rivwth1 = subgrid.channel(
+            idxs_out=idxs_out.ravel(),
+            idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
+            idxs_prev=self.idxs_us_main if direction == "down" else self.idxs_ds,
+            elevtn=self._check_data(elevtn, "elevtn", optional=True),
+            rivwth=self._check_data(rivwth, "rivwth", optional=True),
+            uparea=self._check_data(uparea, "uparea", **upa_kwargs),
+            ncol=self.shape[1],
+            upa_min=upa_min,
+            len_min=len_min,
+            latlon=self.latlon,
+            transform=self.transform,
+            mv=self._mv,
+        )
+        shape = idxs_out.shape
+        return rivlen1.reshape(shape), rivslp1.reshape(shape), rivwth1.reshape(shape)
 
     def subgrid_rivlen(
-        self, idxs_out, mask=None, direction="up",
+        self,
+        idxs_out,
+        mask=None,
+        direction="up",
     ):
         """Returns the subgrid river length [m] based on unit catchment outlet locations.
         A cell's subgrid river is defined by the path starting at the unit
@@ -1100,7 +1178,11 @@ class FlwdirRaster(object):
         return rivlen.reshape(shape)
 
     def subgrid_rivslp(
-        self, idxs_out, elevtn, length=1000, mask=None,
+        self,
+        idxs_out,
+        elevtn,
+        length=1000,
+        mask=None,
     ):
         """Returns the subgrid river slope [m/m] estimated at unit catchment outlet
         pixel. he slope is estimated from the elevation difference between length/2
@@ -1142,7 +1224,13 @@ class FlwdirRaster(object):
         return rivslp.reshape(shape)
 
     def subgrid_rivavg(
-        self, idxs_out, data, weights=None, nodata=-9999.0, mask=None, direction="up",
+        self,
+        idxs_out,
+        data,
+        weights=None,
+        nodata=-9999.0,
+        mask=None,
+        direction="up",
     ):
         """Returns the average value over the subgrid river, based on unit catchment outlet
         locations. The subgrid river is defined by the path starting at the unit

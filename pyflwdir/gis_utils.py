@@ -362,7 +362,14 @@ def vectorize(idxs_ds, xs, ys, mask=None, crs=None, mv=np.intp(-1)):
         idx_ds = idxs_ds[idx0]
         if idx_ds == mv or (mask is not None and mask[idx0] != 1):
             continue
-        geoms.append(LineString([(xs[idx0], ys[idx0]), (xs[idx_ds], ys[idx_ds]),]))
+        geoms.append(
+            LineString(
+                [
+                    (xs[idx0], ys[idx0]),
+                    (xs[idx_ds], ys[idx_ds]),
+                ]
+            )
+        )
         idxs.append(idx0)
         pits.append(idx_ds == idx0)
     gdf = gp.GeoDataFrame(index=idxs, geometry=geoms, crs=crs)

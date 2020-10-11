@@ -23,10 +23,17 @@ setup(
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
     python_requires=">=3.6",
-    install_requires=["numba>=0.48", "numpy", "scipy", "affine",],
+    install_requires=[
+        "numba>=0.48",
+        "numpy",
+        "scipy",
+        "affine",
+    ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "sphinx", "sphinx_rtd_theme", "black"],
-        "optional": ["geopandas",],
+        "optional": [
+            "geopandas",
+        ],
     },
     classifiers=[
         # https://pypi.python.org/pypi?%3Aaction=list_classifiers
