@@ -23,9 +23,9 @@ def test_dem_adjust():
     dem0 = np.array([8, 7, 6, 5, 6, 7, 5, 4])
     dem1 = np.array([8, 7, 6, 6, 6, 6, 5, 4])
     assert np.all(dem._adjust_elevation(dem0) == dem1)
-    # with dig on last position
+    # with zmax on last position
     dem0 = np.array([8, 7, 6, 6, 6, 6, 5, 6])
-    dem1 = np.array([8, 7, 6, 6, 6, 6, 5, 5])
+    dem1 = np.array([8, 7, 6, 6, 6, 6, 6, 6])
     assert np.all(dem._adjust_elevation(dem0) == dem1)
 
 
