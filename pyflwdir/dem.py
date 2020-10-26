@@ -30,14 +30,17 @@ def adjust_elevation(idxs_ds, seq, elevtn, mv=_mv):
     2012.
     """
     elevtn_out = elevtn.copy()
-    n_up = core.upstream_count(idxs_ds, mv=mv)
-    for idx0 in seq[::-1]:  # from up- to downstream
-        if n_up[idx0] == 0:
-            # @ head water cell, i.e. no upstream neighbors
-            # get downstream indices
-            idxs0 = core._trace(idx0, idxs_ds, mv=mv)[0]
+    mask = np.array([np.bool(0) for _ in range(elevtn.size)])  # True for checked cells
+    for idx0 in seq[::-1]:  # from up- to downstream starting from longest stream paths
+        if mask[idx0] == False:  # @ head water cell
+            # get downstream indices up to earlier fixed stream path
+            idxs0 = core._trace(idx0, idxs_ds, mv=mv, mask=mask)[0]
             # fix elevation
-            elevtn_out[idxs0] = _adjust_elevation(elevtn_out[idxs0])
+            elevtn1 = _adjust_elevation(elevtn_out[idxs0])
+            # assert np.all(np.diff(elevtn1) <= 0)
+            # assert elevtn_out[idxs0][-1] == elevtn1[-1]
+            elevtn_out[idxs0] = elevtn1
+            mask[idxs0] = True  # update mask
     return elevtn_out
 
 
@@ -66,7 +69,11 @@ def _adjust_elevation(elevtn):
                 idxs = np.arange(imin, min(n, i + 1))
                 zmod = np.full(idxs.size, zmin, dtype=elevtn.dtype)
                 cost = np.sum(elevtn[idxs] - zmod)
-                if (imax - imin) > 1:  # all options are equal when imax = imin + 1
+                if i + 1 == elevtn.size:
+                    # end of path but not of pit area
+                    elevtn[elevtn < zi] = zi  # fill all smaller than last value
+                    zmod = np.full(idxs.size, zi, dtype=elevtn.dtype)  # zmod == zi
+                elif (imax - imin) > 1:  # all options are equal when imax = imin + 1
                     # option 2: fill -> zmod = zmax, for all values smaller than zmax, previous to zmax
                     idxs2 = np.where(elevtn[:imax] <= zmax)[0]
                     zmod2 = np.full(idxs2.size, zmax, dtype=elevtn.dtype)
