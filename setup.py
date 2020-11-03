@@ -14,6 +14,7 @@ setup(
     description="Fast methods to work with hydro- and topography data in pure Python.",
     long_description=readme + "\n\n",
     url="https://gitlab.com/deltares/wflow/pyflwdir/",
+    download_url="https://gitlab.com/deltares/wflow/pyflwdir/-/archive/0.4.2/pyflwdir-0.4.2.tar.gz",
     author="Dirk Eilander",
     author_email="dirk.eilander@deltares.nl",
     license="MIT",
