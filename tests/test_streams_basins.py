@@ -36,11 +36,11 @@ def test_streams_basins_up(parsed, flwdir):
     assert np.all(np.unique(bas[bas != 0]) == ids)  # nodata == 0
     # test region
     bas = bas.reshape(flwdir.shape)
-    bbox = regions.total_region_bounds(bas)
-    assert np.all(bbox == np.array([0, 0, bas.shape[1], bas.shape[0]]))
-    areas = regions.region_area(bas)
+    total_bbox = regions.region_bounds(bas)[-1]
+    assert np.all(total_bbox == np.array([0, 0, bas.shape[1], bas.shape[0]]))
+    areas = regions.region_area(bas)[1]
     assert areas[0] == np.sum(bas == 1)
-    areas1 = regions.region_area(bas, latlon=True)
+    areas1 = regions.region_area(bas, latlon=True)[1]
     assert areas1.argmax() == areas.argmax()
     # pfafstetter
     idx0 = idxs_pit[np.argsort(upa[idxs_pit])[-1]]

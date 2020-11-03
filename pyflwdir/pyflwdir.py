@@ -669,8 +669,7 @@ class FlwdirRaster(object):
         return basids.reshape(self.shape)
 
     def basin_bounds(self, basins=None, **kwargs):
-        """Returns a table with the basin boundaries. At index 0 the total bounding
-        box is given.
+        """Returns a the basin boundaries.
 
         Additional key-word arguments are passed to the basins method which is used to
         create a basins map if none is provided.
@@ -682,14 +681,19 @@ class FlwdirRaster(object):
 
         Returns
         -------
-        pandas.DataFrame
-            bounds of basins
+        lbs : 1D array of int
+            labels of basins
+        bboxs : 2D array of float
+            bounding boxes of basins, the columns represent [xmin, ymin, xmax, ymax]
+        total_bbox : 1D array of float
+            the total bounding box of all basins [xmin, ymin, xmax, ymax]
         """
         if basins is None:
             basins = self.basins(**kwargs)
         elif basins.size != self.size:
             raise ValueError('"basins" size does not match with FlwdirRaster size')
-        return regions.region_bounds(basins, transform=self.transform)
+        lbs, bboxs, total_bbox = regions.region_bounds(basins, transform=self.transform)
+        return lbs, bboxs, total_bbox
 
     def pfafstetter(self, idx0, depth=1, uparea=None, upa_min=0.0):
         """Returns the pfafstetter coding for a single basin.

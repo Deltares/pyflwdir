@@ -4,7 +4,6 @@ themselves are testes elsewhere"""
 
 import pytest
 import numpy as np
-import pandas as pd
 from affine import Affine
 
 import pyflwdir
@@ -197,11 +196,10 @@ def test_basins():
     with pytest.raises(ValueError, match="IDs cannot contain a value zero"):
         flw.basins(ids=np.zeros(flw.idxs_pit.size, dtype=np.int16))
     # basin bounds using IDENTITY transform
-    df = flw.basin_bounds()
-    assert isinstance(df, pd.DataFrame)
-    assert np.all(df.index == np.unique(basins))  # including zero!
-    df = flw.basin_bounds(basins=np.ones(flw.shape, dtype=np.uint32))
-    assert np.all(df.loc[0, ["ymax", "xmax"]].values == flw.shape)
+    lbs = flw.basin_bounds()[0]
+    assert np.all(lbs == np.unique(basins[basins > 0]))
+    lbs, _, total_bbox = flw.basin_bounds(basins=np.ones(flw.shape, dtype=np.uint32))
+    assert np.all(total_bbox[[3, 2]] == flw.shape)
     with pytest.raises(ValueError, match="size does not match"):
         flw.basin_bounds(basins=np.ones((1, 1)))
 
