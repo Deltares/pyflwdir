@@ -81,7 +81,7 @@ Streams and flow paths
 
 .. automethod:: pyflwdir.FlwdirRaster.stream_distance()
 
-.. automethod:: pyflwdir.FlwdirRaster.vectorize()
+.. automethod:: pyflwdir.FlwdirRaster.features()
 
 
 (Sub)basins
@@ -90,6 +90,8 @@ Streams and flow paths
 .. automethod:: pyflwdir.FlwdirRaster.basins()
 
 .. automethod:: pyflwdir.FlwdirRaster.basin_bounds()
+
+.. automethod:: pyflwdir.FlwdirRaster.subbasins()
 
 .. automethod:: pyflwdir.FlwdirRaster.pfafstetter()
 
@@ -101,6 +103,9 @@ Up- and downstream values
 
 .. automethod:: pyflwdir.FlwdirRaster.upstream_sum()
 
+Up- and downstream arithmetics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. automethod:: pyflwdir.FlwdirRaster.moving_average()
 
 .. automethod:: pyflwdir.FlwdirRaster.accuflux()
@@ -108,22 +113,23 @@ Up- and downstream values
 .. automethod:: pyflwdir.FlwdirRaster.upstream_area()
 
 
-Upscale
-^^^^^^^
+Upscale and subgrid methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automethod:: pyflwdir.FlwdirRaster.upscale()
 
-.. automethod:: pyflwdir.FlwdirRaster.upscale_connect()
+.. automethod:: pyflwdir.FlwdirRaster.upscale_error()
 
+.. automethod:: pyflwdir.FlwdirRaster.subgrid_rivlen()
 
-Unit-catchments
-^^^^^^^^^^^^^^^
+.. automethod:: pyflwdir.FlwdirRaster.subgrid_rivslp()
 
-.. automethod:: pyflwdir.FlwdirRaster.ucat_outlets()
+.. automethod:: pyflwdir.FlwdirRaster.subgrid_rivavg()
 
 .. automethod:: pyflwdir.FlwdirRaster.ucat_area()
 
-.. automethod:: pyflwdir.FlwdirRaster.ucat_channel()
+.. automethod:: pyflwdir.FlwdirRaster.ucat_outlets()
+
 
 Elevation
 ^^^^^^^^^
