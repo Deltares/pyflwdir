@@ -7,21 +7,23 @@ channels:
 # if you only want the user dependencies, see
 # install_requires in setup.py
 dependencies:
+  # required
+  - python>=3.6
   - affine
-  - black
-  - cartopy
-  - geopandas
-  - ipython
-  - matplotlib
   - numba>=0.48
   - numpy
-  - pandas
+  - scipy
+  - setuptools_scm
+  # developer
+  - black
   - pytest
   - pytest-cov
   - pytest-benchmark
-  - python>=3.6
-  - rasterio
-  - scipy
-  - setuptools_scm
   - sphinx
   - sphinx_rtd_theme
+  # optional
+  - geopandas
+  - rasterio
+  - cartopy
+  - ipython
+  - matplotlib

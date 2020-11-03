@@ -841,42 +841,77 @@ class FlwdirRaster(object):
         )
         return stream_dist.reshape(self.shape)
 
-    def vectorize(self, mask=None, xs=None, ys=None, crs=None):
-        """Returns a GeoDataFrame with river segments. Segments are LineStrings
-        connecting cell from down to upstream.
+    # TODO remove in v0.5
+    def vectorize(self, **kwargs):
+        """NOTE: this method will be deprecated from v0.5"""
+        warnings.warn(
+            "vectorize will be deprecated in v0.5. Use features instead.",
+            PendingDeprecationWarning,
+        )
+        import geopandas as gp
 
-        The coordinates of the nodes are based on the cell center as calculated
-        using the affine transform, unless maps with subgrid x and y
+        df = gp.GeoDataFrame.from_features(self.features(kind="flwdir", **kwargs))
+        return df.set_index("idx")
+
+    def features(
+        self, kind="streams", mask=None, xs=None, ys=None, min_sto=1, **kwargs
+    ):
+        """Returns a geo-features of streams of same order or local flow direction.
+
+        The coordinates are based on the cell center as calculated
+        using the affine transform, unless maps with (subgrid) x and y
         coordinates are provided.
 
         Parameters
         ----------
-        min_order : int
+        kind : {streams, flwdir}
+            Kind of LineString features: either streams of local flow directions.
+        mask : ndarray of bool
+            Maks of valid cells.
+        min_sto : int
             Minimum Strahler Order recognized as river, by the default 1.
+            Only in combination with kind = 'streams'
         xs, ys : ndarray of float
             Raster with cell x, y coordinates, by default None and inferred from cell
             center.
-        crs : str, optional
-            Coordinate reference system used for the returned GeoDataFrame
+        kwargs : extra sample maps key-word arguments
+            optional maps to sample from
+            e.g.: strord=flw.stream_order()
 
         Returns
         -------
-        geopandas.GeoDataFrame
-            flow direction vector
+        feats : list of dict
+            Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
         """
+        if "stream" in kind:
+            if "strord" not in kwargs:
+                kwargs.update(strord=self.stream_order())
+            idxs = streams.streams(
+                idxs_ds=self.idxs_ds,
+                seq=self.idxs_seq,
+                strord=self._check_data(kwargs["strord"], "strord"),
+                mask=self._check_data(mask, "mask", optional=True),
+                min_sto=min_sto,
+            )
+        elif kind == "flwdir":
+            idxs = core.flwdir_tuples(
+                self.idxs_ds,
+                mask=self._check_data(mask, "mask", optional=True),
+                mv=self._mv,
+            )
+        else:
+            ValueError('Kind should be either "streams" or "flwdir"')
         # get geoms and make geopandas dataframe
         if xs is None or ys is None:
-            idxs = np.arange(self.size, dtype=np.intp)
-            xs, ys = gis.idxs_to_coords(idxs, self.transform, self.shape)
-        df = gis.vectorize(
-            idxs_ds=self.idxs_ds,
+            idxs0 = np.arange(self.size, dtype=np.intp)
+            xs, ys = gis.idxs_to_coords(idxs0, self.transform, self.shape)
+        feats = gis.features(
+            streams=idxs,
             xs=self._check_data(xs, "xs"),
             ys=self._check_data(ys, "ys"),
-            mask=self._check_data(mask, "mask", optional=True),
-            crs=crs,
-            mv=self._mv,
+            **kwargs,
         )
-        return df
+        return feats
 
     ### UPSCALE FLOW DIRECTIONOS ###
 

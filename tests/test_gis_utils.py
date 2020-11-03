@@ -141,14 +141,3 @@ def test_distance():
     assert gis.distance(0, 4, 3, True) == gis.distance(4, 0, 3, True)
     assert gis.distance(0, 1, 3, False) == gis.distance(7, 8, 3, False)
     assert gis.distance(0, 1, 3, True) != gis.distance(7, 8, 3, True)
-
-
-def test_vectorize():
-    idxs_ds = np.arange(10)
-    idxs_ds[1:] -= 1
-    idxs_ds[-1] = -1
-    xs, ys = np.arange(10), np.zeros(10)
-    df = gis.vectorize(idxs_ds, xs, ys, mask=None)
-    assert np.all(df.index == np.arange(9))
-    assert np.all(np.asarray(df.geometry[0].coords[:]) == 0)
-    assert np.all(df.iloc[1:, :].length == 1)

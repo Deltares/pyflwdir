@@ -221,6 +221,18 @@ def headwater_indices(idxs_ds, mv=_mv):
     return np.array(idxs, dtype=idxs_ds.dtype)
 
 
+@njit
+def flwdir_tuples(idxs_ds, mask=None, mv=_mv):
+    """Returns list of up- and downstream linear index couples."""
+    idxs = []
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == mv or (mask is not None and mask[idx0] != 1):
+            continue
+        idxs.append(np.array([idx0, idx_ds], dtype=idxs_ds.dtype))
+    return idxs
+
+
 # local functions
 
 

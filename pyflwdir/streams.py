@@ -10,6 +10,7 @@ from pyflwdir import gis_utils
 
 __all__ = []
 
+
 # general methods
 @njit
 def accuflux(idxs_ds, seq, data, nodata):
@@ -124,6 +125,50 @@ def upstream_area(
         if idx0 != idx_ds:
             uparea[idx_ds] += uparea[idx0]
     return uparea
+
+
+@njit
+def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
+    """Returns list of linear indices per stream of equal stream order.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    stroord : 1D-array of uint8
+        stream order
+    mask : 1D array of bool, optional
+        consider only True cells
+    min_sto : int, optional
+        minimum stream order of steams, by default 1
+
+    Returns
+    -------
+    streams : list of 1D-arrays of intp
+        linear indices of streams
+    """
+    _done = np.array([np.bool(0) for _ in range(strord.size)])  # initiate False array
+    if mask is not None:
+        _done[mask == False] = True
+    streams = []
+    for idx0 in seq[::-1]:  # up- to downstream
+        if _done[idx0] or strord[idx0] < min_sto:
+            continue
+        idxs = [idx0]
+        sto = strord[idx0]
+        while True:
+            idx_ds = idxs_ds[idx0]
+            sto_ds = strord[idx_ds]
+            idxs.append(idx_ds)
+            if idx0 == idx_ds or sto_ds > sto:  # pit or new stream
+                streams.append(np.array(idxs, dtype=idxs_ds.dtype))
+                break
+            else:
+                _done[idx_ds] = True
+                idx0 = idx_ds
+    return streams
 
 
 @njit

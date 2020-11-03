@@ -1,7 +1,7 @@
 # -- coding: utf-8 --
 """"""
 
-from numba import vectorize, njit
+from numba import njit
 import numpy as np
 import math
 from affine import identity as IDENTITY
@@ -347,32 +347,41 @@ def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
 
 
 ## VECTORIZE
-def vectorize(idxs_ds, xs, ys, mask=None, crs=None, mv=np.intp(-1)):
-    """Returns a list of LineString for each up- downstream connection"""
-    try:
-        import geopandas as gp
-        from shapely.geometry import LineString
-    except ImportError:
-        msg = "The `to_linestring` method requires the additional geopandas package."
-        raise ImportError(msg)
-    geoms = list()
-    idxs = list()
-    pits = list()
-    for idx0 in range(idxs_ds.size):
-        idx_ds = idxs_ds[idx0]
-        if idx_ds == mv or (mask is not None and mask[idx0] != 1):
-            continue
-        geoms.append(
-            LineString(
-                [
-                    (xs[idx0], ys[idx0]),
-                    (xs[idx_ds], ys[idx_ds]),
-                ]
+def features(streams, xs, ys, **kwargs):
+    """Returns a LineString feature for each stream
+
+    Parameters
+    ----------
+    streams : list of 1D-arrays of intp
+        linear indices of streams
+    xs, ys : 1D-array of float
+        x, y coordinates
+    kwargs : extra sample maps key-word arguments
+        optional maps to sample from
+        e.g.: strord=flw.stream_order()
+
+    Returns
+    -------
+    feats : list of dict
+        Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
+    """
+    for key in kwargs:
+        if not isinstance(kwargs[key], np.ndarray) or kwargs[key].size != xs.size:
+            raise ValueError(
+                f'Kwargs map "{key}" should be ndarrays of same size as coordinates'
             )
+    feats = list()
+    for idxs in streams:
+        idx0 = idxs[0]
+        props = {key: kwargs[key].flat[idx0] for key in kwargs}
+        feats.append(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [(xs[i], ys[i]) for i in idxs],
+                },
+                "properties": {"idx": idx0, "pit": idxs[-1] == idxs[-2], **props},
+            }
         )
-        idxs.append(idx0)
-        pits.append(idx_ds == idx0)
-    gdf = gp.GeoDataFrame(index=idxs, geometry=geoms, crs=crs)
-    gdf["pit"] = np.asarray(pits)
-    gdf.index.name = "idxs"
-    return gdf
+    return feats

@@ -244,15 +244,19 @@ def test_streams():
     assert strord.dtype == np.int8
     assert np.all(strord.shape == flw.shape)
     # vectorize
-    gdf = flw.vectorize()
-    assert np.all(gdf.index == np.sort(idxs_seq))
-    gdf["strord"] = strord.flat[gdf.index.values]
-    gdf1 = flw.vectorize(mask=strord >= 3)
-    assert np.all(gdf[gdf["strord"] >= 3].index == gdf1.index)
+    feats = flw.features(kind="streams")
+    fstrord = np.array([f["properties"]["strord"] for f in feats])
+    findex = np.array([f["properties"]["idx"] for f in feats])
+    assert np.all(fstrord == strord.flat[findex])
+    feats = flw.features(kind="flwdir")
+    findex = np.array([f["properties"]["idx"] for f in feats])
+    assert np.all(findex == np.sort(idxs_seq))
     with pytest.raises(ValueError, match="size does not match"):
-        flw.vectorize(xs=np.arange(3), ys=np.arange(3))
+        flw.features(xs=np.arange(3), ys=np.arange(3))
     with pytest.raises(ValueError, match="size does not match"):
-        flw.vectorize(mask=np.ones((1, 1)))
+        flw.features(mask=np.ones((1, 1)))
+    with pytest.raises(ValueError, match="Kwargs map"):
+        flw.features(uparea=np.ones((1, 1)))
     # stream distance
     data = np.zeros(flw.shape, dtype=np.int32)
     data[flw.rank > 0] = 1
