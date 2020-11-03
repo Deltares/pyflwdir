@@ -2,6 +2,49 @@
 Change Log
 ###########
 
+0.4.3
+*****
+Improved
+--------
+* vectorizing of streams
+* pfafstetter method improved
+* remove use of pandas and geopandas to limit dependencies
+
+Added
+-----
+* new subbasins method
+* features method in favor vectorize
+
+0.4.2
+*****
+Improved
+--------
+* improved test coverage
+* prepared release for pip
+* version for HESS preprint
+
+Added
+-----
+
+0.4.1
+*****
+Improved
+--------
+* code reformatted using black
+* improved subgrid river methods
+
+Added
+-----
+* subgrid_rivlen, subgrid_rivslp methods in favor of ucat_channel (will be deprecated)
+
+0.4.0
+*****
+Improved
+--------
+* improved COM upscaling
+
+Added
+-----
 
 0.3.0
 *****
