@@ -204,11 +204,13 @@ def test_basins():
         flw.basin_bounds(basins=np.ones((1, 1)))
 
 
-def test_pfafstetter():
+def test_subbasins():
     pfaf = flw.pfafstetter()
     bas0 = flw.basins(flw.idxs_pit[0])
     assert np.all(pfaf[bas0 != 0] > 0)
     assert pfaf.max() <= 9
+    subbas = flw.subbasins()
+    assert np.all(subbas[bas0 != 0] > 0)
 
 
 def test_uparea():

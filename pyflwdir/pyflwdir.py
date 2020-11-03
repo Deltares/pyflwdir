@@ -695,6 +695,30 @@ class FlwdirRaster(object):
         lbs, bboxs, total_bbox = regions.region_bounds(basins, transform=self.transform)
         return lbs, bboxs, total_bbox
 
+    def subbasins(self, strord=None, min_sto=0):
+        """Returns a subbasin map with unique random IDs.
+
+        Parameters
+        ----------
+        strord : 1D-array of uint8
+            stream order
+        min_sto : int, optional
+            minimum stream order of subbasins, by default the stream order is set to
+            two under the global maxmium stream order.
+
+        Returns
+        -------
+        basins : 1D-arrays of uint32
+            map with unique IDs for stream_order>=min_sto subbasins
+        """
+        subbas = basins.subbasins(
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            strord=self._check_data(strord, "strord"),
+            min_sto=min_sto,
+        )
+        return subbas.reshape(self.shape)
+
     def pfafstetter(self, depth=1, uparea=None, upa_min=0.0):
         """Returns the pfafstetter subbasins.
 
@@ -1413,6 +1437,8 @@ class FlwdirRaster(object):
             data = self.upstream_area(**kwargs)
         elif data is None and name == "basins":
             data = self.basins(**kwargs)
+        elif data is None and name == "strord":
+            data = self.stream_order(**kwargs)
         elif not np.atleast_1d(data).size == self.size:
             raise ValueError(f'"{name}" size does not match with FlwdirRaster size')
         return np.atleast_1d(data).ravel()

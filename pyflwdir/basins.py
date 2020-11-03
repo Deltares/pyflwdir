@@ -46,6 +46,49 @@ def basins(idxs_ds, idxs_pit, seq, ids=None):
     return fillnodata_upstream(idxs_ds, seq, basins, 0)
 
 
+@njit
+def subbasins(idxs_ds, seq, strord, min_sto=0):
+    """Returns a subbasin map with unique IDs starting from one.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    strord : 1D-array of uint8
+        stream order
+    min_sto : int, optional
+        minimum stream order of subbasins, by default the stream order is set to
+        two under the global maxmium stream order.
+
+    Returns
+    -------
+    basins : 1D-arrays of uint32
+        map with unique IDs for stream_order>=min_sto subbasins
+    """
+    if min_sto == 0:
+        min_sto = strord.max() - 2
+    _done = np.array([np.bool(0) for _ in range(strord.size)])  # initiate False array
+    basins = np.full(idxs_ds.size, 0, dtype=np.uint32)
+    i = np.uint32(1)
+    for idx0 in seq[::-1]:  # up- to downstream
+        if _done[idx0] or strord[idx0] < min_sto:
+            continue
+        sto = strord[idx0]
+        while True:
+            idx_ds = idxs_ds[idx0]
+            sto_ds = strord[idx_ds]
+            if idx0 == idx_ds or sto_ds > sto:  # pit or new stream
+                basins[idx0] = i
+                i += 1
+                break
+            else:
+                _done[idx_ds] = True
+                idx0 = idx_ds
+    return fillnodata_upstream(idxs_ds, seq, basins, 0)
+
+
 # TODO check
 # @njit # NOTE does not work atm with dicts (numba 0.48)
 def pfafstetter(idxs_pit, idxs_ds, seq, uparea, upa_min=0, depth=1, mv=_mv):

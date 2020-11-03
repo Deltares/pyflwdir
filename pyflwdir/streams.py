@@ -137,12 +137,12 @@ def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
         index of next downstream cell
     seq : 1D array of int
         ordered cell indices from down- to upstream
-    stroord : 1D-array of uint8
+    strord : 1D-array of uint8
         stream order
     mask : 1D array of bool, optional
         consider only True cells
     min_sto : int, optional
-        minimum stream order of steams, by default 1
+        minimum stream order of streams, by default 1
 
     Returns
     -------
