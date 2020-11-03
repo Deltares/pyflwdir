@@ -960,10 +960,12 @@ class FlwdirRaster(object):
             )
         return flw1, idxs_out.reshape(shape1)
 
-    def upscale_connect(self, other, idxs_out):
-        """Returns an array with ones where the upscaled flow directions are connected.
-        We define a target cell to be connected if the outlet pixel of the downstream
-        target cell is the first outlet pixel downstream from its own outlet pixel.
+    def upscale_error(self, other, idxs_out):
+        """Returns an array with ones (True) where the upscaled flow directions are
+        valid and zeros (False) where erroneous.
+
+        The flow direction from cell 1 to cell 2 is valid if the first outlet pixel
+        downstream of cell 1 is located in cell 2
 
         Cells with missing flow direction data have a value -1.
 
@@ -976,17 +978,17 @@ class FlwdirRaster(object):
 
         Returns
         -------
-        subcon : 2D array of int8 with other.shape
+        flwerr : 2D array of int8 with other.shape
             valid subgrid connection
         """
         assert self._mv == other._mv
-        subcon = upscale.connected(
+        flwerr, _ = upscale.upscale_error(
             other._check_data(idxs_out, "idxs_out"),
             other.idxs_ds,
             self.idxs_ds,
             mv=self._mv,
         )
-        return subcon.reshape(other.shape)
+        return flwerr.reshape(other.shape)
 
     ### UNIT CATCHMENT ###
 

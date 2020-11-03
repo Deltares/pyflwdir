@@ -276,10 +276,10 @@ def test_upscale():
     flw1, idxs_out = flw.upscale(5, method="dmm")  # single method
     assert flw1.transform[0] == 5 * flw.transform[0]
     assert flw1.ftype == flw.ftype
-    subcon = flw.upscale_connect(flw1, idxs_out)
-    assert subcon.flat[flw1.mask].min() == 0
-    assert subcon.flat[flw1.mask].max() == 1
-    assert np.all(subcon[subcon < 0] == -1)
+    flwerr = flw.upscale_error(flw1, idxs_out)
+    assert flwerr.flat[flw1.mask].min() == 0
+    assert flwerr.flat[flw1.mask].max() == 1
+    assert np.all(flwerr[flwerr < 0] == -1)
     with pytest.raises(ValueError, match="Unknown method"):
         flw.upscale(5, method="unknown")
     with pytest.raises(ValueError, match="only works for D8 or LDD"):

@@ -20,7 +20,7 @@ test = [("eam_plus", 5), ("", 1), ("dmm", 4)]
 
 
 @pytest.mark.parametrize("method, cellsize", test)
-def test_ucatch(method, cellsize):
+def test_subgridch(method, cellsize):
     if cellsize == 1:
         idxs_out = np.arange(idxs_ds.size)
         idxs_out[idxs_ds == mv] = mv
@@ -41,8 +41,6 @@ def test_ucatch(method, cellsize):
         assert np.all(uare[umap != 0] == cellsize)
         assert np.all(rivlen[upa == 1] == 0)  # headwater cells
         assert np.all(rivlen[upa > 1] >= 1)  # downstream cells
-
-        # dz == 1 (elv == rank)
         assert np.all(np.isclose(rivslp[rivlen > 0], 1 / rivlen[rivlen > 0]))
     assert np.all(rivwth[idxs_out != mv] >= 0)  # downstream cells
     assert np.all(rivslp[idxs_out != mv] >= 0)
@@ -62,3 +60,23 @@ def test_ucatch(method, cellsize):
         idxs_out, idxs_us_main, ncol, mask=upa >= 5, latlon=True, mv=mv
     )
     assert np.all(rivlen2 >= rivlen3)
+
+    # TODO remove in v0.5
+    wth = np.ones(rank.size)
+    rivlen, rivslp, rivwth = subgrid.channel(
+        idxs_out,
+        idxs_ds,
+        idxs_us_main,
+        elv,
+        wth,
+        upa,
+        ncol,
+        len_min=1e6,
+        latlon=True,
+        mv=mv,
+    )
+    assert np.all(rivslp[idxs_out != mv] >= 0)
+    assert np.all(rivlen[idxs_out != mv] >= 0)
+    assert umap.max() - 1 == np.where(idxs_out != mv)[0][-1]
+    assert np.all(uare[idxs_out != mv] >= 1)
+    assert np.all(rivwth[idxs_out != mv] == 1)

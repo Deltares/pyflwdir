@@ -559,29 +559,7 @@ def ihu_relocate_outlets(
 
     if idxs_fix is None:
         # binary array with outlets
-        outlets = np.array([np.bool(0) for _ in range(subidxs_ds.size)])
-        for subidx in subidxs_out:
-            if subidx == mv:
-                continue
-            outlets[subidx] = True
-        # find disconnected cells
-        idxs_fix_lst = []
-        for idx0 in range(idxs_ds.size):
-            idx_ds = idxs_ds[idx0]
-            if idx_ds == mv:
-                continue
-            subidx = subidxs_out[idx0]
-            while True:
-                subidx_ds = subidxs_ds[subidx]
-                if subidx == subidx_ds or outlets[subidx_ds]:
-                    if subidx_ds != subidxs_out[idx_ds]:
-                        if subidx == subidx_ds:
-                            pass
-                        else:
-                            idxs_fix_lst.append(idx0)
-                    break
-                subidx = subidx_ds
-        idxs_fix1 = np.array(idxs_fix_lst, dtype=idxs_ds.dtype)
+        idxs_fix1 = upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=mv)[1]
     else:
         idxs_fix1 = idxs_fix
 
@@ -1330,9 +1308,12 @@ def eam_plus(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
 
 
 @njit
-def connected(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
-    """Returns an array with ones (zeros) if sugrid outlet/representative cells are
-    connected (disconnected) in D8, cells with missing values are set to -1.
+def upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
+    """Returns an array with ones (zeros) if subgrid outlet/representative cells are
+    valid (erroneous) in D8, cells with missing values are set to -1.
+
+    "The flow direction from cell 1 to cell 2 is erroneous if the first outlet pixel
+    downstream of cell 1 is not located in cell 2"
 
     Parameters
     ----------
@@ -1360,6 +1341,7 @@ def connected(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
     n = idxs_ds.size
     connect_map = np.full(n, 1, np.uint8)
     # loop over outlet cell indices
+    idxs_fix_lst = []
     for idx0 in range(n):
         subidx = subidxs_out[idx0]
         idx_ds = idxs_ds[idx0]
@@ -1369,9 +1351,10 @@ def connected(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
                 if outlets[subidx1] or subidx1 == subidx:  # at outlet or at pit
                     if subidx1 != subidxs_out[idx_ds]:
                         connect_map[idx0] = np.uint8(0)
+                        idxs_fix_lst.append(idx0)
                     break
                 # next iter
                 subidx = subidx1
         else:
             connect_map[idx0] = np.uint8(-1)
-    return connect_map
+    return connect_map, np.array(idxs_fix_lst, dtype=idxs_ds.dtype)

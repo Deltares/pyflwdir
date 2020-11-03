@@ -4,14 +4,14 @@
 import pytest
 import numpy as np
 
-from pyflwdir import streams, basins, core, gis_utils
+from pyflwdir import streams, basins, core, gis_utils, regions
 
 # test data
 from test_core import test_data
 
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
-def test_uparea(parsed, flwdir):
+def test_streams_basins_up(parsed, flwdir):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
     n, ncol = seq.size, flwdir.shape[1]
     # cell count
@@ -34,6 +34,14 @@ def test_uparea(parsed, flwdir):
     bas = basins.basins(idxs_ds, idxs_pit, seq, ids)
     assert np.all(np.array([np.sum(bas == i) for i in ids]) == upa[idxs_pit])
     assert np.all(np.unique(bas[bas != 0]) == ids)  # nodata == 0
+    # test region
+    bas = bas.reshape(flwdir.shape)
+    bbox = regions.total_region_bounds(bas)
+    assert np.all(bbox == np.array([0, 0, bas.shape[1], bas.shape[0]]))
+    areas = regions.region_area(bas)
+    assert areas[0] == np.sum(bas == 1)
+    areas1 = regions.region_area(bas, latlon=True)
+    assert areas1.argmax() == areas.argmax()
     # pfafstetter
     idx0 = idxs_pit[np.argsort(upa[idxs_pit])[-1]]
     pfaf = basins.pfafstetter(idx0, idxs_ds, seq, upa, upa_min=0, depth=2, mv=mv)
@@ -51,7 +59,7 @@ def test_uparea(parsed, flwdir):
 
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
-def test_stream(parsed, flwdir):
+def test_streams_basins_ds(parsed, flwdir):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
     n, ncol = seq.size, flwdir.shape[1]
     idxs_ds[rank == -1] = mv
