@@ -10,13 +10,14 @@ Fast methods to work with hydro- and topography data in pure Python.
 Methods include:
 
 - flow direction upscaling
-- basin delineation
+- (sub)basin delineation
 - pfafstetter subbasins delineation
 - upstream accumulation
 - up- and downstream tracing and arithmetics
 - strahler stream order
 - hydrologically adjusting elevation
 - height above nearest drainage
+- vectorizing stream features
 - *many more!*
 
 
@@ -48,14 +49,14 @@ location of the gridded data. In this step the D8 data is parsed to an actionabl
     # When printing the FlwdirRaster instance we see its attributes. 
     print(flw)
 
-Now all pyflwdir FlwdirRaster methods are available, for instance the stream_order 
-method which returns a map with the Strahler order of each cell. 
+Now all pyflwdir FlwdirRaster methods are available, for instance the subbasins method
+which creates a map with unique IDs for subbasin with a minumum stream_order. 
 
 Browse the `docs API <https://deltares.gitlab.io/wflow/pyflwdir/reference.html>`_ for all methods
 
 .. code-block:: python
 
-    stream_order = flw.stream_order()
+    subbasins = flw.subbasins()
 
 Getting started
 ===============
