@@ -43,7 +43,7 @@ def test_streams_basins_up(parsed, flwdir):
     areas1 = regions.region_area(bas, latlon=True)[1]
     assert areas1.argmax() == areas.argmax()
     # pfafstetter
-    idx0 = idxs_pit[np.argsort(upa[idxs_pit])[-1]]
+    idx0 = idxs_pit[np.argsort(upa[idxs_pit])[-1:]]
     pfaf = basins.pfafstetter(idx0, idxs_ds, seq, upa, upa_min=0, depth=2, mv=mv)
     if pfaf.max() > 10:
         pfaf = pfaf // 10

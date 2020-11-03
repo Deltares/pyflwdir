@@ -695,13 +695,11 @@ class FlwdirRaster(object):
         lbs, bboxs, total_bbox = regions.region_bounds(basins, transform=self.transform)
         return lbs, bboxs, total_bbox
 
-    def pfafstetter(self, idx0, depth=1, uparea=None, upa_min=0.0):
-        """Returns the pfafstetter coding for a single basin.
+    def pfafstetter(self, depth=1, uparea=None, upa_min=0.0):
+        """Returns the pfafstetter subbasins.
 
         Parameters
         ----------
-        idx0 : int
-            index of outlet cell
         depth : int, optional
             Number of pfafsterrer layers, by default 1.
         uparea : 2D array of float, optional
@@ -715,7 +713,7 @@ class FlwdirRaster(object):
             subbasin map with pfafstetter coding
         """
         pfaf = basins.pfafstetter(
-            idx0=idx0,
+            idxs_pit=self.idxs_pit,
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
             uparea=self._check_data(uparea, "uparea"),

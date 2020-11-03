@@ -205,7 +205,7 @@ def test_basins():
 
 
 def test_pfafstetter():
-    pfaf = flw.pfafstetter(flw.idxs_pit[0])
+    pfaf = flw.pfafstetter()
     bas0 = flw.basins(flw.idxs_pit[0])
     assert np.all(pfaf[bas0 != 0] > 0)
     assert pfaf.max() <= 9
