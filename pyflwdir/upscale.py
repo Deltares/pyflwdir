@@ -997,6 +997,11 @@ def ihu_optimize_rivlen(
                         if valid[idx]:
                             assert idx != idx1
                             idxs_ds[idx] = idx1
+                        elif idxs_ds[idx0] == idx:  #  loop > undo
+                            streams[subidxs_out[idx0]] = -1
+                            streams[subidx0] = idx0
+                            subidxs_out[idx0] = subidx0
+                            idxs_ds[idx0] = idx1
                     break
 
     return idxs_ds, subidxs_out
@@ -1016,7 +1021,7 @@ def ihu_minimize_error(
     cellsize,
     minlen=0,
     minupa=0,
-    pit_out_of_cell=False,
+    pit_out_of_cell=2,
     mv=_mv,
 ):
     """Reduces the number of cells with an upstream area error by finding the neighbor
@@ -1036,7 +1041,7 @@ def ihu_minimize_error(
             if subidx_ds == subidx:
                 break
             if streams[subidx_ds] >= 0:
-                idx1 = streams[subidx_ds] # TODO remove use of idx in streams map
+                idx1 = streams[subidx_ds]  # TODO remove use of idx in streams map
                 idxs.append(idx1)
                 if len(idxs) == 100 or (len(idxs) == 1 and in_d8(idx0, idx1, ncol)):
                     break
@@ -1044,13 +1049,12 @@ def ihu_minimize_error(
             subidx = subidx_ds
 
         # check if outlet within +/- 2 cells
-        check_pit = pit_out_of_cell and subidx_ds == subidx
+        check_pit = pit_out_of_cell > 0 and subidx_ds == subidx
         if check_pit:
             idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
-            check_pit = (
-                abs((idx1 - idx0) % ncol) <= 2 and abs((idx1 - idx0)) // ncol <= 2
-            )
-            # check_pit = nearby and np.all(subidxs_out!=subidx_ds)
+            dr = (idx1 % ncol) - (idx0 % ncol)
+            dc = (idx1 // ncol) - (idx0 // ncol)
+            check_pit = abs(dr) <= pit_out_of_cell and abs(dc) <= pit_out_of_cell
         # not outlet cells and at pit -> reset outlet to pit
         if check_pit and (subidx_ds == subidx0 or len(idxs) == 0):
             fixed = True
@@ -1072,10 +1076,10 @@ def ihu_minimize_error(
 
         # # if no upstream neighbor -> find new stream
         idxs_d8 = core._d8_idx(idx0, shape)
-        # if np.all(idxs_ds[idxs_d8] != idx0):
-        #     streams, idxs_ds, subidxs_out, fixed = new_outlet(
-        #         idx0, subidx0, streams, idxs_ds, subidxs_out, *args
-        #     )
+        if np.all(idxs_ds[idxs_d8] != idx0):
+            streams, idxs_ds, subidxs_out, fixed = new_outlet(
+                idx0, subidx0, streams, idxs_ds, subidxs_out, *args
+            )
         # minimize total cells with upa error
         max_dist = 999999
         idxs_hw = list()
@@ -1143,7 +1147,7 @@ def ihu(
     niter=5,
     opt_rivlen=True,
     min_error=True,
-    pit_out_of_cell=True,
+    pit_out_of_cell=2,
     mv=_mv,
 ):
     """Returns the upscaled next downstream index based on the
@@ -1262,7 +1266,7 @@ def ihu(
                 cellsize=cellsize,
                 minlen=minlen,
                 minupa=minupa,
-                pit_out_of_cell=last_iter and pit_out_of_cell,
+                pit_out_of_cell=pit_out_of_cell if last_iter else 0,
                 mv=mv,
             )
         if last_iter:
