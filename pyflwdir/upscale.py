@@ -985,11 +985,12 @@ def ihu_optimize_rivlen(
             if idx1 == idx0 or valid[idx1] == False or valid[idx0] == False:
                 continue
             idxs_us = core._upstream_d8_idx(idx0, idxs_ds, shape)
-            if np.any(np.array([valid[idx] == False for idx in idxs_us])):
-                continue
-            idxs_us_ind8 = np.array([in_d8(idx, idx1, ncol) for idx in idxs_us])
+            # if np.any(np.array([valid[idx] == False for idx in idxs_us])):
+            #     continue
+            # invalid cells will be fixed in the next step
+            idxs_us_ind8 = [in_d8(idx, idx1, ncol) for idx in idxs_us if valid[idx]]
             # replace outlet 0 if all upstream cells are connected to outlet 1
-            if idxs_us.size == 0 or np.all(idxs_us_ind8):
+            if idxs_us.size == 0 or np.all(np.array(idxs_us_ind8)):
                 streams, idxs_ds, subidxs_out, success = new_outlet(
                     idx0, subidx0, streams, idxs_ds, subidxs_out, *args
                 )
@@ -1043,9 +1044,13 @@ def ihu_minimize_error(
             subidx = subidx_ds
 
         # check if outlet within +/- 2 cells
-        idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
-        dr, dc = abs(idx1 - idx0) % ncol, abs(idx1 - idx0) // ncol
-        check_pit = subidx_ds == subidx and dr <= 2 and dc <= 2
+        check_pit = subidx_ds == subidx
+        if check_pit:
+            idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
+            check_pit = (
+                abs((idx1 - idx0) % ncol) <= 2 and abs((idx1 - idx0)) // ncol <= 2
+            )
+            # check_pit = nearby and np.all(subidxs_out!=subidx_ds)
         # not outlet cells and at pit -> reset outlet to pit
         if check_pit and (subidx_ds == subidx0 or len(idxs) == 0):
             fixed = True
@@ -1059,18 +1064,18 @@ def ihu_minimize_error(
                 )
         if check_pit and fixed:
             # set pit at current cell and outlet pixel outside at pit
-            streams[subidx_ds] = idx0
             streams[subidxs_out[idx0]] = -1
+            streams[subidx_ds] = idx0
             idxs_ds[idx0] = idx0
             subidxs_out[idx0] = subidx_ds
             continue
 
-        # if no upstream neighbor -> find new stream
+        # # if no upstream neighbor -> find new stream
         idxs_d8 = core._d8_idx(idx0, shape)
-        if np.all(idxs_ds[idxs_d8] != idx0):
-            streams, idxs_ds, subidxs_out, fixed = new_outlet(
-                idx0, subidx0, streams, idxs_ds, subidxs_out, *args
-            )
+        # if np.all(idxs_ds[idxs_d8] != idx0):
+        #     streams, idxs_ds, subidxs_out, fixed = new_outlet(
+        #         idx0, subidx0, streams, idxs_ds, subidxs_out, *args
+        #     )
         # minimize total cells with upa error
         max_dist = 999999
         idxs_hw = list()
@@ -1080,9 +1085,10 @@ def ihu_minimize_error(
                 for j in range(max_dist + 1):
                     if idx in idxs:
                         d0 = idxs.index(idx) + j  # sum no of cells with error
-                        # prefer horizontal connections
-                        hor = abs(idx1 - idx0) == 1 or abs(idx1 - idx0) == ncol
-                        if d0 < max_dist or (d0 == max_dist and hor):
+                        # prefer horizontal & vertical over diagonal connections
+                        hor = abs(idx1 - idx0) == 1
+                        ver = abs(idx1 - idx0) == ncol
+                        if d0 < max_dist or (d0 == max_dist and (hor or ver)):
                             idxs_ds[idx0] = idx1
                             assert idx0 != idx1
                             max_dist = d0
@@ -1124,9 +1130,11 @@ def ihu(
     subuparea,
     subshape,
     cellsize,
-    iter=True,
     minlen=None,
     minupa=None,
+    niter=2,
+    opt_rivlen=True,
+    min_error=True,
     mv=_mv,
 ):
     """Returns the upscaled next downstream index based on the
@@ -1196,7 +1204,7 @@ def ihu(
         cellsize=cellsize,
         mv=mv,
     )
-    for _ in range(5 * int(iter)):
+    for j in range(niter):
         idxs_ds, subidxs_out, idxs_fix1 = ihu_relocate_outlets(
             idxs_fix=idxs_fix,
             idxs_ds=idxs_ds,
@@ -1208,40 +1216,45 @@ def ihu(
             cellsize=cellsize,
             mv=mv,
         )
+        # valid = subidxs_out != mv
+        # print(j, np.sum(valid) == np.unique(subidxs_out[valid]).size)
+        # import pdb; pdb.set_trace()
         # analyze upscaled flowdirs and return indices of invalid and short flowdirs
         valid, streams, idxs_fix1, idxs_short = upscale_check(
             subidxs_out, idxs_ds, subidxs_ds, minlen=minlen, mv=mv
         )
-        idxs_ds, subidxs_out = ihu_optimize_rivlen(
-            idxs_short=idxs_short,
-            valid=valid,
-            streams=streams,
-            idxs_ds=idxs_ds,
-            subidxs_out=subidxs_out,
-            subidxs_ds=subidxs_ds,
-            subuparea=subuparea,
-            subshape=subshape,
-            shape=shape,
-            cellsize=cellsize,
-            minlen=minlen,
-            minupa=minupa,
-            mv=mv,
-        )
-        idxs_ds, subidxs_out = ihu_minimize_error(
-            idxs_fix=idxs_fix1,
-            valid=valid,
-            streams=streams,
-            idxs_ds=idxs_ds,
-            subidxs_out=subidxs_out,
-            subidxs_ds=subidxs_ds,
-            subuparea=subuparea,
-            subshape=subshape,
-            shape=shape,
-            cellsize=cellsize,
-            minlen=minlen,
-            minupa=minupa,
-            mv=mv,
-        )
+        if opt_rivlen:
+            idxs_ds, subidxs_out = ihu_optimize_rivlen(
+                idxs_short=idxs_short,
+                valid=valid,
+                streams=streams,
+                idxs_ds=idxs_ds,
+                subidxs_out=subidxs_out,
+                subidxs_ds=subidxs_ds,
+                subuparea=subuparea,
+                subshape=subshape,
+                shape=shape,
+                cellsize=cellsize,
+                minlen=minlen,
+                minupa=minupa,
+                mv=mv,
+            )
+        if min_error:
+            idxs_ds, subidxs_out = ihu_minimize_error(
+                idxs_fix=idxs_fix1,
+                valid=valid,
+                streams=streams,
+                idxs_ds=idxs_ds,
+                subidxs_out=subidxs_out,
+                subidxs_ds=subidxs_ds,
+                subuparea=subuparea,
+                subshape=subshape,
+                shape=shape,
+                cellsize=cellsize,
+                minlen=minlen,
+                minupa=minupa,
+                mv=mv,
+            )
         if idxs_fix1.size == 0 or idxs_fix1.size == idxs_fix.size:
             break
         idxs_fix = idxs_fix1
@@ -1250,7 +1263,7 @@ def ihu(
 
 
 def eam_plus(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
-    return ihu(subidxs_ds, subuparea, subshape, cellsize, iter=False, mv=mv)
+    return ihu(subidxs_ds, subuparea, subshape, cellsize, niter=0, mv=mv)
 
 
 @njit
