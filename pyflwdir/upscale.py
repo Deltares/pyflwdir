@@ -1057,16 +1057,16 @@ def ihu_minimize_error(
             check_pit = abs(dr) <= pit_out_of_cell and abs(dc) <= pit_out_of_cell
         # not outlet cells and at pit -> reset outlet to pit
         if check_pit and (subidx_ds == subidx0 or len(idxs) == 0):
-            fixed = True
-        # isolated outlet cells at pit
-        elif check_pit and len(idxs) == 1 and streams[subidx_ds] >= 0:
-            idxs_d8 = core._d8_idx(idx1, shape)
-            if np.all(idxs_ds[idxs_d8] != idx1):
-                # alternative outlet pixel in cell with original pit pixel
-                streams, idxs_ds, subidxs_out, fixed = new_outlet(
-                    idx1, subidx_ds, streams, idxs_ds, subidxs_out, *args
-                )
-        if check_pit and fixed:
+            #     fixed = True
+            # # isolated outlet cells at pit
+            # elif check_pit and len(idxs) == 1 and streams[subidx_ds] >= 0:
+            #     idxs_d8 = core._d8_idx(idx1, shape)
+            #     if np.all(idxs_ds[idxs_d8] != idx1):
+            #         # alternative outlet pixel in cell with original pit pixel
+            #         streams, idxs_ds, subidxs_out, fixed = new_outlet(
+            #             idx1, subidx_ds, streams, idxs_ds, subidxs_out, *args
+            #         )
+            # if check_pit and fixed:
             # set pit at current cell and outlet pixel outside at pit
             streams[subidxs_out[idx0]] = -1
             streams[subidx_ds] = idx0
@@ -1081,58 +1081,63 @@ def ihu_minimize_error(
                 idx0, subidx0, streams, idxs_ds, subidxs_out, *args
             )
         # minimize total cells with upa error
-        max_dist = 999999
-        idxs_hw = list()
-        if not fixed:
-            for idx1 in idxs_d8:
-                idx = idx1
-                hor = abs(idx1 - idx0) == 1
-                ver = abs(idx1 - idx0) == ncol
-                for j in range(max_dist + 1):
-                    if idx in idxs:
-                        d0 = idxs.index(idx) + j  # sum no of cells with error
-                        # prefer horizontal & vertical over diagonal connections
-                        if d0 < max_dist:
-                            # avoid crossing flow dirs
-                            if not (hor or ver):
-                                dr = (idx1 % ncol) - (idx0 % ncol)
-                                dc = (idx1 // ncol) - (idx0 // ncol)
-                                idxh = idx0 + dr
-                                idxv = idx0 + dc * ncol
-                                cross = idxs_ds[idxh] == idxv or idxs_ds[idxv] == idxh
-                            if hor or ver or not cross:
-                                idxs_ds[idx0] = idx1
-                                assert idx0 != idx1
-                                max_dist = d0
-                                fixed = True
-                        break
-                    idx_ds = idxs_ds[idx]
-                    if idx_ds == idx or idx_ds == idx0:  # break if pit or upstream
-                        if idx_ds == idx0:
-                            if core._upstream_d8_idx(idx1, idxs_ds, shape).size == 0:
-                                idxs_hw.append(idx1)
-                        break
-                    # next iter
-                    idx = idx_ds
+        for _ in range(2):
+            max_dist = 999999
+            idxs_hw = list()
+            if not fixed:
+                for idx1 in idxs_d8:
+                    idx = idx1
+                    hor = abs(idx1 - idx0) == 1
+                    ver = abs(idx1 - idx0) == ncol
+                    for j in range(max_dist + 1):
+                        if idx in idxs:
+                            d0 = idxs.index(idx) + j  # sum no of cells with error
+                            if d0 < max_dist:
+                                # avoid crossing flow dirs
+                                if not (hor or ver):
+                                    dr = (idx1 % ncol) - (idx0 % ncol)
+                                    dc = (idx1 // ncol) - (idx0 // ncol)
+                                    idxh = idx0 + dr
+                                    idxv = idx0 + dc * ncol
+                                    cross = (
+                                        idxs_ds[idxh] == idxv or idxs_ds[idxv] == idxh
+                                    )
+                                if hor or ver or not cross:
+                                    idxs_ds[idx0] = idx1
+                                    assert idx0 != idx1
+                                    max_dist = d0
+                                    fixed = True
+                            break
+                        idx_ds = idxs_ds[idx]
+                        if idx_ds == idx or idx_ds == idx0:  # break if pit or upstream
+                            if idx_ds == idx0:
+                                idxs_us = core._upstream_d8_idx(idx1, idxs_ds, shape)
+                                if idxs_us.size == 0:
+                                    idxs_hw.append(idx1)
+                            break
+                        # next iter
+                        idx = idx_ds
 
-        if not fixed and len(idxs_hw) > 0 and len(idxs) > 0:
-            for idx in idxs_hw:
-                # try resetting the oultet pixel of an upstream headwater cell to
-                # another streams which connects to the next downstream outlet pixel
-                # this would provide a fix in the next iteration.
-                subidx0 = subidxs_out[idx]
-                subidx1 = subidxs_out[idxs[0]]
-                args2 = args + (subidx1,)
-                streams, idxs_ds, subidxs_out, fixed = new_outlet(
-                    idx,
-                    subidx0,
-                    streams,
-                    idxs_ds,
-                    subidxs_out,
-                    *args2,
-                )
-                if fixed:
-                    break
+            if not fixed and len(idxs_hw) > 0 and len(idxs) > 0:
+                for idx in idxs_hw:
+                    # try resetting the oultet pixel of an upstream headwater cell to
+                    # another streams which connects to the next downstream outlet pixel
+                    # this would provide a fix in the next iteration.
+                    subidx0 = subidxs_out[idx]
+                    subidx1 = subidxs_out[idxs[0]]
+                    args2 = args + (subidx1,)
+                    streams, idxs_ds, subidxs_out, fixed1 = new_outlet(
+                        idx,
+                        subidx0,
+                        streams,
+                        idxs_ds,
+                        subidxs_out,
+                        *args2,
+                    )
+                    if fixed1:
+                        break
+            else:
+                break
 
     return idxs_ds, subidxs_out
 
