@@ -985,9 +985,7 @@ def ihu_optimize_rivlen(
             if idx1 == idx0 or valid[idx1] == False or valid[idx0] == False:
                 continue
             idxs_us = core._upstream_d8_idx(idx0, idxs_ds, shape)
-            # if np.any(np.array([valid[idx] == False for idx in idxs_us])):
-            #     continue
-            # invalid cells will be fixed in the next step
+            # invalid are set to new outlet pix in the same cell if any
             idxs_us_ind8 = [in_d8(idx, idx1, ncol) for idx in idxs_us if valid[idx]]
             # replace outlet 0 if all upstream cells are connected to outlet 1
             if idxs_us.size == 0 or np.all(np.array(idxs_us_ind8)):
@@ -996,8 +994,9 @@ def ihu_optimize_rivlen(
                 )
                 if success:
                     for idx in idxs_us:
-                        assert idx != idx1
-                        idxs_ds[idx] = idx1
+                        if valid[idx]:
+                            assert idx != idx1
+                            idxs_ds[idx] = idx1
                     break
 
     return idxs_ds, subidxs_out
@@ -1017,6 +1016,7 @@ def ihu_minimize_error(
     cellsize,
     minlen=0,
     minupa=0,
+    pit_out_of_cell=False,
     mv=_mv,
 ):
     """Reduces the number of cells with an upstream area error by finding the neighbor
@@ -1036,7 +1036,7 @@ def ihu_minimize_error(
             if subidx_ds == subidx:
                 break
             if streams[subidx_ds] >= 0:
-                idx1 = streams[subidx_ds]
+                idx1 = streams[subidx_ds] # TODO remove use of idx in streams map
                 idxs.append(idx1)
                 if len(idxs) == 100 or (len(idxs) == 1 and in_d8(idx0, idx1, ncol)):
                     break
@@ -1044,7 +1044,7 @@ def ihu_minimize_error(
             subidx = subidx_ds
 
         # check if outlet within +/- 2 cells
-        check_pit = subidx_ds == subidx
+        check_pit = pit_out_of_cell and subidx_ds == subidx
         if check_pit:
             idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
             check_pit = (
@@ -1082,17 +1082,25 @@ def ihu_minimize_error(
         if not fixed:
             for idx1 in idxs_d8:
                 idx = idx1
+                hor = abs(idx1 - idx0) == 1
+                ver = abs(idx1 - idx0) == ncol
                 for j in range(max_dist + 1):
                     if idx in idxs:
                         d0 = idxs.index(idx) + j  # sum no of cells with error
                         # prefer horizontal & vertical over diagonal connections
-                        hor = abs(idx1 - idx0) == 1
-                        ver = abs(idx1 - idx0) == ncol
-                        if d0 < max_dist or (d0 == max_dist and (hor or ver)):
-                            idxs_ds[idx0] = idx1
-                            assert idx0 != idx1
-                            max_dist = d0
-                            fixed = True
+                        if d0 < max_dist:
+                            # avoid crossing flow dirs
+                            if not (hor or ver):
+                                dr = (idx1 % ncol) - (idx0 % ncol)
+                                dc = (idx1 // ncol) - (idx0 // ncol)
+                                idxh = idx0 + dr
+                                idxv = idx0 + dc * ncol
+                                cross = idxs_ds[idxh] == idxv or idxs_ds[idxv] == idxh
+                            if hor or ver or not cross:
+                                idxs_ds[idx0] = idx1
+                                assert idx0 != idx1
+                                max_dist = d0
+                                fixed = True
                         break
                     idx_ds = idxs_ds[idx]
                     if idx_ds == idx or idx_ds == idx0:  # break if pit or upstream
@@ -1132,9 +1140,10 @@ def ihu(
     cellsize,
     minlen=None,
     minupa=None,
-    niter=2,
+    niter=5,
     opt_rivlen=True,
     min_error=True,
+    pit_out_of_cell=True,
     mv=_mv,
 ):
     """Returns the upscaled next downstream index based on the
@@ -1205,6 +1214,7 @@ def ihu(
         mv=mv,
     )
     for j in range(niter):
+        # analyze upscaled flowdirs and return indices of invalid and short flowdirs
         idxs_ds, subidxs_out, idxs_fix1 = ihu_relocate_outlets(
             idxs_fix=idxs_fix,
             idxs_ds=idxs_ds,
@@ -1216,12 +1226,11 @@ def ihu(
             cellsize=cellsize,
             mv=mv,
         )
-        # valid = subidxs_out != mv
-        # print(j, np.sum(valid) == np.unique(subidxs_out[valid]).size)
-        # import pdb; pdb.set_trace()
-        # analyze upscaled flowdirs and return indices of invalid and short flowdirs
         valid, streams, idxs_fix1, idxs_short = upscale_check(
             subidxs_out, idxs_ds, subidxs_ds, minlen=minlen, mv=mv
+        )
+        last_iter = (
+            idxs_fix1.size == 0 or idxs_fix1.size == idxs_fix.size or j + 1 == niter
         )
         if opt_rivlen:
             idxs_ds, subidxs_out = ihu_optimize_rivlen(
@@ -1253,9 +1262,10 @@ def ihu(
                 cellsize=cellsize,
                 minlen=minlen,
                 minupa=minupa,
+                pit_out_of_cell=last_iter and pit_out_of_cell,
                 mv=mv,
             )
-        if idxs_fix1.size == 0 or idxs_fix1.size == idxs_fix.size:
+        if last_iter:
             break
         idxs_fix = idxs_fix1
 
