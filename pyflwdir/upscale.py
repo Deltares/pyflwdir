@@ -1042,18 +1042,22 @@ def ihu_minimize_error(
             # next iter
             subidx = subidx_ds
 
+        # check if outlet within +/- 2 cells
+        idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
+        dr, dc = abs(idx1 - idx0) % ncol, abs(idx1 - idx0) // ncol
+        check_pit = subidx_ds == subidx and dr <= 2 and dc <= 2
         # not outlet cells and at pit -> reset outlet to pit
-        if subidx_ds == subidx and (subidx_ds == subidx0 or len(idxs) == 0):
+        if check_pit and (subidx_ds == subidx0 or len(idxs) == 0):
             fixed = True
         # isolated outlet cells at pit
-        elif subidx_ds == subidx and len(idxs) == 1 and streams[subidx_ds] >= 0:
+        elif check_pit and len(idxs) == 1 and streams[subidx_ds] >= 0:
             idxs_d8 = core._d8_idx(idx1, shape)
             if np.all(idxs_ds[idxs_d8] != idx1):
                 # alternative outlet pixel in cell with original pit pixel
                 streams, idxs_ds, subidxs_out, fixed = new_outlet(
                     idx1, subidx_ds, streams, idxs_ds, subidxs_out, *args
                 )
-        if subidx_ds == subidx and fixed:
+        if check_pit and fixed:
             # set pit at current cell and outlet pixel outside at pit
             streams[subidx_ds] = idx0
             streams[subidxs_out[idx0]] = -1
@@ -1093,7 +1097,7 @@ def ihu_minimize_error(
                     # next iter
                     idx = idx_ds
 
-        if not fixed and len(idxs_hw) > 0:
+        if not fixed and len(idxs_hw) > 0 and len(idxs) > 0:
             for idx in idxs_hw:
                 # try resetting the oultet pixel of an upstream headwater cell to
                 # another streams which connects to the next downstream outlet pixel
