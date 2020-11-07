@@ -875,12 +875,17 @@ def outlet_pix(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
     """Returns subgrid cells at the edge of a lowres cells with the next downstream
     subgrid cell outside of that lowres cell."""
     subidxs = []
+    subnrow = int(subidxs_ds.size / subncol)
     args = (subncol, cellsize, ncol)
     c_ul = (idx % ncol) * cellsize
     r_ul = (idx // ncol) * cellsize
     for ci in range(cellsize):
+        if c_ul + ci >= subncol:
+            continue
         we_edge = ci == 0 or ci + 1 == cellsize
         for ri in range(cellsize):
+            if r_ul + ri >= subnrow:
+                continue
             ns_edge = ri == 0 or ri + 1 == cellsize
             edge = we_edge or ns_edge
             subidx = (r_ul + ri) * subncol + c_ul + ci
