@@ -1088,17 +1088,20 @@ def ihu_minimize_error(
         # minimize total cells with upa error
         for _ in range(2):
             max_dist = 999999
+            max_upa = 0
             idxs_hw = list()
             if not fixed:
                 for idx1 in idxs_d8:
                     idx = idx1
+                    upa = subuparea[subidxs_out[idx1]]
                     hor = abs(idx1 - idx0) == 1
                     ver = abs(idx1 - idx0) == ncol
                     for j in range(max_dist + 1):
                         if idx in idxs:
                             d0 = idxs.index(idx) + j  # sum no of cells with error
-                            if d0 < max_dist:
+                            if d0 < max_dist or (d0 == max_dist and upa > max_upa):
                                 # avoid crossing flow dirs
+                                cross = False
                                 if not (hor or ver):
                                     dr = (idx1 % ncol) - (idx0 % ncol)
                                     dc = (idx1 // ncol) - (idx0 // ncol)
@@ -1107,10 +1110,11 @@ def ihu_minimize_error(
                                     cross = (
                                         idxs_ds[idxh] == idxv or idxs_ds[idxv] == idxh
                                     )
-                                if hor or ver or not cross:
+                                if not cross:
                                     idxs_ds[idx0] = idx1
                                     assert idx0 != idx1
                                     max_dist = d0
+                                    max_upa = upa
                                     fixed = True
                             break
                         idx_ds = idxs_ds[idx]
