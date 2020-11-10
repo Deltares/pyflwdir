@@ -557,111 +557,112 @@ def ihu_relocate_outlets(
     _, subncol = subshape
     _, ncol = shape
 
+    # linear indices of cells with error
     if idxs_fix is None:
-        # binary array with outlets
         idxs_fix1 = upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=mv)[1]
     else:
         idxs_fix1 = idxs_fix
 
-    # loop over unconnected cells from up to downstream
+    # loop over cells with flow dir error from up to downstream
     idxs_fix_out = []
     seq = np.argsort(subuparea[subidxs_out[idxs_fix1]])
     for i0 in seq:  # @0A lowres fix index loop
         nextiter = False
         idx00 = idxs_fix1[i0]
-        # print(idx00)
 
-        # STEP 1: get downstream path with highres outlet indices
-        idxs_lst = list()
-        subidxs_lst = list()
-        connected = False
-        # read outlet index and move into the next lowres cell to initialize
-        idx_ds0 = idxs_ds[idx00]  # original next downstream cell
-        subidx = subidxs_ds[subidxs_out[idx00]]  # next highres cell
-        idx0 = subidx_2_idx(subidx, subncol, cellsize, ncol)
-        while True:  # @1A while noy connected to original downstream cell
-            # while True:  # @1B highres loop - while not at outlet
+        # STEP 1: get downstream trace
+        # potential alternative outlet pixels:
+        idxs_lst = list()  # cell index list
+        subidxs_lst = list()  # pixel index list
+        # initialize:
+        stop = False
+        idx_ds0 = idxs_ds[idx00]  # next downstream cell
+        subidx = subidxs_ds[subidxs_out[idx00]]  # next downstream pixel
+        idx0 = subidx_2_idx(subidx, subncol, cellsize, ncol)  # current pixel cell
+        while True:  # @1A tracing
             subidx1 = subidxs_ds[subidx]
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             pit = subidx1 == subidx
-            if pit or idx0 != idx1:  # pit or outlet
-                # connected if:
-                # - next downstream lowres cell not in path &
-                # - current highres outlet cell same as original next outlet
+            if pit or idx0 != idx1:  # @ pit or (alternative) outlet pixel
+                # stop if:
+                # - @ pit
                 if pit:
-                    connected = True
+                    stop = True
+                # - @ outlet pixel of next downstream cell (correct connection)
+                # - AND cell not in trace (no alternative outlet pixels)
                 elif subidx == subidxs_out[idx_ds0]:
                     if idx_ds0 in idxs_lst:
                         pass
                     else:
-                        connected = True
-                # check if valid cell
+                        stop = True
+                # check if valid - avoid appending pixels in cells without outlet pixel
                 if idxs_ds[idx0] != mv:
-                    subidxs_lst.append(subidx)  # append highres outlet index
-                    idxs_lst.append(idx0)  # append lowres index
-                # if at original outlet cell of idx0 -> update idx_ds0
+                    subidxs_lst.append(subidx)  # append alternative outlet pixel
+                    idxs_lst.append(idx0)  # append cell
+                # @ outlet pixel of idx0 -> update next downstream cell idx_ds0
                 if subidx == subidxs_out[idx0]:
                     idx_ds0 = idxs_ds[idx0]
                 idx0 = idx1
-            if connected:  # with original ds highres cell
+            if stop:
                 break  # @1A
             # next iter @1A
             subidx = subidx1
-        if connected and subidx == subidxs_out[idxs_ds[idx00]]:
-            # connection at first outlet -> already fixed
+        if stop and subidx == subidxs_out[idxs_ds[idx00]]:
+            # trace ends at first outlet pixels -> already fixed
             continue  # @0A
-        elif not connected:
+        elif stop is False:
+            # no succussful trace end -> skip cell
             continue  # @0A
 
-        # STEP 2: find original upstream connections
-        idxs_us_lst = list()
+        # STEP 2: find tributary cells: i.e. cells directly upstream of trace
+        idxs_us_lst = list()  # tirbutary cells
         idxs_ds0 = np.unique(np.array(idxs_lst, dtype=idxs_ds.dtype))
-        for idx_ds in idxs_ds0:  # @2A lowres us connections loop
-            for idx0 in core._upstream_d8_idx(idx_ds, idxs_ds, shape):
-                # skip upstream nodes wich are on path of step 1
+        for idx_ds in idxs_ds0:  # @2A trace cells loop
+            idxs_us = core._upstream_d8_idx(idx_ds, idxs_ds, shape)
+            for idx0 in idxs_us:  # us neighboring cells loop
+                # skip if us cell on trace
                 if subidxs_out[idx0] in subidxs_lst or idx0 == idx00:
                     continue  # @2A
-                # append lowres index of upstream connection
-                idxs_us_lst.append(idx0)
+                idxs_us_lst.append(idx0)  # append tributary cells
 
-        # STEP 3: connect original upstream connections to outlets on path
+        # STEP 3: connect tributary cells to alternative outlets on trace
         noutlets = len(subidxs_lst)
-        idxs_us_conn_lst = list()  # first possible connection of lateral
-        idxs_us_conn_lst1 = list()  # last possible connection of lateral
-        for i in range(len(idxs_us_lst)):  # @3A lowres us connections loop
-            idx0 = idxs_us_lst[i]
-            subidx = subidxs_out[idx0]
-            connected = False
-            j0, j1 = 0, 0  # start and end connection to path
-            # move into next cell to initialize
-            subidx = subidxs_ds[subidx]
+        idxs_us_conn_lst = list()  # first possible connection of tributary cell
+        idxs_us_conn_lst1 = list()  # last possible connection of tributary cell
+        for i in range(len(idxs_us_lst)):  # @3A tributary cells loop
+            idx0 = idxs_us_lst[i]  # tributary cell
+            subidx = subidxs_out[idx0]  # tributary cell outlet pixel
+            connected = False  # True valid connection to trace
+            j0, j1 = 0, 0  # start and end index of alternative oulet pixel on trace
+            subidx = subidxs_ds[subidx]  # move into next cell to initialize
             idx = idx0
             ii = 0
-            while True and ii <= 10:  # @3B find connecting outlet in subidxs_lst
+            # get indices of alternative outlet pixels to which tributary connects
+            while True and ii <= 10:  # @3B connect loop; max 10 cell edge crossings
                 subidx1 = subidxs_ds[subidx]
                 idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
-                if subidx == subidx1 or idx != idx1:  # if pit OR outlet
+                if subidx == subidx1 or idx != idx1:  # if pit OR outlet pixel
                     if not connected:
                         ii += 1
-                    for j in range(j0, noutlets):  # @3C check outlet loop
-                        if subidxs_lst[j] == subidx:  # connection on path
-                            if not connected:
+                    for j in range(j0, noutlets):  # @3C check alternative outlets loop
+                        if subidxs_lst[j] == subidx:  # @ alternative outlet on trace
+                            if not connected:  # first possible connection
                                 j0, j1, connected = j, j, True
-                            elif in_d8(idx0, idx, ncol):
+                            elif in_d8(idx0, idx, ncol):  # next possible connections
                                 j1 = j
                             break  # @3C
                     if (j1 + 1 == noutlets) or subidx == subidx1:
-                        break  # @3C
+                        break  # @3B
                 # next iter @3B
                 subidx = subidx1
                 idx = idx1
             if connected:
                 idxs_us_conn_lst.append(j0)
                 idxs_us_conn_lst1.append(j1)
-            else:
+            else:  # set tributary connection to last alternative outlet pixel
                 idxs_us_conn_lst.append(noutlets - 1)
                 idxs_us_conn_lst1.append(noutlets - 1)
-        # sort from up to downstream
+        # sort tributary cells from up to downstream connections to trace
         idxs_us_conn = np.array(idxs_us_conn_lst, dtype=idxs_ds.dtype)
         seq1 = np.argsort(idxs_us_conn)
         idxs_us0 = np.array(idxs_us_lst, dtype=idxs_ds.dtype)[seq1]
@@ -675,78 +676,50 @@ def ihu_relocate_outlets(
         while len(bottleneck) > nbottlenecks:
             nextiter = False
             nbottlenecks = len(bottleneck)
-            idx_out_lst = list()
-            subidx0_out_lst = list()
-            idx_ds_lst = list()
-            idx_ds0_lst = list()
-            idx0_lst = list()
+            # change lists
+            subidx0_out_lst = list()  # old outlet pixel
+            idx_out_lst = list()  # cell of changed outlet pixel
+            idx_ds_lst = list()  # new downstream cell
+            idx_ds0_lst = list()  # old downstream cell
+            idx0_lst = list()  # cell of changed flow direction
             idx0 = idx00
-            j0, k0 = 0, 0  # index last set pot. outlet, lateral inflow
-            for j in range(noutlets):  # @4A lowres connecting loop
+            j0, k0 = 0, 0  # index last set alternative outlet pixel, tributary cell
+            for j in range(noutlets):  # @4A alternative outlet pixel trace loop
                 if nextiter:
                     continue
-                idx1 = idxs_lst[j]
                 subidx_out1 = subidxs_lst[j]
-                # check if not connected to ds pit
-                if subidx_out1 == subidxs_ds[subidx_out1] and len(idx_out_lst) == 0:
-                    idxs_pit = np.where(subidxs_out == subidx_out1)[0]
-                    if idxs_pit.size == 1 and in_d8(idx0, idxs_pit[0], ncol):
-                        # previous (smaller) branch already claimed pit
-                        if idxs_ds[idx0] != idxs_pit[0]:
-                            idx_ds0_lst.append(idxs_ds[idx0])
-                            idx0_lst.append(idx0)
-                            idx_ds_lst.append(idxs_pit[0])
-                            idxs_ds[idx0] = idxs_pit[0]
-                            # print('pit - connect', idx0, idxs_pit[0])
-                        break  # @4A
-                    elif idxs_pit.size == 0:
-                        # set pit and move outlet to neighboring cell
-                        # NOTE pit outlet outside lowres cell !
-                        if idxs_ds[idx0] != idx0:
-                            idx_ds0_lst.append(idxs_ds[idx0])
-                            idx0_lst.append(idx0)
-                            idx_ds_lst.append(idx0)
-                            idxs_ds[idx0] = idx0
-                            # print('pit', idx0, idx0)
-                        idx_out_lst.append(idx0)
-                        subidx0_out_lst.append(subidxs_out[idx0])
-                        subidxs_out[idx0] = subidx_out1
-                        # print('pit - outlet', idx0)
-                        break  # @4A
-                    else:
-                        nextiter = True
-                        # print('pit - no connection', idx0)
-                # check if ds lowres cell already edited to avoid loops
+                idx1 = idxs_lst[j]
+                # if ds cell already or marked as bottleneck -> skip
                 if idx1 in idx_out_lst or idx1 in bottleneck:
                     d8 = False
                 else:
                     d8 = in_d8(idx0, idx1, ncol)
-                # check lateral connections
+                # check tributary connections for cell
                 ks_bool = np.logical_and(
                     idxs_us_conn[k0:] >= j0, idxs_us_conn[k0:] <= j
                 )
                 ks = np.where(ks_bool)[0] + k0
                 lats = ks.size > 0
                 nextlats = np.all(idxs_us_conn1[ks] > j) if lats else False
-                # check if possible to maka a d8 connection downstream, but
-                # before next outlet
+                # check if possible to set the tributary flow dir to a next alternative
+                # outlet pixel, but before next original outlet pixel
                 nextd8 = False
-                for jj in range(j + 1, noutlets):
-                    idx = idxs_lst[jj]
-                    if idx in idx_out_lst or idx in bottleneck:
-                        continue
-                    elif in_d8(idx0, idx, ncol):
-                        nextd8 = True
-                    if subidxs_out[idx] == subidxs_lst[jj]:  # original outlet
-                        break
-                # if next highres outlet exists nextd8 is False -> force update
+                if subidxs_out[idx1] != subidx_out1:
+                    for jj in range(j + 1, noutlets):
+                        idx = idxs_lst[jj]
+                        if idx in idx_out_lst or idx in bottleneck:
+                            continue
+                        elif in_d8(idx0, idx, ncol):
+                            nextd8 = True
+                        if subidxs_out[idx] == subidxs_lst[jj]:  # original outlet pix
+                            break
                 nextd8 = nextd8 and subidxs_out[idx1] != subidx_out1
                 # print(idx0, idx1)
                 # print(d8, nextd8, lats, nextlats)
                 if not d8 and not nextd8:
-                    nextiter = True
+                    nextiter = True  # no valid flow dir found
                 elif (not lats and nextd8) or (nextlats and nextd8):
-                    continue
+                    continue  # next alternative outlet pix is also valid -> continue
                 # UPDATE CONNECTIONS
                 if (d8 and lats) or (d8 and not nextd8):
                     # update MAIN connection
@@ -761,8 +734,8 @@ def ihu_relocate_outlets(
                         subidx0_out_lst.append(subidxs_out[idx1])
                         subidxs_out[idx1] = subidx_out1
                         # print('ds - outlet', idx1)
-                    # update LATERAL connections
-                    for k in ks:  # @4C loop lateral connections
+                    # update tributary connections
+                    for k in ks:  # @4C loop tributary connections
                         idx0 = idxs_us0[k]
                         idx0_edit = idx0 in idx_out_lst
                         if idx0_edit:
@@ -771,10 +744,9 @@ def ihu_relocate_outlets(
                         subidx = subidxs_out[idx0]
                         idx_ds0 = idx0
                         path = list()
-                        # connect lateral to next downstream highres outlet
+                        # connect tributary to next outlet pixel
                         while True:  # 4D
-                            # next downstream highres cell index
-                            subidx1 = subidxs_ds[subidx]
+                            subidx1 = subidxs_ds[subidx]  # next pixel
                             idx_ds = subidx_2_idx(subidx1, subncol, cellsize, ncol)
                             outlet = subidx1 == subidxs_out[idx_ds]
                             pit = subidx1 == subidx
@@ -798,24 +770,23 @@ def ihu_relocate_outlets(
                                     idx_ds0_lst.append(idxs_ds[idx0])
                                     idx0_lst.append(idx0)
                                     idx_ds_lst.append(idx_ds)
-                                    idxs_ds[idx0] = idx_ds  # update
+                                    idxs_ds[idx0] = idx_ds  # update tributary flwdir
                                     # print('lats', idx0, idx_ds)
                                 break  # @4D
-                            # new cell AND
-                            # passed unchanged donwstream outlet AND
+                            # move tributary outlet pixel
                             elif (
                                 idx_ds0 != idx_ds
-                                and idx_ds0 != idx0
-                                and subidx_ds0 in path
-                                and not idx_ds_edit
+                                and idx_ds0 != idx0  # edge of tributary cell
+                                and subidx_ds0 in path  # downstream of trib outlet pix
+                                and not idx_ds_edit  # unchanged outlet pixel
                                 and in_d8(idx0, idx_ds0, ncol)
                             ):
-                                # at new cell / potential outlet
+                                # at new cell / potential outlet pixel
                                 # set ds neighbor and relocate outlet IF
                                 # the original outlet has zero upstream cells
-                                # and the next downstream outlet is unchanged
+                                # and the next downstream outlet pix is unchanged
                                 idx_us0 = core._upstream_d8_idx(idx_ds0, idxs_ds, shape)
-                                # next subgrid outlet from
+                                # get cell with next outlet pixel
                                 _, idx_ds00, outlet0 = next_outlet(
                                     subidx,
                                     subidxs_ds,
@@ -828,10 +799,10 @@ def ihu_relocate_outlets(
                                 # zero upstream cells from original outlet AND
                                 # and unchanged next downstream outlet (not pit)
                                 if (
-                                    idx_us0.size == 0
+                                    idx_us0.size == 0  # headwater cell
                                     # and not us_new
                                     and outlet0
-                                    and not idx_ds00_edit
+                                    and not idx_ds00_edit  # ds outlet pix unchanged
                                     and idx_ds0 != idx_ds00
                                     and in_d8(idx_ds0, idx_ds00, ncol)
                                 ):
@@ -862,10 +833,10 @@ def ihu_relocate_outlets(
                     # next iter @4A
                     idx0 = idx1
                     j0 = j + 1
-                # drop upstream lateral connections if past the connection
+                # drop upstream tributary connections if past the connection
                 # outlet which has not been edited
                 elif not nextiter and lats:
-                    for k in ks:  # @4E loop laterals with upstream connections
+                    for k in ks:  # @4E loop tributary with upstream connections
                         idx_ds0 = idxs_ds[idxs_us0[k]]
                         lat_ds = idx_ds0 in idxs_lst[j:]
                         lat_edit = idx_ds0 in idx_out_lst
@@ -900,33 +871,28 @@ def ihu_relocate_outlets(
 
 
 @njit
-def outlet_cells(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
+def outlet_pix(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
     """Returns subgrid cells at the edge of a lowres cells with the next downstream
     subgrid cell outside of that lowres cell."""
     subidxs = []
-    subnrow = subidxs_ds.size / subncol
-    r_ul = (idx // ncol) * cellsize
+    subnrow = int(subidxs_ds.size / subncol)
+    args = (subncol, cellsize, ncol)
     c_ul = (idx % ncol) * cellsize
-    r_ll = ((idx // ncol) + 1) * cellsize - 1
-    c_ur = ((idx % ncol) + 1) * cellsize - 1
-    subidx_ul = r_ul * subncol + c_ul
-    subidx_ll = r_ll * subncol + c_ul
-    subidx_ur = r_ul * subncol + c_ur
-    for i in range(min(cellsize, subncol - c_ul)):
-        subidx = subidx_ul + i
-        if all or subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
-            subidxs.append(subidx)
-        if r_ll < subnrow:
-            subidx = subidx_ll + i
-            if all or subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
+    r_ul = (idx // ncol) * cellsize
+    for ci in range(cellsize):
+        if c_ul + ci >= subncol:
+            continue
+        we_edge = ci == 0 or ci + 1 == cellsize
+        for ri in range(cellsize):
+            if r_ul + ri >= subnrow:
+                continue
+            ns_edge = ri == 0 or ri + 1 == cellsize
+            edge = we_edge or ns_edge
+            subidx = (r_ul + ri) * subncol + c_ul + ci
+            subidx1 = subidxs_ds[subidx]
+            if subidx == subidx1:
                 subidxs.append(subidx)
-    for i in range(1, min(cellsize - 1, subnrow - r_ul)):
-        subidx = subidx_ul + i * subncol
-        if all or subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
-            subidxs.append(subidx)
-        if c_ur < subncol:
-            subidx = subidx_ur + i * subncol
-            if all or subidx_2_idx(subidxs_ds[subidx], subncol, cellsize, ncol) != idx:
+            elif edge and (all or subidx_2_idx(subidx1, *args) != idx):
                 subidxs.append(subidx)
 
     return subidxs
@@ -947,6 +913,7 @@ def new_outlet(
     minlen=0,
     minupa=0,
     mv=_mv,
+    subidx1=None,
 ):
     """Returns an alternative outlet subgrid cell which is connected to neighboring
     outlet cell in d8, not located on any existing stream, with a minimum downstream
@@ -958,7 +925,7 @@ def new_outlet(
     idx_ds = mv
     upa0 = minupa
     streams[subidx0] = -1
-    subidxs = outlet_cells(idx0, subidxs_ds, ncol, subncol, cellsize)
+    subidxs = outlet_pix(idx0, subidxs_ds, ncol, subncol, cellsize)
     for i in range(len(subidxs)):
         subidx = subidxs[i]
         if streams[subidx] != -9 or subuparea[subidx] <= upa0:
@@ -972,7 +939,10 @@ def new_outlet(
             subidx = subidx_ds
         n = len(path)
         idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
-        if n > minlen and in_d8(idx0, idx1, ncol) and idx0 != idx1:
+        outlet1 = subidx1 is None or subidx1 == subidx_ds  # specific outlet
+        outlet = n > minlen and in_d8(idx0, idx1, ncol) and idx0 != idx1
+        pit = n == 1 and subidx == path[0] and idx0 == idx1
+        if outlet1 and (outlet or pit):
             upa0 = subuparea[subidxs[i]]
             subidx_out = subidxs[i]
             idx_ds = idx1
@@ -993,6 +963,9 @@ def new_outlet(
 
 @njit
 def ihu_optimize_rivlen(
+    idxs_short,
+    valid,
+    streams,
     idxs_ds,
     subidxs_out,
     subidxs_ds,
@@ -1010,90 +983,39 @@ def ihu_optimize_rivlen(
     _, subncol = subshape
     _, ncol = shape
     args = (subidxs_ds, subuparea, ncol, subncol, cellsize, minlen, minupa, mv)
-    # array with outlets (>=0) and streams (-1); nodata value is -9
-    assert subidxs_out.size <= 2147483648
-    streams = np.full(subidxs_ds.size, -9, dtype=np.int32)
-    for idx in range(subidxs_out.size):
-        subidx = subidxs_out[idx]
-        if subidx == mv:
-            continue
-        streams[subidx] = idx
-    # find short ds len cells
-    idxs_fix = []
-    for idx0 in range(idxs_ds.size):
-        idx_ds = idxs_ds[idx0]
-        if idx_ds == mv:
-            continue
-        subidx = subidxs_out[idx0]
-        path = []
-        while True:
-            subidx_ds = subidxs_ds[subidx]
-            if subidx == subidx_ds:
-                break
-            path.append(subidx_ds)
-            if subidx_ds == subidxs_out[idx_ds]:
-                # fix connected cells with short ds length
-                if len(path) <= minlen:
-                    idxs_fix.append(idx0)
-                break
-            subidx = subidx_ds
-        for subidx in path:
-            streams[subidx] = max(streams[subidx], -1)
-    # repair
-    for _ in range(5):
-        idxs_fix_out = []
-        for idx0 in idxs_fix:
-            # current outlet 0
+    for i in range(len(idxs_short)):
+        for idx0 in [idxs_short[i], idxs_ds[idxs_short[i]]]:
             subidx0 = subidxs_out[idx0]
-            subidx1 = subidxs_out[idxs_ds[idx0]]
-            idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
-            if idx1 != streams[subidx1]:  # outlet outside lowres cell (pit)
+            idx1 = idxs_ds[idx0]
+            if idx1 == idx0 or valid[idx1] == False or valid[idx0] == False:
                 continue
-            idx0_us = core._upstream_d8_idx(idx0, idxs_ds, shape)
-            idx0_us_ind8 = np.array([in_d8(idx, idx1, ncol) for idx in idx0_us])
+            idxs_us = core._upstream_d8_idx(idx0, idxs_ds, shape)
+            # invalid are set to new outlet pix in the same cell if any
+            idxs_us_ind8 = [in_d8(idx, idx1, ncol) for idx in idxs_us if valid[idx]]
             # replace outlet 0 if all upstream cells are connected to outlet 1
-            if idx0_us.size == 0 or np.all(idx0_us_ind8):
+            if idxs_us.size == 0 or np.all(np.array(idxs_us_ind8)):
                 streams, idxs_ds, subidxs_out, success = new_outlet(
                     idx0, subidx0, streams, idxs_ds, subidxs_out, *args
                 )
                 if success:
-                    for idx in idx0_us:
-                        idxs_ds[idx] = idx1
-                        assert idx != idx1
-                    continue
-            # move to next downstream outlet 2; make sure it is connected
-            subidx = subidx1
-            while True:
-                subidx_ds = subidxs_ds[subidx]
-                if streams[subidx_ds] >= 0 or subidx == subidx_ds:
+                    for idx in idxs_us:
+                        if valid[idx]:
+                            assert idx != idx1
+                            idxs_ds[idx] = idx1
+                        elif idxs_ds[idx0] == idx:  #  loop > undo
+                            streams[subidxs_out[idx0]] = -1
+                            streams[subidx0] = idx0
+                            subidxs_out[idx0] = subidx0
+                            idxs_ds[idx0] = idx1
                     break
-                subidx = subidx_ds
-            subidx2 = subidx_ds
-            idx2 = subidx_2_idx(subidx2, subncol, cellsize, ncol)
-            if idx2 != idxs_ds[idx1] or subidx == subidx_ds or idx2 != streams[subidx2]:
-                continue  # if not connected or outlet outside lowres cells (pit)
-            idx1_us = core._upstream_d8_idx(idx1, idxs_ds, shape)
-            idx1_us_ind8 = np.array([in_d8(idx, idx2, ncol) for idx in idx1_us])
-            # replace outlet 1 if all upstream cells are connected to outlet 2
-            if np.all(idx1_us_ind8):
-                streams, idxs_ds, subidxs_out, success = new_outlet(
-                    idx1, subidx1, streams, idxs_ds, subidxs_out, *args
-                )
-                if success:
-                    for idx in idx1_us:
-                        idxs_ds[idx] = idx2
-                        assert idx != idx2
-                    continue
-            idxs_fix_out.append(idx0)
-        if len(idxs_fix_out) == len(idxs_fix) or len(idxs_fix_out) == 0:
-            break
-        idxs_fix = idxs_fix_out
 
-    return idxs_ds, subidxs_out, streams
+    return idxs_ds, subidxs_out
 
 
 @njit
 def ihu_minimize_error(
+    idxs_fix,
+    valid,
     streams,
     idxs_ds,
     subidxs_out,
@@ -1104,6 +1026,7 @@ def ihu_minimize_error(
     cellsize,
     minlen=0,
     minupa=0,
+    pit_out_of_cell=2,
     mv=_mv,
 ):
     """Reduces the number of cells with an upstream area error by finding the neighbor
@@ -1111,73 +1034,123 @@ def ihu_minimize_error(
     _, subncol = subshape
     _, ncol = shape
     args = (subidxs_ds, subuparea, ncol, subncol, cellsize, minlen, minupa, mv)
-    idxs_fix = []
-    for idx0 in range(idxs_ds.size):
-        idx_ds = idxs_ds[idx0]
-        if idx_ds == mv:
-            continue
+
+    # loop over cells with flow dir error from down to upstream
+    seq = np.argsort(subuparea[subidxs_out[idxs_fix]])
+    for i0 in seq[::-1]:  # @0A lowres fix index loop
+        idx0 = idxs_fix[i0]
+        # for idx0 in idxs_fix:
+        fixed = False
         subidx0 = subidxs_out[idx0]
+        # save path of cells with outlet pixel downstream of current outlet pixel
+        idxs = []
         subidx = subidx0
         while True:
             subidx_ds = subidxs_ds[subidx]
-            if streams[subidx_ds] >= 0 or subidx == subidx_ds:
-                if subidx_ds != subidxs_out[idx_ds]:
-                    idxs_fix.append(idx0)
+            if subidx_ds == subidx:
                 break
-            subidx = subidx_ds
-    for _ in range(5):
-        idxs_fix_out = []
-        # loop over cells
-        for idx0 in idxs_fix:
-            fixed = False
-            subidx0 = subidxs_out[idx0]
-            upa0 = subuparea[subidx0]
-            # save path of cells with outlet pixel downstream of current outlet pixel
-            idxs = []
-            subidx = subidx0
-            while True:
-                subidx_ds = subidxs_ds[subidx]
-                if streams[subidx_ds] >= 0:
-                    idx1 = streams[subidx_ds]
-                    idxs.append(idx1)
-                    if len(idxs) == 100 or (len(idxs) == 1 and in_d8(idx0, idx1, ncol)):
-                        break
-                if subidx_ds == subidx:
+            if streams[subidx_ds] >= 0:
+                idx1 = streams[subidx_ds]  # TODO remove use of idx in streams map
+                idxs.append(idx1)
+                if len(idxs) == 100 or (len(idxs) == 1 and in_d8(idx0, idx1, ncol)):
                     break
-                # next iter
-                subidx = subidx_ds
-            # minimize total cells with upa error
+            # next iter
+            subidx = subidx_ds
+
+        # check if outlet within +/- 2 cells
+        check_pit = pit_out_of_cell > 0 and subidx_ds == subidx
+        if check_pit:
+            idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
+            dr = (idx1 % ncol) - (idx0 % ncol)
+            dc = (idx1 // ncol) - (idx0 // ncol)
+            check_pit = abs(dr) <= pit_out_of_cell and abs(dc) <= pit_out_of_cell
+        # not outlet cells and at pit -> reset outlet to pit
+        if check_pit and (subidx_ds == subidx0 or len(idxs) == 0):
+            #     fixed = True
+            # # isolated outlet cells at pit
+            # elif check_pit and len(idxs) == 1 and streams[subidx_ds] >= 0:
+            #     idxs_d8 = core._d8_idx(idx1, shape)
+            #     if np.all(idxs_ds[idxs_d8] != idx1):
+            #         # alternative outlet pixel in cell with original pit pixel
+            #         streams, idxs_ds, subidxs_out, fixed = new_outlet(
+            #             idx1, subidx_ds, streams, idxs_ds, subidxs_out, *args
+            #         )
+            # if check_pit and fixed:
+            # set pit at current cell and outlet pixel outside at pit
+            streams[subidxs_out[idx0]] = -1
+            streams[subidx_ds] = idx0
+            idxs_ds[idx0] = idx0
+            subidxs_out[idx0] = subidx_ds
+            continue
+
+        # # if no upstream neighbor -> find new stream
+        idxs_d8 = core._d8_idx(idx0, shape)
+        if np.all(idxs_ds[idxs_d8] != idx0):
+            streams, idxs_ds, subidxs_out, fixed = new_outlet(
+                idx0, subidx0, streams, idxs_ds, subidxs_out, *args
+            )
+        # minimize total cells with upa error
+        for _ in range(2):
             max_dist = 999999
-            idxs_d8 = core._d8_idx(idx0, shape)
-            if np.all(idxs_ds[idxs_d8] != idx0):
-                streams, idxs_ds, subidxs_out, fixed = new_outlet(
-                    idx0, subidx0, streams, idxs_ds, subidxs_out, *args
-                )
+            max_upa = 0
+            idxs_hw = list()
             if not fixed:
                 for idx1 in idxs_d8:
-                    subidx1 = subidxs_out[idx1]
-                    upa1 = subuparea[subidx1]
                     idx = idx1
+                    upa = subuparea[subidxs_out[idx1]]
+                    hor = abs(idx1 - idx0) == 1
+                    ver = abs(idx1 - idx0) == ncol
                     for j in range(max_dist + 1):
                         if idx in idxs:
                             d0 = idxs.index(idx) + j  # sum no of cells with error
-                            if d0 < max_dist or (d0 == max_dist and upa1 > upa0):
-                                idxs_ds[idx0] = idx1
-                                assert idx0 != idx1
-                                max_dist = d0
-                                upa0 = upa1
-                                fixed = True
+                            if d0 < max_dist or (d0 == max_dist and upa > max_upa):
+                                # avoid crossing flow dirs
+                                cross = False
+                                if not (hor or ver):
+                                    dr = (idx1 % ncol) - (idx0 % ncol)
+                                    dc = (idx1 // ncol) - (idx0 // ncol)
+                                    idxh = idx0 + dr
+                                    idxv = idx0 + dc * ncol
+                                    cross = (
+                                        idxs_ds[idxh] == idxv or idxs_ds[idxv] == idxh
+                                    )
+                                if not cross:
+                                    idxs_ds[idx0] = idx1
+                                    assert idx0 != idx1
+                                    max_dist = d0
+                                    max_upa = upa
+                                    fixed = True
                             break
                         idx_ds = idxs_ds[idx]
-                        if idx_ds == idx or idx_ds == idx0:  # break if pit or loop
+                        if idx_ds == idx or idx_ds == idx0:  # break if pit or upstream
+                            if idx_ds == idx0:
+                                idxs_us = core._upstream_d8_idx(idx1, idxs_ds, shape)
+                                if idxs_us.size == 0:
+                                    idxs_hw.append(idx1)
                             break
                         # next iter
                         idx = idx_ds
-            if not fixed:
-                idxs_fix_out.append(idx0)
-        if len(idxs_fix_out) == len(idxs_fix) or len(idxs_fix_out) == 0:
-            break
-        idxs_fix = idxs_fix_out
+
+            if not fixed and len(idxs_hw) > 0 and len(idxs) > 0:
+                for idx in idxs_hw:
+                    # try resetting the oultet pixel of an upstream headwater cell to
+                    # another streams which connects to the next downstream outlet pixel
+                    # this would provide a fix in the next iteration.
+                    subidx0 = subidxs_out[idx]
+                    subidx1 = subidxs_out[idxs[0]]
+                    args2 = args + (subidx1,)
+                    streams, idxs_ds, subidxs_out, fixed1 = new_outlet(
+                        idx,
+                        subidx0,
+                        streams,
+                        idxs_ds,
+                        subidxs_out,
+                        *args2,
+                    )
+                    if fixed1:
+                        break
+            else:
+                break
 
     return idxs_ds, subidxs_out
 
@@ -1187,9 +1160,12 @@ def ihu(
     subuparea,
     subshape,
     cellsize,
-    iter=True,
     minlen=None,
     minupa=None,
+    niter=5,
+    opt_rivlen=True,
+    min_error=True,
+    pit_out_of_cell=2,
     mv=_mv,
 ):
     """Returns the upscaled next downstream index based on the
@@ -1259,10 +1235,30 @@ def ihu(
         cellsize=cellsize,
         mv=mv,
     )
-    if iter:
-        for _ in range(5):
-            idxs_ds, subidxs_out, idxs_fix1 = ihu_relocate_outlets(
-                idxs_fix=idxs_fix,
+    for j in range(niter):
+        # analyze upscaled flowdirs and return indices of invalid and short flowdirs
+        idxs_ds, subidxs_out, idxs_fix1 = ihu_relocate_outlets(
+            idxs_fix=idxs_fix,
+            idxs_ds=idxs_ds,
+            subidxs_out=subidxs_out,
+            subidxs_ds=subidxs_ds,
+            subuparea=subuparea,
+            subshape=subshape,
+            shape=shape,
+            cellsize=cellsize,
+            mv=mv,
+        )
+        valid, streams, idxs_fix1, idxs_short = upscale_check(
+            subidxs_out, idxs_ds, subidxs_ds, minlen=minlen, mv=mv
+        )
+        last_iter = (
+            idxs_fix1.size == 0 or idxs_fix1.size == idxs_fix.size or j + 1 == niter
+        )
+        if opt_rivlen:
+            idxs_ds, subidxs_out = ihu_optimize_rivlen(
+                idxs_short=idxs_short,
+                valid=valid,
+                streams=streams,
                 idxs_ds=idxs_ds,
                 subidxs_out=subidxs_out,
                 subidxs_ds=subidxs_ds,
@@ -1270,41 +1266,36 @@ def ihu(
                 subshape=subshape,
                 shape=shape,
                 cellsize=cellsize,
+                minlen=minlen,
+                minupa=minupa,
                 mv=mv,
             )
-            if idxs_fix1.size == 0 or idxs_fix1.size == idxs_fix.size:
-                break
-            idxs_fix = idxs_fix1
-        idxs_ds, subidxs_out, streams = ihu_optimize_rivlen(
-            idxs_ds=idxs_ds,
-            subidxs_out=subidxs_out,
-            subidxs_ds=subidxs_ds,
-            subuparea=subuparea,
-            subshape=subshape,
-            shape=shape,
-            cellsize=cellsize,
-            minlen=minlen,
-            minupa=minupa,
-            mv=mv,
-        )
-        idxs_ds, subidxs_out = ihu_minimize_error(
-            streams=streams,
-            idxs_ds=idxs_ds,
-            subidxs_out=subidxs_out,
-            subidxs_ds=subidxs_ds,
-            subuparea=subuparea,
-            subshape=subshape,
-            shape=shape,
-            cellsize=cellsize,
-            minlen=minlen,
-            minupa=minupa,
-            mv=mv,
-        )
+        if min_error:
+            idxs_ds, subidxs_out = ihu_minimize_error(
+                idxs_fix=idxs_fix1,
+                valid=valid,
+                streams=streams,
+                idxs_ds=idxs_ds,
+                subidxs_out=subidxs_out,
+                subidxs_ds=subidxs_ds,
+                subuparea=subuparea,
+                subshape=subshape,
+                shape=shape,
+                cellsize=cellsize,
+                minlen=minlen,
+                minupa=minupa,
+                pit_out_of_cell=pit_out_of_cell if last_iter else 0,
+                mv=mv,
+            )
+        if last_iter:
+            break
+        idxs_fix = idxs_fix1
+
     return idxs_ds, subidxs_out, shape
 
 
 def eam_plus(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
-    return ihu(subidxs_ds, subuparea, subshape, cellsize, iter=False, mv=mv)
+    return ihu(subidxs_ds, subuparea, subshape, cellsize, niter=0, mv=mv)
 
 
 @njit
@@ -1358,3 +1349,38 @@ def upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
         else:
             connect_map[idx0] = np.uint8(-1)
     return connect_map, np.array(idxs_fix_lst, dtype=idxs_ds.dtype)
+
+
+@njit
+def upscale_check(subidxs_out, idxs_ds, subidxs_ds, minlen=0, mv=_mv):
+    # array with outlets (>=0) and streams (-1); nodata value is -9
+    assert subidxs_out.size <= 2147483648
+    streams = np.full(subidxs_ds.size, -9, dtype=np.int32)
+    valid = np.array([np.bool(1) for _ in range(idxs_ds.size)])
+    for idx in range(subidxs_out.size):
+        subidx = subidxs_out[idx]
+        if subidx == mv:
+            continue
+        streams[subidx] = idx
+    # find cells with error flwdir or short inter outlet pix distance
+    idxs_short, idxs_fix = [], []
+    for idx0 in range(idxs_ds.size):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == mv:
+            continue
+        subidx = subidxs_out[idx0]
+        d = 0
+        while True:
+            subidx1 = subidxs_ds[subidx]
+            if streams[subidx1] >= 0 or subidx1 == subidx:
+                if subidx1 != subidxs_out[idx_ds]:
+                    idxs_fix.append(idx0)
+                    valid[idx0] = False
+                elif subidx1 == subidxs_out[idx_ds] and minlen > 0 and d + 1 <= minlen:
+                    idxs_short.append(idx0)
+                break
+            d += 1
+            streams[subidx] = max(streams[subidx], -1)
+            subidx = subidx1
+    t = idxs_ds.dtype
+    return valid, streams, np.array(idxs_fix, dtype=t), np.array(idxs_short, dtype=t)

@@ -96,7 +96,7 @@ def from_array(
     # parse data
     fd = FTYPES[ftype]
     if check_ftype and not fd.isvalid(data):
-        raise ValueError(f'The flow direction type "{ftype}" is not recognized.')
+        raise ValueError(f'The flow direction data with type "{ftype}" is invalid.')
     if mask is not None:
         if mask.shape != data.shape:
             raise ValueError(f'"mask" shape does not match with data shape')

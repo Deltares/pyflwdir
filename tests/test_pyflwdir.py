@@ -43,7 +43,7 @@ def test_from_array_errors():
         flw.to_array("unknown")
     with pytest.raises(ValueError, match="should be 2 dimensional"):
         pyflwdir.from_array(d8.ravel(), ftype="d8")
-    with pytest.raises(ValueError, match="is not recognized."):
+    with pytest.raises(ValueError, match="is invalid."):
         pyflwdir.from_array(d8, ftype="ldd", check_ftype=True)
     with pytest.raises(ValueError, match="shape does not match"):
         pyflwdir.from_array(d8, mask=np.ones((1, 1)))
