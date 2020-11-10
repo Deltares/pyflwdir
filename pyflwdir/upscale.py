@@ -1034,8 +1034,12 @@ def ihu_minimize_error(
     _, subncol = subshape
     _, ncol = shape
     args = (subidxs_ds, subuparea, ncol, subncol, cellsize, minlen, minupa, mv)
-    # loop over cells
-    for idx0 in idxs_fix:
+
+    # loop over cells with flow dir error from down to upstream
+    seq = np.argsort(subuparea[subidxs_out[idxs_fix]])
+    for i0 in seq[::-1]:  # @0A lowres fix index loop
+        idx0 = idxs_fix[i0]
+        # for idx0 in idxs_fix:
         fixed = False
         subidx0 = subidxs_out[idx0]
         # save path of cells with outlet pixel downstream of current outlet pixel
