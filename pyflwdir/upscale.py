@@ -30,10 +30,9 @@ def subidx_2_idx(subidx, subncol, cellsize, ncol):
 @njit
 def in_d8(idx0, idx_ds, ncol):
     """Returns True if inside 3x3 (current and 8 neighboring) cells."""
-    cond1 = abs(idx_ds - idx0) <= 1  # west, east
-    cond2 = abs(idx_ds - idx0 - ncol) <= 1  # south
-    cond3 = abs(idx_ds - idx0 + ncol) <= 1  # north
-    return cond1 or cond2 or cond3
+    cond1 = abs(idx_ds % ncol - idx0 % ncol) <= 1  # west - east
+    cond2 = abs(idx_ds // ncol - idx0 // ncol) <= 1  # south - north
+    return cond1 and cond2
 
 
 #### DOUBLE MAXIMUM METHOD ####
