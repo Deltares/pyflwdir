@@ -149,9 +149,10 @@ def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
     streams : list of 1D-arrays of intp
         linear indices of streams
     """
-    _done = np.array([np.bool(0) for _ in range(strord.size)])  # initiate False array
     if mask is not None:
-        _done[mask == False] = True
+        _done = ~mask
+    else:
+        _done = np.array([np.bool(0) for _ in range(strord.size)])  # all False
     streams = []
     for idx0 in seq[::-1]:  # up- to downstream
         if _done[idx0] or strord[idx0] < min_sto:

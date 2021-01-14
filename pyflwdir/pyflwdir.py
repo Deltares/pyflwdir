@@ -1489,7 +1489,7 @@ class FlwdirRaster(object):
     def _check_data(self, data, name, optional=False, **kwargs):
         """check or calculate upstream area cells; return flattened array"""
         if data is None and optional:
-            return data
+            return
         elif data is None and name == "uparea":
             data = self.upstream_area(**kwargs)
         elif data is None and name == "basins":
