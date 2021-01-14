@@ -19,9 +19,9 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-benchmark
+  # optional / docs
   - sphinx
   - sphinx_rtd_theme
-  # optional
   - geopandas
   - rasterio
   - cartopy

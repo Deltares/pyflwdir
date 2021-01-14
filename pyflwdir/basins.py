@@ -45,13 +45,14 @@ def basins(idxs_ds, idxs_pit, seq, ids=None):
     basins[idxs_pit] = ids
     return fillnodata_upstream(idxs_ds, seq, basins, 0)
 
+
 @njit
 def contiguous_area_within_region(idxs_ds, seq, region_mask, stream_mask=None):
-    """Returns most downstream contiguous area within region, i.e.: if a stream flows 
+    """Returns most downstream contiguous area within region, i.e.: if a stream flows
     in and out of the region, only the most downstream contiguous area within region
-    will be True in output mask. If a stream mask is provided the area is reduced to 
+    will be True in output mask. If a stream mask is provided the area is reduced to
     cells which drain to the stream.
-    
+
     Parameters
     ----------
     idxs_ds : 1D-array of intp
@@ -76,15 +77,16 @@ def contiguous_area_within_region(idxs_ds, seq, region_mask, stream_mask=None):
     # keep only the most downstream contiguous area within region
     for idx in seq:  # down- to upstream
         idx_ds = idxs_ds[idx]
-        mask[idx] = mask[idx_ds] # propagate mask upstream
-        if region_mask[idx] == False and region_mask[idx_ds]: # leaving region
+        mask[idx] = mask[idx_ds]  # propagate mask upstream
+        if region_mask[idx] == False and region_mask[idx_ds]:  # leaving region
             mask[idx] = False
     return np.logical_and(mask, region_mask)
 
+
 @njit
 def subbasin_mask_within_region(idxs_ds, seq, region_mask, stream_mask=None):
-    """Returns a mask of subbasins within a region, i.e. basins with upstream cells 
-    outside the region are excluded. If a stream mask is provided the area is reduced 
+    """Returns a mask of subbasins within a region, i.e. basins with upstream cells
+    outside the region are excluded. If a stream mask is provided the area is reduced
     to cells which drain to the stream."""
     # get area upstream of streams within region
     if stream_mask is not None:
@@ -96,11 +98,12 @@ def subbasin_mask_within_region(idxs_ds, seq, region_mask, stream_mask=None):
     # keep only subbasins (areas with no upstream cells outside region)
     for idx in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx]
-        if region_mask[idx_ds] == False: # outside region
+        if region_mask[idx_ds] == False:  # outside region
             mask[idx_ds] = False
         else:
-            mask[idx_ds] = mask[idx] # propagate mask downstream
+            mask[idx_ds] = mask[idx]  # propagate mask downstream
     return mask
+
 
 @njit
 def subbasins(idxs_ds, seq, strord, min_sto=0):

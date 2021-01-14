@@ -381,7 +381,7 @@ def features(streams, xs, ys, **kwargs):
                     "type": "LineString",
                     "coordinates": [(xs[i], ys[i]) for i in idxs],
                 },
-                "properties": {"idx": idx0, "pit": idxs[-1] == idxs[-2], **props},
+                "properties": {"idxs": idx0, "pit": idxs[-1] == idxs[-2], **props},
             }
         )
     return feats

@@ -109,7 +109,6 @@ def from_array(
     else:
         dtype = np.intp
 
-
     idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
     idxs_outlet = idxs_pit[np.isin(data.flat[idxs_pit], fd._pv)]
 
@@ -165,8 +164,8 @@ class FlwdirRaster(object):
         ftype : {'d8', 'ldd', 'nextxy'}
             name of flow direction type
         idxs_pit, idxs_outlet : ndarray of int, optional
-            linear indices of all pits/outlets, 
-            outlets exclude pits of inclomplete basins at the domain boundary 
+            linear indices of all pits/outlets,
+            outlets exclude pits of inclomplete basins at the domain boundary
         idxs_seq : ndarray of int, optional
             linear indices of valid cells ordered from down- to upstream
         ncells : integer
@@ -674,7 +673,6 @@ class FlwdirRaster(object):
         basids = basins.basins(self.idxs_ds, idxs, self.idxs_seq, ids)
         return basids.reshape(self.shape)
 
-
     def subbasins(self, strord=None, min_sto=0):
         """Returns a subbasin map with unique IDs.
         Subbasins are defined based on a minimum stream order.
@@ -756,8 +754,8 @@ class FlwdirRaster(object):
         return lbs, bboxs, total_bbox
 
     def subbasin_mask_within_region(self, region_mask, stream_mask=None):
-        """"Returns a mask of subbasins within a region, i.e. basins with upstream cells 
-        outside the region are excluded. If a stream mask is provided the area is reduced 
+        """ "Returns a mask of subbasins within a region, i.e. basins with upstream cells
+        outside the region are excluded. If a stream mask is provided the area is reduced
         to cells which drain to the stream.
 
         Parameters
@@ -773,17 +771,17 @@ class FlwdirRaster(object):
             Mask of subbasins within a region
         """
         mask_out = basins.subbasin_mask_within_region(
-            self.idxs_ds, 
-            self.idxs_seq, 
-            region_mask = self._check_data(region_mask, "region_mask"),
-            stream_mask = self._check_data(stream_mask, "stream_mask", optional=True),
+            self.idxs_ds,
+            self.idxs_seq,
+            region_mask=self._check_data(region_mask, "region_mask"),
+            stream_mask=self._check_data(stream_mask, "stream_mask", optional=True),
         )
         return mask_out.reshape(self.shape)
 
     def contiguous_area_within_region(self, region_mask, stream_mask=None):
-        """"Returns most downstream contiguous area within region, i.e.: if a stream flows 
+        """ "Returns most downstream contiguous area within region, i.e.: if a stream flows
         in and out of the region, only the most downstream contiguous area within region
-        will be True in output mask. If a stream mask is provided the area is reduced to 
+        will be True in output mask. If a stream mask is provided the area is reduced to
         cells which drain to the stream.
 
         Parameters
@@ -799,13 +797,12 @@ class FlwdirRaster(object):
             Mask of most downstream contiguous area within region
         """
         mask_out = basins.contiguous_area_within_region(
-            self.idxs_ds, 
-            self.idxs_seq, 
-            region_mask = self._check_data(region_mask, "region_mask"),
-            stream_mask = self._check_data(stream_mask, "stream_mask", optional=True),
+            self.idxs_ds,
+            self.idxs_seq,
+            region_mask=self._check_data(region_mask, "region_mask"),
+            stream_mask=self._check_data(stream_mask, "stream_mask", optional=True),
         )
         return mask_out.reshape(self.shape)
-
 
     ### ACCUMULATE ####
 
