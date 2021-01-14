@@ -27,28 +27,85 @@ def fillnodata_upstream(idxs_ds, seq, data, nodata):
 
     Returns
     -------
-    1D array of data.dtype
+    data_out: 1D array of data.dtype
         infilled data
     """
-    res = data.copy()
+    data_out = data.copy()
     for idx0 in seq:  # down- to upstream
-        if res[idx0] == nodata:
-            res[idx0] = res[idxs_ds[idx0]]
-    return res
+        if data_out[idx0] == nodata and data_out[idxs_ds[idx0]] != nodata:
+            data_out[idx0] = data_out[idxs_ds[idx0]]
+    return data_out
 
 
 def basins(idxs_ds, idxs_pit, seq, ids=None):
-    """return basin map"""
+    """Return basin map"""
     if ids is None:
         ids = np.arange(1, idxs_pit.size + 1, dtype=np.uint32)
     basins = np.zeros(idxs_ds.size, dtype=ids.dtype)
     basins[idxs_pit] = ids
     return fillnodata_upstream(idxs_ds, seq, basins, 0)
 
+@njit
+def contiguous_area_within_region(idxs_ds, seq, region_mask, stream_mask=None):
+    """Returns most downstream contiguous area within region, i.e.: if a stream flows 
+    in and out of the region, only the most downstream contiguous area within region
+    will be True in output mask. If a stream mask is provided the area is reduced to 
+    cells which drain to the stream.
+    
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    region_mask : 1D array of bool
+        mask of region
+    stream_mask : 1D array of bool, optional
+        mask of stream
+
+    Returns
+    -------
+    mask: 1D array of bool
+        Mask of most downstream contiguous area within region
+    """
+    # get area upstream of streams within region
+    if stream_mask is not None:
+        mask = stream_mask.copy()
+    else:
+        mask = np.array([np.bool(1) for _ in range(region_mask.size)])  # all True
+    # keep only the most downstream contiguous area within region
+    for idx in seq:  # down- to upstream
+        idx_ds = idxs_ds[idx]
+        mask[idx] = mask[idx_ds] # propagate mask upstream
+        if region_mask[idx] == False and region_mask[idx_ds]: # leaving region
+            mask[idx] = False
+    return np.logical_and(mask, region_mask)
+
+@njit
+def subbasin_mask_within_region(idxs_ds, seq, region_mask, stream_mask=None):
+    """Returns a mask of subbasins within a region, i.e. basins with upstream cells 
+    outside the region are excluded. If a stream mask is provided the area is reduced 
+    to cells which drain to the stream."""
+    # get area upstream of streams within region
+    if stream_mask is not None:
+        mask = np.logical_and(region_mask, stream_mask)
+        for idx in seq:  # down- to upstream
+            mask[idx] = mask[idxs_ds[idx]]
+    else:
+        mask = region_mask.copy()
+    # keep only subbasins (areas with no upstream cells outside region)
+    for idx in seq[::-1]:  # up- to downstream
+        idx_ds = idxs_ds[idx]
+        if region_mask[idx_ds] == False: # outside region
+            mask[idx_ds] = False
+        else:
+            mask[idx_ds] = mask[idx] # propagate mask downstream
+    return mask
 
 @njit
 def subbasins(idxs_ds, seq, strord, min_sto=0):
     """Returns a subbasin map with unique IDs starting from one.
+    Subbasins are defined based on a minimum stream order.
 
     Parameters
     ----------
