@@ -246,10 +246,10 @@ def test_streams():
     # vectorize
     feats = flw.features(kind="streams")
     fstrord = np.array([f["properties"]["strord"] for f in feats])
-    findex = np.array([f["properties"]["idx"] for f in feats])
+    findex = np.array([f["properties"]["idxs"] for f in feats])
     assert np.all(fstrord == strord.flat[findex])
     feats = flw.features(kind="flwdir")
-    findex = np.array([f["properties"]["idx"] for f in feats])
+    findex = np.array([f["properties"]["idxs"] for f in feats])
     assert np.all(findex == np.sort(idxs_seq))
     with pytest.raises(ValueError, match="size does not match"):
         flw.features(xs=np.arange(3), ys=np.arange(3))

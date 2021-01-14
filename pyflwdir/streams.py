@@ -149,24 +149,37 @@ def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
     streams : list of 1D-arrays of intp
         linear indices of streams
     """
-    _done = np.array([np.bool(0) for _ in range(strord.size)])  # initiate False array
-    if mask is not None:
-        _done[mask == False] = True
-    streams = []
+    # create map with numbers stream segments
+    streams0 = []
+    segments = np.full(idxs_ds.shape, -1, dtype=np.int32)
+    i = np.int32(0)
     for idx0 in seq[::-1]:  # up- to downstream
-        if _done[idx0] or strord[idx0] < min_sto:
+        if (mask is not None and mask[idx0] == False) or strord[idx0] < min_sto:
             continue
+        idx_ds = idxs_ds[idx0]
+        if segments[idx0] == -1:
+            streams0.append(idx0)
+            segments[idx0] = i
+            i += 1
+        if strord[idx0] != strord[idx_ds]:
+            streams0.append(idx_ds)
+            segments[idx_ds] = i
+            i += 1
+        elif segments[idx_ds] == -1:
+            segments[idx_ds] = segments[idx0]
+
+    # get list of indices arrays of segments
+    streams = []
+    for idx0 in streams0:
         idxs = [idx0]
-        sto = strord[idx0]
+        seg = segments[idx0]
         while True:
             idx_ds = idxs_ds[idx0]
-            sto_ds = strord[idx_ds]
             idxs.append(idx_ds)
-            if idx0 == idx_ds or sto_ds > sto:  # pit or new stream
+            if idx_ds == idx0 or segments[idx_ds] != seg:  # pit or new stream
                 streams.append(np.array(idxs, dtype=idxs_ds.dtype))
                 break
             else:
-                _done[idx_ds] = True
                 idx0 = idx_ds
     return streams
 

@@ -110,11 +110,13 @@ def from_array(
         dtype = np.intp
 
     idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
+    idxs_outlet = idxs_pit[np.isin(data.flat[idxs_pit], fd._pv)]
 
     # initialize
     return FlwdirRaster(
         idxs_ds=idxs_ds,
         idxs_pit=idxs_pit,
+        idxs_outlet=idxs_outlet,
         shape=shape,
         ftype=ftype,
         transform=transform,
@@ -144,6 +146,7 @@ class FlwdirRaster(object):
         shape,
         ftype,
         idxs_pit=None,
+        idxs_outlet=None,
         idxs_seq=None,
         ncells=None,
         transform=gis.IDENTITY,
@@ -160,8 +163,9 @@ class FlwdirRaster(object):
             shape of raster
         ftype : {'d8', 'ldd', 'nextxy'}
             name of flow direction type
-        idxs_pit : ndarray of int, optional
-            linear indices of pit
+        idxs_pit, idxs_outlet : ndarray of int, optional
+            linear indices of all pits/outlets,
+            outlets exclude pits of inclomplete basins at the domain boundary
         idxs_seq : ndarray of int, optional
             linear indices of valid cells ordered from down- to upstream
         ncells : integer
@@ -196,6 +200,7 @@ class FlwdirRaster(object):
         # data
         self._idxs_ds = idxs_ds
         self._pit = idxs_pit
+        self.idxs_outlet = idxs_outlet
         self._seq = idxs_seq
         self._ncells = ncells
         # either -1 or 4294967295 if dtype == np.uint32
@@ -655,7 +660,7 @@ class FlwdirRaster(object):
         2D array of uint32
             (sub)basin map
         """
-        if idxs is None and xy is None:  # full basins
+        if idxs is None and xy is None:  # full basins / includes edge-pits
             idxs = self.idxs_pit
         else:
             idxs = self._check_idxs_xy(idxs, xy, **kwargs)
@@ -668,35 +673,9 @@ class FlwdirRaster(object):
         basids = basins.basins(self.idxs_ds, idxs, self.idxs_seq, ids)
         return basids.reshape(self.shape)
 
-    def basin_bounds(self, basins=None, **kwargs):
-        """Returns a the basin boundaries.
-
-        Additional key-word arguments are passed to the basins method which is used to
-        create a basins map if none is provided.
-
-        Parameters
-        ----------
-        basins : 2D array of uint32, optional
-            basin ids, by default None and calculated on the fly.
-
-        Returns
-        -------
-        lbs : 1D array of int
-            labels of basins
-        bboxs : 2D array of float
-            bounding boxes of basins, the columns represent [xmin, ymin, xmax, ymax]
-        total_bbox : 1D array of float
-            the total bounding box of all basins [xmin, ymin, xmax, ymax]
-        """
-        if basins is None:
-            basins = self.basins(**kwargs)
-        elif basins.size != self.size:
-            raise ValueError('"basins" size does not match with FlwdirRaster size')
-        lbs, bboxs, total_bbox = regions.region_bounds(basins, transform=self.transform)
-        return lbs, bboxs, total_bbox
-
     def subbasins(self, strord=None, min_sto=0):
-        """Returns a subbasin map with unique random IDs.
+        """Returns a subbasin map with unique IDs.
+        Subbasins are defined based on a minimum stream order.
 
         Parameters
         ----------
@@ -746,6 +725,84 @@ class FlwdirRaster(object):
             mv=self._mv,
         )
         return pfaf.reshape(self.shape)
+
+    def basin_bounds(self, basins=None, **kwargs):
+        """Returns a the basin boundaries.
+
+        Additional key-word arguments are passed to the basins method which is used to
+        create a basins map if none is provided.
+
+        Parameters
+        ----------
+        basins : 2D array of uint32, optional
+            basin ids, by default None and calculated on the fly.
+
+        Returns
+        -------
+        lbs : 1D array of int
+            labels of basins
+        bboxs : 2D array of float
+            bounding boxes of basins, the columns represent [xmin, ymin, xmax, ymax]
+        total_bbox : 1D array of float
+            the total bounding box of all basins [xmin, ymin, xmax, ymax]
+        """
+        if basins is None:
+            basins = self.basins(**kwargs)
+        elif basins.size != self.size:
+            raise ValueError('"basins" size does not match with FlwdirRaster size')
+        lbs, bboxs, total_bbox = regions.region_bounds(basins, transform=self.transform)
+        return lbs, bboxs, total_bbox
+
+    def subbasin_mask_within_region(self, region_mask, stream_mask=None):
+        """ "Returns a mask of subbasins within a region, i.e. basins with upstream cells
+        outside the region are excluded. If a stream mask is provided the area is reduced
+        to cells which drain to the stream.
+
+        Parameters
+        ----------
+        region_mask: 2D array of bool
+            Initial mask of region
+        stream_mask: 2D array of bool
+            True for stream cells
+
+        Returns
+        -------
+        mask: 2D array of bool
+            Mask of subbasins within a region
+        """
+        mask_out = basins.subbasin_mask_within_region(
+            self.idxs_ds,
+            self.idxs_seq,
+            region_mask=self._check_data(region_mask, "region_mask"),
+            stream_mask=self._check_data(stream_mask, "stream_mask", optional=True),
+        )
+        return mask_out.reshape(self.shape)
+
+    def contiguous_area_within_region(self, region_mask, stream_mask=None):
+        """ "Returns most downstream contiguous area within region, i.e.: if a stream flows
+        in and out of the region, only the most downstream contiguous area within region
+        will be True in output mask. If a stream mask is provided the area is reduced to
+        cells which drain to the stream.
+
+        Parameters
+        ----------
+        region_mask: 2D array of bool
+            Initial mask of region
+        stream_mask: 2D array of bool
+            True for stream cells
+
+        Returns
+        -------
+        mask: 2D array of bool
+            Mask of most downstream contiguous area within region
+        """
+        mask_out = basins.contiguous_area_within_region(
+            self.idxs_ds,
+            self.idxs_seq,
+            region_mask=self._check_data(region_mask, "region_mask"),
+            stream_mask=self._check_data(stream_mask, "stream_mask", optional=True),
+        )
+        return mask_out.reshape(self.shape)
 
     ### ACCUMULATE ####
 
@@ -877,7 +934,7 @@ class FlwdirRaster(object):
         import geopandas as gp
 
         df = gp.GeoDataFrame.from_features(self.features(kind="flwdir", **kwargs))
-        return df.set_index("idx")
+        return df.set_index("idxs")
 
     def features(
         self, kind="streams", mask=None, xs=None, ys=None, min_sto=1, **kwargs
@@ -927,7 +984,7 @@ class FlwdirRaster(object):
             )
         else:
             ValueError('Kind should be either "streams" or "flwdir"')
-        # get geoms and make geopandas dataframe
+        # get geoms and return features
         if xs is None or ys is None:
             idxs0 = np.arange(self.size, dtype=np.intp)
             xs, ys = gis.idxs_to_coords(idxs0, self.transform, self.shape)
@@ -1432,7 +1489,7 @@ class FlwdirRaster(object):
     def _check_data(self, data, name, optional=False, **kwargs):
         """check or calculate upstream area cells; return flattened array"""
         if data is None and optional:
-            return data
+            return
         elif data is None and name == "uparea":
             data = self.upstream_area(**kwargs)
         elif data is None and name == "basins":
