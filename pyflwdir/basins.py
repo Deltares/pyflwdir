@@ -106,7 +106,7 @@ def subbasin_mask_within_region(idxs_ds, seq, region_mask, stream_mask=None):
 
 
 @njit
-def subbasins(idxs_ds, seq, strord, min_sto=0):
+def subbasins(idxs_ds, seq, strord, mask=None, min_sto=0):
     """Returns a subbasin map with unique IDs starting from one.
     Subbasins are defined based on a minimum stream order.
 
@@ -118,6 +118,8 @@ def subbasins(idxs_ds, seq, strord, min_sto=0):
         ordered cell indices from down- to upstream
     strord : 1D-array of uint8
         stream order
+    mask : 1D array of bool, optional
+        consider only True cells
     min_sto : int, optional
         minimum stream order of subbasins, by default the stream order is set to
         two under the global maxmium stream order.
@@ -129,24 +131,16 @@ def subbasins(idxs_ds, seq, strord, min_sto=0):
     """
     if min_sto == 0:
         min_sto = strord.max() - 2
-    _done = np.array([np.bool(0) for _ in range(strord.size)])  # initiate False array
-    basins = np.full(idxs_ds.size, 0, dtype=np.uint32)
-    i = np.uint32(1)
+    subbas = np.full(idxs_ds.shape, 0, dtype=np.int32)
+    i = np.int32(1)
     for idx0 in seq[::-1]:  # up- to downstream
-        if _done[idx0] or strord[idx0] < min_sto:
+        if (mask is not None and mask[idx0] == False) or strord[idx0] < min_sto:
             continue
-        sto = strord[idx0]
-        while True:
-            idx_ds = idxs_ds[idx0]
-            sto_ds = strord[idx_ds]
-            if idx0 == idx_ds or sto_ds > sto:  # pit or new stream
-                basins[idx0] = i
-                i += 1
-                break
-            else:
-                _done[idx_ds] = True
-                idx0 = idx_ds
-    return fillnodata_upstream(idxs_ds, seq, basins, 0)
+        idx_ds = idxs_ds[idx0]
+        if strord[idx0] != strord[idx_ds] or idx_ds == idx0:
+            subbas[idx0] = i
+            i += 1
+    return fillnodata_upstream(idxs_ds, seq, subbas, 0)
 
 
 # TODO check
