@@ -55,7 +55,7 @@ extensions = [
 ]
 
 # overwrite kernel name in ipynb files
-nbsphinx_kernel_name = ""
+# nbsphinx_kernel_name = ""
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

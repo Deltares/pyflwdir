@@ -26,6 +26,7 @@ dependencies:
   - geopandas
   - rasterio
   - ipython
+  - ipykernel
   - matplotlib
   - cartopy
   - descartes
