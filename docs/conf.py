@@ -50,10 +50,12 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.todo",
     "sphinx.ext.napoleon",
-    "sphinx.ext.intersphinx",
+    # "sphinx.ext.intersphinx",
     "nbsphinx",
-    "sphinx.ext.mathjax",
 ]
+
+# overwrite kernel name in ipynb files
+nbsphinx_kernel_name = ""
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
