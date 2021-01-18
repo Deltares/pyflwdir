@@ -20,6 +20,7 @@ tests:
 
 pages:
   script:
+  - cp notebooks/*.ipynb docs/
   - cd docs
   - make html
   - cd ..

@@ -1,7 +1,13 @@
 Installation
 ============
 
-We are working on making the package available through the conda package managers.
+Install from pip
+----------------
+
+.. code-block:: console
+
+    $ conda install pyflwdir -c conda-forge
+
 
 Install from pip
 ----------------

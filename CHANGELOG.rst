@@ -2,6 +2,21 @@
 Change Log
 ###########
 
+0.4.6
+*****
+Improved
+--------
+* vectorizing of local flow directions and streams in seperate methods
+* fixed subbasins method
+* documentation using nbsphinx
+
+
+0.4.4
+*****
+Improved
+--------
+* IHU upscaling (HESS preprint)
+
 0.4.3
 *****
 Improved
@@ -10,8 +25,8 @@ Improved
 * pfafstetter method improved
 * remove use of pandas and geopandas to limit dependencies
 
-Added
------
+New
+---
 * new subbasins method
 * features method in favor vectorize
 
@@ -21,10 +36,9 @@ Improved
 --------
 * improved test coverage
 * prepared release for pip
-* version for HESS preprint
 
-Added
------
+New
+---
 
 0.4.1
 *****
@@ -33,8 +47,8 @@ Improved
 * code reformatted using black
 * improved subgrid river methods
 
-Added
------
+New
+---
 * subgrid_rivlen, subgrid_rivslp methods in favor of ucat_channel (will be deprecated)
 
 0.4.0
@@ -43,8 +57,8 @@ Improved
 --------
 * improved COM upscaling
 
-Added
------
+New
+---
 
 0.3.0
 *****
@@ -52,8 +66,8 @@ Improved
 --------
 * simplified data layout based on linear downstream cell indices and a ordered sequence or down- to upstream cell indices.
 
-Added
------
+New
+---
 * hand - height above neares drain based on Nobre et al. (2016)
 * floodplains - flood plain delineation based on Nardi et al. (2019)
 * snap/path - methods to follow a streamline in up-  or downstream direction
@@ -61,8 +75,8 @@ Added
 0.2.0
 *****
 
-Added
------
+New
+---
 * suport for multiple flow direction types
 
 Improved
@@ -74,7 +88,7 @@ Improved
 0.1.0
 *****
 
-Added
+New
 -----
 
 * setup_network - Setup all upstream - downstream connections based on the flow direcion map.

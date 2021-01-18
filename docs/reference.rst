@@ -6,6 +6,9 @@ Reference
 FlwdirRaster
 ------------
 
+.. autoclass:: pyflwdir.FlwdirRaster()
+
+
 Input/Output
 ^^^^^^^^^^^^
 
@@ -51,6 +54,8 @@ Flow direction methods
 
 .. automethod:: pyflwdir.FlwdirRaster.repair_loops()
 
+.. automethod:: pyflwdir.FlwdirRaster.vectorize()
+
 
 Raster & geospatial attributes and methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -73,15 +78,17 @@ attribute is required at initializiation, while the others can be set later.
 Streams and flow paths
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. automethod:: pyflwdir.FlwdirRaster.stream_order()
+
+.. automethod:: pyflwdir.FlwdirRaster.streams()
+
 .. automethod:: pyflwdir.FlwdirRaster.path()
 
 .. automethod:: pyflwdir.FlwdirRaster.snap()
 
-.. automethod:: pyflwdir.FlwdirRaster.stream_order()
-
 .. automethod:: pyflwdir.FlwdirRaster.stream_distance()
 
-.. automethod:: pyflwdir.FlwdirRaster.features()
+.. automethod:: pyflwdir.FlwdirRaster.geofeatures()
 
 
 (Sub)basins
@@ -102,6 +109,7 @@ Up- and downstream values
 .. automethod:: pyflwdir.FlwdirRaster.downstream()
 
 .. automethod:: pyflwdir.FlwdirRaster.upstream_sum()
+
 
 Up- and downstream arithmetics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

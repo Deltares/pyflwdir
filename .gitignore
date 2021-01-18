@@ -16,6 +16,8 @@ develop-eggs/
 dist/
 downloads/
 eggs/
+figs/
+scripts/
 .eggs/
 lib/
 lib64/
@@ -116,6 +118,8 @@ venv.bak/
 # mkdocs documentation
 /site
 docs/*.png
+docs/*.ipynb
+docs/ipynb_checkpoints
 
 # mypy
 .mypy_cache/

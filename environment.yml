@@ -22,8 +22,10 @@ dependencies:
   # optional / docs
   - sphinx
   - sphinx_rtd_theme
+  - nbsphinx
   - geopandas
   - rasterio
-  - cartopy
   - ipython
   - matplotlib
+  - cartopy
+  - descartes

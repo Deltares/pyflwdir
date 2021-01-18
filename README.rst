@@ -67,6 +67,12 @@ Install the package from pip using
 
     $ pip install pyflwdir
 
+Install the package from conda using
+
+.. code-block:: console
+
+    $ conda install pyflwdir -c conda-forge
+
 
 Development and Testing
 =======================
