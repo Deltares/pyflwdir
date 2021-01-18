@@ -10,6 +10,13 @@ Improved
 * fixed subbasins method
 * documentation using nbsphinx
 
+0.4.5
+*****
+New
+---
+* subbasin_mask_within_region
+* contiguous_area_within_region
+
 
 0.4.4
 *****

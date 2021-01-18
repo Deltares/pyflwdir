@@ -7,6 +7,8 @@ import pprint
 import pickle
 import logging
 import warnings
+
+import pyflwdir
 from pyflwdir import gis_utils as gis
 from pyflwdir import (
     arithmetics,
@@ -57,18 +59,19 @@ def from_array(
     mask=None,
     transform=gis.IDENTITY,
     latlon=False,
+    **kwargs,
 ):
     """Flow direction raster array parsed to actionable format.
 
     Parameters
     ----------
-    data : ndarray
+    data : 2D array
         flow direction raster data
     ftype : {'d8', 'ldd', 'nextxy', 'infer'}, optional
         name of flow direction type, infer from data if 'infer', by default is 'infer'
     check_ftype : bool, optional
         check if valid flow direction raster if ftype is not 'infer', by default True
-    mask : ndarray of bool, optional
+    mask : 2D array of bool, optional
         True for valid cells. Can be used to mask out subbasins.
     transform : affine transform
         Two dimensional affine transform for 2D linear mapping, by default using the
@@ -77,6 +80,13 @@ def from_array(
         True if WGS84 coordinate reference system, by default False. If True it
         converts the cell areas from degree to metres, otherwise it assumes cell areas
         are in unit metres.
+    **kwargs
+        key-word argumetns passed to FlwdirRaster
+
+    Returns
+    -------
+    FlwdirRaster
+        Actionable flow direction object
 
     """
     if ftype == "infer":
@@ -102,13 +112,9 @@ def from_array(
             raise ValueError(f'"mask" shape does not match with data shape')
         data = np.where(mask != 0, data, fd._mv)
 
-    if data.size < 2147483647:
-        dtype = np.int32
-    elif data.size < 4294967295 - 1:
-        dtype = np.uint32
-    else:
-        dtype = np.intp
-
+    # use smallest possible dtype to represent indices
+    n = data.size
+    dtype = np.int32 if n < 2147483647 else (np.uint32 if n < 4294967294 else np.intp)
     idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
     idxs_outlet = idxs_pit[np.isin(data.flat[idxs_pit], fd._pv)]
 
@@ -121,6 +127,7 @@ def from_array(
         ftype=ftype,
         transform=transform,
         latlon=latlon,
+        **kwargs,
     )
 
 
@@ -151,7 +158,7 @@ class FlwdirRaster(object):
         ncells=None,
         transform=gis.IDENTITY,
         latlon=False,
-        cache=True,
+        cache=False,
     ):
         """Flow direction raster array
 
@@ -163,10 +170,10 @@ class FlwdirRaster(object):
             shape of raster
         ftype : {'d8', 'ldd', 'nextxy'}
             name of flow direction type
-        idxs_pit, idxs_outlet : ndarray of int, optional
+        idxs_pit, idxs_outlet : 2D array of int, optional
             linear indices of all pits/outlets,
             outlets exclude pits of inclomplete basins at the domain boundary
-        idxs_seq : ndarray of int, optional
+        idxs_seq : 2D array of int, optional
             linear indices of valid cells ordered from down- to upstream
         ncells : integer
             number of valid cells
@@ -208,7 +215,7 @@ class FlwdirRaster(object):
 
         # set placeholders only used if cache if True
         self.cache = cache
-        self._idxs_us_main = None
+        self._cached = dict()
 
         # check validity
         if self.idxs_pit.size == 0:
@@ -227,7 +234,7 @@ class FlwdirRaster(object):
         return {
             "ftype": self.ftype,
             "shape": self.shape,
-            "ncells": self._ncells,
+            "ncells": self.ncells,
             "transform": self.transform,
             "latlon": self.latlon,
             "idxs_ds": self.idxs_ds,
@@ -244,10 +251,10 @@ class FlwdirRaster(object):
     def idxs_us_main(self):
         """Linear indices of main upstream cell, i.e. the upstream cell with the
         largest contributing area."""
-        if self._idxs_us_main is None:
-            idxs_us_main = self.main_upstream()
+        if "idxs_us_main" in self._cached:
+            idxs_us_main = self._cached["idxs_us_main"]
         else:
-            idxs_us_main = self._idxs_us_main
+            idxs_us_main = self.main_upstream()
         return idxs_us_main
 
     @property
@@ -274,11 +281,18 @@ class FlwdirRaster(object):
     @property
     def rank(self):
         """Cell Rank, i.e. distance to the outlet in no. of cells."""
-        return core.rank(self.idxs_ds, mv=self._mv)[0].reshape(self.shape)
+        if "rank" in self._cached:
+            _rank = self._cached["rank"]
+        else:
+            _rank = core.rank(self.idxs_ds, mv=self._mv)[0].reshape(self.shape)
+            if self.cache:
+                self._cached.update(rank=_rank)
+        return _rank
 
     @property
     def isvalid(self):
         """True if the flow direction map is valid."""
+        self._cached.pop("rank", None)
         return np.all(self.rank != -1)
 
     @property
@@ -301,12 +315,12 @@ class FlwdirRaster(object):
             raise ValueError(f'Invalid method {method}, select from ["walk", "sort"]')
         self._ncells = self._seq.size
 
-    def main_upstream(self, uparea=None, cache=None):
+    def main_upstream(self, uparea=None):
         idxs_us_main = core.main_upstream(
             idxs_ds=self.idxs_ds, uparea=self._check_data(uparea, "uparea"), mv=self._mv
         )
-        if cache or (cache is None and self.cache):
-            self._idxs_us_main = idxs_us_main
+        if self.cache:
+            self._cached.update(idxs_us_main=idxs_us_main)
         return idxs_us_main
 
     def add_pits(self, idxs=None, xy=None, streams=None):
@@ -319,7 +333,7 @@ class FlwdirRaster(object):
             linear indices of pits, by default is None.
         xy : tuple of array_like of float, optional
             x, y coordinates of pits, by default is None.
-        streams : ndarray of bool, optional
+        streams : 2D array of bool, optional
             2D raster with cells flagged 'True' at stream cells, only used
             in combination with idx or xy, by default None.
         """
@@ -458,7 +472,7 @@ class FlwdirRaster(object):
             linear indices of starting point, by default is None.
         xy : tuple of array_like of float, optional
             x, y coordinates of starting point, by default is None.
-        mask : ndarray of bool, optional
+        mask : 2D array of bool, optional
             True if stream cell.
         max_length : float, optional
             maximum length of trace
@@ -518,7 +532,7 @@ class FlwdirRaster(object):
             linear indices of starting point, by default is None.
         xy : tuple of array_like of float, optional
             x, y coordinates of starting point, by default is None.
-        mask : ndarray of bool
+        mask : 2D array of bool
             True at cell where to snap to
         max_length : float, optional
             maximum length of trace
@@ -652,7 +666,7 @@ class FlwdirRaster(object):
             linear indices of sub(basin) outlets, by default is None.
         xy : tuple of array_like of float, optional
             x, y coordinates of sub(basin) outlets, by default is None.
-        ids : ndarray of uint32, optional
+        ids : 1D array of uint32, optional
             IDs of (sub)basins in same order as idxs, by default None
 
         Returns
@@ -673,7 +687,7 @@ class FlwdirRaster(object):
         basids = basins.basins(self.idxs_ds, idxs, self.idxs_seq, ids)
         return basids.reshape(self.shape)
 
-    def subbasins(self, strord=None, min_sto=0):
+    def subbasins(self, strord=None, mask=None, min_sto=0):
         """Returns a subbasin map with unique IDs.
         Subbasins are defined based on a minimum stream order.
 
@@ -681,6 +695,8 @@ class FlwdirRaster(object):
         ----------
         strord : 1D-array of uint8
             stream order
+        mask : 2D array of bool
+            Maks of valid cells.
         min_sto : int, optional
             minimum stream order of subbasins, by default the stream order is set to
             two under the global maxmium stream order.
@@ -694,6 +710,7 @@ class FlwdirRaster(object):
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
             strord=self._check_data(strord, "strord"),
+            mask=self._check_data(mask, "mask", optional=True),
             min_sto=min_sto,
         )
         return subbas.reshape(self.shape)
@@ -894,7 +911,15 @@ class FlwdirRaster(object):
         2D array of int
             strahler order map
         """
-        return streams.stream_order(self.idxs_ds, self.idxs_seq).reshape(self.shape)
+        if "strord" in self._cached:
+            strord = self._cached["strord"]
+        else:
+            strord = streams.stream_order(self.idxs_ds, self.idxs_seq).reshape(
+                self.shape
+            )
+            if self.cache:
+                self._cached.update(strord=strord)
+        return strord
 
     def stream_distance(self, mask=None, unit="cell"):
         """Returns distance to outlet or next downstream True cell in mask
@@ -924,22 +949,73 @@ class FlwdirRaster(object):
         )
         return stream_dist.reshape(self.shape)
 
-    # TODO remove in v0.5
-    def vectorize(self, **kwargs):
-        """NOTE: this method will be deprecated from v0.5"""
-        warnings.warn(
-            "vectorize will be deprecated in v0.5. Use features instead.",
-            PendingDeprecationWarning,
+    def vectorize(self, mask=None, xs=None, ys=None, **kwargs):
+        """Returns each flow direction as a linestring geo-feature
+
+        Parameters
+        ----------
+        kind : {streams, flwdir}
+            Kind of LineString features: either streams of local flow directions.
+        mask : 2D array of bool
+            Maks of valid cells.
+        xs, ys : 2D array of float
+            Raster with cell x, y coordinates, by default None and inferred from cell
+            center.
+        kwargs : extra sample maps key-word arguments
+            optional maps to sample from
+
+        Returns
+        -------
+        feats : list of dict
+            Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
+        """
+        idxs = core.flwdir_tuples(
+            self.idxs_ds,
+            mask=self._check_data(mask, "mask", optional=True),
+            mv=self._mv,
         )
-        import geopandas as gp
+        return self.geofeatures(idxs, xs=xs, ys=ys, **kwargs)
 
-        df = gp.GeoDataFrame.from_features(self.features(kind="flwdir", **kwargs))
-        return df.set_index("idxs")
+    def streams(self, strord=None, min_sto=1, mask=None, xs=None, ys=None, **kwargs):
+        """Returns each stream segment as a linestring geo-features.
+        A stream segment is defined by flow path between two confluences with minimal
+        stream order `min_sto`.
 
-    def features(
-        self, kind="streams", mask=None, xs=None, ys=None, min_sto=1, **kwargs
-    ):
-        """Returns a geo-features of streams of same order or local flow direction.
+        Parameters
+        ----------
+        kind : {streams, flwdir}
+            Kind of LineString features: either streams of local flow directions.
+        strord : 2D array of int, optional
+            Stream order raster
+        min_sto : int
+            Minimum Strahler Order recognized as river, by the default 1.
+            Only in combination with kind = 'streams'
+        mask : 2D array of bool
+            Maks of valid cells.
+        xs, ys : 2D array of float
+            Raster with cell x, y coordinates, by default None and inferred from cell
+            center.
+        kwargs : extra sample maps key-word arguments
+            optional maps to sample from
+
+        Returns
+        -------
+        feats : list of dict
+            Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
+        """
+        strord = self._check_data(strord, "strord")
+        idxs = streams.streams(
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            strord=strord,
+            mask=self._check_data(mask, "mask", optional=True),
+            min_sto=min_sto,
+        )
+        return self.geofeatures(idxs, xs=xs, ys=ys, strord=strord, **kwargs)
+
+    def geofeatures(self, flowpaths, xs=None, ys=None, **kwargs):
+        """Returns a geo-features of flowpaths defined by a list of arrays of linear
+        indices.
 
         The coordinates are based on the cell center as calculated
         using the affine transform, unless maps with (subgrid) x and y
@@ -947,14 +1023,9 @@ class FlwdirRaster(object):
 
         Parameters
         ----------
-        kind : {streams, flwdir}
-            Kind of LineString features: either streams of local flow directions.
-        mask : ndarray of bool
-            Maks of valid cells.
-        min_sto : int
-            Minimum Strahler Order recognized as river, by the default 1.
-            Only in combination with kind = 'streams'
-        xs, ys : ndarray of float
+        flowpaths: list or 1D array of int
+            list of flow paths described by linear indices
+        xs, ys : 2D array of float
             Raster with cell x, y coordinates, by default None and inferred from cell
             center.
         kwargs : extra sample maps key-word arguments
@@ -966,30 +1037,12 @@ class FlwdirRaster(object):
         feats : list of dict
             Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
         """
-        if "stream" in kind:
-            if "strord" not in kwargs:
-                kwargs.update(strord=self.stream_order())
-            idxs = streams.streams(
-                idxs_ds=self.idxs_ds,
-                seq=self.idxs_seq,
-                strord=self._check_data(kwargs["strord"], "strord"),
-                mask=self._check_data(mask, "mask", optional=True),
-                min_sto=min_sto,
-            )
-        elif kind == "flwdir":
-            idxs = core.flwdir_tuples(
-                self.idxs_ds,
-                mask=self._check_data(mask, "mask", optional=True),
-                mv=self._mv,
-            )
-        else:
-            ValueError('Kind should be either "streams" or "flwdir"')
         # get geoms and return features
         if xs is None or ys is None:
             idxs0 = np.arange(self.size, dtype=np.intp)
             xs, ys = gis.idxs_to_coords(idxs0, self.transform, self.shape)
         feats = gis.features(
-            streams=idxs,
+            flowpaths=flowpaths,
             xs=self._check_data(xs, "xs"),
             ys=self._check_data(ys, "ys"),
             **kwargs,
@@ -1028,10 +1081,10 @@ class FlwdirRaster(object):
 
         Returns
         ------
-        FlwdirRaster
+        flw: FlwdirRaster
             upscaled Flow Direction Raster
-        ndarray of int
-            1D raster indices of subgrid outlets
+        idxs_out: 2D array of int
+            linear indices of subgrid outlets
         """
         if self.ftype not in ["d8", "ldd"]:
             raise ValueError(
@@ -1269,7 +1322,7 @@ class FlwdirRaster(object):
         idxs_out : 2D array of int
             Linear indices of unit catchment outlets. If None (default) the cell
             size (instead of subgrid length) will be used.
-        mask : ndarray of bool with self.shape, optional
+        mask : 2D array of bool with self.shape, optional
             True for valid pixels. can be used to mask out pixels of small rivers.
         direction : {"up", "down"}
             Flow direction in which river length is measured.
@@ -1318,7 +1371,7 @@ class FlwdirRaster(object):
         length : float, optional
             subgrid river length [m] over which to calculate the slope, by default
             1000 m.
-        mask : ndarray of bool with self.shape, optional
+        mask : 2D array of bool with self.shape, optional
             True for valid pixels. can be used to mask out pixels of small rivers.
 
         Returns
@@ -1369,7 +1422,7 @@ class FlwdirRaster(object):
             weights used for averaging, by default None.
         nodata : int or float, optional
             Missing data value for cells outside domain, by default -9999.0
-        mask : ndarray of bool with self.shape, optional
+        mask : 2D array of bool with self.shape, optional
             True for valid pixels. can be used to mask out pixels of small rivers.
         direction : {"up", "down"}
             Flow direction in which river length is measured.

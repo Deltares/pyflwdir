@@ -347,13 +347,13 @@ def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
 
 
 ## VECTORIZE
-def features(streams, xs, ys, **kwargs):
+def features(flowpaths, xs, ys, **kwargs):
     """Returns a LineString feature for each stream
 
     Parameters
     ----------
-    streams : list of 1D-arrays of intp
-        linear indices of streams
+    flowpaths : list of 1D-arrays of intp
+        linear indices of flowpaths
     xs, ys : 1D-array of float
         x, y coordinates
     kwargs : extra sample maps key-word arguments
@@ -371,7 +371,9 @@ def features(streams, xs, ys, **kwargs):
                 f'Kwargs map "{key}" should be ndarrays of same size as coordinates'
             )
     feats = list()
-    for idxs in streams:
+    for idxs in flowpaths:
+        if len(idxs) < 2:
+            continue
         idx0 = idxs[0]
         props = {key: kwargs[key].flat[idx0] for key in kwargs}
         feats.append(

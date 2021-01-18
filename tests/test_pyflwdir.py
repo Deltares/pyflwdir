@@ -65,25 +65,29 @@ def test_flwdirraster_errors():
 @pytest.mark.parametrize("parsed, d8", test_core.test_data)
 def test_flwdirraster_attrs(parsed, d8):
     idxs_ds, idxs_pit, seq, rank, mv = parsed
-    flw = pyflwdir.FlwdirRaster(
-        idxs_ds.copy(), d8.shape, "d8", idxs_pit=idxs_pit.copy()
-    )
-    assert flw._mv == mv
-    assert flw.size == d8.size
-    assert flw.shape == d8.shape
-    assert isinstance(flw._dict, dict)
-    assert isinstance(flw.__str__(), str)
-    assert np.all(flw[flw.idxs_pit] == flw.idxs_pit)
-    assert isinstance(flw.xy(flw.idxs_pit), tuple)
-    assert isinstance(flw.transform, Affine)
-    assert isinstance(flw.bounds, np.ndarray)
-    assert isinstance(flw.latlon, bool)
-    assert np.all(flw.rank.ravel() == rank)
-    assert flw.ncells == seq.size
-    assert np.all(np.diff(rank.flat[flw.idxs_seq]) >= 0)
-    flw.repair_loops()
-    assert flw.isvalid
-    assert np.sum(flw.mask) == flw.ncells
+    for cache in [True, False]:
+        flw = pyflwdir.FlwdirRaster(
+            idxs_ds.copy(), d8.shape, "d8", idxs_pit=idxs_pit.copy(), cache=cache
+        )
+        assert flw._mv == mv
+        assert flw.size == d8.size
+        assert flw.shape == d8.shape
+        assert isinstance(flw._dict, dict)
+        assert isinstance(flw.__str__(), str)
+        assert np.all(flw[flw.idxs_pit] == flw.idxs_pit)
+        assert isinstance(flw.xy(flw.idxs_pit), tuple)
+        assert isinstance(flw.transform, Affine)
+        assert isinstance(flw.bounds, np.ndarray)
+        assert np.allclose(flw.extent, flw.bounds[[0, 2, 1, 3]])
+        assert isinstance(flw.latlon, bool)
+        assert np.all(flw.rank.ravel() == rank)
+        if cache:
+            assert "rank" in flw._cached
+        assert flw.ncells == seq.size
+        assert np.all(np.diff(rank.flat[flw.idxs_seq]) >= 0)
+        flw.repair_loops()
+        assert flw.isvalid
+        assert np.sum(flw.mask) == flw.ncells
 
 
 def test_add_pits():
@@ -244,19 +248,19 @@ def test_streams():
     assert strord.dtype == np.int8
     assert np.all(strord.shape == flw.shape)
     # vectorize
-    feats = flw.features(kind="streams")
+    feats = flw.streams()
     fstrord = np.array([f["properties"]["strord"] for f in feats])
     findex = np.array([f["properties"]["idxs"] for f in feats])
     assert np.all(fstrord == strord.flat[findex])
-    feats = flw.features(kind="flwdir")
+    feats = flw.vectorize()
     findex = np.array([f["properties"]["idxs"] for f in feats])
     assert np.all(findex == np.sort(idxs_seq))
     with pytest.raises(ValueError, match="size does not match"):
-        flw.features(xs=np.arange(3), ys=np.arange(3))
+        flw.geofeatures([np.array([1, 2])], xs=np.arange(3), ys=np.arange(3))
     with pytest.raises(ValueError, match="size does not match"):
-        flw.features(mask=np.ones((1, 1)))
+        flw.streams(mask=np.ones((1, 1)))
     with pytest.raises(ValueError, match="Kwargs map"):
-        flw.features(uparea=np.ones((1, 1)))
+        flw.geofeatures([np.array([1, 2])], uparea=np.ones((1, 1)))
     # stream distance
     data = np.zeros(flw.shape, dtype=np.int32)
     data[flw.rank > 0] = 1

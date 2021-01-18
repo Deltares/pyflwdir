@@ -149,38 +149,40 @@ def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
     streams : list of 1D-arrays of intp
         linear indices of streams
     """
-    # create map with numbers stream segments
-    streams0 = []
-    segments = np.full(idxs_ds.shape, -1, dtype=np.int32)
-    i = np.int32(0)
+    # create map with confluences and list with its indices
+    idxs_conf = []
+    conf = np.array([np.bool(0) for _ in range(idxs_ds.size)])  # all False
     for idx0 in seq[::-1]:  # up- to downstream
-        if (mask is not None and mask[idx0] == False) or strord[idx0] < min_sto:
+        if strord[idx0] < (min_sto - 1):
             continue
         idx_ds = idxs_ds[idx0]
-        if segments[idx0] == -1:
-            streams0.append(idx0)
-            segments[idx0] = i
-            i += 1
-        if strord[idx0] != strord[idx_ds]:
-            streams0.append(idx_ds)
-            segments[idx_ds] = i
-            i += 1
-        elif segments[idx_ds] == -1:
-            segments[idx_ds] = segments[idx0]
+        if strord[idx_ds] > strord[idx0]:
+            idxs_conf.append(idx_ds)
+            if strord[idx0] >= min_sto:
+                conf[idx_ds] = True
+    if len(idxs_conf) == 0:
+        raise ValueError("No streams found with given settings.")
 
     # get list of indices arrays of segments
     streams = []
-    for idx0 in streams0:
-        idxs = [idx0]
-        seg = segments[idx0]
+    done = np.array([np.bool(0) for _ in range(idxs_ds.size)])  # all False
+    for idx0 in idxs_conf:
+        if done[idx0] or (mask is not None and mask[idx0] == False):
+            continue
+        idxs = [idx0]  # initiate with correct dtype
         while True:
+            done[idx0] = True
             idx_ds = idxs_ds[idx0]
-            idxs.append(idx_ds)
-            if idx_ds == idx0 or segments[idx_ds] != seg:  # pit or new stream
-                streams.append(np.array(idxs, dtype=idxs_ds.dtype))
+            valid = mask is None or mask[idx_ds]
+            if valid:
+                idxs.append(idx_ds)
+            if not valid or conf[idx_ds] or done[idx_ds] or idx_ds == idx0:
+                # pit or new stream segment (only on streams with strord > min_sto)
+                if len(idxs) >= 2:
+                    streams.append(np.array(idxs, dtype=idxs_ds.dtype))
                 break
-            else:
-                idx0 = idx_ds
+
+            idx0 = idx_ds
     return streams
 
 
