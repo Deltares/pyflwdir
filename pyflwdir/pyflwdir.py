@@ -586,7 +586,7 @@ class FlwdirRaster(object):
         dflat = self._check_data(data, "data")
         data_out = dflat.copy()
         data_out[self.mask] = dflat[self.idxs_ds[self.mask]]
-        return data_out
+        return data_out.reshape(data.shape)
 
     def upstream_sum(self, data, mv=-9999):
         """Returns sum of next upstream values.
@@ -1310,6 +1310,7 @@ class FlwdirRaster(object):
         idxs_out,
         mask=None,
         direction="up",
+        unit="cell",
     ):
         """Returns the subgrid river length [m] based on unit catchment outlet locations.
         A cell's subgrid river is defined by the path starting at the unit
@@ -1326,6 +1327,8 @@ class FlwdirRaster(object):
             True for valid pixels. can be used to mask out pixels of small rivers.
         direction : {"up", "down"}
             Flow direction in which river length is measured.
+        unit : {'m', 'cell'}
+            Upstream area unit.
 
         Returns
         -------
@@ -1334,8 +1337,10 @@ class FlwdirRaster(object):
         """
         direction = str(direction).lower()
         if direction not in ["up", "down"]:
-            msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
+            msg = f'Unknown flow direction: {direction}, select from ["up", "down"].'
             raise ValueError(msg)
+        if unit not in ["m", "cell"]:
+            raise ValueError(f'Unknown unit: {unit}, select from ["m", "cell"]')
         if idxs_out is None:
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
         rivlen = subgrid.channel_length(
@@ -1343,8 +1348,10 @@ class FlwdirRaster(object):
             idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             mask=self._check_data(mask, "mask", optional=True),
             ncol=self.shape[1],
-            latlon=self.latlon,
-            transform=self.transform,
+            transform=gis.IDENTITY if unit == "cell" else self.transform,
+            latlon=False if unit == "cell" else self.latlon,
+            nodata=np.int32(-9999) if unit == "cell" else np.float32(-9999),
+            dtype=np.int32 if unit == "cell" else np.float32,
             mv=self._mv,
         )
         shape = idxs_out.shape

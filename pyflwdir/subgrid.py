@@ -129,6 +129,8 @@ def channel_length(
     mask=None,
     latlon=False,
     transform=gis_utils.IDENTITY,
+    nodata=-9999.0,
+    dtype=np.float32,
     mv=_mv,
 ):
     """Returns the channel length which is defined by the path starting at the outlet
@@ -150,6 +152,10 @@ def channel_length(
         True if WGS84 coordinates, by default False
     transform : affine transform
         Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
+    nodata : float, optional
+        nodata value, by default -9999.0
+    dtype : numpy.dtype, optional
+        data output type, by default numpy.float32
 
     Returns
     -------
@@ -162,7 +168,7 @@ def channel_length(
         if idx0 != mv:
             outlets[idx0] = np.bool(1)
     # allocate output
-    rivlen = np.full(idxs_out.size, -9999.0, dtype=np.float32)
+    rivlen = np.full(idxs_out.size, nodata, dtype=dtype)
     # loop over outlet cell indices
     for i in range(idxs_out.size):
         idx0 = idxs_out[i]

@@ -212,19 +212,19 @@ def dmm(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
 
 
 @njit
-def effective_area(subidx, subncol, cellsize):
+def effective_area(subidx, subncol, cellsize, r_ratio=0.5):
     """Returns True if highress cell <subidx> is inside the effective area."""
-    R = cellsize / 2.0
-    offset = R - 0.5  # lowres center at cellsize/2 - 0.5
+    R = cellsize * r_ratio
+    offset = cellsize / 2.0 - 0.5  # lowres center
     ri = abs((subidx // subncol) % cellsize - offset)
     ci = abs((subidx % subncol) % cellsize - offset)
     # describes effective area
-    ea = (ri ** 0.5 + ci ** 0.5 <= R ** 0.5) or (ri <= 0.5) or (ci <= 0.5)
+    ea = (ri ** 0.5 + ci ** 0.5) <= R ** 0.5 or ri <= 0.5 or ci <= 0.5
     return ea
 
 
 @njit
-def map_effare(subidxs_ds, subshape, cellsize, mv=_mv):
+def map_effare(subidxs_ds, subshape, cellsize, r_ratio=0.5, mv=_mv):
     """Returns a map with ones on highres cells of lowres effective area."""
     subncol = subshape[1]
     # allocate output
@@ -233,7 +233,7 @@ def map_effare(subidxs_ds, subshape, cellsize, mv=_mv):
     for subidx in range(subidxs_ds.size):
         if subidxs_ds[subidx] == mv:
             continue
-        if effective_area(subidx, subncol, cellsize):
+        if effective_area(subidx, subncol, cellsize, r_ratio=r_ratio):
             effare[subidx] = np.int8(1)
         else:
             effare[subidx] = np.int8(0)
@@ -241,7 +241,7 @@ def map_effare(subidxs_ds, subshape, cellsize, mv=_mv):
 
 
 @njit
-def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
+def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, r_ratio=0.5, mv=_mv):
     """Returns representative highres cell indices of lowres cells
     according to the effective area method.
 
@@ -274,7 +274,7 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
             continue
         # NOTE including pits is different from the original EAM
         ispit = subidx_ds == subidx
-        eff_area = effective_area(subidx, subncol, cellsize)
+        eff_area = effective_area(subidx, subncol, cellsize, r_ratio)
         # check upstream area if cell ispit or at effective area
         if ispit or eff_area:
             idx = subidx_2_idx(subidx, subncol, cellsize, ncol)
@@ -288,7 +288,9 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
 
 
 @njit
-def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
+def eam_nextidx(
+    subidxs_rep, subidxs_ds, subshape, shape, cellsize, r_ratio=0.5, mv=_mv
+):
     """Returns next downstream lowres index by tracing a representative cell to
     the next downstream effective area according to the effective area method.
 
@@ -324,7 +326,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
             idx1 = subidx_2_idx(subidx1, subncol, cellsize, ncol)
             if subidx1 == subidx:  # at pit
                 break
-            elif idx1 != idx0 and effective_area(subidx1, subncol, cellsize):
+            elif idx1 != idx0 and effective_area(subidx1, subncol, cellsize, r_ratio):
                 # in d8 effective area
                 break
             # next iter
@@ -333,7 +335,7 @@ def eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     return idxs_ds
 
 
-def eam(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
+def eam(subidxs_ds, subuparea, subshape, cellsize, r_ratio=0.5, mv=_mv):
     """Returns the upscaled next downstream index based on the
     effective area method (EAM) [1].
 
@@ -364,9 +366,13 @@ def eam(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
     ncol = int(np.ceil(subncol / cellsize))
     shape = nrow, ncol
     # get representative cells
-    subidxs_rep = eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv)
+    subidxs_rep = eam_repcell(
+        subidxs_ds, subuparea, subshape, shape, cellsize, r_ratio=r_ratio, mv=mv
+    )
     # get next downstream lowres index
-    idxs_ds = eam_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv)
+    idxs_ds = eam_nextidx(
+        subidxs_rep, subidxs_ds, subshape, shape, cellsize, r_ratio=r_ratio, mv=mv
+    )
     return idxs_ds, subidxs_rep, shape
 
 
@@ -429,7 +435,9 @@ def ihu_outlets(
 
 
 @njit
-def ihu_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
+def ihu_nextidx(
+    subidxs_out, subidxs_ds, subshape, shape, cellsize, r_ratio=0.5, mv=_mv
+):
     """Returns next downstream lowres index according to the iterative hydrography
     upscaling method (IHU). Every outlet highres cell is traced to the next downstream
     highres outlet cell. If this lays outside d8, we fallback to the next
@@ -479,7 +487,7 @@ def ihu_nextidx(subidxs_out, subidxs_ds, subshape, shape, cellsize, mv=_mv):
                     if subidxs_out[idx1] != subidx1:
                         idxs_fix.append(idx0)  # flag index
                 break
-            if subidx_ds == mv and effective_area(subidx1, subncol, cellsize):
+            if subidx_ds == mv and effective_area(subidx1, subncol, cellsize, r_ratio):
                 subidx_ds = subidx1  # first pass effective area
             # next iter
             subidx = subidx1
@@ -1065,16 +1073,6 @@ def ihu_minimize_error(
             check_pit = abs(dr) <= pit_out_of_cell and abs(dc) <= pit_out_of_cell
         # not outlet cells and at pit -> reset outlet to pit
         if check_pit and (subidx_ds == subidx0 or len(idxs) == 0):
-            #     fixed = True
-            # # isolated outlet cells at pit
-            # elif check_pit and len(idxs) == 1 and streams[subidx_ds] >= 0:
-            #     idxs_d8 = core._d8_idx(idx1, shape)
-            #     if np.all(idxs_ds[idxs_d8] != idx1):
-            #         # alternative outlet pixel in cell with original pit pixel
-            #         streams, idxs_ds, subidxs_out, fixed = new_outlet(
-            #             idx1, subidx_ds, streams, idxs_ds, subidxs_out, *args
-            #         )
-            # if check_pit and fixed:
             # set pit at current cell and outlet pixel outside at pit
             streams[subidxs_out[idx0]] = -1
             streams[subidx_ds] = idx0
@@ -1159,8 +1157,9 @@ def ihu(
     subuparea,
     subshape,
     cellsize,
-    minlen=None,
-    minupa=None,
+    minlen_ratio=0.25,
+    minupa_ratio=0.25,
+    r_ratio=0.5,
     niter=5,
     opt_rivlen=True,
     min_error=True,
@@ -1180,16 +1179,26 @@ def ihu(
         highres raster shape
     cellsize : int
         size of lowres cell measured in higres cells
-    iter : bool
-        If True apply iterative procedures to relocate outletes, optimize river lengths
+    minlen_ratio : float, optional
+        Minimum downstream subgrid distance between outlet cells expressed as ratio of
+        cell length. Used to minimize the number of cells with a downstream subgrid
+        distance below this treshold. By default 0.25.
+    minupa_ratio : float, optional
+        Minimum upstream area for head water cells expressed ratio of cell area.
+        By default 0.25.
+    r_ratio: float, optional
+        Distance from cell center lines which defines effective area, expressed as
+        square root of the cell length ratio, by default 0.5
+    niter : int, optional
+        Maximum number of iterations applied to relocate outletes, optimize river lengths
         and minimize upstream area errors in order to improve the overal upscaled flow
-        direction quality. By default True.
-    minlen : float, optional
-        Minimum downstream subgrid distance between outlet cells. Used to minimize the
-        number of cells with a downstream subgrid distance below this treshold. By
-        default cellsize * 0.25.
-    minupa : float, optional
-        Minimum upstream area for head water cells. By default cellsize^2 * 0.25.
+        direction quality, by default 5.
+    opt_rivlen: bool, optional
+        If True, try to find alternatives for short cells with short river legth. By default True.
+    min_error: bool, optional
+        If True, minimmize total cells with upstream area error for cells with
+        upscale error by finding the neighboring cell with the shortest combined path to
+        a common downstream outlet pixel. By default True.
 
     Returns
     -------
@@ -1203,8 +1212,8 @@ def ihu(
     nrow = int(np.ceil(subnrow / cellsize))
     ncol = int(np.ceil(subncol / cellsize))
     shape = nrow, ncol
-    minlen = cellsize * 0.25 if minlen is None else minlen
-    minupa = cellsize ** 2 * 0.25 if minupa is None else minupa
+    minlen = cellsize * minlen_ratio
+    minupa = cellsize ** 2 * minupa_ratio
     # STEP 1
     # get representative cells
     subidxs_rep = eam_repcell(
@@ -1213,6 +1222,7 @@ def ihu(
         subshape=subshape,
         shape=shape,
         cellsize=cellsize,
+        r_ratio=r_ratio,
         mv=mv,
     )
     # get highres outlet cells
@@ -1232,6 +1242,7 @@ def ihu(
         subshape=subshape,
         shape=shape,
         cellsize=cellsize,
+        r_ratio=r_ratio,
         mv=mv,
     )
     for j in range(niter):
@@ -1250,6 +1261,7 @@ def ihu(
         valid, streams, idxs_fix1, idxs_short = upscale_check(
             subidxs_out, idxs_ds, subidxs_ds, minlen=minlen, mv=mv
         )
+        # print(idxs_short.size)
         last_iter = (
             idxs_fix1.size == 0 or idxs_fix1.size == idxs_fix.size or j + 1 == niter
         )
@@ -1302,8 +1314,9 @@ def upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
     """Returns an array with ones (zeros) if subgrid outlet/representative cells are
     valid (erroneous) in D8, cells with missing values are set to -1.
 
-    "The flow direction from cell 1 to cell 2 is erroneous if the first outlet pixel
-    downstream of cell 1 is not located in cell 2"
+    The flow direction of a cell is erroneous if the first outlet pixel downstream of
+    the outlet pixel of that cell is not located in its downstream cell, i.e.: the cell
+    where the flow direction points to.
 
     Parameters
     ----------
