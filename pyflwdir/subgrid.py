@@ -157,10 +157,10 @@ def channel_length(
         channel section length [m]
     """
     # temp binary array with outlets
-    outlets = np.array([np.bool(0) for _ in range(idxs_nxt.size)])
+    outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
     for idx0 in idxs_out:
         if idx0 != mv:
-            outlets[idx0] = np.bool(1)
+            outlets[idx0] = bool(1)
     # allocate output
     rivlen = np.full(idxs_out.size, -9999.0, dtype=np.float32)
     # loop over outlet cell indices
@@ -222,10 +222,10 @@ def channel_average(
         channel section length [m]
     """
     # temp binary array with outlets
-    outlets = np.array([np.bool(0) for _ in range(idxs_nxt.size)])
+    outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
     for idx0 in idxs_out:
         if idx0 != mv:
-            outlets[idx0] = np.bool(1)
+            outlets[idx0] = bool(1)
     # allocate output
     data_out = np.full(idxs_out.size, nodata, dtype=data.dtype)
     # loop over outlet cell indices
@@ -384,10 +384,10 @@ def channel(
         mean channel section width [m]
     """
     # temp binary array with outlets
-    outlets = np.array([np.bool(0) for _ in range(idxs_nxt.size)])
+    outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
     for idx0 in idxs_out:
         if idx0 != mv:
-            outlets[idx0] = np.bool(1)
+            outlets[idx0] = bool(1)
     # allocate output
     rivlen1 = np.full(idxs_out.size, -9999.0, dtype=np.float32)
     rivslp1 = np.full(idxs_out.size, -9999.0, dtype=np.float32)

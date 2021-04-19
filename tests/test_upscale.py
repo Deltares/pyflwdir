@@ -43,7 +43,7 @@ def test_upscale(flwdir, idxs_ds, idxs_pit, cellsize, name, nflwerr):
     rank, n = core.rank(idxs_ds, mv=np.uint32(mv))
     seq = np.argsort(rank)[-n:]
     upa = streams.upstream_area(idxs_ds, seq, flwdir.shape[1], dtype=np.int32)
-    ids = np.arange(1, idxs_pit.size + 1, dtype=np.int)
+    ids = np.arange(1, idxs_pit.size + 1, dtype=int)
     bas = basins.basins(idxs_ds, idxs_pit, seq, ids)
     # upscale
     fupscale = getattr(upscale, name)

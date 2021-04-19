@@ -151,7 +151,7 @@ def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
     """
     # create map with confluences and list with its indices
     idxs_conf = []
-    conf = np.array([np.bool(0) for _ in range(idxs_ds.size)])  # all False
+    conf = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
     for idx0 in seq[::-1]:  # up- to downstream
         if strord[idx0] < (min_sto - 1):
             continue
@@ -165,7 +165,7 @@ def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
 
     # get list of indices arrays of segments
     streams = []
-    done = np.array([np.bool(0) for _ in range(idxs_ds.size)])  # all False
+    done = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
     for idx0 in idxs_conf:
         if done[idx0] or (mask is not None and mask[idx0] == False):
             continue

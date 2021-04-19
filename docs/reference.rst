@@ -98,9 +98,9 @@ Streams and flow paths
 
 .. automethod:: pyflwdir.FlwdirRaster.basin_bounds()
 
-.. automethod:: pyflwdir.FlwdirRaster.subbasins()
+.. automethod:: pyflwdir.FlwdirRaster.subbasins_streamorder()
 
-.. automethod:: pyflwdir.FlwdirRaster.pfafstetter()
+.. automethod:: pyflwdir.FlwdirRaster.subbasins_pfafstetter()
 
 
 Up- and downstream values

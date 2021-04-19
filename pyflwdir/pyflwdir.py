@@ -114,7 +114,7 @@ def from_array(
 
     # use smallest possible dtype to represent indices
     n = data.size
-    dtype = np.int32 if n < 2147483647 else (np.uint32 if n < 4294967294 else np.intp)
+    dtype = np.int32 if n < 2147483647 else (np.uint32 if n < 4294967294 else int)
     idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
     idxs_outlet = idxs_pit[np.isin(data.flat[idxs_pit], fd._pv)]
 
@@ -210,8 +210,10 @@ class FlwdirRaster(object):
         self.idxs_outlet = idxs_outlet
         self._seq = idxs_seq
         self._ncells = ncells
-        # either -1 or 4294967295 if dtype == np.uint32
-        self._mv = core._mv.astype(idxs_ds.dtype)
+        # either -1 for int or 4294967295 for uint32
+        self._mv = core._mv
+        if idxs_ds.dtype == np.uint32:
+            self._mv = np.uint32(self._mv)
 
         # set placeholders only used if cache if True
         self.cache = cache
@@ -448,7 +450,6 @@ class FlwdirRaster(object):
         return np.array([xmin, xmax, ymin, ymax], dtype=np.float64)
 
     ### LOCAL METHODS ###
-
     def path(
         self,
         idxs=None,
@@ -687,7 +688,7 @@ class FlwdirRaster(object):
         basids = basins.basins(self.idxs_ds, idxs, self.idxs_seq, ids)
         return basids.reshape(self.shape)
 
-    def subbasins(self, strord=None, mask=None, min_sto=0):
+    def subbasins_streamorder(self, strord=None, mask=None, min_sto=-2):
         """Returns a subbasin map with unique IDs.
         Subbasins are defined based on a minimum stream order.
 
@@ -706,7 +707,7 @@ class FlwdirRaster(object):
         basins : 1D-arrays of uint32
             map with unique IDs for stream_order>=min_sto subbasins
         """
-        subbas = basins.subbasins(
+        subbas = basins.subbasins_streamorder(
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
             strord=self._check_data(strord, "strord"),
@@ -715,7 +716,7 @@ class FlwdirRaster(object):
         )
         return subbas.reshape(self.shape)
 
-    def pfafstetter(self, depth=1, uparea=None, upa_min=0.0):
+    def subbasins_pfafstetter(self, depth=1, uparea=None, upa_min=0.0):
         """Returns the pfafstetter subbasins.
 
         Parameters
@@ -732,7 +733,7 @@ class FlwdirRaster(object):
         2D array of uint32
             subbasin map with pfafstetter coding
         """
-        pfaf = basins.pfafstetter(
+        pfaf = basins.subbasins_pfafstetter(
             idxs_pit=self.idxs_pit,
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
@@ -770,33 +771,8 @@ class FlwdirRaster(object):
         lbs, bboxs, total_bbox = regions.region_bounds(basins, transform=self.transform)
         return lbs, bboxs, total_bbox
 
-    def subbasin_mask_within_region(self, region_mask, stream_mask=None):
-        """ "Returns a mask of subbasins within a region, i.e. basins with upstream cells
-        outside the region are excluded. If a stream mask is provided the area is reduced
-        to cells which drain to the stream.
-
-        Parameters
-        ----------
-        region_mask: 2D array of bool
-            Initial mask of region
-        stream_mask: 2D array of bool
-            True for stream cells
-
-        Returns
-        -------
-        mask: 2D array of bool
-            Mask of subbasins within a region
-        """
-        mask_out = basins.subbasin_mask_within_region(
-            self.idxs_ds,
-            self.idxs_seq,
-            region_mask=self._check_data(region_mask, "region_mask"),
-            stream_mask=self._check_data(stream_mask, "stream_mask", optional=True),
-        )
-        return mask_out.reshape(self.shape)
-
-    def contiguous_area_within_region(self, region_mask, stream_mask=None):
-        """ "Returns most downstream contiguous area within region, i.e.: if a stream flows
+    def interbasin_mask(self, region_mask, stream_mask=None):
+        """Returns most downstream contiguous area within region, i.e.: if a stream flows
         in and out of the region, only the most downstream contiguous area within region
         will be True in output mask. If a stream mask is provided the area is reduced to
         cells which drain to the stream.
@@ -813,13 +789,13 @@ class FlwdirRaster(object):
         mask: 2D array of bool
             Mask of most downstream contiguous area within region
         """
-        mask_out = basins.contiguous_area_within_region(
+        contiguous_area = basins.interbasin_mask(
             self.idxs_ds,
             self.idxs_seq,
             region_mask=self._check_data(region_mask, "region_mask"),
             stream_mask=self._check_data(stream_mask, "stream_mask", optional=True),
         )
-        return mask_out.reshape(self.shape)
+        return contiguous_area.reshape(self.shape)
 
     ### ACCUMULATE ####
 
@@ -893,6 +869,39 @@ class FlwdirRaster(object):
         return accu.reshape(data.shape)
 
     ### STREAMS ####
+    def inflow_idxs(self, region_mask):
+        """Returns linear indices of most upstream pixels within region
+
+        Parameters
+        ----------
+        region_mask: 2D array of bool
+            True where region
+
+        Returns:
+        -------
+        idxs: 1D array of int
+            linear indices
+        """
+        return core.inflow_idxs(
+            self.idxs_ds, self.idxs_seq, self._check_data(region_mask, "region_mask")
+        )
+
+    def outflow_idxs(self, region_mask):
+        """Returns linear indices of most downstream pixels within region
+
+        Parameters
+        ----------
+        region: 2D array of bool
+            True where region
+
+        Returns:
+        -------
+        idxs: 1D array of int
+            linear indices
+        """
+        return core.outflow_idxs(
+            self.idxs_ds, self.idxs_seq, self._check_data(region_mask, "region_mask")
+        )
 
     def stream_order(self):
         """Returns the Strahler Order map [1]_.
