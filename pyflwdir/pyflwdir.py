@@ -771,7 +771,7 @@ class FlwdirRaster(object):
         lbs, bboxs, total_bbox = regions.region_bounds(basins, transform=self.transform)
         return lbs, bboxs, total_bbox
 
-    def interbasin_mask(self, region_mask, stream_mask=None):
+    def interbasin_mask(self, region, stream=None):
         """Returns most downstream contiguous area within region, i.e.: if a stream flows
         in and out of the region, only the most downstream contiguous area within region
         will be True in output mask. If a stream mask is provided the area is reduced to
@@ -779,9 +779,9 @@ class FlwdirRaster(object):
 
         Parameters
         ----------
-        region_mask: 2D array of bool
+        region: 2D array of bool
             Initial mask of region
-        stream_mask: 2D array of bool
+        stream: 2D array of bool
             True for stream cells
 
         Returns
@@ -789,13 +789,13 @@ class FlwdirRaster(object):
         mask: 2D array of bool
             Mask of most downstream contiguous area within region
         """
-        contiguous_area = basins.interbasin_mask(
-            self.idxs_ds,
-            self.idxs_seq,
-            region_mask=self._check_data(region_mask, "region_mask"),
-            stream_mask=self._check_data(stream_mask, "stream_mask", optional=True),
+        mask = basins.interbasin_mask(
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            region=self._check_data(region, "region"),
+            stream=self._check_data(stream, "stream", optional=True),
         )
-        return contiguous_area.reshape(self.shape)
+        return mask.reshape(self.shape)
 
     ### ACCUMULATE ####
 
@@ -869,12 +869,12 @@ class FlwdirRaster(object):
         return accu.reshape(data.shape)
 
     ### STREAMS ####
-    def inflow_idxs(self, region_mask):
+    def inflow_idxs(self, region):
         """Returns linear indices of most upstream pixels within region
 
         Parameters
         ----------
-        region_mask: 2D array of bool
+        region: 2D array of bool
             True where region
 
         Returns:
@@ -883,10 +883,10 @@ class FlwdirRaster(object):
             linear indices
         """
         return core.inflow_idxs(
-            self.idxs_ds, self.idxs_seq, self._check_data(region_mask, "region_mask")
+            self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
         )
 
-    def outflow_idxs(self, region_mask):
+    def outflow_idxs(self, region):
         """Returns linear indices of most downstream pixels within region
 
         Parameters
@@ -900,7 +900,7 @@ class FlwdirRaster(object):
             linear indices
         """
         return core.outflow_idxs(
-            self.idxs_ds, self.idxs_seq, self._check_data(region_mask, "region_mask")
+            self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
         )
 
     def stream_order(self):

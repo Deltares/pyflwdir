@@ -506,7 +506,7 @@ def inflow_idxs(idxs_ds, seq, region):
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
         if idx0 != idx_ds:
-            if mask[idx0] and region[idx_ds] and region[idx0] == False:  # in
+            if mask[idx0] and region[idx_ds] and not region[idx0]:  # in
                 idxs.append(idx0)
                 mask[idx_ds] = False
             else:
@@ -521,7 +521,8 @@ def outflow_idxs(idxs_ds, seq, region):
     mask = np.array([bool(1) for _ in range(idxs_ds.size)])  # all True
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
-        if mask[idx_ds] and pit or (region[idx0] and region[idx_ds] == False):  # out
+        # at mask and region and (pit or out)
+        if mask[idx_ds] and region[idx0] and (idx_ds == idx0 or not region[idx_ds]):
             idxs.append(idx0)
             mask[idx0] = False
         else:
