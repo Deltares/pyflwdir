@@ -59,7 +59,7 @@ def test_flwdirraster_errors():
     with pytest.raises(ValueError, match="Invalid FlwdirRaster: shape"):
         pyflwdir.FlwdirRaster(idxs_ds, (1, 2), "d8")
     with pytest.raises(ValueError, match="Invalid FlwdirRaster: no pits found"):
-        pyflwdir.FlwdirRaster(np.array([1, 0], dtype=np.intp), (2, 1), "d8")
+        pyflwdir.FlwdirRaster(np.array([1, 0], dtype=int), (2, 1), "d8")
 
 
 @pytest.mark.parametrize("parsed, d8", test_core.test_data)
@@ -95,7 +95,7 @@ def test_add_pits():
     x, y = flw.xy(flw.idxs_pit)
     # all cells are True -> pit at idx1
     flw.order_cells()  # set flw._seq
-    flw.add_pits(idxs=idx0, streams=np.full(d8.shape, True, dtype=np.bool))
+    flw.add_pits(idxs=idx0, streams=np.full(d8.shape, True, dtype=bool))
     assert np.all(flw.idxs_pit == idx0)
     assert flw._seq is None  # check if seq is deleted
     # original pit idx0
@@ -129,7 +129,7 @@ def test_path_snap():
     assert np.all(flw.snap(xy=flw.xy(idx1), direction="up")[0] == idx0)
 
     # with mask
-    mask = np.full(flw.shape, False, dtype=np.bool)
+    mask = np.full(flw.shape, False, dtype=bool)
     path, dist = flw.path(idx0, mask=mask)
     idx2, _ = flw.snap(idx0, mask=mask)
     assert path[0].size == dist[0] + 1
@@ -156,7 +156,7 @@ def test_path_snap():
 
 
 def test_downstream():
-    idxs = np.arange(flw.size, dtype=np.intp)
+    idxs = np.arange(flw.size, dtype=int)
     assert np.all(flw.downstream(idxs).ravel()[flw.mask] == flw.idxs_ds[flw.mask])
     with pytest.raises(ValueError, match="size does not match"):
         flw.downstream(np.ones((1, 1)))
@@ -209,11 +209,11 @@ def test_basins():
 
 
 def test_subbasins():
-    pfaf = flw.pfafstetter()
+    pfaf = flw.subbasins_pfafstetter()
     bas0 = flw.basins(flw.idxs_pit[0])
     assert np.all(pfaf[bas0 != 0] > 0)
     assert pfaf.max() <= 9
-    subbas = flw.subbasins()
+    subbas = flw.subbasins_streamorder()
     assert np.all(subbas[bas0 != 0] > 0)
 
 
@@ -270,7 +270,7 @@ def test_streams():
     assert dist.dtype == np.int32
     assert np.all(dist.shape == flw.shape)
     assert np.all(dist0[dist != -9999] <= dist[dist != -9999])
-    dist = flw.stream_distance(mask=np.ones(flw.shape, dtype=np.bool))
+    dist = flw.stream_distance(mask=np.ones(flw.shape, dtype=bool))
     assert np.all(dist[dist != -9999] == 0)
     dist = flw.stream_distance(unit="m")
     assert dist.dtype == np.float64

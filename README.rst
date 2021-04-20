@@ -56,7 +56,7 @@ Browse the `docs API <https://deltares.gitlab.io/wflow/pyflwdir/reference.html>`
 
 .. code-block:: python
 
-    subbasins = flw.subbasins()
+    subbasins = flw.subbasins_streamorder()
 
 Getting started
 ===============

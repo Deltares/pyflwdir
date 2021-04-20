@@ -30,7 +30,7 @@ def adjust_elevation(idxs_ds, seq, elevtn, mv=_mv):
     2012.
     """
     elevtn_out = elevtn.copy()
-    mask = np.array([np.bool(0) for _ in range(elevtn.size)])  # True for checked cells
+    mask = np.array([bool(0) for _ in range(elevtn.size)])  # True for checked cells
     for idx0 in seq[::-1]:  # from up- to downstream starting from longest stream paths
         if mask[idx0] == False:  # @ head water cell
             # get downstream indices up to earlier fixed stream path
