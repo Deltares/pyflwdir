@@ -30,7 +30,7 @@ def test_streams_basins_up(parsed, flwdir):
     upa1 = streams.upstream_area(idxs_ds, seq, ncol, latlon=True)
     assert np.all(upa1 == acc1)
     # test basins
-    ids = np.arange(1, idxs_pit.size + 1, dtype=np.int)
+    ids = np.arange(1, idxs_pit.size + 1, dtype=int)
     bas = basins.basins(idxs_ds, idxs_pit, seq, ids)
     assert np.all(np.array([np.sum(bas == i) for i in ids]) == upa[idxs_pit])
     assert np.all(np.unique(bas[bas != 0]) == ids)  # nodata == 0
@@ -44,7 +44,9 @@ def test_streams_basins_up(parsed, flwdir):
     assert areas1.argmax() == areas.argmax()
     # pfafstetter
     idx0 = idxs_pit[np.argsort(upa[idxs_pit])[-1:]]
-    pfaf = basins.pfafstetter(idx0, idxs_ds, seq, upa, upa_min=0, depth=2, mv=mv)
+    pfaf = basins.subbasins_pfafstetter(
+        idx0, idxs_ds, seq, upa, upa_min=0, depth=2, mv=mv
+    )
     if pfaf.max() > 10:
         pfaf = pfaf // 10
     pfafmax = pfaf.max()
