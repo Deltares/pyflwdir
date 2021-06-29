@@ -85,6 +85,8 @@ def upstream_area(
     value. The arae is calculated using the transform. If latlon is True, the resolution
     is interpreted in degree and transformed to m2.
 
+    NOTE: does not require area grid in memory
+
     Parameters
     ----------
     idxs_ds : 1D-array of intp
@@ -275,7 +277,7 @@ def stream_distance(
         distance to outlet or next downstream True cell
     """
     mv = -9999.0
-    dist = np.full(idxs_ds.size, mv, dtype=np.float64 if real_length else np.int32)
+    dist = np.full(idxs_ds.size, mv, dtype=np.float32 if real_length else np.int32)
     dist[seq] = 0  # initialize valid cells with zero length
     d = 1
     for idx0 in seq:  # down- to upstream

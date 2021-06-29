@@ -43,6 +43,27 @@ def _mean(data, nodata):
 
 
 @njit
+def lstsq(x: np.ndarray, y: np.ndarray):
+    """Simple ordinary Least Squares regression."""
+    n = x.size
+    x_sum = 0.0
+    y_sum = 0.0
+    x_sq_sum = 0.0
+    x_y_sum = 0.0
+
+    for i in range(n):
+        x_sum += x[i]
+        y_sum += y[i]
+        x_sq_sum += x[i] ** 2
+        x_y_sum += x[i] * y[i]
+
+    slope = (n * x_y_sum - x_sum * y_sum) / (n * x_sq_sum - x_sum ** 2)
+    intercept = (y_sum - slope * x_sum) / n
+
+    return slope, intercept
+
+
+@njit
 def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_mv):
     """Take the moving weighted average over the flow direction network.
 

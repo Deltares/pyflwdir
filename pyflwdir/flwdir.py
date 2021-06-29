@@ -11,6 +11,7 @@ from pyflwdir import (
     arithmetics,
     core,
     streams,
+    bathymetry,
 )
 
 # export
@@ -46,7 +47,7 @@ class Flwdir(object):
         idxs_outlet=None,
         idxs_seq=None,
         nnodes=None,
-        cache=False,
+        cache=True,
     ):
         """Flow direction raster array
 
@@ -70,7 +71,7 @@ class Flwdir(object):
         self.size = idxs_ds.size
         if self.size <= 1:
             raise ValueError(f"Invalid FlwdirRaster: size {self.size}")
-        self.shape = (1, self.size)
+        self.shape = self.size
 
         # data
         self._idxs_ds = idxs_ds
@@ -148,12 +149,12 @@ class Flwdir(object):
     def rank(self):
         """Cell Rank, i.e. distance to the outlet in no. of cells."""
         if "rank" in self._cached:
-            _rank = self._cached["rank"]
+            rank = self._cached["rank"]
         else:
-            _rank = core.rank(self.idxs_ds, mv=self._mv)[0].reshape(self.shape)
+            rank = core.rank(self.idxs_ds, mv=self._mv)[0].reshape(self.shape)
             if self.cache:
-                self._cached.update(rank=_rank)
-        return _rank
+                self._cached.update(rank=rank)
+        return rank
 
     @property
     def isvalid(self):
@@ -370,12 +371,81 @@ class Flwdir(object):
         if "strord" in self._cached:
             strord = self._cached["strord"]
         else:
-            strord = streams.stream_order(self.idxs_ds, self.idxs_seq).reshape(
-                self.shape
-            )
+            strord = streams.stream_order(self.idxs_ds, self.idxs_seq)
             if self.cache:
                 self._cached.update(strord=strord)
-        return strord
+        return strord.reshape(self.shape)
+
+    ## bathymetry ###
+    def depth_rect(
+        self,
+        q,
+        n=None,
+        s=None,
+        w=None,
+        z=None,
+        d=None,
+        h_pit=None,
+        method="gvf",
+        niter=3,
+        force_monotonicity=True,
+        **kwargs,
+    ):
+        """Returns river depth at each node.
+
+        Parameters
+        ----------
+
+        """
+        q = self._check_data(q, "discharge")
+        n = self._check_data(n, "manning roughness", optional=method != "hdg")
+        s = self._check_data(s, "slope", optional=method != "hdg")
+        w = self._check_data(w, "width", optional=method != "hdg")
+        d = self._check_data(d, "distance", optional=method != "gvf")
+        z = self._check_data(z, "elevation", optional=not force_monotonicity)
+
+        if method == "hdg":
+            h_out = bathymetry.h_hdg(q, **kwargs)
+        else:
+            h_out = bathymetry.h_man(n, q, s, w)
+
+        if h_pit is not None:
+            npit = self.idxs_pit.size
+            if h_pit.size > 1 and h_pit.size != npit:
+                raise ValueError(
+                    f"h_pit size does not match number of pits (n={npit})."
+                )
+            h_out[self.idxs_pit] = h_pit
+
+        if force_monotonicity:
+            for idx0 in self.idxs_seq:  # down- to upstream
+                idx_ds = self.idxs_ds[idx0]
+                if idx_ds == idx0:
+                    continue
+                zb_ds = z[idx_ds] - h_out[idx_ds]
+                zb0 = z[idx0] - h_out[idx0]
+                # make sure zb0 >= zb_ds
+                h_out[idx0] = z[idx0] - max(zb_ds, zb0)
+
+        if method == "gvf":
+            n = n if isinstance(n, np.np.ndarray) else np.full_like(q, n)
+            h_out1 = h_out.copy()
+            for _ in range(niter):
+                for idx0 in self.idxs_seq:  # down- to upstream
+                    idx_ds = self.idxs_ds[idx0]
+                    if idx_ds == idx0:
+                        continue
+                    h0, x0, x1 = h_out[idx_ds], d[idx_ds], d[idx0]
+                    h1 = bathymetry.h_gvf(
+                        h0, x0, x1, n[idx_ds], q[idx_ds], s[idx_ds], w[idx_ds], **kwargs
+                    )
+                    if force_monotonicity:
+                        # make sure zb0 >= zb_ds
+                        h1 = z[idx0] - max(z[idx_ds] - h0, z[idx0] - h1)
+                    h_out1[idx0] = h1
+                h_out = h_out1
+
+        return h_out.reshape(self.shape)
 
     ### SHORTCUTS ###
 
@@ -383,15 +453,12 @@ class Flwdir(object):
         """check or calculate upstream area cells; return flattened array"""
         if data is None and optional:
             return
-        elif data is None and name == "uparea":
-            data = self.upstream_area(**kwargs)
-        elif data is None and name == "basins":
-            data = self.basins(**kwargs)
-        elif data is None and name == "strord":
-            data = self.stream_order(**kwargs)
-        elif not np.atleast_1d(data).size == self.size:
+        data = np.atleast_1d(data)
+        if data.size == 1:
+            data = np.full(self.size, data)
+        elif data.size != self.size:
             raise ValueError(f'"{name}" size does not match.')
-        return np.atleast_1d(data).ravel()
+        return data.ravel()
 
     def _check_idxs_xy(self, idxs, streams=None):
         idxs = np.atleast_1d(idxs).ravel()

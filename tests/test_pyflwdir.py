@@ -104,7 +104,7 @@ def test_add_pits():
     assert np.all(flw.idxs_pit == idx0)
     # check some errors
     with pytest.raises(ValueError, match="size does not match"):
-        flw.add_pits(idxs=idx0, streams=np.ones((1, 1)))
+        flw.add_pits(idxs=idx0, streams=np.ones((2, 1)))
     with pytest.raises(ValueError, match="Either idxs or xy should be provided."):
         flw.add_pits()
     with pytest.raises(ValueError, match="Either idxs or xy should be provided."):
@@ -151,16 +151,16 @@ def test_path_snap():
     with pytest.raises(ValueError, match="Unknown flow direction"):
         flw.snap(idx0, direction="unknown")
     with pytest.raises(ValueError, match="size does not match"):
-        flw.path(idx0, mask=np.ones((1, 1)))
+        flw.path(idx0, mask=np.ones((2, 1)))
     with pytest.raises(ValueError, match="size does not match"):
-        flw.snap(idx0, mask=np.ones((1, 1)))
+        flw.snap(idx0, mask=np.ones((2, 1)))
 
 
 def test_downstream():
     idxs = np.arange(flw.size, dtype=int)
     assert np.all(flw.downstream(idxs).ravel()[flw.mask] == flw.idxs_ds[flw.mask])
     with pytest.raises(ValueError, match="size does not match"):
-        flw.downstream(np.ones((1, 1)))
+        flw.downstream(np.ones((2, 1)))
 
 
 def test_sum_upstream():
@@ -168,7 +168,7 @@ def test_sum_upstream():
     data = np.ones(flw.shape, dtype=np.int32)
     assert np.all(flw.upstream_sum(data).flat[flw.mask] == n_up[flw.mask])
     with pytest.raises(ValueError, match="size does not match"):
-        flw.upstream_sum(np.ones((1, 1)))
+        flw.upstream_sum(np.ones((2, 1)))
 
 
 def test_moving_average():
@@ -178,9 +178,9 @@ def test_moving_average():
     idxs = flw.path(idxs_seq[-1], max_length=2)[0][0]
     assert np.isclose(np.mean(data.flat[idxs]), data_smooth.flat[idxs[1]])
     with pytest.raises(ValueError, match="size does not match"):
-        flw.moving_average(np.ones((1, 1)), n=3)
+        flw.moving_average(np.ones((2, 1)), n=3)
     with pytest.raises(ValueError, match="size does not match"):
-        flw.moving_average(data, n=5, weights=np.ones((1, 1)))
+        flw.moving_average(data, n=5, weights=np.ones((2, 1)))
 
 
 def test_basins():
@@ -206,7 +206,7 @@ def test_basins():
     lbs, _, total_bbox = flw.basin_bounds(basins=np.ones(flw.shape, dtype=np.uint32))
     assert np.all(total_bbox[[3, 2]] == flw.shape)
     with pytest.raises(ValueError, match="size does not match"):
-        flw.basin_bounds(basins=np.ones((1, 1)))
+        flw.basin_bounds(basins=np.ones((2, 1)))
 
 
 def test_subbasins():
@@ -230,12 +230,12 @@ def test_uparea():
     assert np.all(acc.flat[flw.mask] == uparea.flat[flw.mask])
     # test upstream area in km2
     uparea2 = flw.upstream_area(unit="km2")
-    assert uparea2.dtype == np.float64
+    assert uparea2.dtype == np.float32
     assert uparea2.max() == uparea2.flat[flw.idxs_pit].max()
     with pytest.raises(ValueError, match="Unknown unit"):
         flw.upstream_area(unit="km")
     with pytest.raises(ValueError, match="size does not match"):
-        flw.accuflux(np.ones((1, 1)))
+        flw.accuflux(np.ones((2, 1)))
     with pytest.raises(ValueError, match="Unknown flow direction"):
         flw.accuflux(np.ones((1, 1)), direction="???")
 
@@ -264,7 +264,7 @@ def test_streams():
     with pytest.raises(ValueError, match="size does not match"):
         flw.geofeatures([np.array([1, 2])], xs=np.arange(3), ys=np.arange(3))
     with pytest.raises(ValueError, match="size does not match"):
-        flw.streams(mask=np.ones((1, 1)))
+        flw.streams(mask=np.ones((2, 1)))
     with pytest.raises(ValueError, match="Kwargs map"):
         flw.geofeatures([np.array([1, 2])], uparea=np.ones((1, 1)))
     # stream distance
@@ -272,18 +272,19 @@ def test_streams():
     data[flw.rank > 0] = 1
     dist0 = flw.accuflux(data, direction="down")
     assert dist0.dtype == np.int32
-    dist = flw.stream_distance()
+    dist = flw.stream_distance(unit="cell")
+    assert dist.max() == flw.rank.max()
     assert dist.dtype == np.int32
     assert np.all(dist.shape == flw.shape)
     assert np.all(dist0[dist != -9999] <= dist[dist != -9999])
     dist = flw.stream_distance(mask=np.ones(flw.shape, dtype=bool))
     assert np.all(dist[dist != -9999] == 0)
     dist = flw.stream_distance(unit="m")
-    assert dist.dtype == np.float64
+    assert dist.dtype == np.float32
     with pytest.raises(ValueError, match="Unknown unit"):
         flw.stream_distance(unit="km")
     with pytest.raises(ValueError, match="size does not match"):
-        flw.stream_distance(mask=np.ones((1, 1)))
+        flw.stream_distance(mask=np.ones((2, 1)))
 
 
 def test_upscale():
@@ -299,7 +300,7 @@ def test_upscale():
     with pytest.raises(ValueError, match="only works for D8 or LDD"):
         pyflwdir.from_array(nextxy, ftype="nextxy").upscale(10)
     with pytest.raises(ValueError, match="size does not match"):
-        flw.upscale(5, uparea=np.ones((1, 1)))
+        flw.upscale(5, uparea=np.ones((2, 1)))
 
 
 def test_ucat():
@@ -324,7 +325,7 @@ def test_ucat():
     with pytest.raises(ValueError, match="Unknown unit"):
         flw.ucat_area(idxs_out, unit="km")
     with pytest.raises(ValueError, match="size does not match"):
-        flw.subgrid_rivslp(idxs_out, elevtn=np.ones((1, 1)))
+        flw.subgrid_rivslp(idxs_out, elevtn=np.ones((2, 1)))
     with pytest.raises(ValueError, match="Unknown flow direction"):
         flw.subgrid_rivlen(idxs_out, direction="unknown")
 
@@ -337,18 +338,18 @@ def test_dem():
     elevtn_new = flw.dem_adjust(elevtn)
     assert np.all(elevtn_new == 1.0)
     with pytest.raises(ValueError, match="size does not match"):
-        flw.dem_adjust(np.ones((1, 1)))
+        flw.dem_adjust(np.ones((2, 1)))
     # hand
     rank = flw.rank
     drain = rank == 0
     hand = flw.hand(drain, elevtn_new)
     assert np.all(hand[rank > 0] == 0)
     with pytest.raises(ValueError, match="size does not match"):
-        flw.hand(drain, np.ones((1, 1)))
+        flw.hand(drain, np.ones((2, 1)))
     with pytest.raises(ValueError, match="size does not match"):
-        flw.hand(np.ones((1, 1)), elevtn_new)
+        flw.hand(np.ones((2, 1)), elevtn_new)
     # floodplain
     fldpln = flw.floodplains(elevtn_new, uparea=drain, upa_min=1, b=1)
     assert np.all(fldpln.flat[flw.mask] == 1)
     with pytest.raises(ValueError, match="size does not match"):
-        flw.floodplains(np.ones((1, 1)))
+        flw.floodplains(np.ones((2, 1)))

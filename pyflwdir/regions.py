@@ -16,13 +16,7 @@ def region_sum(data, regions):
 
 
 def region_area(regions, transform=gis_utils.IDENTITY, latlon=False):
-    if latlon:
-        lon, lat = gis_utils.affine_to_coords(transform, regions.shape)
-        area = gis_utils.reggrid_area(lat, lon)
-    else:
-        area = np.ones(regions.shape, dtype=np.float32) * abs(
-            transform[0] * transform[4]
-        )
+    area = gis_utils.area_grid(transform=transform, shape=regions.shape, latlon=latlon)
     return region_sum(area, regions)
 
 

@@ -8,6 +8,7 @@ from affine import identity as IDENTITY
 from affine import Affine
 
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
+AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
 
 __all__ = [
     "transform_from_origin",
@@ -259,8 +260,25 @@ def reggrid_area(lats, lons):
     lats & lons [m2]."""
     xres = np.abs(np.mean(np.diff(lons)))
     yres = np.abs(np.mean(np.diff(lats)))
-    area = np.ones((lats.size, lons.size), dtype=lats.dtype)
+    area = np.ones((lats.size, lons.size), dtype=np.float32)
     return cellarea(lats, xres, yres)[:, None] * area
+
+
+def area_grid(transform, shape, latlon=False, unit="m2"):
+    """Returns a regular grid with cell areas"""
+    unit = str(unit).lower()
+    if unit not in AREA_FACTORS:
+        fstr = '", "'.join(AREA_FACTORS.keys())
+        raise ValueError(f'Unknown unit: {unit}, select from "{fstr}".')
+    if unit == "cell":
+        area = np.ones(shape, dtype=np.int32)
+    elif latlon:
+        lon, lat = affine_to_coords(transform, shape)
+        area = reggrid_area(lat, lon) * AREA_FACTORS[unit]
+    elif not latlon:
+        area0 = transform[0] * transform[4] * AREA_FACTORS[unit]
+        area = np.full(shape, area0, dtype=np.float32)
+    return area
 
 
 @njit
