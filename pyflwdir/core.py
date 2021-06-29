@@ -86,7 +86,7 @@ def upstream_matrix(idxs_ds, mv=_mv):
 
 
 @njit
-def idxs_seq(idxs_ds, idxs_pit, shape, mv=_mv):
+def idxs_seq(idxs_ds, idxs_pit, mv=_mv):
     """Returns indices ordered from down- to upstream.
 
     Parameters
@@ -268,6 +268,7 @@ def _upstream_d8_idx(idx0, idxs_ds, shape):
     return np.array(idxs_lst, dtype=idxs_ds.dtype)
 
 
+# TODO use pre-set distance or length raster
 @njit
 def _trace(
     idx0,

@@ -5,6 +5,7 @@ themselves are testes elsewhere"""
 import pytest
 import numpy as np
 from affine import Affine
+import pandas as pd
 
 import pyflwdir
 from pyflwdir import core, core_nextxy, core_d8
@@ -114,7 +115,7 @@ def test_add_pits():
 def test_save(tmpdir):
     fn = tmpdir.join("flw.pkl")
     flw.dump(fn)
-    flw1 = pyflwdir.load(fn)
+    flw1 = pyflwdir.FlwdirRaster.load(fn)
     for key in flw._dict:
         assert np.all(flw._dict[key] == flw1._dict[key])
 
@@ -244,16 +245,21 @@ def test_streams():
     strord = flw.stream_order()
     assert strord.flat[flw.mask].min() == 1
     assert strord.min() == -1
-    assert strord.max() == strord.flat[flw.idxs_pit].max()
+    assert strord.max() == strord.flat[flw.idxs_pit].max() == 5
     assert strord.dtype == np.int8
     assert np.all(strord.shape == flw.shape)
     # vectorize
     feats = flw.streams()
     fstrord = np.array([f["properties"]["strord"] for f in feats])
-    findex = np.array([f["properties"]["idxs"] for f in feats])
+    findex = np.array([f["properties"]["idx"] for f in feats])
     assert np.all(fstrord == strord.flat[findex])
+    findex_ds = np.array([f["properties"]["idx_ds"] for f in feats])
+    # check agains Flwdir
+    flw1 = pyflwdir.Flwdir(pyflwdir.flwdir.get_lin_indices(findex, findex_ds))
+    assert np.all(fstrord == flw1.stream_order().ravel() + 1)
+
     feats = flw.vectorize()
-    findex = np.array([f["properties"]["idxs"] for f in feats])
+    findex = np.array([f["properties"]["idx"] for f in feats])
     assert np.all(findex == np.sort(idxs_seq))
     with pytest.raises(ValueError, match="size does not match"):
         flw.geofeatures([np.array([1, 2])], xs=np.arange(3), ys=np.arange(3))

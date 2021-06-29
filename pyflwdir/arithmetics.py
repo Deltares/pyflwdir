@@ -14,14 +14,13 @@ __all__ = []
 # all functions are faster than numpy.
 @njit
 def _average(data, weights, nodata):
-    """Weighted arithmetic mean
-    NOTE: does not work with nodata=np.nan!
-    """
+    """Weighted arithmetic mean"""
     v = 0.0
     w = 0.0
+    nan = np.isnan(nodata)
     for i in range(data.size):
         v0 = data[i]
-        if v0 == nodata:
+        if (not nan and v0 == nodata) or (nan and np.isnan(v0)):
             continue
         w0 = weights[i]
         v += w0 * v0
@@ -31,13 +30,12 @@ def _average(data, weights, nodata):
 
 @njit
 def _mean(data, nodata):
-    """Arithmetic mean
-    NOTE: does not work with nodata=np.nan!
-    """
+    """Arithmetic mean"""
     v = 0.0
     w = 0.0
+    nan = np.isnan(nodata)
     for v0 in data:
-        if v0 == nodata:
+        if (not nan and v0 == nodata) or (nan and np.isnan(v0)):
             continue
         v += v0
         w += 1.0
@@ -58,8 +56,6 @@ def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_
         number of up/downstream neighbors to include
     idxs_ds, idxs_us_main : array of int
         indices of downstream, main upstream cells
-    upa_min : float, optional
-        Minimum upstream area for upstream neighbors to be considered, by default 0.0
     nodata : float, optional
         Nodata value which is ignored when calculating the average, by default -9999.0
 
@@ -76,7 +72,46 @@ def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_
         idxs = core._window(idx0, n, idxs_ds, idxs_us_main)
         idxs = idxs[idxs != mv]
         if idxs.size > 0:
-            data_out[idx0] = _average(data[idxs], weights[idxs], nodata)
+            w = np.ones(idxs.size) if weights is None else weights[idxs]
+            data_out[idx0] = _average(data[idxs], w, nodata)
+    return data_out
+
+
+@njit
+def moving_median(data, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_mv):
+    """Take the moving median over the flow direction network.
+
+    Parameters
+    ----------
+    data : 1D (sparse) array
+        values
+    weights : 1D (sparse) array
+        weights
+    n : int
+        number of up/downstream neighbors to include
+    idxs_ds, idxs_us_main : array of int
+        indices of downstream, main upstream cells
+    nodata : float, optional
+        Nodata value which is ignored when calculating the median, by default -9999.0
+
+    Returns
+    -------
+    1D array
+        median data
+    """
+    # loop over values and avarage
+    data_out = np.full(data.size, nodata, dtype=data.dtype)
+    nan = np.isnan(nodata)
+    for idx0 in range(data.size):
+        if data[idx0] == nodata:
+            continue
+        idxs = core._window(idx0, n, idxs_ds, idxs_us_main)
+        idxs = idxs[idxs != mv]
+        if idxs.size > 0:
+            a = data[idxs]
+            if not nan:
+                a = np.where(a == nodata, np.nan, a)
+            data_out[idx0] = np.nanmedian(a)
     return data_out
 
 

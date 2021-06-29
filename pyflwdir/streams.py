@@ -128,7 +128,7 @@ def upstream_area(
 
 
 @njit
-def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
+def streams(idxs_ds, seq, strord, mask=None, min_sto=1, max_len=0):
     """Returns list of linear indices per stream of equal stream order.
 
     Parameters
@@ -178,8 +178,21 @@ def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
                 idxs.append(idx_ds)
             if not valid or conf[idx_ds] or done[idx_ds] or idx_ds == idx0:
                 # pit or new stream segment (only on streams with strord > min_sto)
-                if len(idxs) >= 2:
-                    streams.append(np.array(idxs, dtype=idxs_ds.dtype))
+                l = len(idxs)
+                if l >= 2:
+                    n, k = l, 1
+                    if max_len > 0 and (l / max_len) > 1.5:
+                        k = round(l / max_len)
+                        n = round(l / k)
+                    for i in range(k):  # split into k segments with overlapping point
+                        if i + 1 == k:
+                            streams.append(np.array(idxs[i * n :], dtype=idxs_ds.dtype))
+                        else:
+                            streams.append(
+                                np.array(
+                                    idxs[i * n : n * (i + 1) + 1], dtype=idxs_ds.dtype
+                                )
+                            )
                 break
 
             idx0 = idx_ds
@@ -207,19 +220,26 @@ def stream_order(idxs_ds, seq):
     1D array of uint8
         stream order
     """
-    nodata = np.uint8(-1)
-    strord = np.full(idxs_ds.size, nodata, dtype=np.int8)
-    strord[seq] = 1  # initialize valid cells with stream order 1
+    strord = np.full(idxs_ds.size, -1, dtype=np.int8)
+    strord[seq] = 0  # initialize valid cells with stream order 0
+    count = np.zeros(idxs_ds.size, dtype=np.int8)
     for idx0 in seq[::-1]:  # up- to downstream
-        idx_ds = idxs_ds[idx0]
+        # set strean order of current cell
+        if strord[idx0] == 0:  # headwater cells -> order = 1
+            strord[idx0] = 1
+        elif count[idx0] > 1:  # bump order if count > 1
+            strord[idx0] += 1
         sto = strord[idx0]
-        # update next downstream cell
+        # set maximum upstream order at dowsntream neighbor
+        # and count number of upstream cells with maximum order
+        idx_ds = idxs_ds[idx0]
         if idx0 != idx_ds:  # pit
             sto_ds = strord[idx_ds]
             if sto > sto_ds:
+                count[idx_ds] = 1
                 strord[idx_ds] = sto
             elif sto == sto_ds:
-                strord[idx_ds] += 1
+                count[idx_ds] += 1
     return strord
 
 

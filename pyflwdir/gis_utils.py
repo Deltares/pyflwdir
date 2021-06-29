@@ -356,6 +356,8 @@ def features(flowpaths, xs, ys, **kwargs):
         linear indices of flowpaths
     xs, ys : 1D-array of float
         x, y coordinates
+    idxs_ds: list of intp
+        linear index of first cell on next downstream flow path
     kwargs : extra sample maps key-word arguments
         optional maps to sample from
         e.g.: strord=flw.stream_order()
@@ -371,10 +373,15 @@ def features(flowpaths, xs, ys, **kwargs):
                 f'Kwargs map "{key}" should be ndarrays of same size as coordinates'
             )
     feats = list()
-    for idxs in flowpaths:
-        if len(idxs) < 2:
+    for j, idxs in enumerate(flowpaths):
+        n = len(idxs)
+        if n < 2:
             continue
         idx0 = idxs[0]
+        idx_ds = idxs[-1]
+        pit = idxs[-1] == idxs[-2]
+        if pit:
+            idx_ds = -1
         props = {key: kwargs[key].flat[idx0] for key in kwargs}
         feats.append(
             {
@@ -383,7 +390,7 @@ def features(flowpaths, xs, ys, **kwargs):
                     "type": "LineString",
                     "coordinates": [(xs[i], ys[i]) for i in idxs],
                 },
-                "properties": {"idxs": idx0, "pit": idxs[-1] == idxs[-2], **props},
+                "properties": {"idx": idx0, "idx_ds": idx_ds, **props},
             }
         )
     return feats

@@ -1,7 +1,8 @@
 import pkg_resources
 
 # submodules
-from pyflwdir.pyflwdir import *
+from pyflwdir.flwdir import *
+from pyflwdir.flwdir_raster import *
 from pyflwdir.dem import *
 
 from pyflwdir import gis_utils
