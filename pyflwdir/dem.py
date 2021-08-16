@@ -5,18 +5,88 @@
 import numpy as np
 from numba import njit
 import math
+from heapq import heappop, heappush
 
-from pyflwdir import gis_utils, core
+from pyflwdir import gis_utils, core, core_d8
 
 _mv = core._mv
 
-__all__ = ["slope"]
+__all__ = ["slope", "fill_depressions"]
 
 
-# TODO
-def from_dem():
-    """derive flow direction from elevation data"""
-    raise NotImplementedError()
+@njit
+def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
+    """Fill local depressions in elevation data and derived local 
+    D8 flow directions.
+
+    Pits are assumed to only occure at the edge of the data
+    or at the interface with nodata values. Depressions elsewhere
+    are filled based on its lowest pour point elevation if its pour
+    point dpeth is smaller than the maximum pour point depth `max_dz`.
+
+    Based on Wang & Lui 2005 https://doi.org/10.1080/13658810500433453
+
+    Parameters
+    ----------
+    elevtn: 2D array
+        elevation raster
+    nodata: float, optional
+        nodata value, by default -9999.0
+    max_depth: float, optional
+        Maximum pour point depth. Depressions with a larger pour point
+        depth are set as pit. A negative value (default) equals an infitely
+        large pour point depth causing all depressions to be filled.
+
+    Returns
+    -------
+    elevtn_out: 2D array
+        Depression filled elevation
+    d8: 2D array of uint8
+        D8 flow directions
+    """
+    nrow, ncol = elevtn.shape
+    delevtn = np.zeros_like(elevtn)
+    zds = elevtn.copy()  # downstream elevation
+    done = elevtn == nodata
+    d8 = np.where(done, np.uint8(247), np.uint8(0))
+
+    # initiate queue with edge cells
+    queued = gis_utils.get_edge(done)
+    q = [(elevtn[0, 0], np.uint32(0), np.uint32(0)) for _ in range(0)]
+    for r, c in zip(*np.where(queued)):
+        heappush(q, (elevtn[r, c], np.uint32(r), np.uint32(c)))
+
+    while len(q) > 0:
+        z0, r0, c0 = heappop(q)
+        zds[r, c] = min(z0, zds[r, c])
+        for dr in range(-1, 2):
+            r = r0 + dr
+            if r < 0 or r == nrow:
+                continue
+            for dc in range(-1, 2):
+                c = c0 + dc
+                if c < 0 or c == ncol or (done[r, c] and zds[r, c] <= z0):
+                    continue
+                z1 = elevtn[r, c]
+                dz = z0 - z1
+                if max_depth >= 0:
+                    if dz >= max_depth:
+                        heappush(q, (z1, np.uint32(r), np.uint32(c)))
+                        queued[r, c] = True
+                        continue
+                    elif delevtn[r, c] > 0:
+                        queued[r, c] = False
+                        delevtn[r, c] = 0
+                if dz > 0:
+                    delevtn[r, c] = dz
+                    z1 += dz
+                if ~queued[r, c]:
+                    heappush(q, (z1, np.uint32(r), np.uint32(c)))
+                    queued[r, c] = True
+                done[r, c] = True
+                d8[r, c] = core_d8._us[dr + 1, dc + 1]
+                zds[r, c] = z0
+    return elevtn + delevtn, d8
 
 
 @njit
@@ -258,3 +328,42 @@ def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
                     drainz[idx0] = z0
                     drainh[idx0] = h0
     return fldpln
+
+
+@njit
+def _local_d4(idx0, idx_ds, ncol):
+    """Return indices of d4 neighbors, e.g.: indices of N, W neigbors if flowdir is NW."""
+    idxs_d4 = [
+        idx0 - ncol,
+        idx0 - 1,
+        idx0 + ncol,
+        idx0 + 1,
+        idx0 - ncol,
+    ]  # n, w, s, e, n
+    idxs_diag = [
+        idx0 - ncol - 1,
+        idx0 + ncol - 1,
+        idx0 + ncol + 1,
+        idx0 - ncol + 1,
+    ]  # nw, sw, se, ne
+    di = idxs_diag.index(idx_ds)
+    return np.asarray(idxs_d4[di : di + 2])
+
+
+@njit
+def dig_4connectivity(idxs_ds, seq, elv_flat, shape):
+    """Make sure that for every diagonal D8 downstream flow direction
+    there is an adjacent D4 cell with same or lower elevation"""
+    elv_out = elv_flat.copy()
+    _, ncol = shape
+    for idx0 in seq[::-1]:  # up- to downstream
+        idx_ds = idxs_ds[idx0]
+        dd = abs(idx0 - idx_ds)
+        if dd <= 1 or dd == ncol:  # D4
+            continue
+        z0 = elv_out[idx0]  # elevtn of current cell
+        idxs_d4 = _local_d4(idx0, idx_ds, ncol)  # indices of adjacent d4 cells
+        # find adjacent with smallest dz and lower elevation to <= z0
+        idx_d4_min = idxs_d4[np.argmin(elv_out[idxs_d4] - z0)]
+        elv_out[idx_d4_min] = min(elv_out[idx_d4_min], z0)
+    return elv_out

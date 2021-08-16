@@ -10,6 +10,48 @@ parsed, flwdir = test_data[0]
 idxs_ds, idxs_pit, seq, rank, mv = parsed
 
 
+def test_from_dem():
+    # example from Wang & Lui (2015)
+    a = np.array(
+        [
+            [15, 15, 14, 15, 12, 6, 12],
+            [14, 13, 10, 12, 15, 17, 15],
+            [15, 15, 9, 11, 8, 15, 15],
+            [16, 17, 8, 16, 15, 7, 5],
+            [19, 18, 19, 18, 17, 15, 14],
+        ],
+        dtype=np.float32,
+    )
+    # NOTE: compared to paper same a_filled, but difference
+    # in flowdir because row instead of col first ..
+    d8 = np.array(
+        [
+            [2, 2, 4, 8, 1, 0, 16],
+            [1, 1, 2, 2, 128, 64, 32],
+            [128, 128, 1, 1, 2, 2, 4],
+            [64, 128, 128, 128, 1, 1, 0],
+            [64, 128, 64, 32, 128, 128, 64],
+        ],
+        dtype=np.uint8,
+    )
+    a2 = a.copy()
+    a2[1:4, 2] = 11
+    (
+        a_filled,
+        _d8,
+    ) = dem.fill_depressions(a)
+    assert np.all(a_filled == a2)
+    assert np.all(d8 == _d8)
+    # test with nodata values
+    a[3, 5:] = -9999
+    _d8 = dem.fill_depressions(a)[1]
+    assert np.all(_d8[3, 5:] == 247)
+    assert _d8[2, 4] == 0
+    # test max depth
+    _a = dem.fill_depressions(a, max_depth=2)[0]
+    assert np.all(a == _a)
+
+
 def test_dem_adjust():
     # # option 1 fill
     dem0 = np.array([8, 7, 6, 5, 5, 6, 5, 4])

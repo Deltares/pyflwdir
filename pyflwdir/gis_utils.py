@@ -1,14 +1,15 @@
 # -- coding: utf-8 --
 """"""
 
-from numba import njit
+from numba import njit, stencil
 import numpy as np
 import math
-from affine import identity as IDENTITY
 from affine import Affine
 
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
 AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
+# changed to N->S orientation in v0.5 TODO check if used in hydromt?
+IDENTITY = Affine(1, 0, 0, 0, -1, 0)
 
 __all__ = [
     "transform_from_origin",
@@ -21,12 +22,33 @@ __all__ = [
     "reggrid_area",
     "reggrid_dy",
     "reggrid_dx",
+    "get_edge",
 ]
 
 ## TRANSFORM
 # Adapted from https://github.com/mapbox/rasterio/blob/master/rasterio/transform.py
 # changed xy and rowcol to work directly on numpy arrays
 # avoid gdal dependency
+
+
+@njit
+def get_edge(a):
+    return np.logical_and(~a, _get_edge(a))
+
+
+@stencil(cval=True)
+def _get_edge(a):
+    nb = (
+        a[0, 1]
+        or a[1, 0]
+        or a[0, -1]
+        or a[-1, 0]
+        or a[1, 1]
+        or a[1, -1]
+        or a[-1, 1]
+        or a[-1, -1]
+    )
+    return ~a[0, 0] and nb
 
 
 def transform_from_origin(west, north, xsize, ysize):
@@ -274,9 +296,9 @@ def area_grid(transform, shape, latlon=False, unit="m2"):
         area = np.ones(shape, dtype=np.int32)
     elif latlon:
         lon, lat = affine_to_coords(transform, shape)
-        area = reggrid_area(lat, lon) * AREA_FACTORS[unit]
+        area = reggrid_area(lat, lon) / AREA_FACTORS[unit]
     elif not latlon:
-        area0 = transform[0] * transform[4] * AREA_FACTORS[unit]
+        area0 = abs(transform[0] * transform[4]) / AREA_FACTORS[unit]
         area = np.full(shape, area0, dtype=np.float32)
     return area
 
@@ -396,10 +418,7 @@ def features(flowpaths, xs, ys, **kwargs):
         if n < 2:
             continue
         idx0 = idxs[0]
-        idx_ds = idxs[-1]
         pit = idxs[-1] == idxs[-2]
-        if pit:
-            idx_ds = -1
         props = {key: kwargs[key].flat[idx0] for key in kwargs}
         feats.append(
             {
@@ -408,7 +427,7 @@ def features(flowpaths, xs, ys, **kwargs):
                     "type": "LineString",
                     "coordinates": [(xs[i], ys[i]) for i in idxs],
                 },
-                "properties": {"idx": idx0, "idx_ds": idx_ds, **props},
+                "properties": {"idx": idx0, "idx_ds": idxs[-1], "pit": pit, **props},
             }
         )
     return feats
