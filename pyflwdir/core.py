@@ -118,7 +118,62 @@ def idxs_seq(idxs_ds, idxs_pit, mv=_mv):
     return idxs_seq[:i]
 
 
-# returns 1D array (size == n) with indices at all locations
+@njit
+def fillnodata_upstream(idxs_ds, seq, data, nodata):
+    """Retuns a a copy of <data> where upstream cell with <nodata> values are filled
+    based on the first downstream valid cell value.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    data : 1D array
+        original data with missing values
+    nodata : float, integer
+        nodata value
+
+    Returns
+    -------
+    data_out: 1D array of data.dtype
+        infilled data
+    """
+    data_out = data.copy()
+    for idx0 in seq:  # down- to upstream
+        idx_ds = idxs_ds[idx0]
+        if data_out[idx0] == nodata and data_out[idx_ds] != nodata:
+            data_out[idx0] = data_out[idx_ds]
+    return data_out
+
+
+@njit
+def fillnodata_downstream(idxs_ds, seq, data, nodata):
+    """Retuns a a copy of <data> where downstream cells with <nodata> values are filled
+    based on the first upstream valid cell value.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    data : 1D array
+        original data with missing values
+    nodata : float, integer
+        nodata value
+
+    Returns
+    -------
+    data_out: 1D array of data.dtype
+        infilled data
+    """
+    data_out = data.copy()
+    for idx0 in seq[::-1]:  # up- to downstream
+        idx_ds = idxs_ds[idx0]
+        if data_out[idx_ds] == nodata and data_out[idx0] != nodata:
+            data_out[idx_ds] = data_out[idx0]
+    return data_out
 
 
 @njit
@@ -331,15 +386,18 @@ def _trace(
 
 
 @njit
-def _window(idx0, n, idxs_ds, idxs_us_main, mv=_mv):
+def _window(idx0, n, idxs_ds, idxs_us_main, strord=None, mv=_mv):
     """Returns the indices of between the nth upstream to nth downstream cell from
-    the current cell. Upstream cells are with based on the  _main_upstream method."""
+    the current cell. Upstream cells are with based on the  _main_upstream method.
+    If strord is given, only include cells of same stream order when moving downstream.
+    """
     idxs = np.full(n * 2 + 1, mv, idxs_ds.dtype)
     idxs[n] = idx0
+    strord0 = 0 if strord is None else strord[idx0]
     # get n downstream cells
     for i in range(n):
         idx_ds = idxs_ds[idx0]
-        if idx_ds == idx0:  # pit
+        if idx_ds == idx0 or (strord is not None and strord[idx_ds] > strord0):  # pit
             break
         idx0 = idx_ds
         idxs[n + i + 1] = idx0

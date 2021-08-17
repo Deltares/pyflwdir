@@ -16,7 +16,7 @@ __all__ = ["slope", "fill_depressions"]
 
 @njit
 def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
-    """Fill local depressions in elevation data and derived local 
+    """Fill local depressions in elevation data and derived local
     D8 flow directions.
 
     Pits are assumed to only occure at the edge of the data
@@ -58,7 +58,7 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
 
     while len(q) > 0:
         z0, r0, c0 = heappop(q)
-        zds[r, c] = min(z0, zds[r, c])
+        zds[r0, c0] = min(z0, zds[r0, c0])
         for dr in range(-1, 2):
             r = r0 + dr
             if r < 0 or r == nrow:

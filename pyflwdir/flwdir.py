@@ -10,8 +10,8 @@ from numba import njit
 from pyflwdir import (
     arithmetics,
     core,
+    dem,
     streams,
-    bathymetry,
 )
 
 # export
@@ -43,6 +43,7 @@ class Flwdir(object):
     def __init__(
         self,
         idxs_ds,
+        area=None,
         idxs_pit=None,
         idxs_outlet=None,
         idxs_seq=None,
@@ -87,6 +88,8 @@ class Flwdir(object):
         # set placeholders only used if cache if True
         self.cache = cache
         self._cached = dict()
+        if area is not None:
+            self._cached.upate(area=area)
 
         # check validity
         if self.idxs_pit.size == 0:
@@ -166,6 +169,29 @@ class Flwdir(object):
     def mask(self):
         """Boolean array of valid cells in flow direction raster."""
         return self.idxs_ds != self._mv
+
+    @property
+    def distnc(self):
+        """Distance to outlet [m]"""
+        if "distnc" in self._cached:
+            distnc = self._cached["distnc"]
+        else:
+            distnc = np.ones_like(self.idxs_ds, dtype=np.float32)
+        return distnc
+
+    @property
+    def area(self):
+        """Cell area [m]"""
+        if "area" in self._cached:
+            area = self._cached["area"]
+        else:
+            area = np.ones_like(self.idxs_ds, dtype=np.float32)
+        return area
+
+    @property
+    def n_upstream(self):
+        """Number of upstream connection"""
+        return core.upstream_count(self.idxs_ds, mv=self._mv).reshape(self.shape)
 
     ### SET/MODIFY PROPERTIES ###
 
@@ -251,6 +277,37 @@ class Flwdir(object):
 
     ### GLOBAL ARITHMETICS ###
 
+    def fillnodata(self, data, nodata, direction="down"):
+        """Returns data where cells with nodata value have been filled
+        with the nearest up- or downstream valid neighbor value.
+
+        Parameters
+        ----------
+        data : 2D array
+            values
+        nodata: int, float
+            missing data value
+        direction : {'up', 'down'}, optional
+            direction of path, be default 'down', i.e. downstream
+
+        Returns
+        -------
+        2D array
+            fill data
+        """
+        direction = str(direction).lower()
+        dflat = self._check_data(data, "data")
+        if direction == "up":
+            dout = core.fillnodata_upstream(self.idxs_ds, self.idxs_seq, dflat, nodata)
+        elif direction == "down":
+            dout = core.fillnodata_downstream(
+                self.idxs_ds, self.idxs_seq, dflat, nodata
+            )
+        else:
+            msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
+            raise ValueError(msg)
+        return dout.reshape(data.shape)
+
     def downstream(self, data):
         """Returns next downstream value.
 
@@ -292,7 +349,9 @@ class Flwdir(object):
         )
         return data_out.reshape(data.shape)
 
-    def moving_average(self, data, n, weights=None, nodata=-9999.0):
+    def moving_average(
+        self, data, n, weights=None, restrict_strord=False, strord=None, nodata=-9999.0
+    ):
         """Take the moving weighted average over the flow direction network
 
         Parameters
@@ -303,6 +362,10 @@ class Flwdir(object):
             number of up/downstream neighbors to include
         weights : 2D array, optional
             weights, by default equal weights are assumed
+        restrict_strord: bool
+            If True, limit the window to cells of same or smaller stream order.
+        strord : 2D array of int, optional
+            Stream order map.
         nodata : float, optional
             Nodata values which is ignored when calculating the average, by default -9999.0
 
@@ -317,12 +380,15 @@ class Flwdir(object):
             n=n,
             idxs_ds=self.idxs_ds,
             idxs_us_main=self.idxs_us_main,
+            strord=self._check_data(strord, "strord", optional=~restrict_strord),
             nodata=nodata,
             mv=self._mv,
         )
         return data_out.reshape(data.shape)
 
-    def moving_median(self, data, n, nodata=-9999.0):
+    def moving_median(
+        self, data, n, restrict_strord=False, strord=None, nodata=-9999.0
+    ):
         """Take the moving median over the flow direction network
 
         Parameters
@@ -331,6 +397,10 @@ class Flwdir(object):
             values
         n : int
             number of up/downstream neighbors to include
+        restrict_strord: bool
+            If True, limit the window to cells of same or smaller stream order.
+        strord : 2D array of int, optional
+            Stream order map.
         nodata : float, optional
             Nodata values which is ignored when calculating the median, by default -9999.0
 
@@ -344,6 +414,7 @@ class Flwdir(object):
             n=n,
             idxs_ds=self.idxs_ds,
             idxs_us_main=self.idxs_us_main,
+            strord=self._check_data(strord, "strord", optional=~restrict_strord),
             nodata=nodata,
             mv=self._mv,
         )
@@ -376,76 +447,47 @@ class Flwdir(object):
                 self._cached.update(strord=strord)
         return strord.reshape(self.shape)
 
-    ## bathymetry ###
-    def depth_rect(
-        self,
-        q,
-        n=None,
-        s=None,
-        w=None,
-        z=None,
-        d=None,
-        h_pit=None,
-        method="gvf",
-        niter=3,
-        force_monotonicity=True,
-        **kwargs,
-    ):
-        """Returns river depth at each node.
+    def upstream_area(self):
+        """Returns the upstream area map based on the flow directions and set area.
+
+
+        Returns
+        -------
+        nd array of float
+            upstream area
+        """
+        uparea = streams.accuflux(
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            data=self.area,
+            nodata=-9999,
+        )
+        uparea[~self.mask] = -9999
+        return uparea.reshape(self.shape)
+
+    ### ELEVATION ###
+
+    def dem_adjust(self, elevtn):
+        """Returns the hydrologically adjusted elevation where each downstream cell
+        has the same or lower elevation as the current cell.
 
         Parameters
         ----------
+        elevtn : 2D array of float
+            elevation raster
 
+        Returns
+        -------
+        2D array of float
+            elevation raster
         """
-        q = self._check_data(q, "discharge")
-        n = self._check_data(n, "manning roughness", optional=method != "hdg")
-        s = self._check_data(s, "slope", optional=method != "hdg")
-        w = self._check_data(w, "width", optional=method != "hdg")
-        d = self._check_data(d, "distance", optional=method != "gvf")
-        z = self._check_data(z, "elevation", optional=not force_monotonicity)
-
-        if method == "hdg":
-            h_out = bathymetry.h_hdg(q, **kwargs)
-        else:
-            h_out = bathymetry.h_man(n, q, s, w)
-
-        if h_pit is not None:
-            npit = self.idxs_pit.size
-            if h_pit.size > 1 and h_pit.size != npit:
-                raise ValueError(
-                    f"h_pit size does not match number of pits (n={npit})."
-                )
-            h_out[self.idxs_pit] = h_pit
-
-        if force_monotonicity:
-            for idx0 in self.idxs_seq:  # down- to upstream
-                idx_ds = self.idxs_ds[idx0]
-                if idx_ds == idx0:
-                    continue
-                zb_ds = z[idx_ds] - h_out[idx_ds]
-                zb0 = z[idx0] - h_out[idx0]
-                # make sure zb0 >= zb_ds
-                h_out[idx0] = z[idx0] - max(zb_ds, zb0)
-
-        if method == "gvf":
-            n = n if isinstance(n, np.np.ndarray) else np.full_like(q, n)
-            h_out1 = h_out.copy()
-            for _ in range(niter):
-                for idx0 in self.idxs_seq:  # down- to upstream
-                    idx_ds = self.idxs_ds[idx0]
-                    if idx_ds == idx0:
-                        continue
-                    h0, x0, x1 = h_out[idx_ds], d[idx_ds], d[idx0]
-                    h1 = bathymetry.h_gvf(
-                        h0, x0, x1, n[idx_ds], q[idx_ds], s[idx_ds], w[idx_ds], **kwargs
-                    )
-                    if force_monotonicity:
-                        # make sure zb0 >= zb_ds
-                        h1 = z[idx0] - max(z[idx_ds] - h0, z[idx0] - h1)
-                    h_out1[idx0] = h1
-                h_out = h_out1
-
-        return h_out.reshape(self.shape)
+        elevtn_out = dem.adjust_elevation(
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            elevtn=self._check_data(elevtn, "elevtn"),
+            mv=self._mv,
+        )
+        return elevtn_out.reshape(elevtn.shape)
 
     ### SHORTCUTS ###
 
@@ -453,6 +495,11 @@ class Flwdir(object):
         """check or calculate upstream area cells; return flattened array"""
         if data is None and optional:
             return
+        if data is None:
+            if name == "uparea":
+                data = self.upstream_area(**kwargs)
+            elif name == "strord":
+                data = self.stream_order(**kwargs)
         data = np.atleast_1d(data)
         if data.size == 1:
             data = np.full(self.size, data)

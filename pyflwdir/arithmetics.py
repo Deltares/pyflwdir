@@ -64,19 +64,23 @@ def lstsq(x: np.ndarray, y: np.ndarray):
 
 
 @njit
-def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_mv):
+def moving_average(
+    data, weights, n, idxs_ds, idxs_us_main, strord=None, nodata=-9999.0, mv=_mv
+):
     """Take the moving weighted average over the flow direction network.
 
     Parameters
     ----------
-    data : 1D (sparse) array
+    data : 1D array
         values to be averaged
-    weights : 1D (sparse) array
+    weights : 1D array
         weights
     n : int
         number of up/downstream neighbors to include
     idxs_ds, idxs_us_main : array of int
         indices of downstream, main upstream cells
+    strord: 1D array
+        stream order, when set limit window to cells of same or smaller stream order.
     nodata : float, optional
         Nodata value which is ignored when calculating the average, by default -9999.0
 
@@ -90,7 +94,7 @@ def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_
     for idx0 in range(data.size):
         if data[idx0] == nodata:
             continue
-        idxs = core._window(idx0, n, idxs_ds, idxs_us_main)
+        idxs = core._window(idx0, n, idxs_ds, idxs_us_main, strord=strord, mv=mv)
         idxs = idxs[idxs != mv]
         if idxs.size > 0:
             w = np.ones(idxs.size) if weights is None else weights[idxs]
@@ -99,7 +103,7 @@ def moving_average(data, weights, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_
 
 
 @njit
-def moving_median(data, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_mv):
+def moving_median(data, n, idxs_ds, idxs_us_main, strord=None, nodata=-9999.0, mv=_mv):
     """Take the moving median over the flow direction network.
 
     Parameters
@@ -112,6 +116,8 @@ def moving_median(data, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_mv):
         number of up/downstream neighbors to include
     idxs_ds, idxs_us_main : array of int
         indices of downstream, main upstream cells
+    strord: 1D array
+        stream order, when set limit window to cells of same or smaller stream order.
     nodata : float, optional
         Nodata value which is ignored when calculating the median, by default -9999.0
 
@@ -126,12 +132,12 @@ def moving_median(data, n, idxs_ds, idxs_us_main, nodata=-9999.0, mv=_mv):
     for idx0 in range(data.size):
         if data[idx0] == nodata:
             continue
-        idxs = core._window(idx0, n, idxs_ds, idxs_us_main)
+        idxs = core._window(idx0, n, idxs_ds, idxs_us_main, strord=strord, mv=mv)
         idxs = idxs[idxs != mv]
         if idxs.size > 0:
             a = data[idxs]
             if not nan:
-                a = np.where(a == nodata, np.nan, a)
+                a = np.where(a == nodata, np.nan, a).astype(a.dtype)
             data_out[idx0] = np.nanmedian(a)
     return data_out
 

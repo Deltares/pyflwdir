@@ -6,7 +6,7 @@ from numba import njit
 import numpy as np
 
 # import local libraries
-from pyflwdir import gis_utils
+from pyflwdir import gis_utils, arithmetics, core
 
 __all__ = []
 
@@ -130,7 +130,7 @@ def upstream_area(
 
 
 @njit
-def streams(idxs_ds, seq, strord, mask=None, min_sto=1, max_len=0):
+def streams(idxs_ds, seq, mask=None, max_len=0, mv=core._mv):
     """Returns list of linear indices per stream of equal stream order.
 
     Parameters
@@ -139,71 +139,58 @@ def streams(idxs_ds, seq, strord, mask=None, min_sto=1, max_len=0):
         index of next downstream cell
     seq : 1D array of int
         ordered cell indices from down- to upstream
-    strord : 1D-array of uint8
-        stream order
-    mask : 1D array of bool, optional
-        consider only True cells
-    min_sto : int, optional
-        minimum stream order of streams, by default 1
+    mask : 1D-array of bool, optional
+        Mask of stream cells
+    max_len: int, optional
+        Maximum length of a single stream segment measured in cells
+        Longer streams segments are divided into smaller segments of equal length
+        as close as possible to max_len.
 
     Returns
     -------
     streams : list of 1D-arrays of intp
         linear indices of streams
     """
-    # create map with confluences and list with its indices
-    idxs_conf = []
-    conf = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
-    for idx0 in seq[::-1]:  # up- to downstream
-        if strord[idx0] < (min_sto - 1):
-            continue
-        idx_ds = idxs_ds[idx0]
-        if strord[idx_ds] > strord[idx0]:
-            idxs_conf.append(idx_ds)
-            if strord[idx0] >= min_sto:
-                conf[idx_ds] = True
-    if len(idxs_conf) == 0:
-        raise ValueError("No streams found with given settings.")
-
+    if mask is None:
+        nup = core.upstream_count(idxs_ds=idxs_ds, mv=mv)
+    else:
+        nup = arithmetics.upstream_sum(
+            idxs_ds=idxs_ds, data=mask.astype(np.int8), mv=mv
+        )
     # get list of indices arrays of segments
     streams = []
     done = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
-    for idx0 in idxs_conf:
-        if done[idx0] or (mask is not None and mask[idx0] == False):
+    for idx0 in seq[::-1]:
+        if done[idx0] or (mask is not None and ~mask[idx0]):
             continue
         idxs = [idx0]  # initiate with correct dtype
         while True:
             done[idx0] = True
             idx_ds = idxs_ds[idx0]
-            valid = mask is None or mask[idx_ds]
-            if valid:
-                idxs.append(idx_ds)
-            if not valid or conf[idx_ds] or done[idx_ds] or idx_ds == idx0:
-                # pit or new stream segment (only on streams with strord > min_sto)
+            idxs.append(idx_ds)
+            if nup[idx_ds] > 1 or idx_ds == idx0:
                 l = len(idxs)
-                if l >= 2:
+                if l > max_len > 0:
                     n, k = l, 1
-                    if max_len > 0 and (l / max_len) > 1.5:
+                    if (l / max_len) > 1.5:
                         k = round(l / max_len)
                         n = round(l / k)
                     for i in range(k):  # split into k segments with overlapping point
                         if i + 1 == k:
                             streams.append(np.array(idxs[i * n :], dtype=idxs_ds.dtype))
                         else:
-                            streams.append(
-                                np.array(
-                                    idxs[i * n : n * (i + 1) + 1], dtype=idxs_ds.dtype
-                                )
-                            )
+                            _idxs = idxs[i * n : n * (i + 1) + 1]
+                            streams.append(np.array(_idxs, dtype=idxs_ds.dtype))
+                else:
+                    streams.append(np.array(idxs, dtype=idxs_ds.dtype))
                 break
-
             idx0 = idx_ds
     return streams
 
 
 @njit
-def stream_order(idxs_ds, seq):
-    """ "Returns the cell stream order, invalid cells are assinged a nodata value of -1
+def stream_order(idxs_ds, seq, mask=None):
+    """Returns the cell stream order, invalid cells are assinged a nodata value of -1
 
     The smallest streams, which are the cells with no upstream cells, get
     order 1. Where two channels of order 1 join, a channel of order 2
@@ -216,26 +203,32 @@ def stream_order(idxs_ds, seq):
         index of next downstream cell
     seq : 1D array of int
         ordered cell indices from down- to upstream
+    mask : 1D-array of bool, optional
+        True if stream cell
 
     Returns
     -------
     1D array of uint8
         stream order
     """
-    strord = np.full(idxs_ds.size, -1, dtype=np.int8)
-    strord[seq] = 0  # initialize valid cells with stream order 0
-    count = np.zeros(idxs_ds.size, dtype=np.int8)
+    # initialize valid cells with stream order 1
+    if mask is None:
+        strord = np.full(idxs_ds.size, 0, dtype=np.uint8)
+        strord[seq] = 1
+    else:
+        strord = np.where(mask, np.uint8(1), np.uint8(0))
+    count = np.zeros(idxs_ds.size, dtype=np.uint8)
     for idx0 in seq[::-1]:  # up- to downstream
         # set strean order of current cell
-        if strord[idx0] == 0:  # headwater cells -> order = 1
-            strord[idx0] = 1
-        elif count[idx0] > 1:  # bump order if count > 1
+        if strord[idx0] == 0:  # invalid cell
+            continue
+        if count[idx0] > 1:  # bump order if count > 1
             strord[idx0] += 1
         sto = strord[idx0]
         # set maximum upstream order at dowsntream neighbor
         # and count number of upstream cells with maximum order
         idx_ds = idxs_ds[idx0]
-        if idx0 != idx_ds:  # pit
+        if idx0 != idx_ds and strord[idx_ds] != 0:  # pit
             sto_ds = strord[idx_ds]
             if sto > sto_ds:
                 count[idx_ds] = 1

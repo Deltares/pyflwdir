@@ -33,7 +33,7 @@ FTYPES = {
 # export
 __all__ = ["FlwdirRaster", "from_array"]
 
-# logging
+# TODO logging
 logger = logging.getLogger(__name__)
 
 
@@ -47,6 +47,53 @@ def _infer_ftype(flwdir):
     if ftype is None:
         raise ValueError("The flow direction type could not be inferred.")
     return ftype
+
+
+def from_dem(
+    data,
+    nodata=-9999.0,
+    max_depth=-1.0,
+    transform=gis.IDENTITY,
+    latlon=False,
+):
+    """Flow direction raster derived from digital elevation data based on steepest gradient.
+
+    Outlets occur only at the edge of the data or at the interface with nodata values.
+    A local depressions is filled based on its lowest pour point level if the pour point
+    depth is smaller than the maximum pour point depth.
+
+    Implementation based on Wang & Lui 2005 https://doi.org/10.1080/13658810500433453
+
+    NOTE: to retrieve the depression filled dem, use the :py:func:`dem.fill_depressions` method directly.
+
+    Parameters
+    ----------
+    data : 2D array
+        digital elevation data
+    nodata : float, optional
+        Missing data value, by default -9999.0
+    max_depth: float, optional
+        Maximum pour point depth. Depressions with a larger pour point
+        depth are set as pit. A negative value (default) equals an infitely
+        large pour point depth causing all depressions to be filled.
+    transform : affine transform
+        Two dimensional affine transform for 2D linear mapping, by default using the
+        identity transform.
+    latlon : bool, optional
+        True if WGS84 coordinate reference system, by default False. If True it
+        converts the cell areas from degree to metres, otherwise it assumes cell areas
+        are in unit metres.
+
+    Returns
+    -------
+    FlwdirRaster
+        Actionable flow direction object
+    """
+    # parse dem
+    d8 = dem.fill_depressions(data, nodata=nodata, max_depth=max_depth)[1]
+    return from_array(
+        d8, ftype="d8", check_ftype=False, transform=transform, latlon=latlon
+    )
 
 
 def from_array(
@@ -655,7 +702,7 @@ class FlwdirRaster(Flwdir):
         if unit == "cell":
             area = np.ones(self.size, dtype=np.int32)
         else:
-            area = self.area.ravel() * gis.AREA_FACTORS[unit]
+            area = self.area.ravel() / gis.AREA_FACTORS[unit]
         uparea = streams.accuflux(
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
@@ -793,26 +840,44 @@ class FlwdirRaster(Flwdir):
         return self.geofeatures(idxs, xs=xs, ys=ys, **kwargs)
 
     def streams(
-        self, strord=None, min_sto=1, mask=None, xs=None, ys=None, max_len=0, **kwargs
+        self,
+        mask=None,
+        min_sto=1,
+        xs=None,
+        ys=None,
+        idxs_out=None,
+        max_len=0,
+        **kwargs,
     ):
-        """Returns each stream segment as a linestring geo-features.
-        A stream segment is defined by flow path between two confluences with minimal
-        stream order `min_sto`.
+        """Returns a list of stream segment as linestring geo-features.
+
+        A stream segment is defined by flow path between two confluences
+        or if `idxs_out` is given, two outlet cells by idxs_out. The stream cells
+        can be set using a boolean `mask` or a minimum stream order `min_sto`.
+        Note that if a mask is given the minimum stream order is ignored.
+
+        Additional key-word arguments are maps from which a value is sampled
+        at the most downstram cell of a stream segment.
 
         Parameters
         ----------
         kind : {streams, flwdir}
             Kind of LineString features: either streams of local flow directions.
-        strord : 2D array of int, optional
-            Stream order raster
-        min_sto : int
-            Minimum Strahler Order recognized as river, by the default 1.
-            Only in combination with kind = 'streams'
         mask : 2D array of bool
             Mask of valid cells.
+        min_sto : int
+            Minimum Strahler Order recognized as river, by the default 1.
+            A stream order map can optioanlly be passed using the key-word argument `strord`.
         xs, ys : 2D array of float
             Raster with cell x, y coordinates, by default None and inferred from cell
             center.
+        idxs_out : 1D array of int
+            Linear indices of unit catchment outlet cells. Stream segments are created
+            by following the main upstream path to the next outlet cell. By default None.
+        max_len: int, optional
+            Maximum length of a single stream segment measured in cells.
+            Longer streams segments are divided into smaller segments of equal length
+            as close as possible to max_len.
         kwargs : extra sample maps key-word arguments
             optional maps to sample from
 
@@ -821,16 +886,33 @@ class FlwdirRaster(Flwdir):
         feats : list of dict
             Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
         """
-        strord = self._check_data(strord, "strord")
-        idxs = streams.streams(
-            idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
-            strord=strord,
-            mask=self._check_data(mask, "mask", optional=True),
-            min_sto=min_sto,
-            max_len=max_len,
-        )
-        return self.geofeatures(idxs, xs=xs, ys=ys, strord=strord, **kwargs)
+        if mask is not None:
+            mask = self._check_data(mask, "mask")
+        elif min_sto > 1:
+            strord = self._check_data(kwargs.get("strord"), "strord")
+            mask = strord >= min_sto
+            kwargs.update(strord=strord)  # add strord column
+
+        if idxs_out is not None:
+            idxs = subgrid.segment_indices(
+                idxs_out=idxs_out,
+                idxs_nxt=self.idxs_us_main,  # down- to upstream
+                mask=mask,
+                max_len=max_len,
+                mv=self._mv,
+            )
+            # up to downstream for correct idx_ds column
+            idxs = [idxs0[::-1] for idxs0 in idxs]
+        else:
+            idxs = streams.streams(
+                idxs_ds=self.idxs_ds,
+                seq=self.idxs_seq,
+                mask=mask,
+                max_len=max_len,
+                mv=self._mv,
+            )
+
+        return self.geofeatures(idxs, xs=xs, ys=ys, **kwargs)
 
     def geofeatures(self, flowpaths, xs=None, ys=None, **kwargs):
         """Returns a geo-features of flowpaths defined by a list of arrays of linear
@@ -1040,7 +1122,7 @@ class FlwdirRaster(Flwdir):
         if unit == "cell":
             area = np.ones(self.size, dtype=np.int32)
         else:
-            area = self.area.ravel() * gis.AREA_FACTORS[unit]
+            area = self.area.ravel() / gis.AREA_FACTORS[unit]
         ucat_map, ucat_are = subgrid.segment_area(
             idxs_out=idxs_out.ravel(),
             idxs_ds=self.idxs_ds,
@@ -1105,6 +1187,7 @@ class FlwdirRaster(Flwdir):
         elevtn,
         length=1000,
         direction="both",
+        method="mean",
         mask=None,
     ):
         """Returns the subgrid river slope [m/m] estimated at unit catchment outlet
@@ -1147,6 +1230,7 @@ class FlwdirRaster(Flwdir):
                 length=length,
                 mask=self._check_data(mask, "mask", optional=True),
                 mv=self._mv,
+                lstsq=method == "lstsq",
             )
         else:
             rivslp = subgrid.segment_slope(
@@ -1156,8 +1240,8 @@ class FlwdirRaster(Flwdir):
                 distnc=self.distnc.ravel(),
                 mask=self._check_data(mask, "mask", optional=True),
                 mv=self._mv,
+                lstsq=method == "lstsq",
             )
-
         return rivslp.reshape(idxs_out.shape)
 
     def subgrid_rivavg(
@@ -1272,43 +1356,11 @@ class FlwdirRaster(Flwdir):
         shape = idxs_out.shape
         return rivlen.reshape(shape)
 
-    ### CONVERSION ###
-
-    def to_d4(self, elevtn):
-        """Returns FlwdirRaster where diagonal flow directions are modified d4
-        based on minimal difference in elevation
-
-        Parameters
-        ----------
-        elevtn : 2D array of float
-            elevation raster
-
-        Returns
-        -------
-        flwdird4: FlwdirRaster
-            d4 flow directions
-        """
-        idxs_ds_d4 = core_conversion.to_d4(
-            idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
-            elv_flat=self._check_data(elevtn, "elevtn"),
-            shape=self.shape,
-        )
-
-        flwdird4 = FlwdirRaster(
-            idxs_ds=idxs_ds_d4,
-            shape=self.shape,
-            ftype=self.ftype,
-            transform=self.transform,
-            latlon=self.latlon,
-        )
-
-        return flwdird4
-
     ### ELEVATION ###
 
-    def dem_adjust(self, elevtn):
-        """Returns the hydrologically adjusted elevation where each downstream cell
+    def dem_adjust_d4(self, elevtn):
+        """Returns the hydrologically adjusted elevation where for
+        each cell there is an adjacent d4 connected cell which has
         has the same or lower elevation as the current cell.
 
         Parameters
@@ -1318,16 +1370,16 @@ class FlwdirRaster(Flwdir):
 
         Returns
         -------
-        2D array of float
+        elv_out: 2D array of float
             elevation raster
         """
-        elevtn_out = dem.adjust_elevation(
+        elv_out = dem.dig_4connectivity(
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
-            elevtn=self._check_data(elevtn, "elevtn"),
-            mv=self._mv,
+            elv_flat=self._check_data(elevtn, "elevtn"),
+            shape=self.shape,
         )
-        return elevtn_out.reshape(elevtn.shape)
+        return elv_out.reshape(self.shape)
 
     def hand(self, drain, elevtn):
         """Returns the height above the nearest drain (HAND), i.e.: the relative vertical

@@ -290,6 +290,75 @@ def segment_median(
 
 
 @njit
+def segment_indices(
+    idxs_out,
+    idxs_nxt,
+    mask=None,
+    max_len=0,
+    mv=_mv,
+):
+    """Returns the fitted lineaer slopeof the segment. The segment is defined by the flow path starting
+    at the segment outlet pixel of each cell moving up- or downstream until it reaches the next
+    segment outlet pixel.
+
+    Parameters
+    ----------
+    elevtn, distnc : 1D (sparse) array
+        elevation [m], downstream distance to outlet [m]
+    idxs_out : ndarray of int
+        linear indices of unit catchment outlet cells
+    idxs_nxt : ndarray of int
+        linear indices the next main upstream or downstream cell.
+    mask : ndarray of boolean, optional
+        only consider True cells to calculate channel average value
+    nodata : float, optional
+        Nodata value which is ignored when calculating the average, by default -9999.0
+    max_len: int, optional
+        Maximum length of a single stream segment measured in cells
+        Longer streams segments are divided into smaller segments of equal length
+        as close as possible to max_len.
+
+    Returns
+    -------
+    streams : list of 1D-arrays of intp
+        linear indices of streams
+    """
+    # temp binary array with outlets
+    outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
+    for idx0 in idxs_out:
+        if idx0 != mv:
+            outlets[idx0] = bool(1)
+    # allocate output
+    streams = []
+    # loop over outlet cell indices
+    for i in range(idxs_out.size):
+        idx0 = idxs_out[i]
+        if idx0 == mv:
+            continue
+        idxs = [idx0]
+        idx = idx0
+        while True:
+            idx1 = idxs_nxt[idx]
+            if (
+                idx1 == mv
+                or idx1 == idx
+                or (mask is not None and mask[idx1] == False)
+                or max_len > 0
+                and len(idxs) == max_len
+            ):
+                break
+            idxs.append(idx1)
+            if outlets[idx1]:  # include next outlet in stream
+                break
+            # next iter
+            idx = idx1
+        # get median value
+        if len(idxs) > 1:
+            streams.append(np.array(idxs, dtype=idxs_nxt.dtype))
+    return streams
+
+
+@njit
 def segment_slope(
     idxs_out,
     idxs_nxt,
@@ -297,6 +366,7 @@ def segment_slope(
     distnc,
     mask=None,
     nodata=-9999.0,
+    lstsq=True,
     mv=_mv,
 ):
     """Returns the fitted lineaer slopeof the segment. The segment is defined by the flow path starting
@@ -349,8 +419,13 @@ def segment_slope(
             idx = idx1
         # get median value
         if len(idxs) > 1:
-            idxs_np = np.asarray(idxs)
-            rivslp[i] = abs(arithmetics.lstsq(distnc[idxs_np], elevtn[idxs_np])[0])
+            if lstsq:
+                idxs_np = np.asarray(idxs)
+                rivslp[i] = abs(arithmetics.lstsq(distnc[idxs_np], elevtn[idxs_np])[0])
+            else:
+                dz = elevtn[idxs[0]] - elevtn[idxs[-1]]
+                dx = distnc[idxs[0]] - distnc[idxs[-1]]
+                rivslp[i] = abs(dz / dx)
         else:
             rivslp[i] = 0.0
     return rivslp
@@ -365,6 +440,7 @@ def fixed_length_slope(
     distnc,
     length=1e3,
     mask=None,
+    lstsq=True,
     mv=_mv,
 ):
     """Returns the channel slope at the outlet pixel. The slope is based on the elevation values
@@ -419,7 +495,10 @@ def fixed_length_slope(
             idx0 = idx_us
         # write lstsq channel slope
         if len(xs) >= 2:
-            rivslp[i] = abs(arithmetics.lstsq(np.array(xs), np.array(zs))[0])
+            if lstsq:
+                rivslp[i] = abs(arithmetics.lstsq(np.array(xs), np.array(zs))[0])
+            else:
+                rivslp[i] = abs((zs[0] - zs[-1]) / (xs[0] - xs[-1]))
         else:
             rivslp[i] = 0.0
     return rivslp

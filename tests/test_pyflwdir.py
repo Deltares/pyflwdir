@@ -204,7 +204,7 @@ def test_basins():
     lbs = flw.basin_bounds()[0]
     assert np.all(lbs == np.unique(basins[basins > 0]))
     lbs, _, total_bbox = flw.basin_bounds(basins=np.ones(flw.shape, dtype=np.uint32))
-    assert np.all(total_bbox[[3, 2]] == flw.shape)
+    assert np.all(np.abs(total_bbox[[1, 2]]) == flw.shape)
     with pytest.raises(ValueError, match="size does not match"):
         flw.basin_bounds(basins=np.ones((2, 1)))
 
@@ -244,20 +244,20 @@ def test_streams():
     # stream order
     strord = flw.stream_order()
     assert strord.flat[flw.mask].min() == 1
-    assert strord.min() == -1
+    assert strord.min() == 0
     assert strord.max() == strord.flat[flw.idxs_pit].max() == 5
-    assert strord.dtype == np.int8
+    assert strord.dtype == np.uint8
     assert np.all(strord.shape == flw.shape)
-    # vectorize
-    feats = flw.streams()
+    # stream segments
+    feats = flw.streams(strord=strord)
     fstrord = np.array([f["properties"]["strord"] for f in feats])
     findex = np.array([f["properties"]["idx"] for f in feats])
     assert np.all(fstrord == strord.flat[findex])
     findex_ds = np.array([f["properties"]["idx_ds"] for f in feats])
     # check agains Flwdir
     flw1 = pyflwdir.Flwdir(pyflwdir.flwdir.get_lin_indices(findex, findex_ds))
-    assert np.all(fstrord == flw1.stream_order().ravel() + 1)
-
+    assert np.all(fstrord == flw1.stream_order().ravel())
+    # vectorize
     feats = flw.vectorize()
     findex = np.array([f["properties"]["idx"] for f in feats])
     assert np.all(findex == np.sort(idxs_seq))

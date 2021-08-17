@@ -9,7 +9,7 @@ from affine import Affine
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
 AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
 # changed to N->S orientation in v0.5 TODO check if used in hydromt?
-IDENTITY = Affine(1, 0, 0, 0, -1, 0)
+IDENTITY = Affine(1.0, 0.0, 0.0, 0.0, -1.0, 0.0)
 
 __all__ = [
     "transform_from_origin",

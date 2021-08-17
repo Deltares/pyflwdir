@@ -61,18 +61,18 @@ def test_xy():
 
 
 def test_rowcol():
-    aff = gis.IDENTITY
-    left, bottom, right, top = (0, 0, 100, 200)
+    aff = gis.IDENTITY  # N->S changed in version 0.5
+    left, bottom, right, top = (0, -200, 100, 0)
     assert gis.rowcol(aff, left, top) == (top, left)
     assert gis.rowcol(aff, right, top) == (top, right)
-    assert gis.rowcol(aff, right, bottom) == (bottom, right)
-    assert gis.rowcol(aff, left, bottom) == (bottom, left)
+    assert gis.rowcol(aff, right, bottom) == (-bottom, right)
+    assert gis.rowcol(aff, left, bottom) == (-bottom, left)
 
 
 def test_idxs_to_coords():
     shape = (10, 8)
     idxs = np.arange(shape[0] * shape[1]).reshape(shape)
-    transform = gis.IDENTITY
+    transform = gis.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     xs, ys = gis.idxs_to_coords(idxs, transform, shape)
     assert np.all(ys == (np.arange(shape[0]) + 0.5)[:, None])
     assert np.all(xs == np.arange(shape[1]) + 0.5)
@@ -83,7 +83,7 @@ def test_idxs_to_coords():
 def test_coords_to_idxs():
     shape = (10, 8)
     idxs0 = np.arange(shape[0] * shape[1])
-    transform = gis.IDENTITY
+    transform = gis.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     xs, ys = np.meshgrid(np.arange(shape[1]) + 0.5, np.arange(shape[0]) + 0.5)
     idxs = gis.coords_to_idxs(xs, ys, transform, shape)
     assert np.all(idxs.ravel() == idxs0)
@@ -93,7 +93,7 @@ def test_coords_to_idxs():
 
 def test_affine_to_coords():
     shape = (10, 8)
-    transform = gis.IDENTITY
+    transform = gis.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     xs, ys = gis.affine_to_coords(transform, shape)
     assert np.all(ys == np.arange(shape[0]) + 0.5)
     assert np.all(xs == np.arange(shape[1]) + 0.5)

@@ -2,6 +2,30 @@
 Change Log
 ###########
 
+Unreleased
+***********
+New
+---
+* General Flwdir object for 1D vector based (instead of raster based) flow directions
+* flwdir.from_dataframe methods to derive a Flwdir object from a (Geo)DataFrame based on the row index and a column with downstream row indices.
+* dem.fill_depressions and pyflwdir.from_dem methods to derive flow directions from DEMs based on Wang & Lui (2015) 
+* gis_utils.get_edge method to get a boolean mask of valid cells at the interface with nodata cells or the array edge.
+* FlwdirRaster.adjust_dem_d4 method to adjust a DEM such that each cell has a 4D neighbor with equal or lower elevation.
+* new `fillnodata` method fill nodata gaps by propagating valid values up or downstream.
+
+Improved
+--------
+* streams takes a `idxs_out` argument to derive stream vectors for unit catchments
+* streams takes a `max_len` argument to split large segments into multiple smaller ones.
+* Use of Flwdir as common base of FlwdirRaster to share methods and properties 
+* changed IDENTITY transform to have North -> South orientation (yres < 0) which is in line with flow direction rasters.
+* new `restrict_strord` argument in `moving_average` and `moving_median` methods to restrict the moving window to cells with same or larger stream order.
+
+Bugfix
+------
+* stream_order method gave incorrect results
+* streams method gave incorrect segments with the min_sto argument
+
 0.4.6
 *****
 Improved

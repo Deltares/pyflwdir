@@ -37,7 +37,7 @@ def test_streams_basins_up(parsed, flwdir):
     # test region
     bas = bas.reshape(flwdir.shape)
     total_bbox = regions.region_bounds(bas)[-1]
-    assert np.all(total_bbox == np.array([0, 0, bas.shape[1], bas.shape[0]]))
+    assert np.all(total_bbox == np.array([0, -bas.shape[0], bas.shape[1], 0]))
     areas = regions.region_area(bas)[1]
     assert areas[0] == np.sum(bas == 1)
     areas1 = regions.region_area(bas, latlon=True)[1]
@@ -70,7 +70,7 @@ def test_streams_basins_ds(parsed, flwdir):
     idxs_headwater = core.headwater_indices(idxs_ds, mv=mv)
     assert np.all(sto[idxs_headwater] == 1)
     assert np.max(sto[idxs_pit]) == np.max(sto)
-    assert np.all(sto[idxs_ds == mv] == -1) and np.all(sto[idxs_ds != mv] >= 1)
+    assert np.all(sto[idxs_ds == mv] == 0) and np.all(sto[idxs_ds != mv] >= 1)
     # stream distance
     data = np.zeros(idxs_ds.size, dtype=np.int32)
     data[rank > 0] = 1

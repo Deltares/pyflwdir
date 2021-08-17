@@ -9,41 +9,13 @@ _mv = core._mv
 all = []
 
 
-@njit
-def fillnodata_upstream(idxs_ds, seq, data, nodata):
-    """Retuns a a copy of <data> where upstream cell with <nodata> values are filled
-    based on the first downstream valid cell value.
-
-    Parameters
-    ----------
-    idxs_ds : 1D-array of intp
-        index of next downstream cell
-    seq : 1D array of int
-        ordered cell indices from down- to upstream
-    data : 1D array
-        original data with missing values
-    nodata : float, integer
-        nodata value
-
-    Returns
-    -------
-    data_out: 1D array of data.dtype
-        infilled data
-    """
-    data_out = data.copy()
-    for idx0 in seq:  # down- to upstream
-        if data_out[idx0] == nodata and data_out[idxs_ds[idx0]] != nodata:
-            data_out[idx0] = data_out[idxs_ds[idx0]]
-    return data_out
-
-
 def basins(idxs_ds, idxs_pit, seq, ids=None):
     """Return basin map"""
     if ids is None:
         ids = np.arange(1, idxs_pit.size + 1, dtype=np.uint32)
     basins = np.zeros(idxs_ds.size, dtype=ids.dtype)
     basins[idxs_pit] = ids
-    return fillnodata_upstream(idxs_ds, seq, basins, 0)
+    return core.fillnodata_upstream(idxs_ds, seq, basins, 0)
 
 
 @njit
@@ -146,7 +118,7 @@ def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
         if strord[idx0] != strord[idx_ds] or idx_ds == idx0:
             subbas[idx0] = i
             i += 1
-    return fillnodata_upstream(idxs_ds, seq, subbas, 0)
+    return core.fillnodata_upstream(idxs_ds, seq, subbas, 0)
 
 
 # TODO check
@@ -199,4 +171,4 @@ def subbasins_pfafstetter(idxs_pit, idxs_ds, seq, uparea, upa_min=0, depth=1, mv
                 elif d > 0:
                     pfaf[idx0] = pfafid + 1
             pfafs = np.array(pfaf_lst_next, dtype=pfaf.dtype)
-    return fillnodata_upstream(idxs_ds, seq, pfaf, 0)
+    return core.fillnodata_upstream(idxs_ds, seq, pfaf, 0)
