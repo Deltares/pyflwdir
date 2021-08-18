@@ -31,7 +31,7 @@ FTYPES = {
 }
 
 # export
-__all__ = ["FlwdirRaster", "from_array"]
+__all__ = ["FlwdirRaster", "from_array", "from_dem"]
 
 # TODO logging
 logger = logging.getLogger(__name__)
@@ -58,13 +58,14 @@ def from_dem(
 ):
     """Flow direction raster derived from digital elevation data based on steepest gradient.
 
-    Outlets occur only at the edge of the data or at the interface with nodata values.
+    Outlets occur at the edge of the data or at the interface with nodata values.
     A local depressions is filled based on its lowest pour point level if the pour point
-    depth is smaller than the maximum pour point depth.
+    depth is smaller than the maximum pour point depth `max_depth`, otherwise the lowest
+    elevation in the depression becomes a pit.
 
-    Implementation based on Wang & Lui 2005 https://doi.org/10.1080/13658810500433453
+    Based on: Wang, L., & Liu, H. (2006). https://doi.org/10.1080/13658810500433453
 
-    NOTE: to retrieve the depression filled dem, use the :py:func:`dem.fill_depressions` method directly.
+    NOTE: to retrieve the depression filled dem, use the :py:func:`pyflwdir.dem.fill_depressions` method.
 
     Parameters
     ----------

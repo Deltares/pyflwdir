@@ -19,12 +19,12 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
     """Fill local depressions in elevation data and derived local
     D8 flow directions.
 
-    Pits are assumed to only occure at the edge of the data
+    Outlets are assumed to only occure at the edge of the data
     or at the interface with nodata values. Depressions elsewhere
     are filled based on its lowest pour point elevation if its pour
-    point dpeth is smaller than the maximum pour point depth `max_dz`.
+    point dpeth is smaller than the maximum pour point depth `max_depth`.
 
-    Based on Wang & Lui 2005 https://doi.org/10.1080/13658810500433453
+    Based on: Wang, L., & Liu, H. (2006). https://doi.org/10.1080/13658810500433453
 
     Parameters
     ----------
