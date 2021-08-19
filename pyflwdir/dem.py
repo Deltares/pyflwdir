@@ -332,7 +332,7 @@ def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
 
 @njit
 def _local_d4(idx0, idx_ds, ncol):
-    """Return indices of d4 neighbors, e.g.: indices of N, W neigbors if flowdir is NW."""
+    """Return indices of d4 neighbors in diagonal d8 direction, e.g.: indices of N, W neigbors if flowdir is NW."""
     idxs_d4 = [
         idx0 - ncol,
         idx0 - 1,
@@ -340,13 +340,13 @@ def _local_d4(idx0, idx_ds, ncol):
         idx0 + 1,
         idx0 - ncol,
     ]  # n, w, s, e, n
-    idxs_diag = [
-        idx0 - ncol - 1,
-        idx0 + ncol - 1,
-        idx0 + ncol + 1,
-        idx0 - ncol + 1,
-    ]  # nw, sw, se, ne
     if idx_ds != idx0:
+        idxs_diag = [
+            idx0 - ncol - 1,
+            idx0 + ncol - 1,
+            idx0 + ncol + 1,
+            idx0 - ncol + 1,
+        ]  # nw, sw, se, ne
         di = idxs_diag.index(idx_ds)
         return np.asarray(idxs_d4[di : di + 2])
     else:
@@ -358,7 +358,7 @@ def dig_4connectivity(idxs_ds, seq, elv_flat, shape, nodata=-9999):
     """Make sure that for every diagonal D8 downstream flow direction
     there is an adjacent D4 cell with same or lower elevation"""
     elv_out = elv_flat.copy()
-    _, ncol = shape
+    nrow, ncol = shape
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
         dd = abs(idx0 - idx_ds)
@@ -370,10 +370,14 @@ def dig_4connectivity(idxs_ds, seq, elv_flat, shape, nodata=-9999):
             # find adjacent with smallest dz and lower elevation to <= z0
             idx_d4_min = idxs_d4[valid][np.argmin(zs[valid] - z0)]
             elv_out[idx_d4_min] = min(elv_out[idx_d4_min], z0)
-        if idxs_ds[idx_ds] == idx_ds:  # next pit
+        if idxs_ds[idx_ds] == idx_ds:  # next pit because we need to know upstream cell
+            r = idx_ds // ncol
+            c = idx_ds % ncol
+            if r == 0 or r == nrow - 1 or c == 0 or c == ncol - 1:  # edge
+                continue
             idxs_d4 = _local_d4(idx_ds, idx_ds, ncol)
-            idxs_d4 = np.array(
-                [i for i in idxs_d4 if (i != idx0 and i >= 0 and i < idxs_ds.size)]
-            )
-            elv_out[idxs_d4] = np.minimum(elv_out[idx0], elv_out[idxs_d4])
+            if np.any(elv_out[idxs_d4] == nodata):  # D4 link with nodata
+                continue
+            idxs_d4 = np.asarray([idx for idx in idxs_d4 if idx != idx0])
+            elv_out[idxs_d4] = np.minimum(elv_out[idx_ds], elv_out[idxs_d4])
     return elv_out
