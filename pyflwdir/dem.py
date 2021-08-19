@@ -346,12 +346,15 @@ def _local_d4(idx0, idx_ds, ncol):
         idx0 + ncol + 1,
         idx0 - ncol + 1,
     ]  # nw, sw, se, ne
-    di = idxs_diag.index(idx_ds)
-    return np.asarray(idxs_d4[di : di + 2])
+    if idx_ds != idx0:
+        di = idxs_diag.index(idx_ds)
+        return np.asarray(idxs_d4[di : di + 2])
+    else:
+        return np.asarray(idxs_d4[1:])
 
 
 @njit
-def dig_4connectivity(idxs_ds, seq, elv_flat, shape):
+def dig_4connectivity(idxs_ds, seq, elv_flat, shape, nodata=-9999):
     """Make sure that for every diagonal D8 downstream flow direction
     there is an adjacent D4 cell with same or lower elevation"""
     elv_out = elv_flat.copy()
@@ -359,11 +362,18 @@ def dig_4connectivity(idxs_ds, seq, elv_flat, shape):
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
         dd = abs(idx0 - idx_ds)
-        if dd <= 1 or dd == ncol:  # D4
-            continue
-        z0 = elv_out[idx0]  # elevtn of current cell
-        idxs_d4 = _local_d4(idx0, idx_ds, ncol)  # indices of adjacent d4 cells
-        # find adjacent with smallest dz and lower elevation to <= z0
-        idx_d4_min = idxs_d4[np.argmin(elv_out[idxs_d4] - z0)]
-        elv_out[idx_d4_min] = min(elv_out[idx_d4_min], z0)
+        if dd > 1 and dd != ncol:  # diagonal
+            idxs_d4 = _local_d4(idx0, idx_ds, ncol)  # indices of adjacent d4 cells
+            z0 = elv_out[idx0]  # elevtn of current cell
+            zs = elv_out[idxs_d4]
+            valid = zs != nodata
+            # find adjacent with smallest dz and lower elevation to <= z0
+            idx_d4_min = idxs_d4[valid][np.argmin(zs[valid] - z0)]
+            elv_out[idx_d4_min] = min(elv_out[idx_d4_min], z0)
+        if idxs_ds[idx_ds] == idx_ds:  # next pit
+            idxs_d4 = _local_d4(idx_ds, idx_ds, ncol)
+            idxs_d4 = np.array(
+                [i for i in idxs_d4 if (i != idx0 and i >= 0 and i < idxs_ds.size)]
+            )
+            elv_out[idxs_d4] = np.minimum(elv_out[idx0], elv_out[idxs_d4])
     return elv_out

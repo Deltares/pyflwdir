@@ -33,6 +33,7 @@ __all__ = [
 
 @njit
 def get_edge(a):
+    """Get edge of valid cells. Array `a` indicates invalid cells."""
     return np.logical_and(~a, _get_edge(a))
 
 
