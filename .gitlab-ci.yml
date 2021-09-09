@@ -1,11 +1,10 @@
-image: continuumio/miniconda3:latest
+image: condaforge/mambaforge:latest
 
 before_script:
   - apt-get update -q -y
   - apt-get install -y build-essential
   - apt-get install libgl1-mesa-glx -y
-  - conda update -n base conda
-  - conda env create -f environment.yml
+  - mamba env create -f environment.yml
   - source activate pyflwdir
   - pip install -e .
   

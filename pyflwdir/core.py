@@ -381,9 +381,9 @@ def _tributaries(
         linear indices of largest tributaries
     """
     if n > 0:
-        # use heapq to keep n largest
+        # use heapq to keep n largest; initialize with correct dtypes
         i = int(0)
-        ntrib = [(np.float64(upa_min), mv, int(-1)) for _ in range(n)]
+        ntrib = [(uparea[0], idxs_us_trib[0], i) for _ in range(n)]
         heapq.heapify(ntrib)
     else:
         idxs = []
@@ -400,7 +400,7 @@ def _tributaries(
             if upa_trib > upa_min:
                 if n > 0:
                     i += 1
-                    heapq.heappushpop(ntrib, (np.float64(upa_trib), idx_trib, i))
+                    heapq.heappushpop(ntrib, (upa_trib, idx_trib, i))
                     upa_min = max(upa_min, heapq.nsmallest(1, ntrib)[0][0])
                 else:
                     idxs.append(idx_trib)
