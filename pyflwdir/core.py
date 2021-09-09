@@ -384,6 +384,7 @@ def _tributaries(
         # use heapq to keep n largest; initialize with correct dtypes
         i = int(0)
         ntrib = [(uparea[0], idxs_us_trib[0], i) for _ in range(n)]
+        heapq.heapify(ntrib)
     else:
         idxs = []
     # move upstream while checking tributaries
