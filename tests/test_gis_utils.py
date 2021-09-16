@@ -141,3 +141,16 @@ def test_distance():
     assert gis.distance(0, 4, 3, True) == gis.distance(4, 0, 3, True)
     assert gis.distance(0, 1, 3, False) == gis.distance(7, 8, 3, False)
     assert gis.distance(0, 1, 3, True) != gis.distance(7, 8, 3, True)
+
+
+def test_edge():
+    a = np.ones((5, 5), dtype=bool)
+    b = a.copy()
+    b[1:-1, 1:-1] = False
+    assert np.all(gis.get_edge(a) == b)
+    a[np.diag_indices(5)] = False
+    assert np.all(gis.get_edge(a) == a)
+    b = a.copy()
+    b[1, 3], b[3, 1] = False, False
+    d4 = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+    assert np.all(gis.get_edge(a, structure=d4) == b)

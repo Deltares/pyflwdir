@@ -3,6 +3,7 @@
 
 import pytest
 import numpy as np
+import os
 
 from pyflwdir import core, core_d8, streams
 
@@ -10,7 +11,8 @@ _mv = core._mv
 
 # test data
 # slice from real data
-flwdir0 = np.loadtxt("flwdir.asc", dtype=np.uint8)
+testdir = os.path.dirname(__file__)
+flwdir0 = np.loadtxt(os.path.join(testdir, "flwdir.asc"), dtype=np.uint8)
 idxs_ds0, idxs_pit0, _ = core_d8.from_array(flwdir0, dtype=np.uint32)
 rank0, n0 = core.rank(idxs_ds0, mv=np.uint32(_mv))
 seq0 = np.argsort(rank0)[-n0:]

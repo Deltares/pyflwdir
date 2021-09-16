@@ -5,6 +5,7 @@ import pytest
 from affine import Affine
 import time
 import numpy as np
+import os
 
 # local
 from pyflwdir import upscale, core_d8, core, streams, basins
@@ -22,7 +23,8 @@ from test_core import test_data
 mv = np.uint32(core._mv)
 # parsed0, flwdir0 = test_data[0]
 # idxs_ds0, idxs_pit0 = [p.copy() for p in parsed0[:2]]
-flwdir = np.loadtxt("flwdir1.asc", dtype=np.uint8)
+testdir = os.path.dirname(__file__)
+flwdir = np.loadtxt(os.path.join(testdir, "flwdir1.asc"), dtype=np.uint8)
 idxs_ds, idxs_pit, _ = core_d8.from_array(flwdir, dtype=np.uint32)
 
 # cellsize = 20

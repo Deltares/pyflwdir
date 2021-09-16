@@ -25,31 +25,41 @@ __all__ = [
     "get_edge",
 ]
 
+
+@njit
+def get_edge(a, structure=np.ones((3, 3), dtype=bool)):
+    """Get edge of valid cells.
+
+    Parameters
+    ----------
+    a: 2D array of bool
+        Boolean array valid cells.
+    structure: 2D array with shape (3,3) of bool
+        Structuring element used for assessing neighbors
+
+    Returns
+    -------
+    edge: 2D array of bool
+        Boolean array edge cells.
+    """
+    assert structure.shape == (3, 3)
+    s = np.where(structure.ravel() != 0)[0]
+    edge = a.copy()
+    nrow, ncol = a.shape
+    for r in range(0, nrow):
+        for c in range(0, ncol):
+            if ~a[r, c] or r == 0 or r == nrow - 1 or c == 0 or c == ncol - 1:
+                continue
+            a0 = a[slice(r - 1, r + 2), slice(c - 1, c + 2)].ravel()
+            if np.all(a0[s]):
+                edge[r, c] = False
+    return edge
+
+
 ## TRANSFORM
 # Adapted from https://github.com/mapbox/rasterio/blob/master/rasterio/transform.py
 # changed xy and rowcol to work directly on numpy arrays
 # avoid gdal dependency
-
-
-@njit
-def get_edge(a):
-    """Get edge of valid cells. Array `a` indicates invalid cells."""
-    return np.logical_and(~a, _get_edge(a))
-
-
-@stencil(cval=True)
-def _get_edge(a):
-    nb = (
-        a[0, 1]
-        or a[1, 0]
-        or a[0, -1]
-        or a[-1, 0]
-        or a[1, 1]
-        or a[1, -1]
-        or a[-1, 1]
-        or a[-1, -1]
-    )
-    return ~a[0, 0] and nb
 
 
 def transform_from_origin(west, north, xsize, ysize):

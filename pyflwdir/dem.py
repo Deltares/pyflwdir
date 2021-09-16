@@ -5,7 +5,7 @@
 import numpy as np
 from numba import njit
 import math
-from heapq import heappop, heappush
+from heapq import heappop, heappush, heapify
 
 from pyflwdir import gis_utils, core, core_d8
 
@@ -51,8 +51,9 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
     d8 = np.where(done, np.uint8(247), np.uint8(0))
 
     # initiate queue with edge cells
-    queued = gis_utils.get_edge(done)
+    queued = gis_utils.get_edge(~done)
     q = [(elevtn[0, 0], np.uint32(0), np.uint32(0)) for _ in range(0)]
+    heapify(q)
     for r, c in zip(*np.where(queued)):
         heappush(q, (elevtn[r, c], np.uint32(r), np.uint32(c)))
 
