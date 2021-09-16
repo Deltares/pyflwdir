@@ -11,9 +11,10 @@ before_script:
 tests:
   script:
     - cd tests
-    - python -m pytest --cache-clear
     - export NUMBA_DISABLE_JIT=1
     - python -m pytest --verbose --cov=pyflwdir
+    - export NUMBA_DISABLE_JIT=0
+    - python -m pytest --cache-clear
     - cd ..
     - black --check . 
 
