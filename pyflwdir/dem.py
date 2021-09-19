@@ -15,7 +15,7 @@ __all__ = ["slope", "fill_depressions"]
 
 
 @njit
-def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
+def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0, connectivity=8):
     """Fill local depressions in elevation data and derived local
     D8 flow directions.
 
@@ -36,6 +36,8 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
         Maximum pour point depth. Depressions with a larger pour point
         depth are set as pit. A negative value (default) equals an infitely
         large pour point depth causing all depressions to be filled.
+    connectivity: {4, 8}
+        Number of neighboring cells to consider.
 
     Returns
     -------
@@ -46,47 +48,54 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
     """
     nrow, ncol = elevtn.shape
     delv = np.zeros_like(elevtn)
-    zds = elevtn.copy()  # downstream elevation
-    done = elevtn == nodata
+    done = np.isnan(elevtn) if np.isnan(nodata) else elevtn == nodata
     d8 = np.where(done, np.uint8(247), np.uint8(0))
+    if connectivity not in [4, 8]:
+        ValueError(f'"connectivity" should either be 4 or 8, not {connectivity}')
+    # pfff.. numba does not allow creation of numpy bool arrays using normal methods
+    struct = np.array([bool(1) for s in range(9)]).reshape((3, 3))
+    if connectivity == 4:
+        struct[0, 0], struct[-1, -1] = False, False
+        struct[0, -1], struct[-1, 0] = False, False
 
     # initiate queue with edge cells
-    queued = gis_utils.get_edge(~done)
+    queued = gis_utils.get_edge(~done, structure=struct)
     q = [(elevtn[0, 0], np.uint32(0), np.uint32(0)) for _ in range(0)]
     heapq.heapify(q)
     for r, c in zip(*np.where(queued)):
         heapq.heappush(q, (elevtn[r, c], np.uint32(r), np.uint32(c)))
 
+    # loop over cells and neighbors with ascending cell elevation.
+    drs, dcs = np.where(struct)
+    drs, dcs = drs - 1, dcs - 1
     while len(q) > 0:
         z0, r0, c0 = heapq.heappop(q)
-        zds[r0, c0] = min(z0, zds[r0, c0])
-        for dr in range(-1, 2):
+        for dr, dc in zip(drs, dcs):
             r = r0 + dr
-            if r < 0 or r == nrow:
+            c = c0 + dc
+            if r < 0 or r == nrow or c < 0 or c == ncol or done[r, c]:
                 continue
-            for dc in range(-1, 2):
-                c = c0 + dc
-                if c < 0 or c == ncol or (done[r, c] and zds[r, c] <= z0):
-                    continue
-                z1 = elevtn[r, c]
-                dz = z0 - z1
-                if max_depth >= 0:
-                    if dz >= max_depth:
-                        heapq.heappush(q, (z1, np.uint32(r), np.uint32(c)))
-                        queued[r, c] = True
-                        continue
-                    elif delv[r, c] > 0:
-                        queued[r, c] = False
-                        delv[r, c] = 0
-                if dz > 0:
-                    delv[r, c] = dz
-                    z1 += dz
-                if ~queued[r, c]:
+            z1 = elevtn[r, c]
+            dz = z0 - z1  # local depression if dz > 0
+            if max_depth >= 0:  # if positive max_depth: don't fill when dz > max_depth
+                if dz >= max_depth:
                     heapq.heappush(q, (z1, np.uint32(r), np.uint32(c)))
                     queued[r, c] = True
-                done[r, c] = True
-                d8[r, c] = core_d8._us[dr + 1, dc + 1]
-                zds[r, c] = z0
+                    for dr, dc in zip(drs, dcs):  # (re)visit neighbors
+                        done[r + dr, c + dc] = False
+                    continue
+                elif delv[r, c] > 0:  # reset cell if previously filled & revisited
+                    queued[r, c] = False
+                    delv[r, c] = 0
+            if dz > 0:  # check if local depression (dz>0)
+                delv[r, c] = dz
+                z1 += dz
+            if ~queued[r, c]:  # add to queue
+                heapq.heappush(q, (z1, np.uint32(r), np.uint32(c)))
+                queued[r, c] = True
+            done[r, c] = True
+            d8[r, c] = core_d8._us[dr + 1, dc + 1]
+            # zds[r, c] = z0
     return elevtn + delv, d8
 
 

@@ -35,7 +35,7 @@ def get_edge(a, structure=np.ones((3, 3), dtype=bool)):
     a: 2D array of bool
         Boolean array valid cells.
     structure: 2D array with shape (3,3) of bool
-        Structuring element used for assessing neighbors
+        Structuring element used to define which cells are neighbors.
 
     Returns
     -------
