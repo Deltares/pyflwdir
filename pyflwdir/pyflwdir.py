@@ -614,12 +614,16 @@ class FlwdirRaster(Flwdir):
         2D array of uint32
             subbasin map with pfafstetter coding
         """
+        uparea = self._check_data(uparea, "uparea")
+        if upa_min is not None:
+            mask = uparea >= upa_min
         pfaf = basins.subbasins_pfafstetter(
             idxs_pit=self.idxs_pit,
             idxs_ds=self.idxs_ds,
+            idxs_us_main=self.idxs_us_main,
             seq=self.idxs_seq,
             uparea=self._check_data(uparea, "uparea"),
-            upa_min=upa_min,
+            mask=mask,
             depth=depth,
             mv=self._mv,
         )

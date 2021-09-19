@@ -422,29 +422,45 @@ class Flwdir(object):
 
     ### STREAMS  ###
 
-    def stream_order(self):
-        """Returns the Strahler Order map [1]_.
+    def stream_order(self, type="strahler", mask=None):
+        """Returns the Strahler (default) or classic stream order map.
 
-        The smallest streams, which are the cells with no upstream cells, get
-        order 1. Where two channels of order 1 join, a channel of order 2
-        results downstream. In general, where two channels of order i join,
-        a channel of order i+1 results.
+        In the *classic* "bottum up" stream order map, the main river stem has order 1.
+        Each tributary is given a number one greater than that of the
+        river or stream into which they discharge.
 
-        .. [1] Strahler, A.N., 1964 "Quantitative geomorphology of drainage
-          basins and channel networks, section 4-II". In: Handbook of Applied
-          Hydrology (V.T. Chow, et al. (1988)), McGraw-Hill, New York USA
+        In the *strahler* "top down" stream order map, tivers of the first order are
+        the most upstream tributaries or head water cells. If two streams of the same
+        order merge, the resulting stream has an order of one higher.
+        If two rivers with different stream orders merge, the resulting stream is
+        given the maximum of the two order.
+
+        Parameters
+        ----------
+        type: {"strahler", "classic"}
+            Stream order type. By default Strahler.
+        mask: 2D array of boolean
+            Mask of streams to consider. This can be used to compute the stream order
+            for streams with a minimum upstream area or streams within a specific
+            (sub)basin only.
 
         Returns
         -------
         2D array of int
             strahler order map
         """
-        if "strord" in self._cached:
-            strord = self._cached["strord"]
-        else:
-            strord = streams.stream_order(self.idxs_ds, self.idxs_seq)
-            if self.cache:
-                self._cached.update(strord=strord)
+        mask = self._check_data(mask, "mask", optional=True)
+        if type.lower() == "strahler":
+            if "strord" in self._cached:
+                strord = self._cached["strord"]
+            else:
+                strord = streams.strahler_order(self.idxs_ds, self.idxs_seq, mask=mask)
+                if self.cache:
+                    self._cached.update(strord=strord)
+        elif type.lower() == "classic":
+            strord = streams.stream_order(
+                self.idxs_ds, self.idxs_seq, self.idxs_us_main, mask=mask, mv=self._mv
+            )
         return strord.reshape(self.shape)
 
     def upstream_area(self):

@@ -97,21 +97,21 @@ def test_upstream(parsed, flwdir):
         idxs = np.where(idxs_us_main != mv)[0]
         assert np.all(idxs_ds[idxs_us_main[idxs]] == idxs)
         assert idxs.size == np.sum(n_up[upa > 0] >= 1)
-        # tributary
-        idxs_us_trib = core.main_tributary(idxs_ds, idxs_us_main, upa, mv=mv)
-        idxs = np.where(idxs_us_trib != mv)[0]
-        assert idxs.size == np.sum(n_up[upa > 0] > 1)
-        if idxs.size > 0:
-            assert np.all(idxs_ds[idxs_us_main[idxs]] == idxs)
         # window
         path = core._trace(idx0, idxs_us_main, ncol, mv=mv)[0]
         wdw = core._window(idx0, 1, idxs_us_main, idxs_us_main, mv=mv)
         assert np.all(path[:2] == wdw[1:]) and np.all(path[:2][::-1] == wdw[:-1])
-        # tributaries
-        idxs_trib = core._tributaries(idx0, idxs_us_main, idxs_us_trib, upa, mv=mv)
-        assert np.all([np.any(idx == idxs_us_trib[path]) for idx in idxs_trib])
-        if idxs_trib.size > 1:
-            idxs_trib1 = core._tributaries(
-                idx0, idxs_us_main, idxs_us_trib, upa, n=1, mv=mv
-            )
-            assert np.max(upa[idxs_trib]) == upa[idxs_trib1]
+        # # tributary
+        # idxs_us_trib = core.main_tributary(idxs_ds, idxs_us_main, upa, mv=mv)
+        # idxs = np.where(idxs_us_trib != mv)[0]
+        # assert idxs.size == np.sum(n_up[upa > 0] > 1)
+        # if idxs.size > 0:
+        #     assert np.all(idxs_ds[idxs_us_main[idxs]] == idxs)
+        # # tributaries
+        # idxs_trib = core._tributaries(idx0, idxs_us_main, idxs_us_trib, upa, mv=mv)
+        # assert np.all([np.any(idx == idxs_us_trib[path]) for idx in idxs_trib])
+        # if idxs_trib.size > 1:
+        #     idxs_trib1 = core._tributaries(
+        #         idx0, idxs_us_main, idxs_us_trib, upa, n=1, mv=mv
+        #     )
+        #     assert np.max(upa[idxs_trib]) == upa[idxs_trib1]

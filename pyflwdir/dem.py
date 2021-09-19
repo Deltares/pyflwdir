@@ -5,7 +5,7 @@
 import numpy as np
 from numba import njit
 import math
-from heapq import heappop, heappush, heapify
+import heapq
 
 from pyflwdir import gis_utils, core, core_d8
 
@@ -45,7 +45,7 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
         D8 flow directions
     """
     nrow, ncol = elevtn.shape
-    delevtn = np.zeros_like(elevtn)
+    delv = np.zeros_like(elevtn)
     zds = elevtn.copy()  # downstream elevation
     done = elevtn == nodata
     d8 = np.where(done, np.uint8(247), np.uint8(0))
@@ -53,12 +53,12 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
     # initiate queue with edge cells
     queued = gis_utils.get_edge(~done)
     q = [(elevtn[0, 0], np.uint32(0), np.uint32(0)) for _ in range(0)]
-    heapify(q)
+    heapq.heapify(q)
     for r, c in zip(*np.where(queued)):
-        heappush(q, (elevtn[r, c], np.uint32(r), np.uint32(c)))
+        heapq.heappush(q, (elevtn[r, c], np.uint32(r), np.uint32(c)))
 
     while len(q) > 0:
-        z0, r0, c0 = heappop(q)
+        z0, r0, c0 = heapq.heappop(q)
         zds[r0, c0] = min(z0, zds[r0, c0])
         for dr in range(-1, 2):
             r = r0 + dr
@@ -72,22 +72,22 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0):
                 dz = z0 - z1
                 if max_depth >= 0:
                     if dz >= max_depth:
-                        heappush(q, (z1, np.uint32(r), np.uint32(c)))
+                        heapq.heappush(q, (z1, np.uint32(r), np.uint32(c)))
                         queued[r, c] = True
                         continue
-                    elif delevtn[r, c] > 0:
+                    elif delv[r, c] > 0:
                         queued[r, c] = False
-                        delevtn[r, c] = 0
+                        delv[r, c] = 0
                 if dz > 0:
-                    delevtn[r, c] = dz
+                    delv[r, c] = dz
                     z1 += dz
                 if ~queued[r, c]:
-                    heappush(q, (z1, np.uint32(r), np.uint32(c)))
+                    heapq.heappush(q, (z1, np.uint32(r), np.uint32(c)))
                     queued[r, c] = True
                 done[r, c] = True
                 d8[r, c] = core_d8._us[dr + 1, dc + 1]
                 zds[r, c] = z0
-    return elevtn + delevtn, d8
+    return elevtn + delv, d8
 
 
 @njit

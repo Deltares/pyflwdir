@@ -6,6 +6,7 @@ Unreleased
 ***********
 New
 ---
+* classis "bottum up" stream order 
 * General Flwdir object for 1D vector based (instead of raster based) flow directions
 * flwdir.from_dataframe methods to derive a Flwdir object from a (Geo)DataFrame based on the row index and a column with downstream row indices.
 * dem.fill_depressions and pyflwdir.from_dem methods to derive flow directions from DEMs based on Wang & Lui (2015) 
@@ -23,8 +24,13 @@ Improved
 
 Bugfix
 ------
+* pfafstetter subbasins reimplementation to fix mall functioning when jitted
 * stream_order method gave incorrect results
 * streams method gave incorrect segments with the min_sto argument
+
+Deprecated
+----------
+* main_tributaries method is deprecated due to mallfunctioning when jitted
 
 0.4.6
 *****
