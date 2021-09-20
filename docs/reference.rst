@@ -6,7 +6,7 @@ Reference
 FlwdirRaster
 ------------
 
-.. autoclass:: pyflwdir.FlwdirRaster()
+.. autoclass:: pyflwdir.FlwdirRaster
 
 
 Input/Output
@@ -14,11 +14,14 @@ Input/Output
 
 .. automethod:: pyflwdir.from_array()
 
+.. automethod:: pyflwdir.from_dem()
+
 .. automethod:: pyflwdir.FlwdirRaster.to_array()
 
-.. automethod:: pyflwdir.load()
+.. automethod:: pyflwdir.FlwdirRaster.load()
 
 .. automethod:: pyflwdir.FlwdirRaster.dump()
+
 
 
 Flow direction attributes
@@ -70,9 +73,9 @@ attribute is required at initializiation, while the others can be set later.
 
 .. automethod:: pyflwdir.FlwdirRaster.xy()
 
-.. automethod:: pyflwdir.FlwdirRaster.bounds()
+.. autoproperty:: pyflwdir.FlwdirRaster.bounds()
 
-.. automethod:: pyflwdir.FlwdirRaster.extent()
+.. autoproperty:: pyflwdir.FlwdirRaster.extent()
 
 
 Streams and flow paths
@@ -80,13 +83,13 @@ Streams and flow paths
 
 .. automethod:: pyflwdir.FlwdirRaster.stream_order()
 
-.. automethod:: pyflwdir.FlwdirRaster.streams()
-
 .. automethod:: pyflwdir.FlwdirRaster.path()
 
 .. automethod:: pyflwdir.FlwdirRaster.snap()
 
 .. automethod:: pyflwdir.FlwdirRaster.stream_distance()
+
+.. automethod:: pyflwdir.FlwdirRaster.streams()
 
 .. automethod:: pyflwdir.FlwdirRaster.geofeatures()
 
@@ -148,3 +151,6 @@ Elevation
 
 .. automethod:: pyflwdir.FlwdirRaster.floodplains()
 
+.. automethod:: pyflwdir.dem.fill_depressions()
+
+.. automethod:: pyflwdir.dem.slope()

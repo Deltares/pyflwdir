@@ -3,7 +3,7 @@
 
 import pytest
 import numpy as np
-from pyflwdir import dem, streams
+from pyflwdir import dem
 from test_core import test_data
 
 parsed, flwdir = test_data[0]
@@ -40,6 +40,19 @@ def test_from_dem():
     a_filled, _d8 = dem.fill_depressions(a)
     assert np.all(a_filled == a2)
     assert np.all(d8 == _d8)
+    # test single outlet
+    a2 = np.array(
+        [
+            [15, 15, 14, 15, 12, 15, 17.0],
+            [14, 13, 11, 12, 15, 17, 15.0],
+            [15, 15, 11, 11, 8, 15, 15.0],
+            [16, 17, 11, 16, 15, 7, 5.0],
+            [19, 18, 19, 18, 17, 15, 14.0],
+        ],
+        dtype=np.float32,
+    )
+    a_filled = dem.fill_depressions(a, outlets="min")[0]
+    assert np.all(a2 == a_filled)
     # test with 4-connectivity
     a2 = np.array(
         [

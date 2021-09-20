@@ -72,12 +72,6 @@ local_settings.py
 instance/
 .webassets-cache
 
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
 # PyBuilder
 target/
 
@@ -115,10 +109,15 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
+# notebooks
+notebooks/*.png
+
+# Sphinx documentation
+docs/_build/
 /site
 docs/*.png
 docs/*.ipynb
+docs/*.tif
 docs/ipynb_checkpoints
 
 # mypy
