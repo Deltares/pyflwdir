@@ -19,7 +19,7 @@ Featured methods
 ----------------
 
 .. image:: _static/pyflwdir.png
-  :width: 100%
+  :width: 600
 
 - flow directions from elevation data using a steepest gradient algorithm
 - strahler stream order
