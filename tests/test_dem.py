@@ -41,16 +41,7 @@ def test_from_dem():
     assert np.all(a_filled == a2)
     assert np.all(d8 == _d8)
     # test single outlet
-    a2 = np.array(
-        [
-            [15, 15, 14, 15, 12, 15, 17.0],
-            [14, 13, 11, 12, 15, 17, 15.0],
-            [15, 15, 11, 11, 8, 15, 15.0],
-            [16, 17, 11, 16, 15, 7, 5.0],
-            [19, 18, 19, 18, 17, 15, 14.0],
-        ],
-        dtype=np.float32,
-    )
+    a2[0, 5] = 12
     a_filled = dem.fill_depressions(a, outlets="min")[0]
     assert np.all(a2 == a_filled)
     # test with 4-connectivity
