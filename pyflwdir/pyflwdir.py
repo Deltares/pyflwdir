@@ -12,7 +12,6 @@ from pyflwdir import gis_utils as gis
 from pyflwdir import (
     basins,
     core,
-    core_conversion,
     core_d8,
     core_nextxy,
     core_ldd,
@@ -55,13 +54,14 @@ def from_dem(
     max_depth=-1.0,
     transform=gis.IDENTITY,
     latlon=False,
+    outlets="edge",
 ):
     """Flow direction raster derived from digital elevation data based on steepest gradient.
 
-    Outlets occur at the edge of the data or at the interface with nodata values.
-    A local depressions is filled based on its lowest pour point level if the pour point
-    depth is smaller than the maximum pour point depth `max_depth`, otherwise the lowest
-    elevation in the depression becomes a pit.
+    Outlets are assumed to only occur at the edge of valid elevation cells.
+    Depressions elsewhere are filled based on its lowest pour point elevation.
+    If the pour point depth is larger than the maximum pour point depth `max_depth` a pit
+    is set at the depression local minimum elevation.
 
     Based on: Wang, L., & Liu, H. (2006). https://doi.org/10.1080/13658810500433453
 
@@ -84,6 +84,9 @@ def from_dem(
         True if WGS84 coordinate reference system, by default False. If True it
         converts the cell areas from degree to metres, otherwise it assumes cell areas
         are in unit metres.
+    outlets: {'edge', 'min'}
+        Position for basin outlet(s) at the all valid elevation edge cell ('edge')
+        or only the minimum elevation edge cell ('min')
 
     Returns
     -------
@@ -91,7 +94,9 @@ def from_dem(
         Actionable flow direction object
     """
     # parse dem
-    d8 = dem.fill_depressions(data, nodata=nodata, max_depth=max_depth)[1]
+    d8 = dem.fill_depressions(
+        data, nodata=nodata, max_depth=max_depth, outlets=outlets
+    )[1]
     return from_array(
         d8, ftype="d8", check_ftype=False, transform=transform, latlon=latlon
     )

@@ -2,6 +2,7 @@
 """Methods to derive topo/hydrographical paramters from elevation data, in some cases 
  in combination with flow direction data."""
 
+from notebooks.utils import quickplot
 import numpy as np
 from numba import njit
 import math
@@ -15,14 +16,16 @@ __all__ = ["slope", "fill_depressions"]
 
 
 @njit
-def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0, connectivity=8):
+def fill_depressions(
+    elevtn, outlets="edge", nodata=-9999.0, max_depth=-1.0, connectivity=8
+):
     """Fill local depressions in elevation data and derived local
     D8 flow directions.
 
-    Outlets are assumed to only occure at the edge of the data
-    or at the interface with nodata values. Depressions elsewhere
-    are filled based on its lowest pour point elevation if its pour
-    point dpeth is smaller than the maximum pour point depth `max_depth`.
+    Outlets are assumed to only occur at the edge of valid elevation cells.
+    Depressions elsewhere are filled based on its lowest pour point elevation.
+    If the pour point depth is larger than the maximum pour point depth `max_depth` a pit
+    is set at the depression local minimum elevation.
 
     Based on: Wang, L., & Liu, H. (2006). https://doi.org/10.1080/13658810500433453
 
@@ -38,6 +41,9 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0, connectivity=8):
         large pour point depth causing all depressions to be filled.
     connectivity: {4, 8}
         Number of neighboring cells to consider.
+    outlets: {'edge', 'min'}
+        Position for basin outlet(s) at the all valid elevation edge cell ('edge')
+        or only the minimum elevation edge cell ('min')
 
     Returns
     -------
@@ -58,12 +64,17 @@ def fill_depressions(elevtn, nodata=-9999.0, max_depth=-1.0, connectivity=8):
         struct[0, 0], struct[-1, -1] = False, False
         struct[0, -1], struct[-1, 0] = False, False
 
-    # initiate queue with edge cells
+    # initiate queue
+    # 1) with edge cells
     queued = gis_utils.get_edge(~done, structure=struct)
+    # TODO: 3) from mask with (potential) outlet cells
     q = [(elevtn[0, 0], np.uint32(0), np.uint32(0)) for _ in range(0)]
     heapq.heapify(q)
     for r, c in zip(*np.where(queued)):
         heapq.heappush(q, (elevtn[r, c], np.uint32(r), np.uint32(c)))
+    # 2) global edge mimimum (single outlet)
+    if outlets == "min":
+        q = [heapq.heappop(q)]
 
     # loop over cells and neighbors with ascending cell elevation.
     drs, dcs = np.where(struct)

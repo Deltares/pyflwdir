@@ -429,7 +429,7 @@ class Flwdir(object):
         Each tributary is given a number one greater than that of the
         river or stream into which they discharge.
 
-        In the *strahler* "top down" stream order map, tivers of the first order are
+        In the *strahler* "top down" stream order map, rivers of the first order are
         the most upstream tributaries or head water cells. If two streams of the same
         order merge, the resulting stream has an order of one higher.
         If two rivers with different stream orders merge, the resulting stream is
