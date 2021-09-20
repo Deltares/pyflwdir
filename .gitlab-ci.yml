@@ -21,6 +21,7 @@ tests:
 pages:
   script:
   - cp notebooks/*.ipynb docs/
+  - cp notebooks/*.tif docs/
   - cd docs
   - make html
   - cd ..
