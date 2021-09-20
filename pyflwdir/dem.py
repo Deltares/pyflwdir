@@ -57,7 +57,7 @@ def fill_depressions(
     done = np.isnan(elevtn) if np.isnan(nodata) else elevtn == nodata
     d8 = np.where(done, np.uint8(247), np.uint8(0))
     if connectivity not in [4, 8]:
-        ValueError(f'"connectivity" should either be 4 or 8, not {connectivity}')
+        raise ValueError(f'"connectivity" should either be 4 or 8')
     # pfff.. numba does not allow creation of numpy bool arrays using normal methods
     struct = np.array([bool(1) for s in range(9)]).reshape((3, 3))
     if connectivity == 4:
@@ -75,6 +75,8 @@ def fill_depressions(
     # 2) global edge mimimum (single outlet)
     if outlets == "min":
         q = [heapq.heappop(q)]
+        queued[:, :] = False
+        queued[q[0][1], q[0][2]] = True
 
     # loop over cells and neighbors with ascending cell elevation.
     drs, dcs = np.where(struct)
