@@ -61,18 +61,18 @@ def test_xy():
 
 
 def test_rowcol():
-    aff = gis.IDENTITY
-    left, bottom, right, top = (0, 0, 100, 200)
+    aff = gis.IDENTITY  # N->S changed in version 0.5
+    left, bottom, right, top = (0, -200, 100, 0)
     assert gis.rowcol(aff, left, top) == (top, left)
     assert gis.rowcol(aff, right, top) == (top, right)
-    assert gis.rowcol(aff, right, bottom) == (bottom, right)
-    assert gis.rowcol(aff, left, bottom) == (bottom, left)
+    assert gis.rowcol(aff, right, bottom) == (-bottom, right)
+    assert gis.rowcol(aff, left, bottom) == (-bottom, left)
 
 
 def test_idxs_to_coords():
     shape = (10, 8)
     idxs = np.arange(shape[0] * shape[1]).reshape(shape)
-    transform = gis.IDENTITY
+    transform = gis.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     xs, ys = gis.idxs_to_coords(idxs, transform, shape)
     assert np.all(ys == (np.arange(shape[0]) + 0.5)[:, None])
     assert np.all(xs == np.arange(shape[1]) + 0.5)
@@ -83,7 +83,7 @@ def test_idxs_to_coords():
 def test_coords_to_idxs():
     shape = (10, 8)
     idxs0 = np.arange(shape[0] * shape[1])
-    transform = gis.IDENTITY
+    transform = gis.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     xs, ys = np.meshgrid(np.arange(shape[1]) + 0.5, np.arange(shape[0]) + 0.5)
     idxs = gis.coords_to_idxs(xs, ys, transform, shape)
     assert np.all(idxs.ravel() == idxs0)
@@ -93,7 +93,7 @@ def test_coords_to_idxs():
 
 def test_affine_to_coords():
     shape = (10, 8)
-    transform = gis.IDENTITY
+    transform = gis.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     xs, ys = gis.affine_to_coords(transform, shape)
     assert np.all(ys == np.arange(shape[0]) + 0.5)
     assert np.all(xs == np.arange(shape[1]) + 0.5)
@@ -141,3 +141,16 @@ def test_distance():
     assert gis.distance(0, 4, 3, True) == gis.distance(4, 0, 3, True)
     assert gis.distance(0, 1, 3, False) == gis.distance(7, 8, 3, False)
     assert gis.distance(0, 1, 3, True) != gis.distance(7, 8, 3, True)
+
+
+def test_edge():
+    a = np.ones((5, 5), dtype=bool)
+    b = a.copy()
+    b[1:-1, 1:-1] = False
+    assert np.all(gis.get_edge(a) == b)
+    a[np.diag_indices(5)] = False
+    assert np.all(gis.get_edge(a) == a)
+    b = a.copy()
+    b[1, 3], b[3, 1] = False, False
+    d4 = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+    assert np.all(gis.get_edge(a, structure=d4) == b)

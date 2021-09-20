@@ -2,21 +2,112 @@
 """Methods to derive topo/hydrographical paramters from elevation data, in some cases 
  in combination with flow direction data."""
 
+from notebooks.utils import quickplot
 import numpy as np
 from numba import njit
 import math
+import heapq
 
-from pyflwdir import gis_utils, core
+from pyflwdir import gis_utils, core, core_d8
 
 _mv = core._mv
 
-__all__ = ["slope"]
+__all__ = ["slope", "fill_depressions"]
 
 
-# TODO
-def from_dem():
-    """derive flow direction from elevation data"""
-    raise NotImplementedError()
+@njit
+def fill_depressions(
+    elevtn, outlets="edge", nodata=-9999.0, max_depth=-1.0, connectivity=8
+):
+    """Fill local depressions in elevation data and derived local
+    D8 flow directions.
+
+    Outlets are assumed to only occur at the edge of valid elevation cells.
+    Depressions elsewhere are filled based on its lowest pour point elevation.
+    If the pour point depth is larger than the maximum pour point depth `max_depth` a pit
+    is set at the depression local minimum elevation.
+
+    Based on: Wang, L., & Liu, H. (2006). https://doi.org/10.1080/13658810500433453
+
+    Parameters
+    ----------
+    elevtn: 2D array
+        elevation raster
+    nodata: float, optional
+        nodata value, by default -9999.0
+    max_depth: float, optional
+        Maximum pour point depth. Depressions with a larger pour point
+        depth are set as pit. A negative value (default) equals an infitely
+        large pour point depth causing all depressions to be filled.
+    connectivity: {4, 8}
+        Number of neighboring cells to consider.
+    outlets: {'edge', 'min'}
+        Position for basin outlet(s) at the all valid elevation edge cell ('edge')
+        or only the minimum elevation edge cell ('min')
+
+    Returns
+    -------
+    elevtn_out: 2D array
+        Depression filled elevation
+    d8: 2D array of uint8
+        D8 flow directions
+    """
+    nrow, ncol = elevtn.shape
+    delv = np.zeros_like(elevtn)
+    done = np.isnan(elevtn) if np.isnan(nodata) else elevtn == nodata
+    d8 = np.where(done, np.uint8(247), np.uint8(0))
+    if connectivity not in [4, 8]:
+        ValueError(f'"connectivity" should either be 4 or 8, not {connectivity}')
+    # pfff.. numba does not allow creation of numpy bool arrays using normal methods
+    struct = np.array([bool(1) for s in range(9)]).reshape((3, 3))
+    if connectivity == 4:
+        struct[0, 0], struct[-1, -1] = False, False
+        struct[0, -1], struct[-1, 0] = False, False
+
+    # initiate queue
+    # 1) with edge cells
+    queued = gis_utils.get_edge(~done, structure=struct)
+    # TODO: 3) from mask with (potential) outlet cells
+    q = [(elevtn[0, 0], np.uint32(0), np.uint32(0)) for _ in range(0)]
+    heapq.heapify(q)
+    for r, c in zip(*np.where(queued)):
+        heapq.heappush(q, (elevtn[r, c], np.uint32(r), np.uint32(c)))
+    # 2) global edge mimimum (single outlet)
+    if outlets == "min":
+        q = [heapq.heappop(q)]
+
+    # loop over cells and neighbors with ascending cell elevation.
+    drs, dcs = np.where(struct)
+    drs, dcs = drs - 1, dcs - 1
+    while len(q) > 0:
+        z0, r0, c0 = heapq.heappop(q)
+        for dr, dc in zip(drs, dcs):
+            r = r0 + dr
+            c = c0 + dc
+            if r < 0 or r == nrow or c < 0 or c == ncol or done[r, c]:
+                continue
+            z1 = elevtn[r, c]
+            dz = z0 - z1  # local depression if dz > 0
+            if max_depth >= 0:  # if positive max_depth: don't fill when dz > max_depth
+                if dz >= max_depth:
+                    heapq.heappush(q, (z1, np.uint32(r), np.uint32(c)))
+                    queued[r, c] = True
+                    for dr, dc in zip(drs, dcs):  # (re)visit neighbors
+                        done[r + dr, c + dc] = False
+                    continue
+                elif delv[r, c] > 0:  # reset cell if previously filled & revisited
+                    queued[r, c] = False
+                    delv[r, c] = 0
+            if dz > 0:  # check if local depression (dz>0)
+                delv[r, c] = dz
+                z1 += dz
+            if ~queued[r, c]:  # add to queue
+                heapq.heappush(q, (z1, np.uint32(r), np.uint32(c)))
+                queued[r, c] = True
+            done[r, c] = True
+            d8[r, c] = core_d8._us[dr + 1, dc + 1]
+            # zds[r, c] = z0
+    return elevtn + delv, d8
 
 
 @njit
@@ -258,3 +349,56 @@ def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
                     drainz[idx0] = z0
                     drainh[idx0] = h0
     return fldpln
+
+
+@njit
+def _local_d4(idx0, idx_ds, ncol):
+    """Return indices of d4 neighbors in diagonal d8 direction, e.g.: indices of N, W neigbors if flowdir is NW."""
+    idxs_d4 = [
+        idx0 - ncol,
+        idx0 - 1,
+        idx0 + ncol,
+        idx0 + 1,
+        idx0 - ncol,
+    ]  # n, w, s, e, n
+    if idx_ds != idx0:
+        idxs_diag = [
+            idx0 - ncol - 1,
+            idx0 + ncol - 1,
+            idx0 + ncol + 1,
+            idx0 - ncol + 1,
+        ]  # nw, sw, se, ne
+        di = idxs_diag.index(idx_ds)
+        return np.asarray(idxs_d4[di : di + 2])
+    else:
+        return np.asarray(idxs_d4[1:])
+
+
+@njit
+def dig_4connectivity(idxs_ds, seq, elv_flat, shape, nodata=-9999):
+    """Make sure that for every diagonal D8 downstream flow direction
+    there is an adjacent D4 cell with same or lower elevation"""
+    elv_out = elv_flat.copy()
+    nrow, ncol = shape
+    for idx0 in seq[::-1]:  # up- to downstream
+        idx_ds = idxs_ds[idx0]
+        dd = abs(idx0 - idx_ds)
+        if dd > 1 and dd != ncol:  # diagonal
+            idxs_d4 = _local_d4(idx0, idx_ds, ncol)  # indices of adjacent d4 cells
+            z0 = elv_out[idx0]  # elevtn of current cell
+            zs = elv_out[idxs_d4]
+            valid = zs != nodata
+            # find adjacent with smallest dz and lower elevation to <= z0
+            idx_d4_min = idxs_d4[valid][np.argmin(zs[valid] - z0)]
+            elv_out[idx_d4_min] = min(elv_out[idx_d4_min], z0)
+        if idxs_ds[idx_ds] == idx_ds:  # next pit because we need to know upstream cell
+            r = idx_ds // ncol
+            c = idx_ds % ncol
+            if r == 0 or r == nrow - 1 or c == 0 or c == ncol - 1:  # edge
+                continue
+            idxs_d4 = _local_d4(idx_ds, idx_ds, ncol)
+            if np.any(elv_out[idxs_d4] == nodata):  # D4 link with nodata
+                continue
+            idxs_d4 = np.asarray([idx for idx in idxs_d4 if idx != idx0])
+            elv_out[idxs_d4] = np.minimum(elv_out[idx_ds], elv_out[idxs_d4])
+    return elv_out

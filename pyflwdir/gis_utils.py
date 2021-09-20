@@ -1,13 +1,15 @@
 # -- coding: utf-8 --
 """"""
 
-from numba import njit
+from numba import njit, stencil
 import numpy as np
 import math
-from affine import identity as IDENTITY
 from affine import Affine
 
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
+AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
+# changed to N->S orientation in v0.5 TODO check if used in hydromt?
+IDENTITY = Affine(1.0, 0.0, 0.0, 0.0, -1.0, 0.0)
 
 __all__ = [
     "transform_from_origin",
@@ -20,7 +22,39 @@ __all__ = [
     "reggrid_area",
     "reggrid_dy",
     "reggrid_dx",
+    "get_edge",
 ]
+
+
+@njit
+def get_edge(a, structure=np.ones((3, 3), dtype=bool)):
+    """Get edge of valid cells.
+
+    Parameters
+    ----------
+    a: 2D array of bool
+        Boolean array valid cells.
+    structure: 2D array with shape (3,3) of bool
+        Structuring element used to define which cells are neighbors.
+
+    Returns
+    -------
+    edge: 2D array of bool
+        Boolean array edge cells.
+    """
+    assert structure.shape == (3, 3)
+    s = np.where(structure.ravel() != 0)[0]
+    edge = a.copy()
+    nrow, ncol = a.shape
+    for r in range(0, nrow):
+        for c in range(0, ncol):
+            if ~a[r, c] or r == 0 or r == nrow - 1 or c == 0 or c == ncol - 1:
+                continue
+            a0 = a[slice(r - 1, r + 2), slice(c - 1, c + 2)].ravel()
+            if np.all(a0[s]):
+                edge[r, c] = False
+    return edge
+
 
 ## TRANSFORM
 # Adapted from https://github.com/mapbox/rasterio/blob/master/rasterio/transform.py
@@ -259,8 +293,25 @@ def reggrid_area(lats, lons):
     lats & lons [m2]."""
     xres = np.abs(np.mean(np.diff(lons)))
     yres = np.abs(np.mean(np.diff(lats)))
-    area = np.ones((lats.size, lons.size), dtype=lats.dtype)
+    area = np.ones((lats.size, lons.size), dtype=np.float32)
     return cellarea(lats, xres, yres)[:, None] * area
+
+
+def area_grid(transform, shape, latlon=False, unit="m2"):
+    """Returns a regular grid with cell areas"""
+    unit = str(unit).lower()
+    if unit not in AREA_FACTORS:
+        fstr = '", "'.join(AREA_FACTORS.keys())
+        raise ValueError(f'Unknown unit: {unit}, select from "{fstr}".')
+    if unit == "cell":
+        area = np.ones(shape, dtype=np.int32)
+    elif latlon:
+        lon, lat = affine_to_coords(transform, shape)
+        area = reggrid_area(lat, lon) / AREA_FACTORS[unit]
+    elif not latlon:
+        area0 = abs(transform[0] * transform[4]) / AREA_FACTORS[unit]
+        area = np.full(shape, area0, dtype=np.float32)
+    return area
 
 
 @njit
@@ -356,6 +407,8 @@ def features(flowpaths, xs, ys, **kwargs):
         linear indices of flowpaths
     xs, ys : 1D-array of float
         x, y coordinates
+    idxs_ds: list of intp
+        linear index of first cell on next downstream flow path
     kwargs : extra sample maps key-word arguments
         optional maps to sample from
         e.g.: strord=flw.stream_order()
@@ -371,10 +424,12 @@ def features(flowpaths, xs, ys, **kwargs):
                 f'Kwargs map "{key}" should be ndarrays of same size as coordinates'
             )
     feats = list()
-    for idxs in flowpaths:
-        if len(idxs) < 2:
+    for j, idxs in enumerate(flowpaths):
+        n = len(idxs)
+        if n < 2:
             continue
         idx0 = idxs[0]
+        pit = idxs[-1] == idxs[-2]
         props = {key: kwargs[key].flat[idx0] for key in kwargs}
         feats.append(
             {
@@ -383,7 +438,7 @@ def features(flowpaths, xs, ys, **kwargs):
                     "type": "LineString",
                     "coordinates": [(xs[i], ys[i]) for i in idxs],
                 },
-                "properties": {"idxs": idx0, "pit": idxs[-1] == idxs[-2], **props},
+                "properties": {"idx": idx0, "idx_ds": idxs[-1], "pit": pit, **props},
             }
         )
     return feats

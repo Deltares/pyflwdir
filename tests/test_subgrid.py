@@ -28,13 +28,15 @@ def test_subgridch(method, cellsize):
         idxs_out, _ = subgrid.outlets(
             idxs_ds, upa, cellsize, shape, method=method, mv=mv
         )
-    umap, uare = subgrid.ucat_area(idxs_out, idxs_ds, seq, ncol, dtype=np.int32, mv=mv)
-    # upstream
-    rivlen = subgrid.channel_length(idxs_out, idxs_us_main, ncol, latlon=True, mv=mv)
-    rivslp = subgrid.channel_slope(
-        idxs_out, idxs_ds, idxs_us_main, elv, ncol, length=1, latlon=True, mv=mv
+    umap, uare = subgrid.segment_area(
+        idxs_out, idxs_ds, seq, area=np.ones(idxs_ds.size, dtype=np.int32), mv=mv
     )
-    rivwth = subgrid.channel_average(
+    # upstream
+    rivlen = subgrid.segment_length(idxs_out, idxs_us_main, distnc=rank.ravel(), mv=mv)
+    rivslp = subgrid.fixed_length_slope(
+        idxs_out, idxs_ds, idxs_us_main, elv, rank.ravel(), mv=mv
+    )
+    rivwth = subgrid.segment_average(
         idxs_out, idxs_us_main, np.ones(elv.size), np.ones(elv.size), mv=mv
     )
     if cellsize == 1:
@@ -48,35 +50,13 @@ def test_subgridch(method, cellsize):
     assert umap.max() - 1 == np.where(idxs_out != mv)[0][-1]
     assert np.all(uare[idxs_out != mv] >= 1)
     # downstream
-    rivlen1 = subgrid.channel_length(idxs_out, idxs_ds, ncol, latlon=True, mv=mv)
+    rivlen1 = subgrid.segment_length(idxs_out, idxs_ds, distnc=rank.ravel(), mv=mv)
     pits = idxs_ds[idxs_out[idxs_out != mv]] == idxs_out[idxs_out != mv]
     assert np.all(rivlen1[idxs_out != mv][pits] == 0)
     assert np.all(rivlen1[idxs_out != mv] >= 0)
     # mask
-    rivlen2 = subgrid.channel_length(
-        idxs_out, idxs_us_main, ncol, mask=None, latlon=True, mv=mv
-    )
-    rivlen3 = subgrid.channel_length(
-        idxs_out, idxs_us_main, ncol, mask=upa >= 5, latlon=True, mv=mv
+    rivlen2 = subgrid.segment_length(idxs_out, idxs_us_main, distnc=rank.ravel(), mv=mv)
+    rivlen3 = subgrid.segment_length(
+        idxs_out, idxs_us_main, distnc=rank.ravel(), mask=upa >= 5, mv=mv
     )
     assert np.all(rivlen2 >= rivlen3)
-
-    # TODO remove in v0.5
-    wth = np.ones(rank.size)
-    rivlen, rivslp, rivwth = subgrid.channel(
-        idxs_out,
-        idxs_ds,
-        idxs_us_main,
-        elv,
-        wth,
-        upa,
-        ncol,
-        len_min=1e6,
-        latlon=True,
-        mv=mv,
-    )
-    assert np.all(rivslp[idxs_out != mv] >= 0)
-    assert np.all(rivlen[idxs_out != mv] >= 0)
-    assert umap.max() - 1 == np.where(idxs_out != mv)[0][-1]
-    assert np.all(uare[idxs_out != mv] >= 1)
-    assert np.all(rivwth[idxs_out != mv] == 1)

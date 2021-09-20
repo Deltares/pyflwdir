@@ -3,22 +3,19 @@
 
 import numpy as np
 from affine import Affine
-import pprint
 import pickle
 import logging
 import warnings
 
-import pyflwdir
+from pyflwdir.flwdir import Flwdir
 from pyflwdir import gis_utils as gis
 from pyflwdir import (
-    arithmetics,
     basins,
     core,
     core_d8,
     core_nextxy,
     core_ldd,
     dem,
-    gis_utils,
     regions,
     subgrid,
     upscale,
@@ -31,12 +28,11 @@ FTYPES = {
     core_ldd._ftype: core_ldd,
     core_nextxy._ftype: core_nextxy,
 }
-AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
 
 # export
-__all__ = ["FlwdirRaster", "from_array", "load"]
+__all__ = ["FlwdirRaster", "from_array", "from_dem"]
 
-# logging
+# TODO logging
 logger = logging.getLogger(__name__)
 
 
@@ -50,6 +46,60 @@ def _infer_ftype(flwdir):
     if ftype is None:
         raise ValueError("The flow direction type could not be inferred.")
     return ftype
+
+
+def from_dem(
+    data,
+    nodata=-9999.0,
+    max_depth=-1.0,
+    transform=gis.IDENTITY,
+    latlon=False,
+    outlets="edge",
+):
+    """Flow direction raster derived from digital elevation data based on steepest gradient.
+
+    Outlets are assumed to only occur at the edge of valid elevation cells.
+    Depressions elsewhere are filled based on its lowest pour point elevation.
+    If the pour point depth is larger than the maximum pour point depth `max_depth` a pit
+    is set at the depression local minimum elevation.
+
+    Based on: Wang, L., & Liu, H. (2006). https://doi.org/10.1080/13658810500433453
+
+    NOTE: to retrieve the depression filled dem, use the :py:func:`pyflwdir.dem.fill_depressions` method.
+
+    Parameters
+    ----------
+    data : 2D array
+        digital elevation data
+    nodata : float, optional
+        Missing data value, by default -9999.0
+    max_depth: float, optional
+        Maximum pour point depth. Depressions with a larger pour point
+        depth are set as pit. A negative value (default) equals an infitely
+        large pour point depth causing all depressions to be filled.
+    transform : affine transform
+        Two dimensional affine transform for 2D linear mapping, by default using the
+        identity transform.
+    latlon : bool, optional
+        True if WGS84 coordinate reference system, by default False. If True it
+        converts the cell areas from degree to metres, otherwise it assumes cell areas
+        are in unit metres.
+    outlets: {'edge', 'min'}
+        Position for basin outlet(s) at the all valid elevation edge cell ('edge')
+        or only the minimum elevation edge cell ('min')
+
+    Returns
+    -------
+    FlwdirRaster
+        Actionable flow direction object
+    """
+    # parse dem
+    d8 = dem.fill_depressions(
+        data, nodata=nodata, max_depth=max_depth, outlets=outlets
+    )[1]
+    return from_array(
+        d8, ftype="d8", check_ftype=False, transform=transform, latlon=latlon
+    )
 
 
 def from_array(
@@ -131,20 +181,7 @@ def from_array(
     )
 
 
-def load(fn):
-    """Load serialized FlwdirRaster object from file
-
-    Parameters
-    ----------
-    fn : str
-        path
-    """
-    with open(fn, "rb") as handle:
-        kwargs = pickle.load(handle)
-    return FlwdirRaster(**kwargs)
-
-
-class FlwdirRaster(object):
+class FlwdirRaster(Flwdir):
     """Flow direction raster array parsed to general actionable format."""
 
     def __init__(
@@ -155,10 +192,10 @@ class FlwdirRaster(object):
         idxs_pit=None,
         idxs_outlet=None,
         idxs_seq=None,
-        ncells=None,
+        nnodes=None,
         transform=gis.IDENTITY,
         latlon=False,
-        cache=False,
+        cache=True,
     ):
         """Flow direction raster array
 
@@ -175,7 +212,7 @@ class FlwdirRaster(object):
             outlets exclude pits of inclomplete basins at the domain boundary
         idxs_seq : 2D array of int, optional
             linear indices of valid cells ordered from down- to upstream
-        ncells : integer
+        nnodes : integer
             number of valid cells
         transform : affine transform
             Two dimensional affine transform for 2D linear mapping, by default using
@@ -186,6 +223,16 @@ class FlwdirRaster(object):
             areas are in unit metres.
 
         """
+        # flow directions
+        super().__init__(
+            idxs_ds=idxs_ds,
+            idxs_pit=idxs_pit,
+            idxs_outlet=idxs_outlet,
+            idxs_seq=idxs_seq,
+            nnodes=nnodes,
+            cache=cache,
+        )
+
         # flow direction type
         if not ftype in FTYPES.keys():
             ftypes_str = '" ,"'.join(list(FTYPES.keys()))
@@ -194,49 +241,19 @@ class FlwdirRaster(object):
         self.ftype = ftype
         self._core = FTYPES[ftype]
 
-        # dimension and spatial properties
-        self.size = idxs_ds.size
-        if self.size <= 1:
-            raise ValueError(f"Invalid FlwdirRaster: size {self.size}")
+        # raster dimensions and spatial attributes
         if np.multiply(*shape) != self.size:
             msg = f"Invalid FlwdirRaster: shape {shape} does not match size {self.size}"
             raise ValueError(msg)
         self.shape = shape
         self.set_transform(transform, latlon)
 
-        # data
-        self._idxs_ds = idxs_ds
-        self._pit = idxs_pit
-        self.idxs_outlet = idxs_outlet
-        self._seq = idxs_seq
-        self._ncells = ncells
-        # either -1 for int or 4294967295 for uint32
-        self._mv = core._mv
-        if idxs_ds.dtype == np.uint32:
-            self._mv = np.uint32(self._mv)
-
-        # set placeholders only used if cache if True
-        self.cache = cache
-        self._cached = dict()
-
-        # check validity
-        if self.idxs_pit.size == 0:
-            raise ValueError("Invalid FlwdirRaster: no pits found")
-
-    def __str__(self):
-        return pprint.pformat(self._dict)
-
-    def __getitem__(self, idx):
-        return self.idxs_ds[idx]
-
-    ### PROPERTIES ###
-
     @property
     def _dict(self):
         return {
             "ftype": self.ftype,
             "shape": self.shape,
-            "ncells": self.ncells,
+            "nnodes": self.nnodes,
             "transform": self.transform,
             "latlon": self.latlon,
             "idxs_ds": self.idxs_ds,
@@ -245,19 +262,8 @@ class FlwdirRaster(object):
         }
 
     @property
-    def idxs_ds(self):
-        """Linear indices of downstream cell."""
-        return self._idxs_ds
-
-    @property
-    def idxs_us_main(self):
-        """Linear indices of main upstream cell, i.e. the upstream cell with the
-        largest contributing area."""
-        if "idxs_us_main" in self._cached:
-            idxs_us_main = self._cached["idxs_us_main"]
-        else:
-            idxs_us_main = self.main_upstream()
-        return idxs_us_main
+    def ncells(self):
+        return self.nnodes
 
     @property
     def idxs_seq(self):
@@ -266,64 +272,7 @@ class FlwdirRaster(object):
             self.order_cells(method="walk" if self.ftype != "nextxy" else "sort")
         return self._seq
 
-    @property
-    def idxs_pit(self):
-        """Linear indices of pits/outlets."""
-        if self._pit is None:
-            self._pit = core.pit_indices(self.idxs_ds)
-        return self._pit
-
-    @property
-    def ncells(self):
-        """Number of valid cells."""
-        if self._ncells is None:
-            self._ncells = int(np.sum(self.rank >= 0))
-        return self._ncells
-
-    @property
-    def rank(self):
-        """Cell Rank, i.e. distance to the outlet in no. of cells."""
-        if "rank" in self._cached:
-            _rank = self._cached["rank"]
-        else:
-            _rank = core.rank(self.idxs_ds, mv=self._mv)[0].reshape(self.shape)
-            if self.cache:
-                self._cached.update(rank=_rank)
-        return _rank
-
-    @property
-    def isvalid(self):
-        """True if the flow direction map is valid."""
-        self._cached.pop("rank", None)
-        return np.all(self.rank != -1)
-
-    @property
-    def mask(self):
-        """Boolean array of valid cells in flow direction raster."""
-        return self.idxs_ds != self._mv
-
     ### SET/MODIFY PROPERTIES ###
-
-    def order_cells(self, method="sort"):
-        """Order cells from down- to upstream."""
-        if method == "sort":
-            # slow for large arrays
-            rnk, n = core.rank(self.idxs_ds, mv=self._mv)
-            self._seq = np.argsort(rnk)[-n:].astype(self.idxs_ds.dtype)
-        elif method == "walk":
-            # faster for large arrays, but also takes lots of memory
-            self._seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self.shape, self._mv)
-        else:
-            raise ValueError(f'Invalid method {method}, select from ["walk", "sort"]')
-        self._ncells = self._seq.size
-
-    def main_upstream(self, uparea=None):
-        idxs_us_main = core.main_upstream(
-            idxs_ds=self.idxs_ds, uparea=self._check_data(uparea, "uparea"), mv=self._mv
-        )
-        if self.cache:
-            self._cached.update(idxs_us_main=idxs_us_main)
-        return idxs_us_main
 
     def add_pits(self, idxs=None, xy=None, streams=None):
         """Add pits the flow direction raster.
@@ -340,13 +289,7 @@ class FlwdirRaster(object):
             in combination with idx or xy, by default None.
         """
         idxs1 = self._check_idxs_xy(idxs, xy, streams)
-        # add pits
-        self.idxs_ds[idxs1] = idxs1
-        self._pit = np.unique(np.concatenate([self.idxs_pit, idxs1]))
-        # reset order, ncells and upstream cell indices
-        self._seq = None
-        self._ncells = None
-        self._idxs_us_main = None
+        super().add_pits(idxs=idxs1)
 
     def set_transform(self, transform, latlon=False):
         """Set transform affine.
@@ -369,19 +312,7 @@ class FlwdirRaster(object):
         self.transform = transform
         self.latlon = latlon
 
-    def repair_loops(self):
-        """Repair loops by setting a pit at every cell which does not drain to a pit."""
-        repair_idx = core.loop_indices(self.idxs_ds, mv=self._mv)
-        if repair_idx.size > 0:
-            # set pits for all loop indices !
-            self.add_pits(repair_idx)
-
-    ### WRITE ###
-
-    def dump(self, fn):
-        """Serialize object to file using pickle library."""
-        with open(fn, "wb") as handle:
-            pickle.dump(self._dict, handle, protocol=-1)
+    ### WRITE / EXPORT ###
 
     def to_array(self, ftype=None):
         """Return 2D flow direction raster.
@@ -403,6 +334,19 @@ class FlwdirRaster(object):
         else:
             raise ValueError(f'ftype "{ftype}" unknown')
         return flwdir
+
+    @staticmethod
+    def load(fn):
+        """Load serialized FlwdirRaster object from file
+
+        Parameters
+        ----------
+        fn : str
+            path
+        """
+        with open(fn, "rb") as handle:
+            kwargs = pickle.load(handle)
+        return FlwdirRaster(**kwargs)
 
     ### spatial methods ###
 
@@ -448,6 +392,28 @@ class FlwdirRaster(object):
         """Returns the raster extent in cartopy format [xmin, xmax, ymin, ymax]."""
         xmin, ymin, xmax, ymax = self.bounds
         return np.array([xmin, xmax, ymin, ymax], dtype=np.float64)
+
+    @property
+    def distnc(self):
+        """Distance to outlet [m]"""
+        if "distnc" in self._cached:
+            distnc = self._cached["distnc"]
+        else:
+            distnc = self.stream_distance(unit="m")
+            if self.cache:
+                self._cached.update(distnc=distnc)
+        return distnc
+
+    @property
+    def area(self):
+        """Cell area [m]"""
+        if "area" in self._cached:
+            area = self._cached["area"]
+        else:
+            area = gis.area_grid(self.transform, self.shape, self.latlon, unit="m2")
+            if self.cache:
+                self._cached.update(area=area)
+        return area
 
     ### LOCAL METHODS ###
     def path(
@@ -569,86 +535,6 @@ class FlwdirRaster(object):
         )
         return idxs1, dist
 
-    ### GLOBAL ARITHMETICS ###
-
-    def downstream(self, data):
-        """Returns next downstream value.
-
-        Parameters
-        ----------
-        data : 2D array
-            values
-
-        Returns
-        -------
-        2D array
-            downstream data
-        """
-        dflat = self._check_data(data, "data")
-        data_out = dflat.copy()
-        data_out[self.mask] = dflat[self.idxs_ds[self.mask]]
-        return data_out.reshape(data.shape)
-
-    def upstream_sum(self, data, mv=-9999):
-        """Returns sum of next upstream values.
-
-        Parameters
-        ----------
-        data : 2D array
-            values
-        mv : int or float
-            missing value
-
-        Returns
-        -------
-        2D array
-            sum of upstream data
-        """
-        data_out = arithmetics.upstream_sum(
-            idxs_ds=self.idxs_ds,
-            data=self._check_data(data, "data"),
-            nodata=mv,
-            mv=self._mv,
-        )
-        return data_out.reshape(data.shape)
-
-    def moving_average(self, data, n, weights=None, nodata=-9999.0):
-        """Take the moving weighted average over the flow direction network
-
-        Parameters
-        ----------
-        data : 2D array
-            values
-        n : int
-            number of up/downstream neighbors to include
-        weights : 2D array, optional
-            weights, by default equal weights are assumed
-        nodata : float, optional
-            Nodata values which is ignored when calculating the average, by default -9999.0
-
-        Returns
-        -------
-        2D array
-            averaged data
-        """
-        dflat = np.atleast_1d(data).ravel()
-        if dflat.size != self.size:
-            raise ValueError("Data size does not match with FlwdirRaster size.")
-        if weights is None:
-            weights = np.ones(self.size, dtype=np.float32)
-        elif np.atleast_1d(weights).size != self.size:
-            raise ValueError("Weights size does not match with FlwdirRaster size.")
-        data_out = arithmetics.moving_average(
-            data=dflat,
-            weights=np.atleast_1d(weights).ravel(),
-            n=n,
-            idxs_ds=self.idxs_ds,
-            idxs_us_main=self.idxs_us_main,
-            nodata=nodata,
-            mv=self._mv,
-        )
-        return data_out.reshape(data.shape)
-
     ### BASINS ###
 
     def basins(self, idxs=None, xy=None, ids=None, **kwargs):
@@ -697,7 +583,7 @@ class FlwdirRaster(object):
         strord : 1D-array of uint8
             stream order
         mask : 2D array of bool
-            Maks of valid cells.
+            Mask of valid cells.
         min_sto : int, optional
             minimum stream order of subbasins, by default the stream order is set to
             two under the global maxmium stream order.
@@ -733,12 +619,16 @@ class FlwdirRaster(object):
         2D array of uint32
             subbasin map with pfafstetter coding
         """
+        uparea = self._check_data(uparea, "uparea")
+        if upa_min is not None:
+            mask = uparea >= upa_min
         pfaf = basins.subbasins_pfafstetter(
             idxs_pit=self.idxs_pit,
             idxs_ds=self.idxs_ds,
+            idxs_us_main=self.idxs_us_main,
             seq=self.idxs_seq,
             uparea=self._check_data(uparea, "uparea"),
-            upa_min=upa_min,
+            mask=mask,
             depth=depth,
             mv=self._mv,
         )
@@ -816,19 +706,20 @@ class FlwdirRaster(object):
             upstream area map [m2]
         """
         unit = str(unit).lower()
-        if unit not in AREA_FACTORS:
-            fstr = '", "'.join(AREA_FACTORS.keys())
+        if unit not in gis.AREA_FACTORS:
+            fstr = '", "'.join(gis.AREA_FACTORS.keys())
             raise ValueError(f'Unknown unit: {unit}, select from "{fstr}".')
-        uparea = streams.upstream_area(
+        if unit == "cell":
+            area = np.ones(self.size, dtype=np.int32)
+        else:
+            area = self.area.ravel() / gis.AREA_FACTORS[unit]
+        uparea = streams.accuflux(
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
-            ncol=self.shape[1],
-            latlon=False if unit == "cell" else self.latlon,
-            transform=gis.IDENTITY if unit == "cell" else self.transform,
-            area_factor=AREA_FACTORS[unit],
-            nodata=np.int32(-9999) if unit == "cell" else np.float64(-9999),
-            dtype=np.int32 if unit == "cell" else np.float64,
+            data=area,
+            nodata=-9999,
         )
+        uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)
 
     def accuflux(self, data, nodata=-9999, direction="up"):
@@ -903,33 +794,6 @@ class FlwdirRaster(object):
             self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
         )
 
-    def stream_order(self):
-        """Returns the Strahler Order map [1]_.
-
-        The smallest streams, which are the cells with no upstream cells, get
-        order 1. Where two channels of order 1 join, a channel of order 2
-        results downstream. In general, where two channels of order i join,
-        a channel of order i+1 results.
-
-        .. [1] Strahler, A.N., 1964 "Quantitative geomorphology of drainage
-          basins and channel networks, section 4-II". In: Handbook of Applied
-          Hydrology (V.T. Chow, et al. (1988)), McGraw-Hill, New York USA
-
-        Returns
-        -------
-        2D array of int
-            strahler order map
-        """
-        if "strord" in self._cached:
-            strord = self._cached["strord"]
-        else:
-            strord = streams.stream_order(self.idxs_ds, self.idxs_seq).reshape(
-                self.shape
-            )
-            if self.cache:
-                self._cached.update(strord=strord)
-        return strord
-
     def stream_distance(self, mask=None, unit="cell"):
         """Returns distance to outlet or next downstream True cell in mask
 
@@ -966,7 +830,7 @@ class FlwdirRaster(object):
         kind : {streams, flwdir}
             Kind of LineString features: either streams of local flow directions.
         mask : 2D array of bool
-            Maks of valid cells.
+            Mask of valid cells.
         xs, ys : 2D array of float
             Raster with cell x, y coordinates, by default None and inferred from cell
             center.
@@ -985,25 +849,45 @@ class FlwdirRaster(object):
         )
         return self.geofeatures(idxs, xs=xs, ys=ys, **kwargs)
 
-    def streams(self, strord=None, min_sto=1, mask=None, xs=None, ys=None, **kwargs):
-        """Returns each stream segment as a linestring geo-features.
-        A stream segment is defined by flow path between two confluences with minimal
-        stream order `min_sto`.
+    def streams(
+        self,
+        mask=None,
+        min_sto=1,
+        xs=None,
+        ys=None,
+        idxs_out=None,
+        max_len=0,
+        **kwargs,
+    ):
+        """Returns a list of stream segment as linestring geo-features.
+
+        A stream segment is defined by flow path between two confluences
+        or if `idxs_out` is given, two outlet cells by idxs_out. The stream cells
+        can be set using a boolean `mask` or a minimum stream order `min_sto`.
+        Note that if a mask is given the minimum stream order is ignored.
+
+        Additional key-word arguments are maps from which a value is sampled
+        at the most downstram cell of a stream segment.
 
         Parameters
         ----------
         kind : {streams, flwdir}
             Kind of LineString features: either streams of local flow directions.
-        strord : 2D array of int, optional
-            Stream order raster
+        mask : 2D array of bool
+            Mask of valid cells.
         min_sto : int
             Minimum Strahler Order recognized as river, by the default 1.
-            Only in combination with kind = 'streams'
-        mask : 2D array of bool
-            Maks of valid cells.
+            A stream order map can optioanlly be passed using the key-word argument `strord`.
         xs, ys : 2D array of float
             Raster with cell x, y coordinates, by default None and inferred from cell
             center.
+        idxs_out : 1D array of int
+            Linear indices of unit catchment outlet cells. Stream segments are created
+            by following the main upstream path to the next outlet cell. By default None.
+        max_len: int, optional
+            Maximum length of a single stream segment measured in cells.
+            Longer streams segments are divided into smaller segments of equal length
+            as close as possible to max_len.
         kwargs : extra sample maps key-word arguments
             optional maps to sample from
 
@@ -1012,15 +896,33 @@ class FlwdirRaster(object):
         feats : list of dict
             Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
         """
-        strord = self._check_data(strord, "strord")
-        idxs = streams.streams(
-            idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
-            strord=strord,
-            mask=self._check_data(mask, "mask", optional=True),
-            min_sto=min_sto,
-        )
-        return self.geofeatures(idxs, xs=xs, ys=ys, strord=strord, **kwargs)
+        if mask is not None:
+            mask = self._check_data(mask, "mask")
+        elif min_sto > 1:
+            strord = self._check_data(kwargs.get("strord"), "strord")
+            mask = strord >= min_sto
+            kwargs.update(strord=strord)  # add strord column
+
+        if idxs_out is not None:
+            idxs = subgrid.segment_indices(
+                idxs_out=idxs_out,
+                idxs_nxt=self.idxs_us_main,  # down- to upstream
+                mask=mask,
+                max_len=max_len,
+                mv=self._mv,
+            )
+            # up to downstream for correct idx_ds column
+            idxs = [idxs0[::-1] for idxs0 in idxs]
+        else:
+            idxs = streams.streams(
+                idxs_ds=self.idxs_ds,
+                seq=self.idxs_seq,
+                mask=mask,
+                max_len=max_len,
+                mv=self._mv,
+            )
+
+        return self.geofeatures(idxs, xs=xs, ys=ys, **kwargs)
 
     def geofeatures(self, flowpaths, xs=None, ys=None, **kwargs):
         """Returns a geo-features of flowpaths defined by a list of arrays of linear
@@ -1218,101 +1120,27 @@ class FlwdirRaster(object):
 
         Returns
         -------
-        2D array of float with other.shape
+        ucat_map: 2D array of int with self.shape
+            unit catchment map [-]
+        ucat_are: 2D array of float with idxs_out.shape
             subgrid cell area [m2]
         """
         unit = str(unit).lower()
-        if unit not in AREA_FACTORS:
-            fstr = '", "'.join(AREA_FACTORS.keys())
-            raise ValueError(f'Unknown unit: {unit}, select from "{fstr}"')
-        ucat_map, ucat_are = subgrid.ucat_area(
-            idxs_out.ravel(),
-            self.idxs_ds,
-            self.idxs_seq,
-            self.shape[1],
-            transform=gis.IDENTITY if unit == "cell" else self.transform,
-            latlon=False if unit == "cell" else self.latlon,
-            area_factor=AREA_FACTORS[unit],
-            nodata=np.int32(-9999) if unit == "cell" else np.float64(-9999),
-            dtype=np.int32 if unit == "cell" else np.float64,
+        if unit not in gis.AREA_FACTORS:
+            fstr = '", "'.join(gis.AREA_FACTORS.keys())
+            raise ValueError(f'Unknown unit: {unit}, select from "{fstr}".')
+        if unit == "cell":
+            area = np.ones(self.size, dtype=np.int32)
+        else:
+            area = self.area.ravel() / gis.AREA_FACTORS[unit]
+        ucat_map, ucat_are = subgrid.segment_area(
+            idxs_out=idxs_out.ravel(),
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            area=area,
             mv=self._mv,
         )
         return ucat_map.reshape(self.shape), ucat_are.reshape(idxs_out.shape)
-
-    # TODO remove in v0.5
-    def ucat_channel(
-        self,
-        idxs_out=None,
-        elevtn=None,
-        rivwth=None,
-        uparea=None,
-        direction="up",
-        upa_min=0.0,
-        len_min=0.0,
-    ):
-        """NOTE: this method will be deprecated from v0.5
-
-        Returns the river length [m], slope [m/m] and mean width for a unit catchment
-        channel section. The channel section is defined by the path starting at the unit
-        catchment outlet cell moving upstream following the upstream subgrid cells with
-        the largest upstream area (default) or downstream until it reaches the next
-        outlet cell.
-
-        A mimumum upstream area threshold can be set to discriminate river cells.
-
-        Parameters
-        ----------
-        idxs_out : 2D array of int, optional
-            linear indices of unit catchment outlets, if None (default) all valid
-            indices will be passed computing the cell length and slope in upstream
-            direction.
-        elevnt : 2D array of float, optional
-            elevation raster, required to calculate slope
-        rivwth : 2D array of float, optional
-            river width raster, required to calculate mean width
-        uparea : 2D array of float, optional
-            upstream area, if None (default) it is calculated.
-        upa_min : float, optional
-            minimum upstream area threshold for streams [km2].
-        len_min : float, optional
-            minimum river length reach to caculate a slope, if the river reach is shorter
-            it is extended in both direction until this requirement is met for calculating
-            the river slope.
-
-        Returns
-        -------
-        2D array of float with other.shape
-            subgrid river length [m]
-        2D array of float with other.shape
-            subgrid river slope [m/m]
-        """
-        warnings.warn(
-            "Ucat_channel will be deprecated in v0.5. Use subgrid_rivlen and subgrid_rivslp instead.",
-            PendingDeprecationWarning,
-        )
-        direction = str(direction).lower()
-        if direction not in ["up", "down"]:
-            msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
-            raise ValueError(msg)
-        if idxs_out is None:
-            idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
-        upa_kwargs = dict(optional=upa_min == 0, unit="km2")
-        rivlen1, rivslp1, rivwth1 = subgrid.channel(
-            idxs_out=idxs_out.ravel(),
-            idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
-            idxs_prev=self.idxs_us_main if direction == "down" else self.idxs_ds,
-            elevtn=self._check_data(elevtn, "elevtn", optional=True),
-            rivwth=self._check_data(rivwth, "rivwth", optional=True),
-            uparea=self._check_data(uparea, "uparea", **upa_kwargs),
-            ncol=self.shape[1],
-            upa_min=upa_min,
-            len_min=len_min,
-            latlon=self.latlon,
-            transform=self.transform,
-            mv=self._mv,
-        )
-        shape = idxs_out.shape
-        return rivlen1.reshape(shape), rivslp1.reshape(shape), rivwth1.reshape(shape)
 
     def subgrid_rivlen(
         self,
@@ -1335,7 +1163,7 @@ class FlwdirRaster(object):
         mask : 2D array of bool with self.shape, optional
             True for valid pixels. can be used to mask out pixels of small rivers.
         direction : {"up", "down"}
-            Flow direction in which river length is measured.
+            Flow direction in which river length is measured, by default 'up'.
         unit : {'m', 'cell'}
             Upstream area unit.
 
@@ -1352,15 +1180,12 @@ class FlwdirRaster(object):
             raise ValueError(f'Unknown unit: {unit}, select from ["m", "cell"]')
         if idxs_out is None:
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
-        rivlen = subgrid.channel_length(
+        distnc = self.distnc if unit == "m" else self.stream_distance(unit=unit)
+        rivlen = subgrid.segment_length(
             idxs_out=idxs_out.ravel(),
             idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             mask=self._check_data(mask, "mask", optional=True),
-            ncol=self.shape[1],
-            transform=gis.IDENTITY if unit == "cell" else self.transform,
-            latlon=False if unit == "cell" else self.latlon,
-            nodata=np.int32(-9999) if unit == "cell" else np.float32(-9999),
-            dtype=np.int32 if unit == "cell" else np.float32,
+            distnc=distnc.ravel(),
             mv=self._mv,
         )
         shape = idxs_out.shape
@@ -1371,10 +1196,12 @@ class FlwdirRaster(object):
         idxs_out,
         elevtn,
         length=1000,
+        direction="both",
+        method="mean",
         mask=None,
     ):
         """Returns the subgrid river slope [m/m] estimated at unit catchment outlet
-        pixel. he slope is estimated from the elevation difference between length/2
+        pixel. The slope is estimated from the elevation difference between length/2
         downstream and lenght/2 upstream of the outlet pixel.
 
         Parameters
@@ -1385,8 +1212,10 @@ class FlwdirRaster(object):
         elevtn : 2D array of float with self.shape, optional
             Elevation raster, required to calculate slope.
         length : float, optional
-            subgrid river length [m] over which to calculate the slope, by default
-            1000 m.
+            Subgrid river length [m] over which to calculate the slope, by default
+            1000 m. Only used in combination with direction = 'both'
+        direction : {"both", "up", "down"}
+            Flow direction in which river slope is measured, by default 'both'.
         mask : 2D array of bool with self.shape, optional
             True for valid pixels. can be used to mask out pixels of small rivers.
 
@@ -1395,22 +1224,35 @@ class FlwdirRaster(object):
         rivslp : 2D array of float with idxs_out.shape
             subgrid river slope [m/m]
         """
+        direction = str(direction).lower()
+        if direction not in ["both", "up", "down"]:
+            msg = f'Unknown flow direction: {direction}, select from ["both", "up", "down"].'
+            raise ValueError(msg)
         if idxs_out is None:
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
-        rivslp = subgrid.channel_slope(
-            idxs_out=idxs_out.ravel(),
-            idxs_ds=self.idxs_ds,
-            idxs_us_main=self.idxs_us_main,
-            elevtn=self._check_data(elevtn, "elevtn"),
-            length=length,
-            mask=self._check_data(mask, "mask", optional=True),
-            ncol=self.shape[1],
-            latlon=self.latlon,
-            transform=self.transform,
-            mv=self._mv,
-        )
-        shape = idxs_out.shape
-        return rivslp.reshape(shape)
+        if direction == "both":
+            rivslp = subgrid.fixed_length_slope(
+                idxs_out=idxs_out.ravel(),
+                idxs_ds=self.idxs_ds,
+                idxs_us_main=self.idxs_us_main,
+                elevtn=self._check_data(elevtn, "elevtn"),
+                distnc=self.distnc.ravel(),
+                length=length,
+                mask=self._check_data(mask, "mask", optional=True),
+                mv=self._mv,
+                lstsq=method == "lstsq",
+            )
+        else:
+            rivslp = subgrid.segment_slope(
+                idxs_out=idxs_out.ravel(),
+                idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
+                elevtn=self._check_data(elevtn, "elevtn"),
+                distnc=self.distnc.ravel(),
+                mask=self._check_data(mask, "mask", optional=True),
+                mv=self._mv,
+                lstsq=method == "lstsq",
+            )
+        return rivslp.reshape(idxs_out.shape)
 
     def subgrid_rivavg(
         self,
@@ -1441,7 +1283,63 @@ class FlwdirRaster(object):
         mask : 2D array of bool with self.shape, optional
             True for valid pixels. can be used to mask out pixels of small rivers.
         direction : {"up", "down"}
-            Flow direction in which river length is measured.
+            Flow direction in which segment is defined, by default 'up'.
+
+        Returns
+        -------
+        rivavg : 2D array of float with idxs_out.shape
+            subgrid segment average
+        """
+        direction = str(direction).lower()
+        if direction not in ["up", "down"]:
+            msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
+            raise ValueError(msg)
+        if idxs_out is None:
+            idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
+        if weights is None:
+            weights = np.ones(self.size, dtype=np.float32)
+        rivavg = subgrid.segment_average(
+            idxs_out=idxs_out.ravel(),
+            idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
+            data=self._check_data(data, "data"),
+            weights=weights,
+            nodata=nodata,
+            mask=self._check_data(mask, "mask", optional=True),
+            mv=self._mv,
+        )
+        shape = idxs_out.shape
+        return rivavg.reshape(shape)
+
+    def subgrid_rivmed(
+        self,
+        idxs_out,
+        data,
+        weights=None,
+        nodata=-9999.0,
+        mask=None,
+        direction="up",
+    ):
+        """Returns the average value over the subgrid river, based on unit catchment outlet
+        locations. The subgrid river is defined by the path starting at the unit
+        catchment outlet pixel moving up- or downstream until it reaches the next
+        outlet pixel. If moving upstream and a pixel has multiple upstream neighbors,
+        the pixel with the largest upstream area is selected.
+
+        Parameters
+        ----------
+        idxs_out : 2D array of int
+            Linear indices of unit catchment outlets. If None (default) the cell
+            size (instead of subgrid length) will be used.
+        data : 2D array
+            values
+        weigths : 2D array, optional
+            weights used for averaging, by default None.
+        nodata : int or float, optional
+            Missing data value for cells outside domain, by default -9999.0
+        mask : 2D array of bool with self.shape, optional
+            True for valid pixels. can be used to mask out pixels of small rivers.
+        direction : {"up", "down"}
+            Flow direction in which river length is measured, by default 'up'.
 
         Returns
         -------
@@ -1456,7 +1354,7 @@ class FlwdirRaster(object):
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
         if weights is None:
             weights = np.ones(self.size, dtype=np.float32)
-        rivlen = subgrid.channel_average(
+        rivlen = subgrid.segment_average(
             idxs_out=idxs_out.ravel(),
             idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             data=self._check_data(data, "data"),
@@ -1470,8 +1368,9 @@ class FlwdirRaster(object):
 
     ### ELEVATION ###
 
-    def dem_adjust(self, elevtn):
-        """Returns the hydrologically adjusted elevation where each downstream cell
+    def dem_adjust_d4(self, elevtn, nodata=-9999.0):
+        """Returns the hydrologically adjusted elevation where for
+        each cell there is an adjacent d4 connected cell which has
         has the same or lower elevation as the current cell.
 
         Parameters
@@ -1481,16 +1380,17 @@ class FlwdirRaster(object):
 
         Returns
         -------
-        2D array of float
+        elv_out: 2D array of float
             elevation raster
         """
-        elevtn_out = dem.adjust_elevation(
+        elv_out = dem.dig_4connectivity(
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
-            elevtn=self._check_data(elevtn, "elevtn"),
-            mv=self._mv,
+            elv_flat=self._check_data(elevtn, "elevtn"),
+            shape=self.shape,
+            nodata=nodata,
         )
-        return elevtn_out.reshape(elevtn.shape)
+        return elv_out.reshape(self.shape)
 
     def hand(self, drain, elevtn):
         """Returns the height above the nearest drain (HAND), i.e.: the relative vertical
@@ -1559,24 +1459,18 @@ class FlwdirRaster(object):
         """check or calculate upstream area cells; return flattened array"""
         if data is None and optional:
             return
-        elif data is None and name == "uparea":
-            data = self.upstream_area(**kwargs)
-        elif data is None and name == "basins":
-            data = self.basins(**kwargs)
-        elif data is None and name == "strord":
-            data = self.stream_order(**kwargs)
-        elif not np.atleast_1d(data).size == self.size:
-            raise ValueError(f'"{name}" size does not match with FlwdirRaster size')
-        return np.atleast_1d(data).ravel()
+        if data is None:
+            if name == "uparea":
+                data = self.upstream_area(**kwargs)
+            elif name == "basins":
+                data = self.basins(**kwargs)
+            elif name == "strord":
+                data = self.stream_order(**kwargs)
+        return super()._check_data(data, name, optional)
 
-    def _check_idxs_xy(self, idxs, xy, streams=None):
+    def _check_idxs_xy(self, idxs=None, xy=None, streams=None):
         if (xy is not None and idxs is not None) or (xy is None and idxs is None):
             raise ValueError("Either idxs or xy should be provided.")
         elif xy is not None:
             idxs = self.index(*xy)
-        idxs = np.atleast_1d(idxs).ravel()
-        # snap to streams
-        streams = self._check_data(streams, "streams", optional=True)
-        if streams is not None:
-            idxs = self.snap(idxs=idxs, mask=streams)[0]
-        return idxs
+        return super()._check_idxs_xy(idxs, streams)

@@ -3,11 +3,78 @@
 
 import pytest
 import numpy as np
-from pyflwdir import dem, streams
+from pyflwdir import dem
 from test_core import test_data
 
 parsed, flwdir = test_data[0]
 idxs_ds, idxs_pit, seq, rank, mv = parsed
+
+
+def test_from_dem():
+    # example from Wang & Lui (2015)
+    a = np.array(
+        [
+            [15, 15, 14, 15, 12, 6, 12],
+            [14, 13, 10, 12, 15, 17, 15],
+            [15, 15, 9, 11, 8, 15, 15],
+            [16, 17, 8, 16, 15, 7, 5],
+            [19, 18, 19, 18, 17, 15, 14],
+        ],
+        dtype=np.float32,
+    )
+    # NOTE: compared to paper same a_filled, but difference
+    # in flowdir because row instead of col first ..
+    d8 = np.array(
+        [
+            [2, 2, 4, 8, 1, 0, 16],
+            [1, 1, 2, 2, 128, 64, 32],
+            [128, 128, 1, 1, 2, 2, 4],
+            [64, 128, 128, 128, 1, 1, 0],
+            [64, 128, 64, 32, 128, 128, 64],
+        ],
+        dtype=np.uint8,
+    )
+    # test default
+    a2 = a.copy()
+    a2[1:4, 2] = 11  # filled depression
+    a_filled, _d8 = dem.fill_depressions(a)
+    assert np.all(a_filled == a2)
+    assert np.all(d8 == _d8)
+    # test single outlet
+    a2 = np.array(
+        [
+            [15, 15, 14, 15, 12, 15, 17.0],
+            [14, 13, 11, 12, 15, 17, 15.0],
+            [15, 15, 11, 11, 8, 15, 15.0],
+            [16, 17, 11, 16, 15, 7, 5.0],
+            [19, 18, 19, 18, 17, 15, 14.0],
+        ],
+        dtype=np.float32,
+    )
+    a_filled = dem.fill_depressions(a, outlets="min")[0]
+    assert np.all(a2 == a_filled)
+    # test with 4-connectivity
+    a2 = np.array(
+        [
+            [15, 15, 14, 15, 12, 6, 12],
+            [14, 14, 14, 14, 15, 17, 15],
+            [15, 15, 14, 14, 14, 15, 15],
+            [16, 17, 14, 16, 15, 7, 5],
+            [19, 18, 19, 18, 17, 15, 14],
+        ],
+        dtype=np.float32,
+    )
+    a_filled, _d8 = dem.fill_depressions(a, connectivity=4)
+    assert np.all(a_filled == a2)
+    assert np.all(np.isin(np.unique(_d8), [0, 1, 4, 16, 64]))
+    # test with nodata values
+    a[3, 5:] = -9999
+    _d8 = dem.fill_depressions(a)[1]
+    assert np.all(_d8[3, 5:] == 247)
+    assert _d8[2, 4] == 0
+    # test max depth
+    _a = dem.fill_depressions(a, max_depth=2)[0]
+    assert np.all(a == _a)
 
 
 def test_dem_adjust():
@@ -32,7 +99,7 @@ def test_dem_adjust():
 # TODO: extend test
 def test_slope():
     elv = np.ones((4, 4))
-    nodata = -9999.0
+    nodata = -9999
     assert np.all(dem.slope(elv, nodata) == 0)
     elv.flat[0] == -9999
     assert np.all(dem.slope(elv, nodata).flat[1:] == 0)

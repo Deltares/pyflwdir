@@ -50,14 +50,15 @@ def rank(idxs_ds, mv=_mv):
 
 
 @njit
-def upstream_count(idxs_ds, mv=_mv):
+def upstream_count(idxs_ds, mv=_mv, mask=None):
     """Returns array with number of upstream cells per cell."""
     n_up = np.full(idxs_ds.size, -9, dtype=np.int8)
     for idx0 in range(idxs_ds.size):
         idx_ds = idxs_ds[idx0]
         if idx_ds != mv:
             n_up[idx0] = max(n_up[idx0], 0)
-            if idx0 != idx_ds:  # pit
+            valid = mask is None or mask[idx0]
+            if idx0 != idx_ds and valid:  # pit
                 n_up[idx_ds] = max(n_up[idx_ds], 0) + 1
     return n_up
 
@@ -86,7 +87,7 @@ def upstream_matrix(idxs_ds, mv=_mv):
 
 
 @njit
-def idxs_seq(idxs_ds, idxs_pit, shape, mv=_mv):
+def idxs_seq(idxs_ds, idxs_pit, mv=_mv):
     """Returns indices ordered from down- to upstream.
 
     Parameters
@@ -118,7 +119,62 @@ def idxs_seq(idxs_ds, idxs_pit, shape, mv=_mv):
     return idxs_seq[:i]
 
 
-# returns 1D array (size == n) with indices at all locations
+@njit
+def fillnodata_upstream(idxs_ds, seq, data, nodata):
+    """Retuns a a copy of <data> where upstream cell with <nodata> values are filled
+    based on the first downstream valid cell value.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    data : 1D array
+        original data with missing values
+    nodata : float, integer
+        nodata value
+
+    Returns
+    -------
+    data_out: 1D array of data.dtype
+        infilled data
+    """
+    data_out = data.copy()
+    for idx0 in seq:  # down- to upstream
+        idx_ds = idxs_ds[idx0]
+        if data_out[idx0] == nodata and data_out[idx_ds] != nodata:
+            data_out[idx0] = data_out[idx_ds]
+    return data_out
+
+
+@njit
+def fillnodata_downstream(idxs_ds, seq, data, nodata):
+    """Retuns a a copy of <data> where downstream cells with <nodata> values are filled
+    based on the first upstream valid cell value.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    data : 1D array
+        original data with missing values
+    nodata : float, integer
+        nodata value
+
+    Returns
+    -------
+    data_out: 1D array of data.dtype
+        infilled data
+    """
+    data_out = data.copy()
+    for idx0 in seq[::-1]:  # up- to downstream
+        idx_ds = idxs_ds[idx0]
+        if data_out[idx_ds] == nodata and data_out[idx0] != nodata:
+            data_out[idx_ds] = data_out[idx0]
+    return data_out
 
 
 @njit
@@ -152,40 +208,6 @@ def main_upstream(idxs_ds, uparea, upa_min=0.0, mv=_mv):
     return idxs_us_main
 
 
-@njit
-def main_tributary(idxs_ds, idxs_us_main, uparea, upa_min=0.0, mv=_mv):
-    """Returns the index of the upstream cell with
-    the second largest upstream area, i.e. the largest tributary.
-
-    Parameters
-    ----------
-    idxs_ds : 1D-array of int
-        index of next downstream cell
-    idxs_us_main : 1D-array of int
-        index of main upstream cell
-    uparea : 1D-array
-        upstream area values
-    upa_min : float, optional
-        minimum upstream area threshold
-
-    Returns
-    -------
-    1D-array of int
-        linear indices of tributaries
-    """
-    idxs_us_trib = np.full(idxs_ds.size, mv, dtype=idxs_ds.dtype)
-    upa_main = np.full(idxs_ds.size, upa_min, dtype=uparea.dtype)
-    for idx0 in range(idxs_ds.size):
-        idx_ds = idxs_ds[idx0]
-        # pit or mv or main upstream
-        if idx_ds == idx0 or idx_ds == mv or idxs_us_main[idx_ds] == idx0:
-            continue
-        elif uparea[idx0] > upa_main[idx_ds]:
-            idxs_us_trib[idx_ds] = idx0
-            upa_main[idx_ds] = uparea[idx0]
-    return idxs_us_trib
-
-
 # returns 1D array (size < n) with indices of specific locations
 
 
@@ -211,14 +233,17 @@ def loop_indices(idxs_ds, mv=_mv):
 
 
 @njit
-def headwater_indices(idxs_ds, mv=_mv):
+def headwater_indices(idxs_ds, mask=None, mv=_mv):
     """Returns indices of headwater cells, i.e. cells with no upstream neighbors"""
-    idxs = []
-    counts = upstream_count(idxs_ds, mv)
-    for idx0 in range(idxs_ds.size):
-        if counts[idx0] == 0:
-            idxs.append(idx0)
-    return np.array(idxs, dtype=idxs_ds.dtype)
+    nup = upstream_count(idxs_ds, mask=mask, mv=mv)
+    return np.where(nup == 0)[0].astype(idxs_ds.dtype)
+
+
+@njit
+def confluence_indices(idxs_ds, mask=None, mv=_mv):
+    """Returns indices of confluence cells, i.e. cells with two or more upstream neighbors"""
+    nup = upstream_count(idxs_ds, mask=mask, mv=mv)
+    return np.where(nup > 1)[0].astype(idxs_ds.dtype)
 
 
 @njit
@@ -268,6 +293,7 @@ def _upstream_d8_idx(idx0, idxs_ds, shape):
     return np.array(idxs_lst, dtype=idxs_ds.dtype)
 
 
+# TODO use pre-set distance or length raster
 @njit
 def _trace(
     idx0,
@@ -330,15 +356,18 @@ def _trace(
 
 
 @njit
-def _window(idx0, n, idxs_ds, idxs_us_main, mv=_mv):
+def _window(idx0, n, idxs_ds, idxs_us_main, strord=None, mv=_mv):
     """Returns the indices of between the nth upstream to nth downstream cell from
-    the current cell. Upstream cells are with based on the  _main_upstream method."""
+    the current cell. Upstream cells are with based on the  _main_upstream method.
+    If strord is given, only include cells of same stream order when moving downstream.
+    """
     idxs = np.full(n * 2 + 1, mv, idxs_ds.dtype)
     idxs[n] = idx0
+    strord0 = 0 if strord is None else strord[idx0]
     # get n downstream cells
     for i in range(n):
         idx_ds = idxs_ds[idx0]
-        if idx_ds == idx0:  # pit
+        if idx_ds == idx0 or (strord is not None and strord[idx_ds] > strord0):  # pit
             break
         idx0 = idx_ds
         idxs[n + i + 1] = idx0
@@ -351,68 +380,6 @@ def _window(idx0, n, idxs_ds, idxs_us_main, mv=_mv):
         idx0 = idx_us
         idxs[n - i - 1] = idx0
     return idxs
-
-
-@njit
-def _tributaries(
-    idx0, idxs_us_main, idxs_us_trib, uparea, idx_end=_mv, upa_min=0.0, n=0, mv=_mv
-):
-    """Return indices of tributaries upstream from idx0 and downstream
-    from idx_end.
-
-    Parameters
-    ----------
-    idx0 : int
-        linear index of start cell
-    idxs_us_main, idxs_us_trib : 1D-array of int
-        linear indices of main upstream and tributary cells
-    uparea : 1D-array
-        array with upstream area values
-    idx_end : int, optional
-        linear index of most upstream, by default missing value, i.e.: no fixed cell
-    upa_min : float, optional
-        minimum upstream area threshold for tributary
-    n : int, optional
-        number of tributaries, by default 0
-
-    Returns
-    -------
-    1D array of int with size n
-        linear indices of largest tributaries
-    """
-    if n > 0:
-        # use heapq to keep n largest; initialize with correct dtypes
-        i = int(0)
-        ntrib = [(uparea[0], idxs_us_trib[0], i) for _ in range(n)]
-        heapq.heapify(ntrib)
-    else:
-        idxs = []
-    # move upstream while checking tributaries
-    while True:
-        idx_main = idxs_us_main[idx0]
-        if idx_main == idx_end or idx_main == mv:
-            break
-        elif uparea[idx_main] < upa_min:
-            break
-        idx_trib = idxs_us_trib[idx0]
-        if idx_trib != mv:
-            upa_trib = uparea[idx_trib]
-            if upa_trib > upa_min:
-                if n > 0:
-                    i += 1
-                    heapq.heappushpop(ntrib, (upa_trib, idx_trib, i))
-                    upa_min = max(upa_min, heapq.nsmallest(1, ntrib)[0][0])
-                else:
-                    idxs.append(idx_trib)
-        # next iter
-        idx0 = idx_main
-    # order from down to upstream
-    if n > 0:
-        seq = np.argsort(np.array([ntrib[i][-1] for i in range(n)]))
-        idxs_out = np.array([ntrib[i][1] for i in seq], dtype=idxs_us_main.dtype)
-    else:
-        idxs_out = np.array(idxs, dtype=idxs_us_main.dtype)
-    return idxs_out
 
 
 @njit

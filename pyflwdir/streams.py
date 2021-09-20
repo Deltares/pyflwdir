@@ -6,7 +6,7 @@ from numba import njit
 import numpy as np
 
 # import local libraries
-from pyflwdir import gis_utils
+from pyflwdir import gis_utils, core
 
 __all__ = []
 
@@ -85,6 +85,8 @@ def upstream_area(
     value. The arae is calculated using the transform. If latlon is True, the resolution
     is interpreted in degree and transformed to m2.
 
+    NOTE: does not require area grid in memory
+
     Parameters
     ----------
     idxs_ds : 1D-array of intp
@@ -128,7 +130,7 @@ def upstream_area(
 
 
 @njit
-def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
+def streams(idxs_ds, seq, mask=None, max_len=0, mv=core._mv):
     """Returns list of linear indices per stream of equal stream order.
 
     Parameters
@@ -137,63 +139,57 @@ def streams(idxs_ds, seq, strord, mask=None, min_sto=1):
         index of next downstream cell
     seq : 1D array of int
         ordered cell indices from down- to upstream
-    strord : 1D-array of uint8
-        stream order
-    mask : 1D array of bool, optional
-        consider only True cells
-    min_sto : int, optional
-        minimum stream order of streams, by default 1
+    mask : 1D-array of bool, optional
+        Mask of stream cells
+    max_len: int, optional
+        Maximum length of a single stream segment measured in cells
+        Longer streams segments are divided into smaller segments of equal length
+        as close as possible to max_len.
 
     Returns
     -------
     streams : list of 1D-arrays of intp
         linear indices of streams
     """
-    # create map with confluences and list with its indices
-    idxs_conf = []
-    conf = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
-    for idx0 in seq[::-1]:  # up- to downstream
-        if strord[idx0] < (min_sto - 1):
-            continue
-        idx_ds = idxs_ds[idx0]
-        if strord[idx_ds] > strord[idx0]:
-            idxs_conf.append(idx_ds)
-            if strord[idx0] >= min_sto:
-                conf[idx_ds] = True
-    if len(idxs_conf) == 0:
-        raise ValueError("No streams found with given settings.")
-
+    nup = core.upstream_count(idxs_ds=idxs_ds, mask=mask, mv=mv)
     # get list of indices arrays of segments
     streams = []
     done = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
-    for idx0 in idxs_conf:
-        if done[idx0] or (mask is not None and mask[idx0] == False):
+    for idx0 in seq[::-1]:
+        if done[idx0] or (mask is not None and ~mask[idx0]):
             continue
         idxs = [idx0]  # initiate with correct dtype
         while True:
             done[idx0] = True
             idx_ds = idxs_ds[idx0]
-            valid = mask is None or mask[idx_ds]
-            if valid:
-                idxs.append(idx_ds)
-            if not valid or conf[idx_ds] or done[idx_ds] or idx_ds == idx0:
-                # pit or new stream segment (only on streams with strord > min_sto)
-                if len(idxs) >= 2:
+            idxs.append(idx_ds)
+            if nup[idx_ds] > 1 or idx_ds == idx0:
+                l = len(idxs)
+                if l > max_len > 0:
+                    n, k = l, 1
+                    if (l / max_len) > 1.5:
+                        k = round(l / max_len)
+                        n = round(l / k)
+                    for i in range(k):  # split into k segments with overlapping point
+                        if i + 1 == k:
+                            streams.append(np.array(idxs[i * n :], dtype=idxs_ds.dtype))
+                        else:
+                            _idxs = idxs[i * n : n * (i + 1) + 1]
+                            streams.append(np.array(_idxs, dtype=idxs_ds.dtype))
+                else:
                     streams.append(np.array(idxs, dtype=idxs_ds.dtype))
                 break
-
             idx0 = idx_ds
     return streams
 
 
 @njit
-def stream_order(idxs_ds, seq):
-    """ "Returns the cell stream order, invalid cells are assinged a nodata value of -1
+def stream_order(idxs_ds, seq, idxs_us_main, mask=None, mv=core._mv):
+    """Returns the classic or Hack's "bottum up" stream order.
 
-    The smallest streams, which are the cells with no upstream cells, get
-    order 1. Where two channels of order 1 join, a channel of order 2
-    results downstream. In general, where two channels of order i join,
-    a channel of order i+1 results
+    The main stem, based on upstream area has order 1.
+    Each tributary is given a number one greater than that of the
+    river or stream into which they discharge.
 
     Parameters
     ----------
@@ -201,25 +197,65 @@ def stream_order(idxs_ds, seq):
         index of next downstream cell
     seq : 1D array of int
         ordered cell indices from down- to upstream
+    mask : 1D-array of bool, optional
+        True if stream cell
 
     Returns
     -------
     1D array of uint8
         stream order
     """
-    nodata = np.uint8(-1)
-    strord = np.full(idxs_ds.size, nodata, dtype=np.int8)
-    strord[seq] = 1  # initialize valid cells with stream order 1
-    for idx0 in seq[::-1]:  # up- to downstream
+    nup = core.upstream_count(idxs_ds=idxs_ds, mask=mask, mv=mv)
+    strord = np.full(idxs_ds.size, 0, dtype=np.uint8)
+    for idx0 in seq:  # down- to upstream
+        if mask is not None and not mask[idx0]:  # invalid cell
+            continue
         idx_ds = idxs_ds[idx0]
-        sto = strord[idx0]
-        # update next downstream cell
-        if idx0 != idx_ds:  # pit
-            sto_ds = strord[idx_ds]
-            if sto > sto_ds:
-                strord[idx_ds] = sto
-            elif sto == sto_ds:
-                strord[idx_ds] += 1
+        if idx_ds == idx0:  # pit
+            strord[idx0] = 1
+        elif nup[idx_ds] > 1 and idxs_us_main[idx_ds] != idx0:
+            strord[idx0] = strord[idx_ds] + 1
+        else:
+            strord[idx0] = strord[idx_ds]
+    return strord
+
+
+@njit
+def strahler_order(idxs_ds, seq, mask=None):
+    """Returns the strahler "top down" stream order.
+
+    Rivers of the first order are the most upstream tributaries or head water cells.
+    If two streams of the same order merge, the resulting stream has an order of one higher.
+    If two rivers with different stream orders merge, the resulting stream is given the maximum of the two order.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    mask : 1D-array of bool, optional
+        True if stream cell
+
+    Returns
+    -------
+    1D array of uint8
+        stream order
+    """
+    strord = np.full(idxs_ds.size, 0, dtype=np.uint8)
+    for idx0 in seq[::-1]:  # up- to downstream
+        if mask is not None and not mask[idx0]:  # invalid
+            continue
+        if strord[idx0] == 0:  # headwater cell
+            strord[idx0] = 1
+        idx_ds = idxs_ds[idx0]
+        if idx_ds == idx0:
+            continue
+        sto, sto_ds = strord[idx0], strord[idx_ds]
+        if sto_ds < sto:
+            strord[idx_ds] = sto
+        elif sto == sto_ds:
+            strord[idx_ds] += 1
     return strord
 
 
@@ -255,7 +291,7 @@ def stream_distance(
         distance to outlet or next downstream True cell
     """
     mv = -9999.0
-    dist = np.full(idxs_ds.size, mv, dtype=np.float64 if real_length else np.int32)
+    dist = np.full(idxs_ds.size, mv, dtype=np.float32 if real_length else np.int32)
     dist[seq] = 0  # initialize valid cells with zero length
     d = 1
     for idx0 in seq:  # down- to upstream
