@@ -1201,8 +1201,9 @@ class FlwdirRaster(Flwdir):
         mask=None,
     ):
         """Returns the subgrid river slope [m/m] estimated at unit catchment outlet
-        pixel. The slope is estimated from the elevation difference between length/2
-        downstream and lenght/2 upstream of the outlet pixel.
+        pixel. The slope is estimated from the elevation around the outlet pixel
+        (`direction='both'`), or between the outlet pixel and the next downstream
+        (`direction='down'`) or next upstream (`direction='up'`) outlet pixel.
 
         Parameters
         ----------
@@ -1218,6 +1219,10 @@ class FlwdirRaster(Flwdir):
             Flow direction in which river slope is measured, by default 'both'.
         mask : 2D array of bool with self.shape, optional
             True for valid pixels. can be used to mask out pixels of small rivers.
+        method: {'mean', 'lstsq'}
+            Estimate the segment slope based on the `mean` slope: i.e.: net difference
+            in elevation divided by length; or `lstsq` slope: i.e.: a simple ordinary
+            least squares regression estimate of slope
 
         Returns
         -------

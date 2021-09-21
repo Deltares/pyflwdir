@@ -16,6 +16,7 @@ New
 
 Improved
 --------
+* faster subgrid slope method with optional lstsq regression based slope
 * streams takes a `idxs_out` argument to derive stream vectors for unit catchments
 * streams takes a `max_len` argument to split large segments into multiple smaller ones.
 * Use of Flwdir as common base of FlwdirRaster to share methods and properties 
