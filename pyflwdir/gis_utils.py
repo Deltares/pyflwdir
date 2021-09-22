@@ -5,6 +5,7 @@ from numba import njit, stencil
 import numpy as np
 import math
 from affine import Affine
+import heapq
 
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
 AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
@@ -23,7 +24,89 @@ __all__ = [
     "reggrid_dy",
     "reggrid_dx",
     "get_edge",
+    "spread2d",
 ]
+
+
+@njit()
+def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY):
+    """Returns filled array with nearest observations, origin cells and friction distance to origin.
+    The friction distance is measured through valid cells in the mask and has a uniform value of 1. by default.
+    The diagonal distance is taken as the hypot of the vertical and horizontal distances.
+
+
+    Parameters
+    ----------
+    osb: 2D array
+        Initial array with observations.
+    msk: 2D array of bool, optional
+        Mask of valid cells to consider for filling.
+    nodata: int, float
+        Missing data value in obs. Cells with this value and where mask equals True are filled, by default 0.
+    frc: 2D array of float
+        Friction values, by default a uniform value of 1 is used.
+    latlon: bool
+        True for geographic CRS, False for projected CRS.
+        If True, the transform units are assumed to be degrees and converted to metric distances.
+    transform: Affine
+        Coefficients mapping pixel coordinates to coordinate reference system.
+
+    Returns
+    -------
+    out: 2D array of obs.dtype
+        Output observations array where nodata values are filled with the nearest observation.
+    src: 2D array of int32
+        Linear index of origin cell.
+    dst: 2D array of float32
+        Distance to origin cell.
+    """
+    nrow, ncol = obs.shape
+    xres, yres, north = transform[0], abs(transform[4]), transform[5]
+    dx, dy = xres, yres
+
+    out = obs.copy().ravel()
+    src = np.full(obs.size, -1, dtype=np.int32)  # linear index of source
+    dst = np.full(obs.size, 0, dtype=np.float32)  # distance from source
+
+    # initiate with correct dtype
+    q = [(np.float32(0), np.uint32(0)) for _ in range(0)]
+    heapq.heapify(q)
+
+    for idx in range(out.size):
+        if out[idx] != nodata:
+            if msk is None or msk.flat[idx]:
+                heapq.heappush(q, (np.float32(0), np.uint32(idx)))
+            src[idx] = idx
+
+    while len(q) > 0:
+        d0, idx = heapq.heappop(q)
+        if dst[idx] < d0:
+            continue
+        f0 = 1.0 if frc is None else frc[idx]
+        r = idx // ncol
+        c = idx % ncol
+        if latlon:
+            lat = north + (r + 0.5) * yres
+            dy = degree_metres_y(lat) * yres
+            dx = degree_metres_x(lat) * xres
+        for dr in range(-1, 2):
+            for dc in range(-1, 2):
+                if dr == 0 and dc == 0:
+                    continue
+                r1, c1 = r + dr, c + dc
+                check_bounds = r1 < 0 or r1 >= nrow or c1 < 0 or c1 >= ncol
+                if check_bounds or (msk is not None and ~msk[r1, c1]):
+                    continue
+                d = d0 + np.hypot(dr * dx, dc * dy) * f0
+                idx1 = r1 * ncol + c1
+                if src[idx1] == -1 or d < dst[idx1]:
+                    idx0 = src[idx]
+                    src[idx1] = idx0
+                    dst[idx1] = d
+                    out[idx1] = out[idx0]
+                    heapq.heappush(q, (np.float32(d), np.uint32(idx1)))
+
+    return out.reshape(obs.shape), src.reshape(obs.shape), dst.reshape(obs.shape)
 
 
 @njit
@@ -99,8 +182,8 @@ def xy(transform, rows, cols, offset="center"):
 
     Parameters
     ----------
-    transform : affine transform
-        Transformation from pixel coordinates to coordinate reference system.
+    transform: Affine
+        Coefficients mapping pixel coordinates to coordinate reference system.
     rows : ndarray or int
         Pixel rows.
     cols : ndarray or int
@@ -144,7 +227,7 @@ def rowcol(transform, xs, ys, op=np.floor, precision=None):
         positive for floor, negative for ceil.
     Parameters
     ----------
-    transform : Affine
+    transform: Affine
         Coefficients mapping pixel coordinates to coordinate reference system.
     xs : ndarray or float
         x values in coordinate reference system
@@ -180,8 +263,8 @@ def idxs_to_coords(idxs, transform, shape, offset="center"):
     ----------
     idxs : ndarray of int
         linear indices
-    transform : affine transform
-        Two dimensional affine transform for 2D linear mapping
+    transform: Affine
+        Coefficients mapping pixel coordinates to coordinate reference system.
     shape : tuple of int
         The height, width  of the raster.
     offset : {'center', 'ul', 'ur', 'll', 'lr'}
@@ -219,8 +302,8 @@ def coords_to_idxs(xs, ys, transform, shape, op=np.floor, precision=None):
         x values in coordinate reference system
     ys : ndarray or float
         y values in coordinate reference system
-    transform : affine transform
-        Two dimensional affine transform for 2D linear mapping
+    transform: Affine
+        Coefficients mapping pixel coordinates to coordinate reference system.
     shape : tuple of int
         The height, width  of the raster.
     op : function {numpy.floor, numpy.ceil, numpy.round}
@@ -256,8 +339,8 @@ def affine_to_coords(affine, shape):
 
     Parameters
     ----------
-    affine : affine transform
-        Two dimensional affine transform for 2D linear mapping
+    affine: Affine
+        Coefficients mapping pixel coordinates to coordinate reference system.
     shape : tuple of int
         The height, width  of the raster.
 
@@ -371,10 +454,11 @@ def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
         index of start, end cell
     ncol : int
         number of columns in raster
-    latlon : bool, optional
-        True if WGS84 coordinates, by default False
-    transform : affine transform
-        Two dimensional transform for 2D linear mapping
+    latlon: bool
+        True for geographic CRS, False for projected CRS.
+        If True, the transform units are assumed to be degrees and converted to metric distances.
+    transform: Affine
+        Coefficients mapping pixel coordinates to coordinate reference system.
 
     Returns
     -------

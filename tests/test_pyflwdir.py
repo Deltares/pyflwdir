@@ -201,20 +201,25 @@ def test_basins():
     with pytest.raises(ValueError, match="IDs cannot contain a value zero"):
         flw.basins(ids=np.zeros(flw.idxs_pit.size, dtype=np.int16))
     # basin bounds using IDENTITY transform
-    lbs = flw.basin_bounds()[0]
+    lbs = flw.basin_bounds(basins)[0]
     assert np.all(lbs == np.unique(basins[basins > 0]))
     lbs, _, total_bbox = flw.basin_bounds(basins=np.ones(flw.shape, dtype=np.uint32))
     assert np.all(np.abs(total_bbox[[1, 2]]) == flw.shape)
-    with pytest.raises(ValueError, match="size does not match"):
+    with pytest.raises(ValueError, match="shape does not match"):
         flw.basin_bounds(basins=np.ones((2, 1)))
+    # basin outlets
+    idxs_out = flw.basin_outlets(basins)[1]
+    assert np.all(np.sort(idxs_out) == np.sort(flw.idxs_pit))
 
 
 def test_subbasins():
-    pfaf = flw.subbasins_pfafstetter()
+    pfaf = flw.subbasins_pfafstetter()[0]
     bas0 = flw.basins(flw.idxs_pit[0])
     assert np.all(pfaf[bas0 != 0] > 0)
     assert pfaf.max() <= 9
-    subbas = flw.subbasins_streamorder()
+    subbas = flw.subbasins_streamorder()[0]
+    assert np.all(subbas[bas0 != 0] > 0)
+    subbas = flw.subbasins_area(upa_min=10)[0]
     assert np.all(subbas[bas0 != 0] > 0)
 
 

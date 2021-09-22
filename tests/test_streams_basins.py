@@ -60,13 +60,17 @@ def test_subbasins(parsed, flwdir):
     n, ncol = seq.size, flwdir.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
     idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
-    # # pfafstetter for largest basin
+    ## pfafstetter for largest basin
     idx0 = np.atleast_1d(idxs_pit[np.argsort(upa[idxs_pit])[-1:]])
-    pfaf1 = basins.subbasins_pfafstetter(
+    pfaf1, idxs_out1 = basins.subbasins_pfafstetter(
         idx0, idxs_ds, seq, idxs_us_main, upa, mask=None, depth=1, mv=mv
     )
     assert pfaf1[idx0] == 1
-    pfaf2 = basins.subbasins_pfafstetter(
+    lbs, idxs_out = regions.region_outlets(pfaf1, idxs_ds, seq)
+    idxs_out1 = idxs_out1[np.argsort(pfaf1[idxs_out1])]
+    assert np.all(idxs_out1 == idxs_out)
+    assert np.all(lbs == pfaf1[idxs_out1])
+    pfaf2, _ = basins.subbasins_pfafstetter(
         idx0, idxs_ds, seq, idxs_us_main, upa, mask=None, depth=2, mv=mv
     )
     assert pfaf2[idx0] == 11
@@ -74,6 +78,28 @@ def test_subbasins(parsed, flwdir):
     pfaf_path = pfaf2[core.path(idx0, idxs_us_main, mv=mv)[0][0]]
     assert np.all(pfaf_path % 2 == 1)  # only interbasin (=odd values)
     assert np.all(np.diff(pfaf_path) >= 0)  # increasing values upstream
+    ## streamorder basins
+    strord = streams.strahler_order(idxs_ds, seq)
+    maxsto = strord.max()
+    subbas, idxs_out1 = basins.subbasins_streamorder(idxs_ds, seq, strord, min_sto=-2)
+    sto_out = strord[idxs_out1]
+    assert np.all(sto_out >= maxsto - 2)
+    assert np.all(strord[subbas == 0] < maxsto - 2)
+    pits = idxs_ds[idxs_out1] == idxs_out1
+    sto_out1 = strord[idxs_ds[idxs_out1]]
+    assert np.all(sto_out1[~pits] > sto_out[~pits])
+    assert np.all(subbas[idxs_out1][~pits] != subbas[idxs_ds[idxs_out1]][~pits])
+    ## area subbasins
+    subbas, idxs_out1 = basins.subbasins_area(
+        idxs_ds, seq, idxs_us_main, upa, upa_min=5
+    )
+    assert np.all(upa[subbas == 0] == -9999)
+    pits = idxs_ds[idxs_out1] == idxs_out1
+    assert np.all(subbas[idxs_out1][~pits] != subbas[idxs_ds[idxs_out1]][~pits])
+    lbs0 = subbas[idxs_out1][~pits]
+    lbs, areas = regions.region_area(subbas.reshape(flwdir.shape))
+    # all nonpits must have upa_min size
+    assert np.all(areas[np.isin(lbs, lbs0)] > 5)
 
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
