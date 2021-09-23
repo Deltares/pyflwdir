@@ -13,7 +13,7 @@ New
 * gis_utils.spread2d method to spread valid values on a 2D raster with optional friction and mask rasters
 * FlwdirRaster.dem_dig_d4 method to adjust a DEM such that each cell has a 4D neighbor with equal or lower elevation.
 * FlwdirRaster.fillnodata method fill nodata gaps by propagating valid values up or downstream.
-* region.region_outlets method; which is also wrapped in the new FlwdirRaster.basin_outlet method
+* region.region_outlets method; which is also wrapped in the new FlwdirRaster.basin_outlets method
 * region.region_dissolve method to dissovle regions into their nearest neighboring region
 * FlwdirRaster.subbasins_areas method to derive subbasins based on a minimal area threshold
 
@@ -37,6 +37,7 @@ Bugfix
 Deprecated
 ----------
 * FlwdirRaster.main_tributaries method is deprecated due to mallfunctioning when jitted
+* FlwdirRaster.inflow_idxs and FlwdirRaster.outflow_idxs
 
 0.4.6
 *****

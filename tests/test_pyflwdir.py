@@ -219,7 +219,7 @@ def test_subbasins():
     assert pfaf.max() <= 9
     subbas = flw.subbasins_streamorder()[0]
     assert np.all(subbas[bas0 != 0] > 0)
-    subbas = flw.subbasins_area(upa_min=10)[0]
+    subbas = flw.subbasins_area(10)[0]
     assert np.all(subbas[bas0 != 0] > 0)
 
 

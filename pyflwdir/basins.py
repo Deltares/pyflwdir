@@ -192,11 +192,11 @@ def subbasins_pfafstetter(
 
 
 @njit
-def subbasins_area(idxs_ds, seq, idxs_us_main, uparea, upa_min):
-    """Returns map with basin IDs, with a minimal area of `upa_min`.
+def subbasins_area(idxs_ds, seq, idxs_us_main, uparea, area_min):
+    """Returns map with basin IDs, with a minimal area of `area_min`.
     Moving upstream from the basin outlets a new subbasin starts at tributaries
-    with a contributing area larger than `upa_min` and new interbasins when its area
-    exceeds the `upa_min`.
+    with a contributing area larger than `area_min` and new interbasins when its area
+    exceeds the `area_min`.
 
     Returns
     -------
@@ -216,8 +216,8 @@ def subbasins_area(idxs_ds, seq, idxs_us_main, uparea, upa_min):
             continue
         upa0 = upa_out[idx_ds]
         upa = uparea[idx]
-        if (upa0 - upa) > upa_min and upa > upa_min:
-            conf = (uparea[idx_ds] - upa) > upa_min
+        if (upa0 - upa) > area_min and upa > area_min:
+            conf = (uparea[idx_ds] - upa) > area_min
             trib = idxs_us_main[idx_ds] != idx
             if not conf or trib:
                 idxs.append(idx)

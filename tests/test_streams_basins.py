@@ -94,14 +94,14 @@ def test_subbasins(parsed, flwdir):
     assert np.all(np.diff(pfaf_path) >= 0)  # increasing values upstream
     ## area subbasins
     subbas, idxs_out1 = basins.subbasins_area(
-        idxs_ds, seq, idxs_us_main, upa, upa_min=5
+        idxs_ds, seq, idxs_us_main, upa, area_min=5
     )
     assert np.all(upa[subbas == 0] == -9999)
     pits = idxs_ds[idxs_out1] == idxs_out1
     assert np.all(subbas[idxs_out1][~pits] != subbas[idxs_ds[idxs_out1]][~pits])
     lbs0 = subbas[idxs_out1][~pits]
     lbs, areas = regions.region_area(subbas.reshape(flwdir.shape))
-    # all nonpits must have upa_min size
+    # all nonpits must have area_min size
     assert np.all(areas[np.isin(lbs, lbs0)] > 5)
 
 

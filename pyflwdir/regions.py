@@ -164,7 +164,12 @@ def region_outlets(regions, idxs_ds, seq):
 
 
 def region_dissolve(
-    regions, labels=None, idxs=None, transform=gis_utils.IDENTITY, latlon=False
+    regions,
+    labels=None,
+    idxs=None,
+    transform=gis_utils.IDENTITY,
+    latlon=False,
+    **kwargs
 ):
     """Dissolve regions into its nearest neighboring regions.
 
@@ -210,7 +215,7 @@ def region_dissolve(
     regions0[np.isin(regions, labels)] = 0
     assert np.any(regions0 != 0)
     out, _, dst = gis_utils.spread2d(
-        regions0, nodata=0, transform=transform, latlon=latlon
+        regions0, nodata=0, transform=transform, latlon=latlon, **kwargs
     )
     if idxs is None:  # get idxs based on smallest distance per region
         r, c = zip(*ndimage.minimum_position(dst, regions, labels))

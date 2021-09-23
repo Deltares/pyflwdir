@@ -638,16 +638,16 @@ class FlwdirRaster(Flwdir):
         )
         return subbas.reshape(self.shape), idxs_out
 
-    def subbasins_area(self, upa_min, uparea=None):
-        """Returns map with basin IDs, with a minimal area of `upa_min`.
+    def subbasins_area(self, area_min, uparea=None):
+        """Returns map with basin IDs, with a minimal area of `area_min`.
         Moving upstream from the basin outlets a new subbasin starts at tributaries
-        with a contributing area larger than `upa_min` and new interbasins when its area
-        exceeds the `upa_min`.
+        with a contributing area larger than `area_min` and new interbasins when its area
+        exceeds the `area_min`.
 
         Parameters
         ----------
-        area_thresh : float
-            Upstream area theshold for subbasins, by default 0.0.
+        area_min : float
+            subbasin area theshold; same unit as `uparea`, by default km2.
         uparea : 2D array of float, optional
             2D raster with upstream area, by default None; calculated on the fly.
 
@@ -662,8 +662,8 @@ class FlwdirRaster(Flwdir):
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
             idxs_us_main=self.idxs_us_main,
-            uparea=self._check_data(uparea, "uparea"),
-            upa_min=upa_min,
+            uparea=self._check_data(uparea, "uparea", unit="km2"),
+            area_min=area_min,
         )
         return subbas.reshape(self.shape), idxs_out
 

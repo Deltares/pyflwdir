@@ -103,7 +103,7 @@ Streams and flow paths
 
 .. automethod:: pyflwdir.FlwdirRaster.subbasins_pfafstetter()
 
-.. automethod:: pyflwdir.FlwdirRaster.subbasins_areas()
+.. automethod:: pyflwdir.FlwdirRaster.subbasins_area()
 
 .. automethod:: pyflwdir.FlwdirRaster.basin_outlets()
 
@@ -191,7 +191,7 @@ Region utility methods
 
 .. automethod:: pyflwdir.regions.region_sum()
 
-.. automethod:: pyflwdir.regions.region_areas()
+.. automethod:: pyflwdir.regions.region_area()
 
 .. automethod:: pyflwdir.regions.region_dissolve()
 
