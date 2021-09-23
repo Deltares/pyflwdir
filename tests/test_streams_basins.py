@@ -36,7 +36,7 @@ def test_accuflux(parsed, flwdir):
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
 def test_basins(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
+    idxs_ds, idxs_pit, seq, _, _ = [p.copy() for p in parsed]
     n, ncol = seq.size, flwdir.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
     # test basins
@@ -48,10 +48,24 @@ def test_basins(parsed, flwdir):
     bas = bas.reshape(flwdir.shape)
     total_bbox = regions.region_bounds(bas)[-1]
     assert np.all(total_bbox == np.array([0, -bas.shape[0], bas.shape[1], 0]))
-    areas = regions.region_area(bas)[1]
+    lbs, areas = regions.region_area(bas)
     assert areas[0] == np.sum(bas == 1)
     areas1 = regions.region_area(bas, latlon=True)[1]
     assert areas1.argmax() == areas.argmax()
+    # test dissolve with labels
+    lbs0 = lbs[np.argmin(areas)]
+    bas1 = regions.region_dissolve(bas, labels=lbs0)
+    assert np.all(~np.isin(bas1, lbs0))
+    # test dissovle with linear index
+    idxs = idxs_pit[np.argsort(upa[idxs_pit])][:2]
+    lbs0 = bas.flat[idxs]
+    bas1 = regions.region_dissolve(bas, idxs=idxs)
+    assert np.all(~np.isin(bas1, lbs0))
+    # dissolve errors
+    with pytest.raises(ValueError, match='Either "labels" or "idxs" must be provided'):
+        regions.region_dissolve(bas)
+    with pytest.raises(ValueError, match="Found non-unique or zero-value labels"):
+        regions.region_dissolve(bas, labels=0)
 
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)
@@ -60,13 +74,17 @@ def test_subbasins(parsed, flwdir):
     n, ncol = seq.size, flwdir.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
     idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
-    # # pfafstetter for largest basin
+    ## pfafstetter for largest basin
     idx0 = np.atleast_1d(idxs_pit[np.argsort(upa[idxs_pit])[-1:]])
-    pfaf1 = basins.subbasins_pfafstetter(
+    pfaf1, idxs_out1 = basins.subbasins_pfafstetter(
         idx0, idxs_ds, seq, idxs_us_main, upa, mask=None, depth=1, mv=mv
     )
     assert pfaf1[idx0] == 1
-    pfaf2 = basins.subbasins_pfafstetter(
+    lbs, idxs_out = regions.region_outlets(pfaf1.reshape(flwdir.shape), idxs_ds, seq)
+    idxs_out1 = idxs_out1[np.argsort(pfaf1[idxs_out1])]
+    assert np.all(idxs_out1 == idxs_out)
+    assert np.all(lbs == pfaf1[idxs_out1])
+    pfaf2, _ = basins.subbasins_pfafstetter(
         idx0, idxs_ds, seq, idxs_us_main, upa, mask=None, depth=2, mv=mv
     )
     assert pfaf2[idx0] == 11
@@ -74,6 +92,33 @@ def test_subbasins(parsed, flwdir):
     pfaf_path = pfaf2[core.path(idx0, idxs_us_main, mv=mv)[0][0]]
     assert np.all(pfaf_path % 2 == 1)  # only interbasin (=odd values)
     assert np.all(np.diff(pfaf_path) >= 0)  # increasing values upstream
+    ## area subbasins
+    subbas, idxs_out1 = basins.subbasins_area(
+        idxs_ds, seq, idxs_us_main, upa, area_min=5
+    )
+    assert np.all(upa[subbas == 0] == -9999)
+    pits = idxs_ds[idxs_out1] == idxs_out1
+    assert np.all(subbas[idxs_out1][~pits] != subbas[idxs_ds[idxs_out1]][~pits])
+    lbs0 = subbas[idxs_out1][~pits]
+    lbs, areas = regions.region_area(subbas.reshape(flwdir.shape))
+    # all nonpits must have area_min size
+    assert np.all(areas[np.isin(lbs, lbs0)] > 5)
+
+
+@pytest.mark.parametrize("parsed, flwdir", test_data)
+def test_subbasins_strord(parsed, flwdir):
+    idxs_ds, _, seq, _, _ = [p.copy() for p in parsed]
+    ## streamorder basins
+    strord = streams.strahler_order(idxs_ds, seq)
+    maxsto = strord.max()
+    subbas, idxs_out1 = basins.subbasins_streamorder(idxs_ds, seq, strord, min_sto=-2)
+    sto_out = strord[idxs_out1]
+    assert np.all(sto_out >= maxsto - 2)
+    assert np.all(strord[subbas == 0] < maxsto - 2)
+    pits = idxs_ds[idxs_out1] == idxs_out1
+    sto_out1 = strord[idxs_ds[idxs_out1]]
+    assert np.all(sto_out1[~pits] > sto_out[~pits])
+    assert np.all(subbas[idxs_out1][~pits] != subbas[idxs_ds[idxs_out1]][~pits])
 
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)

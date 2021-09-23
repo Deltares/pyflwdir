@@ -6,32 +6,38 @@ Unreleased
 ***********
 New
 ---
-* classis "bottum up" stream order 
 * General Flwdir object for 1D vector based (instead of raster based) flow directions
 * flwdir.from_dataframe methods to derive a Flwdir object from a (Geo)DataFrame based on the row index and a column with downstream row indices.
 * dem.fill_depressions and pyflwdir.from_dem methods to derive flow directions from DEMs based on Wang & Lui (2015) 
 * gis_utils.get_edge method to get a boolean mask of valid cells at the interface with nodata cells or the array edge.
-* FlwdirRaster.adjust_dem_d4 method to adjust a DEM such that each cell has a 4D neighbor with equal or lower elevation.
-* new `fillnodata` method fill nodata gaps by propagating valid values up or downstream.
+* gis_utils.spread2d method to spread valid values on a 2D raster with optional friction and mask rasters
+* FlwdirRaster.dem_dig_d4 method to adjust a DEM such that each cell has a 4D neighbor with equal or lower elevation.
+* FlwdirRaster.fillnodata method fill nodata gaps by propagating valid values up or downstream.
+* region.region_outlets method; which is also wrapped in the new FlwdirRaster.basin_outlets method
+* region.region_dissolve method to dissovle regions into their nearest neighboring region
+* FlwdirRaster.subbasins_areas method to derive subbasins based on a minimal area threshold
 
 Improved
 --------
-* faster subgrid slope method with optional lstsq regression based slope
-* streams takes a `idxs_out` argument to derive stream vectors for unit catchments
-* streams takes a `max_len` argument to split large segments into multiple smaller ones.
-* Use of Flwdir as common base of FlwdirRaster to share methods and properties 
-* changed IDENTITY transform to have North -> South orientation (yres < 0) which is in line with flow direction rasters.
-* new `restrict_strord` argument in `moving_average` and `moving_median` methods to restrict the moving window to cells with same or larger stream order.
+* added type="classis" for bottum-up stream order to FlwdirRaster.stream_order, default is type="strahler"
+* return subbasin outlet indices for all FlwdirRaster.subbasin* methods
+* improved subgrid slope method with optional lstsq regression based slope
+* FlwdirRaster.streams takes an optional `idxs_out` argument to derive stream vectors for unit catchments
+* FlwdirRaster.streams takes an optional `max_len` argument to split large segments into multiple smaller ones.
+* Using the new Flwdir object as common base of FlwdirRaster to share methods and properties 
+* gis_utils.IDENTITY transform has North -> South orientation (yres < 0) instead of S->N orientation which is in line with flow direction rasters.
+* new `restrict_strord` argument in FlwdirRaster.moving_average and FlwdirRaster.moving_median methods to restrict the moving window to cells with same or larger stream order.
 
 Bugfix
 ------
-* pfafstetter subbasins reimplementation to fix mall functioning when jitted
-* stream_order method gave incorrect results
-* streams method gave incorrect segments with the min_sto argument
+* strahler stream_order method gave incorrect results
+* basins.subbasins_pfafstetter reimplementation to fix mall functioning when jitted
+* FlwdirRaster.streams fix when called with optional `min_sto` argument
 
 Deprecated
 ----------
-* main_tributaries method is deprecated due to mallfunctioning when jitted
+* FlwdirRaster.main_tributaries method is deprecated due to mallfunctioning when jitted
+* FlwdirRaster.inflow_idxs and FlwdirRaster.outflow_idxs
 
 0.4.6
 *****

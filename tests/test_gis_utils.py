@@ -154,3 +154,17 @@ def test_edge():
     b[1, 3], b[3, 1] = False, False
     d4 = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     assert np.all(gis.get_edge(a, structure=d4) == b)
+
+
+def test_spread():
+    a = np.zeros((5, 5))
+    a[2, 2] = 1
+    out, src, dst = gis.spread2d(a, nodata=0)
+    assert np.all(out == 1)
+    assert np.all(src == 12)
+    assert np.isclose(np.max(dst), 2 * np.hypot(1, 1))
+    a[-1, -1] = 2
+    out, src, dst = gis.spread2d(a, nodata=0, msk=a != 2, latlon=True)
+    assert np.all(out[a != 2] == 1)
+    assert np.all(out.flat[src] == out)
+    assert dst[-1, -1] == 0

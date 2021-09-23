@@ -507,7 +507,7 @@ class Flwdir(object):
 
     ### SHORTCUTS ###
 
-    def _check_data(self, data, name, optional=False, **kwargs):
+    def _check_data(self, data, name, optional=False, flatten=True, **kwargs):
         """check or calculate upstream area cells; return flattened array"""
         if data is None and optional:
             return
@@ -517,11 +517,18 @@ class Flwdir(object):
             elif name == "strord":
                 data = self.stream_order(**kwargs)
         data = np.atleast_1d(data)
-        if data.size == 1:
-            data = np.full(self.size, data)
-        elif data.size != self.size:
-            raise ValueError(f'"{name}" size does not match.')
-        return data.ravel()
+        if flatten:
+            if data.size == 1:
+                data = np.full(self.size, data, dtype=data.dtype)
+            elif data.size != self.size:
+                raise ValueError(f'"{name}" size does not match.')
+            return data.ravel()
+        else:
+            if data.size == 1:
+                data = np.full(self.shape, data, dtype=data.dtype)
+            elif data.shape != self.shape:
+                raise ValueError(f'"{name}" shape does not match.')
+            return data
 
     def _check_idxs_xy(self, idxs, streams=None):
         idxs = np.atleast_1d(idxs).ravel()

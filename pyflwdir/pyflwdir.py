@@ -575,7 +575,7 @@ class FlwdirRaster(Flwdir):
         return basids.reshape(self.shape)
 
     def subbasins_streamorder(self, strord=None, mask=None, min_sto=-2):
-        """Returns a subbasin map with unique IDs.
+        """Returns a subbasin map with unique IDs and its outlet linear indices.
         Subbasins are defined based on a minimum stream order.
 
         Parameters
@@ -590,17 +590,19 @@ class FlwdirRaster(Flwdir):
 
         Returns
         -------
-        basins : 1D-arrays of uint32
+        subbas : 2D-array of int32
             map with unique IDs for stream_order>=min_sto subbasins
+        idxs_out: 1D array of int
+            linear indices of subbasin outlet cells
         """
-        subbas = basins.subbasins_streamorder(
+        subbas, idxs_out = basins.subbasins_streamorder(
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
             strord=self._check_data(strord, "strord"),
             mask=self._check_data(mask, "mask", optional=True),
             min_sto=min_sto,
         )
-        return subbas.reshape(self.shape)
+        return subbas.reshape(self.shape), idxs_out
 
     def subbasins_pfafstetter(self, depth=1, uparea=None, upa_min=0.0):
         """Returns the pfafstetter subbasins.
@@ -616,23 +618,54 @@ class FlwdirRaster(Flwdir):
 
         Returns
         -------
-        2D array of uint32
+        subbas: 2D array of int32
             subbasin map with pfafstetter coding
+        idxs_out: 1D array of int
+            linear indices of subbasin outlet cells
         """
         uparea = self._check_data(uparea, "uparea")
         if upa_min is not None:
             mask = uparea >= upa_min
-        pfaf = basins.subbasins_pfafstetter(
+        subbas, idxs_out = basins.subbasins_pfafstetter(
             idxs_pit=self.idxs_pit,
             idxs_ds=self.idxs_ds,
             idxs_us_main=self.idxs_us_main,
             seq=self.idxs_seq,
-            uparea=self._check_data(uparea, "uparea"),
+            uparea=uparea,
             mask=mask,
             depth=depth,
             mv=self._mv,
         )
-        return pfaf.reshape(self.shape)
+        return subbas.reshape(self.shape), idxs_out
+
+    def subbasins_area(self, area_min, uparea=None):
+        """Returns map with basin IDs, with a minimal area of `area_min`.
+        Moving upstream from the basin outlets a new subbasin starts at tributaries
+        with a contributing area larger than `area_min` and new interbasins when its area
+        exceeds the `area_min`.
+
+        Parameters
+        ----------
+        area_min : float
+            subbasin area theshold; same unit as `uparea`, by default km2.
+        uparea : 2D array of float, optional
+            2D raster with upstream area, by default None; calculated on the fly.
+
+        Returns
+        -------
+        subbas: 2D array of int32
+            subbasin map with pfafstetter coding
+        idxs_out: 1D array of int
+            linear indices of subbasin outlet cells
+        """
+        subbas, idxs_out = basins.subbasins_area(
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            idxs_us_main=self.idxs_us_main,
+            uparea=self._check_data(uparea, "uparea", unit="km2"),
+            area_min=area_min,
+        )
+        return subbas.reshape(self.shape), idxs_out
 
     def basin_bounds(self, basins=None, **kwargs):
         """Returns a the basin boundaries.
@@ -654,12 +687,33 @@ class FlwdirRaster(Flwdir):
         total_bbox : 1D array of float
             the total bounding box of all basins [xmin, ymin, xmax, ymax]
         """
-        if basins is None:
-            basins = self.basins(**kwargs)
-        elif basins.size != self.size:
-            raise ValueError('"basins" size does not match with FlwdirRaster size')
-        lbs, bboxs, total_bbox = regions.region_bounds(basins, transform=self.transform)
+        lbs, bboxs, total_bbox = regions.region_bounds(
+            regions=self._check_data(basins, "basins", flatten=False, **kwargs),
+            transform=self.transform,
+        )
         return lbs, bboxs, total_bbox
+
+    def basin_outlets(self, basins):
+        """Returns the linear index of the outlet cell of `basins`.
+
+        Parameters
+        ----------
+        basins: 2D array of int
+            raster with unique IDs for each basin, where the background value must be zero.
+
+        Returns
+        -------
+        lbs: 1D array
+            array of the unique region IDs
+        idxs_out: 1D array
+            linear index of outlet cell per region
+        """
+        lbs, idxs_out = regions.region_outlets(
+            regions=self._check_data(basins, "basins"),
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+        )
+        return lbs, idxs_out
 
     def interbasin_mask(self, region, stream=None):
         """Returns most downstream contiguous area within region, i.e.: if a stream flows
@@ -760,23 +814,6 @@ class FlwdirRaster(Flwdir):
         return accu.reshape(data.shape)
 
     ### STREAMS ####
-    def inflow_idxs(self, region):
-        """Returns linear indices of most upstream pixels within region
-
-        Parameters
-        ----------
-        region: 2D array of bool
-            True where region
-
-        Returns:
-        -------
-        idxs: 1D array of int
-            linear indices
-        """
-        return core.inflow_idxs(
-            self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
-        )
-
     def outflow_idxs(self, region):
         """Returns linear indices of most downstream pixels within region
 
@@ -790,9 +827,10 @@ class FlwdirRaster(Flwdir):
         idxs: 1D array of int
             linear indices
         """
-        return core.outflow_idxs(
-            self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
+        warnings.warn(
+            "outflow_idxs is deprecated, use basin_outlets instead", DeprecationWarning
         )
+        return self.basin_outlets(region)[1]
 
     def stream_distance(self, mask=None, unit="cell"):
         """Returns distance to outlet or next downstream True cell in mask
@@ -1373,7 +1411,7 @@ class FlwdirRaster(Flwdir):
 
     ### ELEVATION ###
 
-    def dem_adjust_d4(self, elevtn, nodata=-9999.0):
+    def dem_dig_d4(self, elevtn, nodata=-9999.0):
         """Returns the hydrologically adjusted elevation where for
         each cell there is an adjacent d4 connected cell which has
         has the same or lower elevation as the current cell.
@@ -1460,7 +1498,7 @@ class FlwdirRaster(Flwdir):
 
     ### SHORTCUTS ###
 
-    def _check_data(self, data, name, optional=False, **kwargs):
+    def _check_data(self, data, name, optional=False, flatten=True, **kwargs):
         """check or calculate upstream area cells; return flattened array"""
         if data is None and optional:
             return
@@ -1471,7 +1509,7 @@ class FlwdirRaster(Flwdir):
                 data = self.basins(**kwargs)
             elif name == "strord":
                 data = self.stream_order(**kwargs)
-        return super()._check_data(data, name, optional)
+        return super()._check_data(data, name, optional, flatten=flatten)
 
     def _check_idxs_xy(self, idxs=None, xy=None, streams=None):
         if (xy is not None and idxs is not None) or (xy is None and idxs is None):

@@ -18,6 +18,9 @@ def basins(idxs_ds, idxs_pit, seq, ids=None):
     return core.fillnodata_upstream(idxs_ds, seq, basins, 0)
 
 
+# NOTE not unit tested
+# TODO: change this method to derive the interbasin for a single outflow as currently
+# its results are ambiguous?!
 @njit
 def interbasin_mask(idxs_ds, seq, region, stream=None):
     """Returns most downstream contiguous area within region, i.e.: if a stream flows
@@ -82,21 +85,22 @@ def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
 
     Returns
     -------
-    basins : 1D-arrays of uint32
+    basins : 1D-arrays of int32
         map with unique IDs for stream_order>=min_sto subbasins
     """
     if min_sto < 0:
         min_sto = strord.max() + min_sto
     subbas = np.full(idxs_ds.shape, 0, dtype=np.int32)
-    i = np.int32(1)
+    idxs = []
     for idx0 in seq[::-1]:  # up- to downstream
         if (mask is not None and mask[idx0] == False) or strord[idx0] < min_sto:
             continue
         idx_ds = idxs_ds[idx0]
         if strord[idx0] != strord[idx_ds] or idx_ds == idx0:
-            subbas[idx0] = i
-            i += 1
-    return core.fillnodata_upstream(idxs_ds, seq, subbas, 0)
+            idxs.append(idx0)
+            subbas[idx0] = len(idxs)
+    idxs1 = np.array(idxs, dtype=idxs_ds.dtype)
+    return core.fillnodata_upstream(idxs_ds, seq, subbas, 0), idxs1
 
 
 @njit
@@ -117,7 +121,8 @@ def subbasins_pfafstetter(
     strord = np.where(strord <= depth + 1, strord, 0).astype(strord.dtype)
     idxs_trib = _tributaries(idxs_ds, seq, strord)
     # initiate map with pfaf id at river branch based on classic stream order map
-    pfaf_branch = np.zeros(idxs_ds.size, np.uint32)
+    pfaf_branch = np.zeros(idxs_ds.size, np.int32)
+    idxs = []
     # keep basin label; depth; outlet index
     labs = [(int(0), int(0)) for _ in range(0)]  # set dtypes
     # propagate basin labels upstream its main stem
@@ -125,6 +130,7 @@ def subbasins_pfafstetter(
     for d0 in range(1, depth):
         pfaf0 += 10 ** d0
     for i, idx in enumerate(idxs_pit):
+        idxs.append(idx)
         pfaf1 = pfaf0 + (i + 1) * 10 ** depth
         labs.append((pfaf1, 1))
         pfaf_branch[idx] = pfaf1
@@ -155,6 +161,7 @@ def subbasins_pfafstetter(
         # pfaf_branch[idx0] = pfaf0
         pfaf_int_ds = pfaf0  # downstream interbasin
         for i, idx in enumerate(idxs_trib0s):
+            idxs.append(idx)
             idx1 = idxs_us_main[idxs_ds[idx]]  # interbasin outlet
             # propagate subbasin labels upstream its main stem
             pfaf_sub = pfaf0 + (i * 2 + 1) * 10 ** (depth - d0)  # subbasin
@@ -168,6 +175,7 @@ def subbasins_pfafstetter(
                 labs.append((pfaf_sub, d0 + 1))
             # propagate interbasin labels upstream main stem
             if pfaf_branch[idx1] == pfaf_int_ds:
+                idxs.append(idx1)
                 pfaf_int = pfaf0 + (i + 1) * 2 * 10 ** (depth - d0)  # interbasin
                 pfaf_branch[idx1] = pfaf_int
                 while True:
@@ -178,4 +186,48 @@ def subbasins_pfafstetter(
                 pfaf_int_ds = pfaf_int
                 if d0 < depth:  # next iter
                     labs.append((pfaf_int, d0 + 1))
-    return core.fillnodata_upstream(idxs_ds, seq, pfaf_branch, 0) % 10 ** depth
+    idxs1 = np.array(idxs, dtype=idxs_ds.dtype)
+    pfafbas = core.fillnodata_upstream(idxs_ds, seq, pfaf_branch, 0) % 10 ** depth
+    return pfafbas, idxs1
+
+
+@njit
+def subbasins_area(idxs_ds, seq, idxs_us_main, uparea, area_min):
+    """Returns map with basin IDs, with a minimal area of `area_min`.
+    Moving upstream from the basin outlets a new subbasin starts at tributaries
+    with a contributing area larger than `area_min` and new interbasins when its area
+    exceeds the `area_min`.
+
+    Returns
+    -------
+    basins: 2D array of int32
+        raster with basin IDs
+    idxs1: 1D array of int
+        linear indices of subbasin outlet cells
+    """
+    upa_out = uparea.copy()
+    subbas = np.zeros(idxs_ds.size, dtype=np.uint32)
+    idxs = []
+    for idx in seq:  # down- to upstream
+        idx_ds = idxs_ds[idx]
+        if idx_ds == idx:
+            idxs.append(idx)
+            subbas[idx] = len(idxs)
+            continue
+        upa0 = upa_out[idx_ds]
+        upa = uparea[idx]
+        if (upa0 - upa) > area_min and upa > area_min:
+            conf = (uparea[idx_ds] - upa) > area_min
+            trib = idxs_us_main[idx_ds] != idx
+            if not conf or trib:
+                idxs.append(idx)
+                subbas[idx] = len(idxs)
+                upa_out[idx] = upa
+            if trib:
+                idx1 = idxs_us_main[idx_ds]  # main stem
+                upa_out[idx_ds] -= upa
+                upa_out[idx1] = upa_out[idx_ds]
+        else:
+            upa_out[idx] = upa0
+    idxs1 = np.array(idxs, dtype=idxs_ds.dtype)
+    return core.fillnodata_upstream(idxs_ds, seq, subbas, 0), idxs1
