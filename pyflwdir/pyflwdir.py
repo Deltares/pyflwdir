@@ -1427,7 +1427,7 @@ class FlwdirRaster(Flwdir):
 
     ### ELEVATION ###
 
-    def dem_adjust_d4(self, elevtn, nodata=-9999.0):
+    def dem_dig_d4(self, elevtn, nodata=-9999.0):
         """Returns the hydrologically adjusted elevation where for
         each cell there is an adjacent d4 connected cell which has
         has the same or lower elevation as the current cell.

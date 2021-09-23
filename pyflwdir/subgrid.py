@@ -225,6 +225,7 @@ def segment_average(
     return data_out
 
 
+## NOTE: not unit tested
 @njit
 def segment_median(
     idxs_out,
@@ -289,6 +290,7 @@ def segment_median(
     return data_out
 
 
+## NOTE: not unit tested
 @njit
 def segment_indices(
     idxs_out,
@@ -358,6 +360,7 @@ def segment_indices(
     return streams
 
 
+## NOTE: not unit tested
 @njit
 def segment_slope(
     idxs_out,

@@ -63,8 +63,8 @@ Flow direction methods
 Raster & geospatial attributes and methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The FlwdirRaster object contains :attr:`FlwdirRaster.shape`, :attr:`FlwdirRaster.transform`
-and :attr:`FlwdirRaster.latlon` attributes describing its geospatial location. The first 
+The FlwdirRaster object contains :py:attr:`FlwdirRaster.shape`, :py:attr:`FlwdirRaster.transform`
+and :py:attr:`FlwdirRaster.latlon` attributes describing its geospatial location. The first 
 attribute is required at initializiation, while the others can be set later.
 
 .. automethod:: pyflwdir.FlwdirRaster.set_transform()
@@ -73,9 +73,9 @@ attribute is required at initializiation, while the others can be set later.
 
 .. automethod:: pyflwdir.FlwdirRaster.xy()
 
-.. autoproperty:: pyflwdir.FlwdirRaster.bounds()
+.. autoattribute:: pyflwdir.FlwdirRaster.bounds
 
-.. autoproperty:: pyflwdir.FlwdirRaster.extent()
+.. autoattribute:: pyflwdir.FlwdirRaster.extent
 
 
 Streams and flow paths
@@ -99,11 +99,16 @@ Streams and flow paths
 
 .. automethod:: pyflwdir.FlwdirRaster.basins()
 
-.. automethod:: pyflwdir.FlwdirRaster.basin_bounds()
-
 .. automethod:: pyflwdir.FlwdirRaster.subbasins_streamorder()
 
 .. automethod:: pyflwdir.FlwdirRaster.subbasins_pfafstetter()
+
+.. automethod:: pyflwdir.FlwdirRaster.subbasins_areas()
+
+.. automethod:: pyflwdir.FlwdirRaster.basin_outlets()
+
+.. automethod:: pyflwdir.FlwdirRaster.basin_bounds()
+
 
 
 Up- and downstream values
@@ -137,6 +142,8 @@ Upscale and subgrid methods
 
 .. automethod:: pyflwdir.FlwdirRaster.subgrid_rivavg()
 
+.. automethod:: pyflwdir.FlwdirRaster.subgrid_rivmed()
+
 .. automethod:: pyflwdir.FlwdirRaster.ucat_area()
 
 .. automethod:: pyflwdir.FlwdirRaster.ucat_outlets()
@@ -147,10 +154,44 @@ Elevation
 
 .. automethod:: pyflwdir.FlwdirRaster.dem_adjust()
 
+.. automethod:: pyflwdir.FlwdirRaster.dem_dig_d4()
+
 .. automethod:: pyflwdir.FlwdirRaster.hand()
 
 .. automethod:: pyflwdir.FlwdirRaster.floodplains()
 
+
+
+Elevation raster methods
+------------------------
+
 .. automethod:: pyflwdir.dem.fill_depressions()
 
 .. automethod:: pyflwdir.dem.slope()
+
+
+
+GIS raster utility methods
+--------------------------
+
+.. automethod:: pyflwdir.gis_utils.spread2d()
+
+.. automethod:: pyflwdir.gis_utils.get_edge()
+
+.. automethod:: pyflwdir.gis_utils.reggrid_area()
+
+
+
+Region utility methods
+----------------------
+
+.. automethod:: pyflwdir.regions.region_bounds()
+
+.. automethod:: pyflwdir.regions.region_slices()
+
+.. automethod:: pyflwdir.regions.region_sum()
+
+.. automethod:: pyflwdir.regions.region_areas()
+
+.. automethod:: pyflwdir.regions.region_dissolve()
+

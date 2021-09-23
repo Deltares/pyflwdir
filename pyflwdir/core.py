@@ -465,6 +465,7 @@ def snap(
     return idxs, dists
 
 
+# NOTE: not unit tested
 @njit
 def inflow_idxs(idxs_ds, seq, region):
     """returns linear indices of most upstream pixels within region"""
@@ -481,6 +482,7 @@ def inflow_idxs(idxs_ds, seq, region):
     return np.array(idxs, dtype=idxs_ds.dtype)
 
 
+# NOTE: not unit tested
 @njit
 def outflow_idxs(idxs_ds, seq, region):
     """returns linear indices of most downstream pixels within region"""

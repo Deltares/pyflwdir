@@ -3,7 +3,7 @@
 from numba import njit
 import numpy as np
 
-from pyflwdir import core, streams, gis_utils
+from pyflwdir import core, streams
 
 _mv = core._mv
 all = []
@@ -18,36 +18,9 @@ def basins(idxs_ds, idxs_pit, seq, ids=None):
     return core.fillnodata_upstream(idxs_ds, seq, basins, 0)
 
 
-def dissolve_basins(basins, pit_mask):
-    """Dissolve (small) basins into neighboring basins. The (small) basins are assigned
-    the basin ID of the nearest neighboring basin measured from its outlet pixel as
-    provided in `pit_mask`.
-
-    Parameters
-    ----------
-    basins : 2D-array of int
-        raster with basin IDs
-    pit_mask : 2D-array of bool
-        raster with True values at outlets of basins which should be dissolved.
-
-    Returns
-    -------
-    basins_out : 2D-array of int
-        raster with basin IDs
-    """
-    basins0 = basins.copy()
-    pit_bas0 = basins[pit_mask]
-    if not pit_bas0.size == np.unique(pit_bas0).size:
-        raise ValueError("Eech basin may only contain a single pit cell.")
-    basins0[np.isin(basins, pit_bas0)] = 0
-    assert np.any(basins0 != 0)
-    pit_bas1 = gis_utils.spread2d(basins0, nodata=0)[0][pit_mask]
-    d = {old: new for old, new in zip(pit_bas0, pit_bas1)}
-    return np.vectorize(lambda x: d.get(x, x))(basins)
-
-
+# NOTE not unit tested
 # TODO: change this method to derive the interbasin for a single outflow as currently
-# its results are ambiguous
+# its results are ambiguous?!
 @njit
 def interbasin_mask(idxs_ds, seq, region, stream=None):
     """Returns most downstream contiguous area within region, i.e.: if a stream flows
