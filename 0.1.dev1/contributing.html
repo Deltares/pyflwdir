@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing &mdash; pyflwdir 0.1.dev1+gab227d0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Change Log" href="changelog.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> pyflwdir
+          </a>
+              <div class="version">
+                0.1.dev1+gab227d0.dev
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing to PyFlwDir</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#code-of-conduct">Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rights">Rights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#issue-conventions">Issue Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design-principles">Design Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#git-conventions">Git Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#code-conventions">Code Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development-environment">Development Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#initial-setup">Initial Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-the-tests">Running the tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-code-format-checks">Running code format checks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/Deltares/pyflwdir">Github repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyflwdir</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Contributing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline"></a></h1>
+<p>Welcome to the pyflwdir project. All contributions, bug reports, bug fixes,
+documentation improvements, enhancements, and ideas are welcome. Here’s how we work.</p>
+<section id="code-of-conduct">
+<h2>Code of Conduct<a class="headerlink" href="#code-of-conduct" title="Permalink to this headline"></a></h2>
+<p>First of all: the pyflwdir project has a code of conduct. Please read the
+CODE_OF_CONDUCT.txt file, it’s important to all of us.</p>
+</section>
+<section id="rights">
+<h2>Rights<a class="headerlink" href="#rights" title="Permalink to this headline"></a></h2>
+<p>The MIT license (see LICENSE.txt) applies to all contributions.</p>
+</section>
+<section id="issue-conventions">
+<h2>Issue Conventions<a class="headerlink" href="#issue-conventions" title="Permalink to this headline"></a></h2>
+<p>The pyflwdir issue tracker is for actionable issues.</p>
+<p>Pyflwdir is a relatively new project and highly active. We have bugs, both
+known and unknown.</p>
+<p>Please search existing issues, open and closed, before creating a new one.</p>
+<p>Please provide these details as well as tracebacks and relevant logs. Short scripts and
+datasets demonstrating the issue are especially helpful!</p>
+</section>
+<section id="design-principles">
+<h2>Design Principles<a class="headerlink" href="#design-principles" title="Permalink to this headline"></a></h2>
+<p>Pyflwdir contains methods to work with hydro- and topography data in Numpy arrays.</p>
+<ul class="simple">
+<li><p>I/O from the filesystem to numpy arrays is not part of this package, other packages
+such as <a class="reference external" href="https://github.com/pydata/xarray">xarray</a>. or
+<a class="reference external" href="https://github.com/pydata/xarray">rasterio</a>.</p></li>
+<li><p>To accalerate the code we use <a class="reference external" href="https://github.com/numba/numba">numba</a>.</p></li>
+<li><p>Flow direction data is parsed to a flattened array of linear indices of the next
+downstream cell. Based on this general concept many methods can be applied.</p></li>
+</ul>
+</section>
+<section id="git-conventions">
+<h2>Git Conventions<a class="headerlink" href="#git-conventions" title="Permalink to this headline"></a></h2>
+<p>After discussing a new proposal or implementation in the issue tracker, you can start
+working on the code. You write your code locally in a new branch pyflwdir repo or in a
+branch of a fork. Once you’re done with your first iteration, you commit your code and
+push to your pyflwdir repository.</p>
+<p>To create a new branch after you’ve downloaded the latest changes in the project:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git pull
+<span class="gp">$ </span>git checkout -b &lt;name-of-branch&gt;
+</pre></div>
+</div>
+<p>Develop your new code and keep while keeping track of the status and differences using:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git status
+<span class="gp">$ </span>git diff
+</pre></div>
+</div>
+<p>Add and commit local changes, use clear commit messages and add the number of the
+related issue to that (first) commit message:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git add &lt;file-name OR folder-name&gt;
+<span class="gp">$ </span>git commit -m <span class="s2">&quot;this is my commit message. Ref #xxx&quot;</span>
+</pre></div>
+</div>
+<p>Regularly push local commits to the repository. For a new branch the remote and name
+of branch need to be added.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git push &lt;remote&gt; &lt;name-of-branch&gt;
+</pre></div>
+</div>
+<p>When your changes are ready for review, you can merge them into the main codebase with a
+merge request. We recommend creating a merge request as early as possible to give other
+developers a heads up and to provide an opportunity for valuable early feedback. You
+can create a merge request online or by pushing your branch to a feature-branch.</p>
+</section>
+<section id="code-conventions">
+<h2>Code Conventions<a class="headerlink" href="#code-conventions" title="Permalink to this headline"></a></h2>
+<p>We use <a class="reference external" href="https://black.readthedocs.io/en/stable/">black</a> for standardized code formatting.</p>
+<p>Tests are mandatory for new features. We use <a class="reference external" href="https://pytest.org">pytest</a>. All tests
+should go in the tests directory.</p>
+<p>During Continuous Integration testing, several tools will be run to check your code for
+based on pytest, but also stylistic errors.</p>
+</section>
+<section id="development-environment">
+<h2>Development Environment<a class="headerlink" href="#development-environment" title="Permalink to this headline"></a></h2>
+<p>Developing pyflwdir requires Python &gt;= 3.6. We prefer developing with the most recent
+version of Python. We strongly encourage you to develop in a seperate conda environment.
+All Python dependencies required to develop pyflwdir can be found in <a class="reference external" href="environment.yml">environment.yml</a>.</p>
+<section id="initial-setup">
+<h3>Initial Setup<a class="headerlink" href="#initial-setup" title="Permalink to this headline"></a></h3>
+<p>First, clone pyflwdir’s <code class="docutils literal notranslate"><span class="pre">git</span></code> repo and navigate into the repository:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git clone git@github.com:Deltares/pyflwdir.git
+<span class="gp">$ </span><span class="nb">cd</span> pyflwdir
+</pre></div>
+</div>
+<p>Then, make and activate a new pyflwdir conda environment based on the environment.yml
+file contained in the repository:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>conda env create -f environment.yml
+<span class="gp">$ </span>conda activate pyflwdir
+</pre></div>
+</div>
+<p>Finally, build and install pyflwdir:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip install -e .
+</pre></div>
+</div>
+</section>
+<section id="running-the-tests">
+<h3>Running the tests<a class="headerlink" href="#running-the-tests" title="Permalink to this headline"></a></h3>
+<p>Pyflwdir’s tests live in the tests folder and generally match the main package layout.
+Test should be run from the tests folder.</p>
+<p>To run the entire suite and the code coverage report:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span><span class="nb">cd</span> tests
+<span class="gp">$ </span>python -m pytest --verbose --cov<span class="o">=</span>pyflwdir --cov-report term-missing
+</pre></div>
+</div>
+<p>A single test file:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python -m pytest --verbose test_pyflwdir.py
+</pre></div>
+</div>
+<p>A single test:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python -m pytest --verbose test_pyflwdir.py::test_save
+</pre></div>
+</div>
+</section>
+<section id="running-code-format-checks">
+<h3>Running code format checks<a class="headerlink" href="#running-code-format-checks" title="Permalink to this headline"></a></h3>
+<p>The code formatting will be checked based on the <a class="reference external" href="https://black.readthedocs.io/en/stable/the_black_code_style.html">black clode style</a> during ci.
+Make sure the check below returns <em>All done!</em> before commiting your edits.</p>
+<p>To check the formatting of your code:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>black --check .
+</pre></div>
+</div>
+<p>To automatically reformat your code:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>black .
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="changelog.html" class="btn btn-neutral float-left" title="Change Log" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Deltares.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pyflwdir.regions &mdash; pyflwdir 0.1.dev1+gab227d0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> pyflwdir
+          </a>
+              <div class="version">
+                0.1.dev1+gab227d0.dev
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../reference.html">API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing to PyFlwDir</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/Deltares/pyflwdir">Github repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pyflwdir</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>pyflwdir.regions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pyflwdir.regions</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -- coding: utf-8 --</span>
+<span class="sd">&quot;&quot;&quot;Methods to for regions, i.e. connected areas with same unique ID.</span>
+<span class="sd">Building on scipy.ndimage measurement methods, see</span>
+<span class="sd">https://docs.scipy.org/doc/scipy/reference/ndimage.html#measurements</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">ndimage</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">gis_utils</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;region_bounds&quot;</span><span class="p">,</span> <span class="s2">&quot;region_slices&quot;</span><span class="p">,</span> <span class="s2">&quot;region_sum&quot;</span><span class="p">,</span> <span class="s2">&quot;region_area&quot;</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">region_sum</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">regions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the sum of values in `data` for each unique label in `regions`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data: 2D array</span>
+<span class="sd">        input data</span>
+<span class="sd">    regions: 2D array of int</span>
+<span class="sd">        raster with unique IDs for each region, must have the same shape as `data`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lbs, sum: 1D array</span>
+<span class="sd">        arrays of the unique region IDs, and associated sum of input data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lbs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">regions</span><span class="p">[</span><span class="n">regions</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">lbs</span><span class="p">,</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">regions</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">lbs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">region_area</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the area [m2] for each unique label in `regions`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    regions: 2D array of int</span>
+<span class="sd">        raster with unique IDs for each region, must have the same shape as `data`.</span>
+<span class="sd">    latlon: bool</span>
+<span class="sd">        True for geographic CRS, False for projected CRS.</span>
+<span class="sd">        If True, the transform units are assumed to be degrees and converted to metric distances.</span>
+<span class="sd">    transform: Affine</span>
+<span class="sd">        Coefficients mapping pixel coordinates to coordinate reference system.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lbs, areas: 1D array</span>
+<span class="sd">        array of the unique region IDs, and associated areas [m2]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="n">gis_utils</span><span class="o">.</span><span class="n">area_grid</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">regions</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="n">latlon</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">region_sum</span><span class="p">(</span><span class="n">area</span><span class="p">,</span> <span class="n">regions</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">region_slices</span><span class="p">(</span><span class="n">regions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns slices for each unique label in `regions`.</span>
+
+<span class="sd">    NOTE: a region must be a connected area with the same ID,</span>
+<span class="sd">    where ID are integer values larger than zero.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    regions: 2D array of int</span>
+<span class="sd">        raster with unique IDs for each region, must have the same shape as `data`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lbs: 1D array</span>
+<span class="sd">        array of the unique region IDs</span>
+<span class="sd">    slices: list of tuples</span>
+<span class="sd">        Each tuple contains slices, one for each dimension</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">regions</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The &quot;regions&quot; array should be two dimensional&#39;</span><span class="p">)</span>
+    <span class="n">lbs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">regions</span><span class="p">[</span><span class="n">regions</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">lbs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No regions found in data&quot;</span><span class="p">)</span>
+    <span class="n">slices</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">find_objects</span><span class="p">(</span><span class="n">regions</span><span class="p">)</span>
+    <span class="n">slices</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">slices</span> <span class="k">if</span> <span class="n">s</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">lbs</span><span class="p">,</span> <span class="n">slices</span>
+
+
+<span class="k">def</span> <span class="nf">region_bounds</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the bounding box each unique label in `regions`.</span>
+
+<span class="sd">    NOTE: a region must be a connected area with the same ID,</span>
+<span class="sd">    where ID are integer values larger than zero.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    regions: 2D array of int</span>
+<span class="sd">        raster with unique IDs for each region, must have the same shape as `data`.</span>
+<span class="sd">    transform: Affine</span>
+<span class="sd">        Coefficients mapping pixel coordinates to coordinate reference system.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lbs: 1D array</span>
+<span class="sd">        array of the unique region IDs</span>
+<span class="sd">    bboxs: 2D array with shape (lbs.size, 4)</span>
+<span class="sd">        bounding box [xmin, ymin, xmax, ymax] for each label</span>
+<span class="sd">    total_bbox: 1D array</span>
+<span class="sd">        total bounding box of all regions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lbs</span><span class="p">,</span> <span class="n">slices</span> <span class="o">=</span> <span class="n">region_slices</span><span class="p">(</span><span class="n">regions</span><span class="p">)</span>
+    <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span> <span class="o">=</span> <span class="n">transform</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">transform</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+    <span class="n">lons</span><span class="p">,</span> <span class="n">lats</span> <span class="o">=</span> <span class="n">gis_utils</span><span class="o">.</span><span class="n">affine_to_coords</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">regions</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">iy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">iy</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">yres</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">iy</span> <span class="o">=</span> <span class="n">iy</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">xres</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">ix</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">xres</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">yres</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">bboxs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">yslice</span><span class="p">,</span> <span class="n">xslice</span> <span class="ow">in</span> <span class="n">slices</span><span class="p">:</span>
+        <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="n">lons</span><span class="p">[</span><span class="n">xslice</span><span class="p">][</span><span class="n">ix</span><span class="p">]</span>
+        <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="n">lats</span><span class="p">[</span><span class="n">yslice</span><span class="p">][</span><span class="n">iy</span><span class="p">]</span>
+        <span class="n">bboxs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">xmin</span> <span class="o">-</span> <span class="n">dx</span><span class="p">,</span> <span class="n">ymin</span> <span class="o">-</span> <span class="n">dy</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">+</span> <span class="n">dx</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">+</span> <span class="n">dy</span><span class="p">])</span>
+    <span class="n">bboxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">bboxs</span><span class="p">)</span>
+    <span class="n">total_bbox</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">bboxs</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">bboxs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)])</span>
+    <span class="k">return</span> <span class="n">lbs</span><span class="p">,</span> <span class="n">bboxs</span><span class="p">,</span> <span class="n">total_bbox</span>
+
+
+<span class="nd">@njit</span>
+<span class="k">def</span> <span class="nf">region_outlets</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the linear index of the outlet cell in `regions`.</span>
+
+<span class="sd">    NOTE: a region must be a connected area with the same ID,</span>
+<span class="sd">    where ID are integer values larger than zero.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    regions: 2D array of int</span>
+<span class="sd">        raster with unique IDs for each region, must have the same shape as `data`.</span>
+<span class="sd">    idxs_ds : 1D-array of intp</span>
+<span class="sd">        index of next downstream cell</span>
+<span class="sd">    seq : 1D array of int</span>
+<span class="sd">        ordered cell indices from down- to upstream</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lbs: 1D array</span>
+<span class="sd">        array of the unique region IDs</span>
+<span class="sd">    idxs_out: 1D array</span>
+<span class="sd">        linear index of outlet cell per region</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">regions_flat</span> <span class="o">=</span> <span class="n">regions</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">lbs_lst</span><span class="p">,</span> <span class="n">idxs_lst</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># up- to downstream</span>
+        <span class="n">idx_ds</span> <span class="o">=</span> <span class="n">idxs_ds</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">lb0</span> <span class="o">=</span> <span class="n">regions_flat</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="c1"># outlet: idx inside region (lb0) and idx_ds outside region or pit</span>
+        <span class="k">if</span> <span class="n">lb0</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">idx_ds</span> <span class="o">==</span> <span class="n">idx</span> <span class="ow">or</span> <span class="n">regions_flat</span><span class="p">[</span><span class="n">idx_ds</span><span class="p">]</span> <span class="o">!=</span> <span class="n">lb0</span><span class="p">):</span>
+            <span class="n">idxs_lst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+            <span class="n">lbs_lst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lb0</span><span class="p">)</span>
+    <span class="n">lbs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lbs_lst</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">regions</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">idxs_lst</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">idxs_ds</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">sort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">lbs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lbs</span><span class="p">[</span><span class="n">sort</span><span class="p">],</span> <span class="n">idxs_out</span><span class="p">[</span><span class="n">sort</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">region_dissolve</span><span class="p">(</span>
+    <span class="n">regions</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">idxs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">,</span>
+    <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Dissolve regions into its nearest neighboring regions.</span>
+
+<span class="sd">    Regions to be dissolved are provided by either their `labels` or one location</span>
+<span class="sd">    per region expressed with a linear index in `idxs`. These regions are assigned the</span>
+<span class="sd">    label of the nearest neighboring region. If a locations `idxs` are provided the</span>
+<span class="sd">    proximitity to other regions from that location. This can be  usefull to e.g.</span>
+<span class="sd">    dissolve basins based on the distance from its outlet.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    regions: 2D-array of int</span>
+<span class="sd">        raster with unique non-zero positive IDs for each region</span>
+<span class="sd">    labels: 1D-array of int</span>
+<span class="sd">        labels of regions to be dissolved. Must be unique and larger than zero.</span>
+<span class="sd">    idxs: 1D-array of int</span>
+<span class="sd">        linear index of one location per region to be dissolved</span>
+<span class="sd">    latlon: bool</span>
+<span class="sd">        True for geographic CRS, False for projected CRS.</span>
+<span class="sd">        If True, the transform units are assumed to be degrees and converted to metric distances.</span>
+<span class="sd">    transform: Affine</span>
+<span class="sd">        Coefficients mapping pixel coordinates to coordinate reference system.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    basins_out : 2D-array of int</span>
+<span class="sd">        raster with basin IDs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">idxs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">regions</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">idxs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Either &quot;labels&quot; or &quot;idxs&quot; must be provided.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">labels</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Found non-unique or zero-value labels.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">regions</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The &quot;regions&quot; array should be two dimensional&#39;</span><span class="p">)</span>
+    <span class="c1"># set regions to be dissolved to zero (=background value)</span>
+    <span class="c1"># and spread labels of valid regions</span>
+    <span class="n">regions0</span> <span class="o">=</span> <span class="n">regions</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">regions0</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">labels</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">regions0</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">out</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">dst</span> <span class="o">=</span> <span class="n">gis_utils</span><span class="o">.</span><span class="n">spread2d</span><span class="p">(</span>
+        <span class="n">regions0</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="n">latlon</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">idxs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># get idxs based on smallest distance per region</span>
+        <span class="n">r</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">ndimage</span><span class="o">.</span><span class="n">minimum_position</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">regions</span><span class="p">,</span> <span class="n">labels</span><span class="p">))</span>
+        <span class="n">idxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">*</span> <span class="n">regions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+    <span class="c1"># read labels of nearest regions at idxs</span>
+    <span class="n">labels1</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span>
+    <span class="c1"># relabel regions</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">old</span><span class="p">:</span> <span class="n">new</span> <span class="k">for</span> <span class="n">old</span><span class="p">,</span> <span class="n">new</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">labels1</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">))(</span><span class="n">regions</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Deltares.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
