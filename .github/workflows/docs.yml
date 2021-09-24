@@ -37,7 +37,7 @@ jobs:
       # Move examples folder before make html for nbsphinx
       - name: Build docs
         run: |
-          mv notebooks docs
+          cp notebooks/* docs
           pushd docs
           make html
           popd
@@ -46,7 +46,7 @@ jobs:
       # branch that's not master (which is confined to n.nn.x above) or on a tag.
       - name: Set doc version
         if: ${{ github.event_name != 'push' || !contains(github.ref, 'master') }}
-        run: echo "DOC_VERSION=$(python -c 'from pyflwdir import __version__ as v; print(v.split("+")[0])')" >> $GITHUB_ENV
+        run: echo "DOC_VERSION=$(python -c 'from pyflwdir import __version__ as v; print("dev" if "dev" in v else v)')" >> $GITHUB_ENV
 
       - name: Upload to GitHub Pages
         if: ${{ github.event_name != 'pull_request'}}
