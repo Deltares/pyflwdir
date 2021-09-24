@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
-        python-version: ["3.8", "3.9"] # fix tests to support older versions
+        python-version: ["3.9", "3.8", "3.7"] # fix tests to support older versions
     
     steps:
       - uses: actions/checkout@v2
@@ -30,18 +30,5 @@ jobs:
           environment-file: envs/pyflwdir-test.yml
           activate-environment: pyflwdir-test
 
-      - name: Conda info
-        run: |
-         conda info
-         conda list
-
-      - name: Intall pyflwdir
-        run: flit install
-
       - name: Test
-        run: python -m pytest --verbose --cov=pyflwdir --cov-report xml
-
-      - name: Check style
-        run: black --check .
-
-      - uses: codecov/codecov-action@v1
+        run: python -m pytest --verbose
