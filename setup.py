@@ -13,7 +13,7 @@ setup(
     name="pyflwdir",
     description="Fast methods to work with hydro- and topography data in pure Python.",
     long_description=readme + "\n\n",
-    url="https://gitlab.com/deltares/wflow/pyflwdir/",
+    url="https://github.com/Deltares/pyflwdir",
     author="Dirk Eilander",
     author_email="dirk.eilander@deltares.nl",
     license="MIT",
@@ -31,9 +31,6 @@ setup(
     ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "sphinx", "sphinx_rtd_theme", "black"],
-        "optional": [
-            "geopandas",
-        ],
     },
     classifiers=[
         # https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -43,8 +40,8 @@ setup(
         "Topic :: Scientific/Engineering :: Hydrology",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     keywords="hydrology watershed basins stream pyflwdir wflow",
 )

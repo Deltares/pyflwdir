@@ -1,0 +1,36 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  Test:
+    name: Test coverage & style
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash -l {0}
+    
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: "3.9"
+          mamba-version: "*"
+          channels: conda-forge,defaults
+          channel-priority: true
+          environment-file: envs/pyflwdir-test.yml
+          activate-environment: pyflwdir-test
+
+      - name: Test
+        run: |
+         export NUMBA_DISABLE_JIT=0  
+         python -m pytest --verbose --cov=pyflwdir --cov-report xml
+
+      - name: Check style
+        run: black --check .
+
+      - uses: codecov/codecov-action@v1

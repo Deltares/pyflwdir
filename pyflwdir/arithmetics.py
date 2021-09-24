@@ -5,7 +5,7 @@ from numba import njit
 import numpy as np
 
 # import flow direction definition
-from pyflwdir import core
+from . import core
 
 _mv = core._mv
 __all__ = []

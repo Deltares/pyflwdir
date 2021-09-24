@@ -7,7 +7,7 @@ import pickle
 import logging
 from numba import njit
 
-from pyflwdir import (
+from . import (
     arithmetics,
     core,
     dem,

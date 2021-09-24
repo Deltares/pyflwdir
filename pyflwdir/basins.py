@@ -3,7 +3,7 @@
 from numba import njit
 import numpy as np
 
-from pyflwdir import core, streams
+from . import core, streams
 
 _mv = core._mv
 all = []
@@ -174,7 +174,7 @@ def subbasins_pfafstetter(
             if d0 < depth:  # next iter
                 labs.append((pfaf_sub, d0 + 1))
             # propagate interbasin labels upstream main stem
-            if pfaf_branch[idx1] == pfaf_int_ds:
+            if idx1 not in idxs:
                 idxs.append(idx1)
                 pfaf_int = pfaf0 + (i + 1) * 2 * 10 ** (depth - d0)  # interbasin
                 pfaf_branch[idx1] = pfaf_int

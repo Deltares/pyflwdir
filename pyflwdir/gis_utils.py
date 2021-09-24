@@ -1,7 +1,7 @@
 # -- coding: utf-8 --
 """"""
 
-from numba import njit, stencil
+from numba import njit
 import numpy as np
 import math
 from affine import Affine

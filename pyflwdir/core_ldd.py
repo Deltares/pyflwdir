@@ -4,7 +4,7 @@ nextidx."""
 
 from numba import njit, vectorize
 import numpy as np
-from pyflwdir import core, core_d8
+from . import core, core_d8
 
 __all__ = []
 

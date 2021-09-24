@@ -1,0 +1,17 @@
+name: pyflwdir-test
+
+channels:
+  - conda-forge
+
+# note that these are minimal packages required for testing purposes
+dependencies:
+  # required
+  - python>=3.6
+  - affine
+  - numba>=0.48
+  - numpy
+  - scipy
+  # test
+  - black
+  - pytest
+  - pytest-cov

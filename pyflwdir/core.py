@@ -8,7 +8,7 @@ import numpy as np
 import math
 import heapq
 
-from pyflwdir import gis_utils
+from . import gis_utils
 
 __all__ = []
 _mv = np.intp(-1)

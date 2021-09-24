@@ -5,7 +5,7 @@ nextidx. This type is mainly used for the CaMa-Flood model. Note that X (column)
 
 from numba import njit, vectorize
 import numpy as np
-from pyflwdir import core
+from . import core
 
 __all__ = []
 

@@ -8,7 +8,7 @@ from scipy import ndimage
 import numpy as np
 from numba import njit
 
-from pyflwdir import gis_utils
+from . import gis_utils
 
 __all__ = ["region_bounds", "region_slices", "region_sum", "region_area"]
 

@@ -5,7 +5,6 @@ themselves are testes elsewhere"""
 import pytest
 import numpy as np
 from affine import Affine
-import pandas as pd
 
 import pyflwdir
 from pyflwdir import core, core_nextxy, core_d8

@@ -136,7 +136,6 @@ def test_streams(parsed, flwdir):
     # strahler stream order with mask
     sto1 = streams.strahler_order(idxs_ds, seq, mask=sto > 1)
     assert np.all(sto1[sto <= 1] == 0)
-    assert np.max(sto1) == np.max(sto) - 1
     # classic stream order
     idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
     sto0 = streams.stream_order(idxs_ds, seq, idxs_us_main, mask=None, mv=mv)

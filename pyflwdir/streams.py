@@ -6,7 +6,7 @@ from numba import njit
 import numpy as np
 
 # import local libraries
-from pyflwdir import gis_utils, core
+from . import gis_utils, core
 
 __all__ = []
 
