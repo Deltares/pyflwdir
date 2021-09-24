@@ -7,9 +7,9 @@ import pickle
 import logging
 import warnings
 
-from pyflwdir.flwdir import Flwdir
-from pyflwdir import gis_utils as gis
-from pyflwdir import (
+from .flwdir import Flwdir
+from . import gis_utils as gis
+from . import (
     basins,
     core,
     core_d8,

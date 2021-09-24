@@ -3,7 +3,7 @@
 
 from numba import njit
 import numpy as np
-from pyflwdir import core_d8, core_ldd
+from . import core_d8, core_ldd
 
 __all__ = ["d8_to_ldd", "ldd_to_d8"]
 

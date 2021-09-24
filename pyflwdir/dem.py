@@ -2,13 +2,12 @@
 """Methods to derive topo/hydrographical paramters from elevation data, in some cases 
  in combination with flow direction data."""
 
-from notebooks.utils import quickplot
 import numpy as np
 from numba import njit
 import math
 import heapq
 
-from pyflwdir import gis_utils, core, core_d8
+from . import gis_utils, core, core_d8
 
 _mv = core._mv
 

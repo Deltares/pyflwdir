@@ -4,9 +4,7 @@
 from numba import njit
 import numpy as np
 
-from pyflwdir import core, gis_utils, upscale
-from pyflwdir import arithmetics
-from pyflwdir.arithmetics import _average
+from . import core, upscale, arithmetics
 
 _mv = core._mv
 __all__ = []
@@ -221,7 +219,7 @@ def segment_average(
         # get average value
         if len(idxs) > 0:
             idxs_np = np.asarray(idxs, dtype=np.intp)
-            data_out[i] = _average(data[idxs_np], weights[idxs_np], nodata)
+            data_out[i] = arithmetics._average(data[idxs_np], weights[idxs_np], nodata)
     return data_out
 
 

@@ -4,7 +4,7 @@
 from numba import njit
 import numpy as np
 
-from pyflwdir import core
+from . import core
 
 _mv = core._mv
 

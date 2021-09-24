@@ -1,11 +1,11 @@
 import pkg_resources
 
 # submodules
-from pyflwdir.flwdir import *
-from pyflwdir.pyflwdir import *
-from pyflwdir.dem import *
+from .flwdir import *
+from .pyflwdir import *
+from .dem import *
 
-from pyflwdir import gis_utils
+from . import gis_utils, regions
 
 try:
     __version__ = pkg_resources.get_distribution(__name__).version
