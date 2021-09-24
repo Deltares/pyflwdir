@@ -1,129 +1,56 @@
-# file based on github/gitignore
+######################
+# OS generated files #
+######################
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+*.swp
+*.*~
+._*
+.idea/
 
-# Byte-compiled / optimized / DLL files
-__pycache__/
+###################
+# python #
+###################
 *.py[cod]
-*$py.class
 
 # C extensions
 *.so
 
-# Distribution / packaging
-.Python
-data/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-figs/
-scripts/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
+# Packages
 *.egg
+*.egg-info
+.eggs/
 MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+__pycache__
+.ipynb_checkpoints/
+docs/build
+docs/examples
+docs/api/generated
 
 # Installer logs
 pip-log.txt
-pip-delete-this-directory.txt
 
 # Unit test / coverage reports
-htmlcov/
-.tox/
 .coverage
-.coverage.*
-.cache
-.pytest_cache
+.tox
 nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-tests/data/*.tif
-tests/data/*.gpkg*
-tests/data/*.xml
-tests/data/*.qml
-tests/data/*.qgz
-tests/*.ipynb
+.cache
 
 # Translations
 *.mo
-*.pot
 
-# Django stuff:
-*.log
-.static_storage/
-.media/
-local_settings.py
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# VScode
+# vscode
 .vscode
-
-# PyCharm
-.idea
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-docs/*.png
-docs/*.ipynb
-docs/ipynb_checkpoints
-
-# mypy
-.mypy_cache/
-
-# temp
-_pyflwdir
-scripts
