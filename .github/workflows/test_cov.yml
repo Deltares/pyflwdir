@@ -27,7 +27,7 @@ jobs:
 
       - name: Test
         run: |
-         export NUMBA_DISABLE_JIT=0  
+         export NUMBA_DISABLE_JIT=1
          python -m pytest --verbose --cov=pyflwdir --cov-report xml
 
       - name: Check style
