@@ -32,7 +32,7 @@ jobs:
           activate-environment: pyflwdir-docs
 
       - name: Install pyflwdir
-        run: pip istall .
+        run: pip install .
 
       # Move examples folder before make html for nbsphinx
       - name: Build docs
