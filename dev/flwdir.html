@@ -4,23 +4,25 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flow direction data &mdash; pyflwdir 0.1.dev1+gab227d0 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <title>Flow direction data &mdash; pyflwdir 0.1.dev1+g2bccede documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
+    <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script src="../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Flow directions from elevation data" href="from_dem.html" />
+    <link rel="prev" title="Background" href="background.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -28,13 +30,13 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> pyflwdir
+            <a href="index.html" class="icon icon-home"> pyflwdir
           </a>
               <div class="version">
-                0.1.dev1+gab227d0.dev
+                0.1.dev1+g2bccede.dev
               </div>
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -43,18 +45,28 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Flow direction data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="from_dem.html">Flow directions from elevation data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basins.html">Deliniation of (sub)basins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="streams.html">Stream order</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracing.html">Tracing flow directions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elevation_indices.html">Elevation indices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upscaling.html">Flow direction upscaling</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../reference.html">API reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to PyFlwDir</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to PyFlwDir</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/Deltares/pyflwdir">Github repository</a></li>
 </ul>
 
@@ -64,17 +76,17 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">pyflwdir</a>
+          <a href="index.html">pyflwdir</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content style-external-links">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
       <li>Flow direction data</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/notebooks/flwdir.ipynb.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/flwdir.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -356,7 +368,7 @@ div.rendered_html tbody tr:hover {
 <h1>Flow direction data<a class="headerlink" href="#Flow-direction-data" title="Permalink to this headline"></a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code> object is at the core of the pyflwdir package. It contains gridded flow direction data, parsed to an actionable common format which describes the linear index of the next dowsntream cell.</p>
 <p>Currently we support two local flow direction (D8) data types according to the arcgis <strong>D8</strong> and pcraster <strong>LDD</strong> conventions (see figure), and one global flow direction type according to the CaMa-Flood <strong>NEXTXY</strong> convention. Local flow direction data types describe the next downstream cell based on a relative direction from a cell towards one of its neighboring cells, while global flow direction types describe the next downstream cell based on its row and column indices.</p>
-<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="f18758c407fc4e789b8ad7332d4c0fa3" class="no-scaled-link" src="docs/_static/ftypes.png" style="width: 500px;" /></p>
+<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="f18a6f7ec674403d9d21f8fa4bc54991" class="no-scaled-link" src="_images/ftypes.png" style="width: 500px;" /></p>
 <p>We read the flow direction raster data, including meta-data, using <a class="reference external" href="https://rasterio.readthedocs.io/en/latest/">rasterio</a></p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -416,8 +428,8 @@ div.rendered_html tbody tr:hover {
        0.0, -0.008333333333339965, 52.00833333330708)}
 </pre></div></div>
 </div>
-<p>We can than make use of the many methods of the <code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code> object, see <a class="reference external" href="reference.rst">FlwdirRaster API</a>.</p>
-<p>To visualize the flow directions we derive the stream network as vector using the <a class="reference external" href="reference.rst#pyflwdir.FlwdirRaster.streams">streams()</a> method. Each line element respresnets a stream segment with a minimal Strahler stream order of <code class="docutils literal notranslate"><span class="pre">min_sto</span></code>, as computed by <a class="reference external" href="reference.rst#pyflwdir.FlwdirRaster.stream_order">stream_order()</a>. The line elements (geo features) are parsed to a <a class="reference external" href="https://geopandas.org/data_structures.html#geodataframe">GeoDataFrame</a> object for visualization.</p>
+<p>We can than make use of the many methods of the <code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code> object, see <a class="reference internal" href="reference.html"><span class="doc">FlwdirRaster API</span></a>.</p>
+<p>To visualize the flow directions we derive the stream network as vector using the <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.streams"><span class="std std-ref">streams()</span></a> method. Each line element respresnets a stream segment with a minimal Strahler stream order of <code class="docutils literal notranslate"><span class="pre">min_sto</span></code>, as computed by <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.stream_order"><span class="std std-ref">stream_order()</span></a>. The line elements (geo features) are parsed to a <a class="reference external" href="https://geopandas.org/data_structures.html#geodataframe">GeoDataFrame</a> object for visualization.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -528,7 +540,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_flwdir_12_0.png" src="../_images/notebooks_flwdir_12_0.png" />
+<img alt="_images/flwdir_12_0.png" src="_images/flwdir_12_0.png" />
 </div>
 </div>
 </section>
@@ -536,7 +548,10 @@ div.rendered_html tbody tr:hover {
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="background.html" class="btn btn-neutral float-left" title="Background" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="from_dem.html" class="btn btn-neutral float-right" title="Flow directions from elevation data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

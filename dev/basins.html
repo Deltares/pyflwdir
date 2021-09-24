@@ -4,23 +4,25 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Delineation of (sub)basins &mdash; pyflwdir 0.1.dev1+gab227d0 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <title>Delineation of (sub)basins &mdash; pyflwdir 0.1.dev1+g2bccede documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
+    <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script src="../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Stream order" href="streams.html" />
+    <link rel="prev" title="Flow directions from elevation data" href="from_dem.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -28,13 +30,13 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> pyflwdir
+            <a href="index.html" class="icon icon-home"> pyflwdir
           </a>
               <div class="version">
-                0.1.dev1+gab227d0.dev
+                0.1.dev1+g2bccede.dev
               </div>
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -43,18 +45,34 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="flwdir.html">Flow direction data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="from_dem.html">Flow directions from elevation data</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deliniation of (sub)basins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Outlet-based-(sub)basins">Outlet based (sub)basins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Stream-order-subbasins">Stream order subbasins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Pfafstetter-subbasins">Pfafstetter subbasins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Minimal-area-based-subbasins">Minimal area based subbasins</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="streams.html">Stream order</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracing.html">Tracing flow directions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elevation_indices.html">Elevation indices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upscaling.html">Flow direction upscaling</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../reference.html">API reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to PyFlwDir</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to PyFlwDir</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/Deltares/pyflwdir">Github repository</a></li>
 </ul>
 
@@ -64,17 +82,17 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">pyflwdir</a>
+          <a href="index.html">pyflwdir</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content style-external-links">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
       <li>Delineation of (sub)basins</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/notebooks/basins.ipynb.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/basins.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -384,7 +402,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <section id="Outlet-based-(sub)basins">
 <h2>Outlet based (sub)basins<a class="headerlink" href="#Outlet-based-(sub)basins" title="Permalink to this headline"></a></h2>
-<p>The <a class="reference external" href="reference.rst#pyflwdir.FlwdirRaster.basins">basins()</a> method delineates (sub)basins defined by its outlet location. By default the method uses pits from the flow direction raster as outlets to delineate basins, but if outlet locations are profided these are used instead. An additional <code class="docutils literal notranslate"><span class="pre">streams</span></code> argument can be added to make sure the outlet locations are snapped to the nearest downstream stream cell, using the <a class="reference external" href="reference.rst#pyflwdir.FlwdirRaster.snap">snap()</a> method under the hood.
+<p>The <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.basins"><span class="std std-ref">basins()</span></a> method delineates (sub)basins defined by its outlet location. By default the method uses pits from the flow direction raster as outlets to delineate basins, but if outlet locations are profided these are used instead. An additional <code class="docutils literal notranslate"><span class="pre">streams</span></code> argument can be added to make sure the outlet locations are snapped to the nearest downstream stream cell, using the <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.snap"><span class="std std-ref">snap()</span></a> method under the hood.
 Here streams are defined by a minimum Strahler stream order of 4.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -472,13 +490,13 @@ Here streams are defined by a minimum Strahler stream order of 4.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_basins_6_0.png" src="../_images/notebooks_basins_6_0.png" />
+<img alt="_images/basins_6_0.png" src="_images/basins_6_0.png" />
 </div>
 </div>
 </section>
 <section id="Stream-order-subbasins">
 <h2>Stream order subbasins<a class="headerlink" href="#Stream-order-subbasins" title="Permalink to this headline"></a></h2>
-<p>The <a class="reference external" href="reference.rst#pyflwdir.FlwdirRaster.subbasins_streamorder">subbasins_streamorder()</a> method creates subbasins at all confluences where each branch has a minimal stream order set by <code class="docutils literal notranslate"><span class="pre">min_sto</span></code>. An optional mask can be added to select a subset of the outlets (i.e. confluences) which are located inside the mask.</p>
+<p>The <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.subbasins_streamorder"><span class="std std-ref">subbasins_streamorder()</span></a> method creates subbasins at all confluences where each branch has a minimal stream order set by <code class="docutils literal notranslate"><span class="pre">min_sto</span></code>. An optional mask can be added to select a subset of the outlets (i.e. confluences) which are located inside the mask.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -504,13 +522,13 @@ Here streams are defined by a minimum Strahler stream order of 4.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_basins_9_0.png" src="../_images/notebooks_basins_9_0.png" />
+<img alt="_images/basins_9_0.png" src="_images/basins_9_0.png" />
 </div>
 </div>
 </section>
 <section id="Pfafstetter-subbasins">
 <h2>Pfafstetter subbasins<a class="headerlink" href="#Pfafstetter-subbasins" title="Permalink to this headline"></a></h2>
-<p>The <a class="reference external" href="reference.rst#pyflwdir.FlwdirRaster.subbasins_pfafstetter">subbasins_pfafstetter()</a> method creates subbasins with the hierarchical pfafstetter coding system. It is designed such that topological information is embedded in the code, which makes it easy to determine whether a subbasin is downstream of another subbasin. At each level the four largest subbasins have even numbers and five largest interbasins have odd numbers. The <code class="docutils literal notranslate"><span class="pre">depth</span></code> argument is used to set the number of subbasin
+<p>The <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.subbasins_pfafstetter"><span class="std std-ref">subbasins_pfafstetter()</span></a> method creates subbasins with the hierarchical pfafstetter coding system. It is designed such that topological information is embedded in the code, which makes it easy to determine whether a subbasin is downstream of another subbasin. At each level the four largest subbasins have even numbers and five largest interbasins have odd numbers. The <code class="docutils literal notranslate"><span class="pre">depth</span></code> argument is used to set the number of subbasin
 levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth=1</span></code> nine, and with <code class="docutils literal notranslate"><span class="pre">depth=2</span></code> 81 sub/interbasins are found. The <code class="docutils literal notranslate"><span class="pre">subbasins_pfafstetter</span></code> method requires upstream area of each cell, which is calculated on the fly if not provided with the <code class="docutils literal notranslate"><span class="pre">uparea</span></code> argument.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -611,7 +629,7 @@ levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_basins_13_0.png" src="../_images/notebooks_basins_13_0.png" />
+<img alt="_images/basins_13_0.png" src="_images/basins_13_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -708,13 +726,13 @@ levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_basins_15_0.png" src="../_images/notebooks_basins_15_0.png" />
+<img alt="_images/basins_15_0.png" src="_images/basins_15_0.png" />
 </div>
 </div>
 </section>
 <section id="Minimal-area-based-subbasins">
 <h2>Minimal area based subbasins<a class="headerlink" href="#Minimal-area-based-subbasins" title="Permalink to this headline"></a></h2>
-<p>The <a class="reference external" href="reference.rst#pyflwdir.FlwdirRaster.subbasins_area">subbasins_area()</a> method creates subbasins with a minimal area of <code class="docutils literal notranslate"><span class="pre">area_min</span></code>. Moving upstream from the basin outlets a new subbasin starts at tributaries with a contributing area larger than <code class="docutils literal notranslate"><span class="pre">area_min</span></code> and new interbasins when its area exceeds the <code class="docutils literal notranslate"><span class="pre">area_min</span></code>.</p>
+<p>The <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.subbasins_area"><span class="std std-ref">subbasins_area()</span></a> method creates subbasins with a minimal area of <code class="docutils literal notranslate"><span class="pre">area_min</span></code>. Moving upstream from the basin outlets a new subbasin starts at tributaries with a contributing area larger than <code class="docutils literal notranslate"><span class="pre">area_min</span></code> and new interbasins when its area exceeds the <code class="docutils literal notranslate"><span class="pre">area_min</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
@@ -742,7 +760,7 @@ levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_basins_18_0.png" src="../_images/notebooks_basins_18_0.png" />
+<img alt="_images/basins_18_0.png" src="_images/basins_18_0.png" />
 </div>
 </div>
 </section>
@@ -751,7 +769,10 @@ levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="from_dem.html" class="btn btn-neutral float-left" title="Flow directions from elevation data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="streams.html" class="btn btn-neutral float-right" title="Stream order" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

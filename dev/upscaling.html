@@ -4,23 +4,25 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flow direction upscaling &mdash; pyflwdir 0.1.dev1+gab227d0 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <title>Flow direction upscaling &mdash; pyflwdir 0.1.dev1+g2bccede documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
+    <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script src="../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reference" href="reference.html" />
+    <link rel="prev" title="Elevation indices" href="elevation_indices.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -28,13 +30,13 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> pyflwdir
+            <a href="index.html" class="icon icon-home"> pyflwdir
           </a>
               <div class="version">
-                0.1.dev1+gab227d0.dev
+                0.1.dev1+g2bccede.dev
               </div>
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -43,18 +45,31 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="flwdir.html">Flow direction data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="from_dem.html">Flow directions from elevation data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basins.html">Deliniation of (sub)basins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="streams.html">Stream order</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracing.html">Tracing flow directions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elevation_indices.html">Elevation indices</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Flow direction upscaling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Flow direction upscaling</a></li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../reference.html">API reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to PyFlwDir</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to PyFlwDir</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/Deltares/pyflwdir">Github repository</a></li>
 </ul>
 
@@ -64,17 +79,17 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">pyflwdir</a>
+          <a href="index.html">pyflwdir</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content style-external-links">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
       <li>Flow direction upscaling</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/notebooks/upscaling.ipynb.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/upscaling.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -414,12 +429,12 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_upscaling_3_0.png" src="../_images/notebooks_upscaling_3_0.png" />
+<img alt="_images/upscaling_3_0.png" src="_images/upscaling_3_0.png" />
 </div>
 </div>
 <section id="id1">
 <h2>Flow direction upscaling<a class="headerlink" href="#id1" title="Permalink to this headline"></a></h2>
-<p>Methods to upcale flow directions are required as models often have a coarser resolution than the elevation data used to build them. Instead of deriving flow directions from upscaled elevation data, it is better to directly upscaling the flow direction data itself. The <a class="reference external" href="reference.rst#pyflwdir.FlwdirRaster.upscale">upscale()</a> method implements the recently developed Iterative Hydrography Upscaling (<strong>IHU</strong>) algorithm (<a class="reference external" href="https://doi.org/10.5194/hess-2020-582">Eilander et al 2020</a>). The method
+<p>Methods to upcale flow directions are required as models often have a coarser resolution than the elevation data used to build them. Instead of deriving flow directions from upscaled elevation data, it is better to directly upscaling the flow direction data itself. The <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.upscale"><span class="std std-ref">upscale()</span></a> method implements the recently developed Iterative Hydrography Upscaling (<strong>IHU</strong>) algorithm (<a class="reference external" href="https://doi.org/10.5194/hess-2020-582">Eilander et al 2020</a>). The method
 takes high resolution flow directions and upstream area grid to iterativly determine the best stream segment to represent in each upscaled cell. This stream segment is than traced towards the next downstream upscaled cell to determine the upscaled flow directions. Full details can be found in the referenced paper.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -432,7 +447,7 @@ takes high resolution flow directions and upstream area grid to iterativly deter
 </pre></div>
 </div>
 </div>
-<p>Several methods are implemented based on the most downstream high-res pixel of each upscaled cell, the so-called outlet pixels. The location of these pixels can be used to derive the contributing area to each cell using the <a class="reference external" href="reference.rst#pyflwdir.FlwdirRaster.ucat_area">ucat_area()</a> method.</p>
+<p>Several methods are implemented based on the most downstream high-res pixel of each upscaled cell, the so-called outlet pixels. The location of these pixels can be used to derive the contributing area to each cell using the <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.ucat_area"><span class="std std-ref">ucat_area()</span></a> method.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -487,7 +502,7 @@ upscaling error in 1.32% of cells
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_upscaling_10_0.png" src="../_images/notebooks_upscaling_10_0.png" />
+<img alt="_images/upscaling_10_0.png" src="_images/upscaling_10_0.png" />
 </div>
 </div>
 </section>
@@ -496,7 +511,10 @@ upscaling error in 1.32% of cells
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="elevation_indices.html" class="btn btn-neutral float-left" title="Elevation indices" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 
