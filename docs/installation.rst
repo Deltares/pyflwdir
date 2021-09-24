@@ -17,7 +17,7 @@ Install from pip
     $ pip install pyflwdir
 
 
-Install from gitlab (for developers)
+Install from github (for developers)
 ------------------------------------
 
 For we advise the following steps to install the package.
@@ -26,7 +26,7 @@ First, clone pyflwdir's ``git`` repo and navigate into the repository:
 
 .. code-block:: console
 
-    $ git clone https://gitlab.com/deltares/wflow/pyflwdir.git
+    $ git clone git@github.com:Deltares/pyflwdir.git
     $ cd pyflwdir
 
 Then, make and activate a new pyflwdir conda environment based on the environment.yml

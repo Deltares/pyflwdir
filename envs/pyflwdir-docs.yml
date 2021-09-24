@@ -1,0 +1,26 @@
+name: pyflwdir-docs
+
+channels:
+  - conda-forge
+
+dependencies:
+  # required
+  - python>=3.6
+  - affine
+  - numba>=0.48
+  - numpy
+  - scipy
+  - setuptools_scm
+  - pip
+  # docs
+  - sphinx
+  - sphinx_rtd_theme
+  - nbsphinx
+  # notebooks
+  - geopandas
+  - rasterio
+  - ipython
+  - ipykernel
+  - matplotlib
+  - cartopy
+  - descartes

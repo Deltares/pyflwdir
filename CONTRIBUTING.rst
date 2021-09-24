@@ -41,16 +41,6 @@ Pyflwdir contains methods to work with hydro- and topography data in Numpy array
 Git Conventions
 ---------------
 
-First of all, if git is new to you, here are some great resources for learning Git:
-
-- the GitLab `help pages <https://gitlab.com/help/gitlab-basics/start-using-git.md>`__.
-- the NumPy’s `documentation <http://docs.scipy.org/doc/numpy/dev/index.html>`__.
-
-The code is hosted on GitLab. To contribute you will need to sign up for a free 
-GitLab account. We follow the `GitLab workflow 
-<https://about.gitlab.com/blog/2016/10/25/gitlab-workflow-an-overview/>`__
-to allow many people to work together on the project.
-
 After discussing a new proposal or implementation in the issue tracker, you can start 
 working on the code. You write your code locally in a new branch pyflwdir repo or in a 
 branch of a fork. Once you're done with your first iteration, you commit your code and 
@@ -115,7 +105,7 @@ First, clone pyflwdir's ``git`` repo and navigate into the repository:
 
 .. code-block:: console
 
-    $ git clone git@gitlab.com:deltares/wflow/pyflwdir.git
+    $ git clone git@github.com:Deltares/pyflwdir.git
     $ cd pyflwdir
 
 Then, make and activate a new pyflwdir conda environment based on the environment.yml 

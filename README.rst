@@ -1,6 +1,3 @@
-.. image:: https://gitlab.com/deltares/wflow/pyflwdir/badges/master/coverage.svg
-   :target: https://gitlab.com/deltares/wflow/pyflwdir/commits/master
-
 ################################################################################
 PyFlwDir
 ################################################################################
@@ -22,7 +19,7 @@ Featured methods
 ----------------
 
 .. image:: docs/_static/pyflwdir.png
-  :width: 600
+  :width: 100%
 
 - flow directions from elevation data using a steepest gradient algorithm
 - strahler stream order
@@ -63,7 +60,7 @@ See `CONTRIBUTING.rst <CONTRIBUTING.rst/>`__
 Documentation
 =============
 
-See `docs <https://deltares.gitlab.io/wflow/pyflwdir/>`__
+See `docs <https://deltares.github.io/pyflwdir/latest/>`__
 
 License
 =======
