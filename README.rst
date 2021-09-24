@@ -1,3 +1,18 @@
+
+.. image:: https://codecov.io/gh/Deltares/pyflwdir/branch/main/graph/badge.svg?token=N4VMHJJAV3
+    :target: https://codecov.io/gh/Deltares/pyflwdir
+
+.. image:: https://img.shields.io/badge/docs-latest-brightgreen.svg
+    :target: https://deltares.github.io/pyflwdir/latest
+    :alt: Latest developers docs
+
+.. image:: https://pypip.in/v/pyflwdir/badge.png
+    :target: https://pypi.org/project/pyflwdir/
+    :alt: Latest PyPI version
+
+.. image:: https://anaconda.org/conda-forge/pyflwdir/badges/version.svg
+    :target: https://anaconda.org/conda-forge/pyflwdir
+
 ################################################################################
 PyFlwDir
 ################################################################################
