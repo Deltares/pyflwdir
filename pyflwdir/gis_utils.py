@@ -62,51 +62,56 @@ def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY
     """
     nrow, ncol = obs.shape
     xres, yres, north = transform[0], abs(transform[4]), transform[5]
-    dx, dy = xres, yres
+    if latlon:
+        lats = north + (np.arange(nrow) + 0.5) * yres
+        dys = degree_metres_y(lats) * yres
+        dxs = degree_metres_x(lats) * xres
+    else:
+        dx, dy = xres, yres
 
-    out = obs.copy().ravel()
-    src = np.full(obs.size, -1, dtype=np.int32)  # linear index of source
-    dst = np.full(obs.size, 0, dtype=np.float32)  # distance from source
+    # output
+    out = obs.copy()
+    src = np.full(obs.shape, -1, dtype=np.int32)  # linear index of source
+    dst = np.full(obs.shape, 0, dtype=np.float32)  # distance from source
 
-    # initiate with correct dtype
-    q = [(np.float32(0), np.uint32(0)) for _ in range(0)]
+    # initiate queue with correct dtype
+    # heapq is faster when fifo loop not in order of ascending distance from source;
+    # otherwise a fixed length numpy array queue is up to ~2x faster
+    q = [(np.float32(0), np.uint32(0), np.uint32(0)) for _ in range(0)]
     heapq.heapify(q)
 
-    for idx in range(out.size):
-        if out[idx] != nodata:
-            if msk is None or msk.flat[idx]:
-                heapq.heappush(q, (np.float32(0), np.uint32(idx)))
-            src[idx] = idx
+    for r in range(nrow):
+        for c in range(ncol):
+            if obs[r, c] != nodata:
+                if msk is None or msk[r, c]:
+                    heapq.heappush(q, (np.float32(0), np.uint32(r), np.uint32(c)))
+                src[r, c] = r * ncol + c
 
+    obs = obs.ravel()
     while len(q) > 0:
-        d0, idx = heapq.heappop(q)
-        if dst[idx] < d0:
+        d0, r, c = heapq.heappop(q)
+        if dst[r, c] < d0:
             continue
-        f0 = 1.0 if frc is None else frc[idx]
-        r = idx // ncol
-        c = idx % ncol
+        f0 = 1.0 if frc is None else frc[r, c]
         if latlon:
-            lat = north + (r + 0.5) * yres
-            dy = degree_metres_y(lat) * yres
-            dx = degree_metres_x(lat) * xres
+            dx, dy = dxs[r], dys[r]
         for dr in range(-1, 2):
             for dc in range(-1, 2):
                 if dr == 0 and dc == 0:
                     continue
                 r1, c1 = r + dr, c + dc
-                check_bounds = r1 < 0 or r1 >= nrow or c1 < 0 or c1 >= ncol
-                if check_bounds or (msk is not None and ~msk[r1, c1]):
+                outside = r1 < 0 or r1 >= nrow or c1 < 0 or c1 >= ncol
+                if outside or (msk is not None and ~msk[r1, c1]):
                     continue
-                d = d0 + np.hypot(dr * dx, dc * dy) * f0
-                idx1 = r1 * ncol + c1
-                if src[idx1] == -1 or d < dst[idx1]:
-                    idx0 = src[idx]
-                    src[idx1] = idx0
-                    dst[idx1] = d
-                    out[idx1] = out[idx0]
-                    heapq.heappush(q, (np.float32(d), np.uint32(idx1)))
+                d = d0 + np.hypot(dr * dy, dc * dx) * f0
+                if src[r1, c1] == -1 or d < dst[r1, c1]:
+                    idx0 = src[r, c]
+                    src[r1, c1] = idx0
+                    dst[r1, c1] = d
+                    out[r1, c1] = obs[idx0]
+                    heapq.heappush(q, (np.float32(d), np.uint32(r1), np.uint32(c1)))
 
-    return out.reshape(obs.shape), src.reshape(obs.shape), dst.reshape(obs.shape)
+    return out, src, dst
 
 
 @njit
