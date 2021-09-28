@@ -32,7 +32,7 @@ Pyflwdir is in pure python and powered by numba to keep it fast.
 Featured methods
 ----------------
 
-.. image:: docs/_static/pyflwdir.png
+.. image:: https://raw.githubusercontent.com/Deltares/pyflwdir/master/docs/_static/pyflwdir.png
   :width: 100%
 
 - flow directions from elevation data using a steepest gradient algorithm
@@ -143,7 +143,7 @@ See `CONTRIBUTING.rst <CONTRIBUTING.rst/>`__ for how we work.
 Changes
 =======
 
-See `CHANGESLOG.rst <CHANGELOG.rst>`__
+See `CHANGELOG.rst <CHANGELOG.rst>`__
 
 Authors
 =======

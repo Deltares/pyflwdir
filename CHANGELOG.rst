@@ -2,6 +2,21 @@
 Change Log
 ###########
 
+unreleased
+**********
+
+New
+---
+
+Improved
+--------
+
+Bugfix
+------
+
+Deprecated
+----------
+
 0.5 (28-Sept-2021)
 ******************
 New

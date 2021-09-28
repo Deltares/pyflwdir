@@ -128,11 +128,18 @@ Running the tests
 Pyflwdir's tests live in the tests folder and generally match the main package layout. 
 Test should be run from the tests folder.
 
-To run the entire suite and the code coverage report:
+Note that to get a coverage report we need to disable numba jit. This can be done
+by setting the environment variable ``NUMBA_DISABLE_JIT=1``, see 
+`numba docs <https://numba.pydata.org/numba-doc/dev/reference/envvars.html#envvar-NUMBA_DISABLE_JIT>`_
+
+To run the entire suite and the code coverage report. 
 
 .. code-block:: console
 
-    $ cd tests
+    $ python -m pytest --verbose --cov=pyflwdir --cov-report term-missing
+
+.. code-block:: console
+
     $ python -m pytest --verbose --cov=pyflwdir --cov-report term-missing
 
 A single test file:
@@ -165,3 +172,26 @@ To automatically reformat your code:
 .. code-block:: console
 
     $ black . 
+
+Creating a release
+^^^^^^^^^^^^^^^^^^
+
+1. First create a new release on github under https://github.com/Deltares/pyflwdir/releases. We use semantic versioning and describe the release based on the CHANGELOG.
+2. Make sure to update and clean your local git folder. This remmoves all files which are not tracked by git. 
+
+.. code-block:: console
+
+    $ git pull
+    $ git clean -xfd
+
+3. Build a wheel for the package and check the resulting files in the dist/ directory.
+
+.. code-block:: console
+
+    $ python setup.py sdist bdist_wheel
+
+4. Then use twine to upload our wheels to pypi. It will prompt you for your username and password.
+
+.. code-block:: console
+
+    $ twine upload dist/*

@@ -1,2 +1,4 @@
 include LICENSE
 include README.rst
+recursive-exclude * *.py[co]
+graft pyflwdir

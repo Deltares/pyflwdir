@@ -14,6 +14,9 @@ setup(
     description="Fast methods to work with hydro- and topography data in pure Python.",
     long_description=readme + "\n\n",
     url="https://github.com/Deltares/pyflwdir",
+    project_urls={
+        "Documentation": "https://deltares.github.io/pyflwdir/latest",
+    },
     author="Dirk Eilander",
     author_email="dirk.eilander@deltares.nl",
     license="MIT",
