@@ -2,8 +2,8 @@
 Change Log
 ###########
 
-Unreleased
-***********
+0.5 (28-Sept-2021)
+******************
 New
 ---
 * General Flwdir object for 1D vector based (instead of raster based) flow directions
