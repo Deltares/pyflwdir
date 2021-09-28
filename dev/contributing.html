@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contributing &mdash; pyflwdir 0.1.dev1+g1cba341 documentation</title>
+  <title>Contributing &mdash; pyflwdir 0.1.dev1+g65d86ea documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -30,7 +30,7 @@
             <a href="index.html" class="icon icon-home"> pyflwdir
           </a>
               <div class="version">
-                0.1.dev1+g1cba341.dev
+                0.1.dev1+g65d86ea.dev
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -74,6 +74,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#initial-setup">Initial Setup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#running-the-tests">Running the tests</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#running-code-format-checks">Running code format checks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-release">Creating a release</a></li>
 </ul>
 </li>
 </ul>
@@ -230,9 +231,14 @@ file contained in the repository:</p>
 <h3>Running the tests<a class="headerlink" href="#running-the-tests" title="Permalink to this headline"></a></h3>
 <p>Pyflwdir’s tests live in the tests folder and generally match the main package layout.
 Test should be run from the tests folder.</p>
-<p>To run the entire suite and the code coverage report:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span><span class="nb">cd</span> tests
-<span class="gp">$ </span>python -m pytest --verbose --cov<span class="o">=</span>pyflwdir --cov-report term-missing
+<p>Note that to get a coverage report we need to disable numba jit. This can be done
+by setting the environment variable <code class="docutils literal notranslate"><span class="pre">NUMBA_DISABLE_JIT=1</span></code>, see
+<a class="reference external" href="https://numba.pydata.org/numba-doc/dev/reference/envvars.html#envvar-NUMBA_DISABLE_JIT">numba docs</a></p>
+<p>To run the entire suite and the code coverage report.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python -m pytest --verbose --cov<span class="o">=</span>pyflwdir --cov-report term-missing
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python -m pytest --verbose --cov<span class="o">=</span>pyflwdir --cov-report term-missing
 </pre></div>
 </div>
 <p>A single test file:</p>
@@ -254,6 +260,29 @@ Make sure the check below returns <em>All done!</em> before commiting your edits
 </div>
 <p>To automatically reformat your code:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>black .
+</pre></div>
+</div>
+</section>
+<section id="creating-a-release">
+<h3>Creating a release<a class="headerlink" href="#creating-a-release" title="Permalink to this headline"></a></h3>
+<ol class="arabic simple">
+<li><p>First create a new release on github under <a class="reference external" href="https://github.com/Deltares/pyflwdir/releases">https://github.com/Deltares/pyflwdir/releases</a>. We use semantic versioning and describe the release based on the CHANGELOG.</p></li>
+<li><p>Make sure to update and clean your local git folder. This remmoves all files which are not tracked by git.</p></li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git pull
+<span class="gp">$ </span>git clean -xfd
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Build a wheel for the package and check the resulting files in the dist/ directory.</p></li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python setup.py sdist bdist_wheel
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>Then use twine to upload our wheels to pypi. It will prompt you for your username and password.</p></li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>twine upload dist/*
 </pre></div>
 </div>
 </section>
