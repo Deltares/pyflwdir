@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pyflwdir.pyflwdir &mdash; pyflwdir 0.1.dev1+g65d86ea documentation</title>
+  <title>pyflwdir.pyflwdir &mdash; pyflwdir  documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../index.html" class="icon icon-home"> pyflwdir
           </a>
               <div class="version">
-                0.1.dev1+g65d86ea.dev
+                0.1.
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -906,8 +906,24 @@
         <span class="k">return</span> <span class="n">accu</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
     <span class="c1">### STREAMS ####</span>
+    <span class="k">def</span> <span class="nf">inflow_idxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns linear indices of most upstream cells within region</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        region: 2D array of bool</span>
+<span class="sd">            True where region</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        -------</span>
+<span class="sd">        idxs: 1D array of int</span>
+<span class="sd">            linear indices</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">inflow_idxs</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="s2">&quot;region&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">outflow_idxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns linear indices of most downstream pixels within region</span>
+        <span class="sd">&quot;&quot;&quot;Returns linear indices of most downstream cells within region</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -919,10 +935,9 @@
 <span class="sd">        idxs: 1D array of int</span>
 <span class="sd">            linear indices</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;outflow_idxs is deprecated, use basin_outlets instead&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span>
+        <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">outflow_idxs</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="s2">&quot;region&quot;</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">basin_outlets</span><span class="p">(</span><span class="n">region</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 
 <div class="viewcode-block" id="FlwdirRaster.stream_distance"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.stream_distance">[docs]</a>    <span class="k">def</span> <span class="nf">stream_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns distance to outlet or next downstream True cell in mask</span>
