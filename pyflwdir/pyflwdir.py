@@ -814,8 +814,24 @@ class FlwdirRaster(Flwdir):
         return accu.reshape(data.shape)
 
     ### STREAMS ####
+    def inflow_idxs(self, region):
+        """Returns linear indices of most upstream cells within region
+
+        Parameters
+        ----------
+        region: 2D array of bool
+            True where region
+        Returns:
+        -------
+        idxs: 1D array of int
+            linear indices
+        """
+        return core.inflow_idxs(
+            self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
+        )
+
     def outflow_idxs(self, region):
-        """Returns linear indices of most downstream pixels within region
+        """Returns linear indices of most downstream cells within region
 
         Parameters
         ----------
@@ -827,10 +843,9 @@ class FlwdirRaster(Flwdir):
         idxs: 1D array of int
             linear indices
         """
-        warnings.warn(
-            "outflow_idxs is deprecated, use basin_outlets instead", DeprecationWarning
+        return core.outflow_idxs(
+            self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
         )
-        return self.basin_outlets(region)[1]
 
     def stream_distance(self, mask=None, unit="cell"):
         """Returns distance to outlet or next downstream True cell in mask

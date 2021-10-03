@@ -16,9 +16,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import pkg_resources
 import os
 import sys
+import pyflwdir
 
 here = os.path.dirname(__file__)
 sys.path.insert(0, os.path.abspath(os.path.join(here, "..")))
@@ -30,10 +30,8 @@ project = "pyflwdir"
 copyright = "Deltares"
 author = "Dirk Eilander"
 
-# The full version, including alpha/beta/rc tags
-release = pkg_resources.get_distribution("pyflwdir").version
 # The short version which is displayed
-version = ".".join(release.split(".")[:3]) + ".dev"
+version = pyflwdir.__version__.split("dev")[0]
 
 # -- General configuration ------------------------------------------------
 
