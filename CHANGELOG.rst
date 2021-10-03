@@ -2,20 +2,12 @@
 Change Log
 ###########
 
-unreleased
-**********
+0.5.1 (3-Oct-2021)
+******************
 
 New
 ---
-
-Improved
---------
-
-Bugfix
-------
-
-Deprecated
-----------
+* Restore FlwdirRaster.inflow_idxs and FlwdirRaster.outflow_idxs methods
 
 0.5 (28-Sept-2021)
 ******************
