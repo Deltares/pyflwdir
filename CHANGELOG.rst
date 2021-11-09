@@ -2,6 +2,15 @@
 Change Log
 ###########
 
+0.5.2 (unreleased)
+******************
+
+Improved
+--------
+* FlwdirRaster.streams method includes a (zero-length) line at pits and adds option for trace direction in combination with segment end cells.
+* Moved accuflux method from FlwdirRaster to parent Flwdir class.
+
+
 0.5.1 (3-Oct-2021)
 ******************
 
