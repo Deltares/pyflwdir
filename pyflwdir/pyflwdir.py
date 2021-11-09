@@ -776,43 +776,6 @@ class FlwdirRaster(Flwdir):
         uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)
 
-    def accuflux(self, data, nodata=-9999, direction="up"):
-        """Return accumulated data values along the flow direction map.
-
-        Parameters
-        ----------
-        data : 2D array
-            values
-        nodata : int or float
-            Missing data value for cells outside domain
-        direction : {'up', 'down'}, optional
-            direction in which to accumulate data, by default upstream
-
-        Returns
-        -------
-        2D array with data.dtype
-            accumulated values
-        """
-        if direction == "up":
-            accu = streams.accuflux(
-                idxs_ds=self.idxs_ds,
-                seq=self.idxs_seq,
-                data=self._check_data(data, "data"),
-                nodata=nodata,
-            )
-        elif direction == "down":
-            accu = streams.accuflux_ds(
-                idxs_ds=self.idxs_ds,
-                seq=self.idxs_seq,
-                data=self._check_data(data, "data"),
-                nodata=nodata,
-            )
-        else:
-            raise ValueError(
-                'Unknown flow direction: {direction}, select from ["up", "down"].'
-            )
-        return accu.reshape(data.shape)
-
     ### STREAMS ####
     def inflow_idxs(self, region):
         """Returns linear indices of most upstream cells within region
@@ -910,6 +873,7 @@ class FlwdirRaster(Flwdir):
         ys=None,
         idxs_out=None,
         max_len=0,
+        direction="up",
         **kwargs,
     ):
         """Returns a list of stream segment as linestring geo-features.
@@ -930,13 +894,18 @@ class FlwdirRaster(Flwdir):
             Mask of valid cells.
         min_sto : int
             Minimum Strahler Order recognized as river, by the default 1.
-            A stream order map can optioanlly be passed using the key-word argument `strord`.
+            A stream order map can optionally be passed using the key-word argument `strord`.
         xs, ys : 2D array of float
             Raster with cell x, y coordinates, by default None and inferred from cell
             center.
         idxs_out : 1D array of int
-            Linear indices of unit catchment outlet cells. Stream segments are created
-            by following the main upstream path to the next outlet cell. By default None.
+            Linear indices of segment end cells. Stream segments are based on  the path
+            between two segment end cells in up- or downstream flow direction, see
+            `direction` argument.
+            By default None in which case segements are based on confluences.
+        direction : {"up", "down"}
+            Flow direction to define path between segment end points. Only used
+            in combination with `idxs_out`.
         max_len: int, optional
             Maximum length of a single stream segment measured in cells.
             Longer streams segments are divided into smaller segments of equal length
@@ -959,13 +928,14 @@ class FlwdirRaster(Flwdir):
         if idxs_out is not None:
             idxs = subgrid.segment_indices(
                 idxs_out=idxs_out,
-                idxs_nxt=self.idxs_us_main,  # down- to upstream
+                idxs_nxt=self.idxs_us_main if direction == "up" else self.idxs_ds,
                 mask=mask,
                 max_len=max_len,
                 mv=self._mv,
             )
             # up to downstream for correct idx_ds column
-            idxs = [idxs0[::-1] for idxs0 in idxs]
+            if direction == "up":
+                idxs = [idxs0[::-1] for idxs0 in idxs]
         else:
             idxs = streams.streams(
                 idxs_ds=self.idxs_ds,
