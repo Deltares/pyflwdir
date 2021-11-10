@@ -66,6 +66,15 @@ def test_downstream(parsed, flwdir):
         path = core._trace(idx0, idxs_ds, mv=mv)[0]
         wdw = core._window(idx0, 2, idxs_ds, idxs_ds, mv=mv)
         assert np.all(path == wdw[2:]) and np.all(path[::-1] == wdw[:-2])
+        ##
+        rank1 = core.fillnodata_downstream(idxs_ds, seq, rank, nodata=0)
+        idxs1 = idxs_ds[np.where(rank == 1)[0]]
+        idxs1, n_up = np.unique(idxs1, return_counts=True)
+        assert np.all(rank1[idxs1] == 1)
+        rank2 = core.fillnodata_downstream(idxs_ds, seq, rank, nodata=0, how="min")
+        assert np.all(rank2 == rank1)
+        rank3 = core.fillnodata_downstream(idxs_ds, seq, rank, nodata=0, how="sum")
+        assert np.all(rank3[idxs1] == n_up)
 
 
 @pytest.mark.parametrize("parsed, flwdir", test_data)

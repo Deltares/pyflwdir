@@ -161,7 +161,7 @@ def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
         original data with missing values
     nodata : float, integer
         nodata value
-    how: {'min', 'max', 'sum', 'mean'}
+    how: {'min', 'max', 'sum'}
         method to merge values at confluences.
 
     Returns
@@ -170,14 +170,21 @@ def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
         infilled data
     """
     data_out = data.copy()
-    f = {"max": np.max, "min": np.min, "sum": np.sum, "mean": np.mean}[how]
+    # TODO simplify max/min/sum
+    assert how in ["min", "max", "sum"]
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
+        if idx_ds == idx0:  # pit
+            continue
         if data[idx_ds] == nodata and data_out[idx0] != nodata:
             if data_out[idx_ds] == nodata:
                 data_out[idx_ds] = data_out[idx0]
+            elif how == "max":
+                data_out[idx_ds] = max(data_out[idx0], data_out[idx_ds])
+            elif how == "min":
+                data_out[idx_ds] = min(data_out[idx0], data_out[idx_ds])
             else:
-                data_out[idx_ds] = f(data_out[[idx0, idx_ds]])
+                data_out[idx_ds] += data_out[idx0]
     return data_out
 
 
