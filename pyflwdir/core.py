@@ -2,11 +2,9 @@
 """Core flow direction functionality. All functions work based on the an array of 
 next downstream indices (idxs_ds) and mostly return indices."""
 
-from numba import njit, prange
+from numba import njit
 from numba.typed import List
 import numpy as np
-import math
-import heapq
 
 from . import gis_utils
 
@@ -141,10 +139,9 @@ def fillnodata_upstream(idxs_ds, seq, data, nodata):
         infilled data
     """
     data_out = data.copy()
-    missing = np.isnan(data) if np.isnan(nodata) else data == nodata
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
-        if missing[idx0] and not missing[idx_ds]:
+        if data_out[idx0] == nodata and data_out[idx_ds] != nodata:
             data_out[idx0] = data_out[idx_ds]
     return data_out
 
@@ -172,13 +169,15 @@ def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
     data_out: 1D array of data.dtype
         infilled data
     """
-    f = {"max": np.nanmax, "min": np.nanmin, "sum": np.nansum, "mean": np.nanmean}[how]
     data_out = data.copy()
-    missing = np.isnan(data) if np.isnan(nodata) else data == nodata
+    f = {"max": np.max, "min": np.min, "sum": np.sum, "mean": np.mean}[how]
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
-        if missing[idx_ds] and not missing[idx0]:
-            data_out[idx_ds] = f(data_out[idx0], data_out[idx_ds])
+        if data[idx_ds] == nodata and data_out[idx0] != nodata:
+            if data_out[idx_ds] == nodata:
+                data_out[idx_ds] = data_out[idx0]
+            else:
+                data_out[idx_ds] = f(data_out[[idx0, idx_ds]])
     return data_out
 
 

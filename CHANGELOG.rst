@@ -9,7 +9,6 @@ Improved
 --------
 * FlwdirRaster.streams method includes a (zero-length) line at pits and adds option for trace direction in combination with segment end cells.
 * Moved accuflux method from FlwdirRaster to parent Flwdir class.
-* Support nodata = NaNs in fillnodata methods.
 * Additional `how` argument in fillnodata to indicate how to combine values at confluences. Min, max, sum and mean are supported.
 
 
