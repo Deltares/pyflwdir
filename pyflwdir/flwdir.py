@@ -277,7 +277,7 @@ class Flwdir(object):
 
     ### GLOBAL ARITHMETICS ###
 
-    def fillnodata(self, data, nodata, direction="down"):
+    def fillnodata(self, data, nodata, direction="down", how="max"):
         """Returns data where cells with nodata value have been filled
         with the nearest up- or downstream valid neighbor value.
 
@@ -289,11 +289,14 @@ class Flwdir(object):
             missing data value
         direction : {'up', 'down'}, optional
             direction of path, be default 'down', i.e. downstream
+        how: {'min', 'max', 'sum', 'mean'}, optional.
+            Method to merge values at confluences. By default 'max'.
+            Only used in combination with `direction = 'down'`.
 
         Returns
         -------
         2D array
-            fill data
+            filled data
         """
         direction = str(direction).lower()
         dflat = self._check_data(data, "data")
@@ -301,7 +304,7 @@ class Flwdir(object):
             dout = core.fillnodata_upstream(self.idxs_ds, self.idxs_seq, dflat, nodata)
         elif direction == "down":
             dout = core.fillnodata_downstream(
-                self.idxs_ds, self.idxs_seq, dflat, nodata
+                self.idxs_ds, self.idxs_seq, dflat, nodata, how=how
             )
         else:
             msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'

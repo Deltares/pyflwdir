@@ -141,15 +141,16 @@ def fillnodata_upstream(idxs_ds, seq, data, nodata):
         infilled data
     """
     data_out = data.copy()
+    missing = np.isnan(data) if np.isnan(nodata) else data == nodata
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
-        if data_out[idx0] == nodata and data_out[idx_ds] != nodata:
+        if missing[idx0] and not missing[idx_ds]:
             data_out[idx0] = data_out[idx_ds]
     return data_out
 
 
 @njit
-def fillnodata_downstream(idxs_ds, seq, data, nodata):
+def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
     """Retuns a a copy of <data> where downstream cells with <nodata> values are filled
     based on the first upstream valid cell value.
 
@@ -163,17 +164,21 @@ def fillnodata_downstream(idxs_ds, seq, data, nodata):
         original data with missing values
     nodata : float, integer
         nodata value
+    how: {'min', 'max', 'sum', 'mean'}
+        method to merge values at confluences.
 
     Returns
     -------
     data_out: 1D array of data.dtype
         infilled data
     """
+    f = {"max": np.nanmax, "min": np.nanmin, "sum": np.nansum, "mean": np.nanmean}[how]
     data_out = data.copy()
+    missing = np.isnan(data) if np.isnan(nodata) else data == nodata
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
-        if data_out[idx_ds] == nodata and data_out[idx0] != nodata:
-            data_out[idx_ds] = data_out[idx0]
+        if missing[idx_ds] and not missing[idx0]:
+            data_out[idx_ds] = f(data_out[idx0], data_out[idx_ds])
     return data_out
 
 
