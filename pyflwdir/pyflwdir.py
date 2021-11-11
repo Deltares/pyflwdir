@@ -1396,15 +1396,17 @@ class FlwdirRaster(Flwdir):
 
     ### ELEVATION ###
 
-    def dem_dig_d4(self, elevtn, nodata=-9999.0):
+    def dem_dig_d4(self, elevtn, rivmsk=None, nodata=-9999.0):
         """Returns the hydrologically adjusted elevation where for
-        each cell there is an adjacent d4 connected cell which has
+        each cell river cell there is an adjacent D4 connected cell which has
         has the same or lower elevation as the current cell.
 
         Parameters
         ----------
         elevtn : 2D array of float
             elevation raster
+        rivmsk : 2D array of bool, optional
+            river mask
 
         Returns
         -------
@@ -1415,6 +1417,7 @@ class FlwdirRaster(Flwdir):
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
             elv_flat=self._check_data(elevtn, "elevtn"),
+            mask=self._check_data(rivmsk, "rivmsk", optional=True),
             shape=self.shape,
             nodata=nodata,
         )
