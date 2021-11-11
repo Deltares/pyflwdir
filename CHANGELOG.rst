@@ -5,6 +5,11 @@ Change Log
 0.5.2 (unreleased)
 ******************
 
+New
+---
+* Flwdir.river_depth for gradually varying flow (gvf) and manning river depth estimation
+* Flwdir.path method to get the indices of flow paths for vector flow directions
+
 Improved
 --------
 * FlwdirRaster.streams method includes a (zero-length) line at pits and adds option for trace direction in combination with segment end cells.
