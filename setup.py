@@ -25,9 +25,9 @@ setup(
     test_suite="tests",
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=[
-        "numba>=0.48",
+        "numba>=0.54",
         "numpy",
         "scipy",
         "affine",
