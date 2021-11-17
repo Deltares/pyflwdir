@@ -320,7 +320,7 @@ def segment_indices(
 
     Returns
     -------
-    streams : list of 1D-arrays of intp
+    streams : list of 1D-arrays of int
         linear indices of streams
     """
     # temp binary array with outlets
@@ -339,12 +339,12 @@ def segment_indices(
         idx = idx0
         while True:
             idx1 = idxs_nxt[idx]
+            pit = idx1 == idx
             if (
                 idx1 == mv
-                or idx1 == idx
+                or pit
                 or (mask is not None and mask[idx1] == False)
-                or max_len > 0
-                and len(idxs) == max_len
+                or (max_len > 0 and len(idxs) == max_len)
             ):
                 break
             idxs.append(idx1)
@@ -352,9 +352,12 @@ def segment_indices(
                 break
             # next iter
             idx = idx1
-        # get median value
+        # append indices to list of stream segments
         if len(idxs) > 1:
             streams.append(np.array(idxs, dtype=idxs_nxt.dtype))
+        # changed in v0.5.2: add zero-length line at pits
+        if pit:
+            streams.append(np.array([idx1, idx1], dtype=idxs_nxt.dtype))
     return streams
 
 

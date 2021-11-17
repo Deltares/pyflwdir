@@ -376,12 +376,14 @@ def _local_d4(idx0, idx_ds, ncol):
 
 
 @njit
-def dig_4connectivity(idxs_ds, seq, elv_flat, shape, nodata=-9999):
+def dig_4connectivity(idxs_ds, seq, elv_flat, shape, mask=None, nodata=-9999):
     """Make sure that for every diagonal D8 downstream flow direction
     there is an adjacent D4 cell with same or lower elevation"""
     elv_out = elv_flat.copy()
     nrow, ncol = shape
     for idx0 in seq[::-1]:  # up- to downstream
+        if mask is not None and not mask[idx0]:
+            continue
         idx_ds = idxs_ds[idx0]
         dd = abs(idx0 - idx_ds)
         if dd > 1 and dd != ncol:  # diagonal

@@ -2,11 +2,9 @@
 """Core flow direction functionality. All functions work based on the an array of 
 next downstream indices (idxs_ds) and mostly return indices."""
 
-from numba import njit, prange
+from numba import njit
 from numba.typed import List
 import numpy as np
-import math
-import heapq
 
 from . import gis_utils
 
@@ -149,7 +147,7 @@ def fillnodata_upstream(idxs_ds, seq, data, nodata):
 
 
 @njit
-def fillnodata_downstream(idxs_ds, seq, data, nodata):
+def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
     """Retuns a a copy of <data> where downstream cells with <nodata> values are filled
     based on the first upstream valid cell value.
 
@@ -163,6 +161,8 @@ def fillnodata_downstream(idxs_ds, seq, data, nodata):
         original data with missing values
     nodata : float, integer
         nodata value
+    how: {'min', 'max', 'sum'}
+        method to merge values at confluences.
 
     Returns
     -------
@@ -170,10 +170,21 @@ def fillnodata_downstream(idxs_ds, seq, data, nodata):
         infilled data
     """
     data_out = data.copy()
+    # TODO simplify max/min/sum
+    assert how in ["min", "max", "sum"]
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
-        if data_out[idx_ds] == nodata and data_out[idx0] != nodata:
-            data_out[idx_ds] = data_out[idx0]
+        if idx_ds == idx0:  # pit
+            continue
+        if data[idx_ds] == nodata and data_out[idx0] != nodata:
+            if data_out[idx_ds] == nodata:
+                data_out[idx_ds] = data_out[idx0]
+            elif how == "max":
+                data_out[idx_ds] = max(data_out[idx0], data_out[idx_ds])
+            elif how == "min":
+                data_out[idx_ds] = min(data_out[idx0], data_out[idx_ds])
+            else:
+                data_out[idx_ds] += data_out[idx0]
     return data_out
 
 

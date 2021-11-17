@@ -6,7 +6,7 @@
     :target: https://deltares.github.io/pyflwdir/latest
     :alt: Latest developers docs
 
-.. image:: https://pypip.in/v/pyflwdir/badge.png
+.. image:: https://badge.fury.io/py/pyflwdir.svg
     :target: https://pypi.org/project/pyflwdir/
     :alt: Latest PyPI version
 

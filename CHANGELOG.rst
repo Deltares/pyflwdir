@@ -2,6 +2,21 @@
 Change Log
 ###########
 
+0.5.2 (17-Nov-2021)
+*******************
+
+New
+---
+* Flwdir.river_depth for gradually varying flow (gvf) and manning river depth estimation
+* Flwdir.path method to get the indices of flow paths for vector flow directions
+
+Improved
+--------
+* FlwdirRaster.streams method includes a (zero-length) line at pits and adds option for trace direction in combination with segment end cells.
+* Moved accuflux method from FlwdirRaster to parent Flwdir class.
+* Additional `how` argument in fillnodata to indicate how to combine values at confluences. Min, max, sum and mean are supported.
+
+
 0.5.1 (3-Oct-2021)
 ******************
 

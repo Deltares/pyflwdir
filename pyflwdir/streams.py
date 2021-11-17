@@ -155,15 +155,17 @@ def streams(idxs_ds, seq, mask=None, max_len=0, mv=core._mv):
     # get list of indices arrays of segments
     streams = []
     done = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
-    for idx0 in seq[::-1]:
+    for idx0 in seq[::-1]:  # up- to downstream
         if done[idx0] or (mask is not None and ~mask[idx0]):
             continue
         idxs = [idx0]  # initiate with correct dtype
         while True:
             done[idx0] = True
             idx_ds = idxs_ds[idx0]
-            idxs.append(idx_ds)
-            if nup[idx_ds] > 1 or idx_ds == idx0:
+            pit = idx_ds == idx0
+            if not pit:
+                idxs.append(idx_ds)
+            if nup[idx_ds] > 1 or pit:
                 l = len(idxs)
                 if l > max_len > 0:
                     n, k = l, 1
@@ -178,6 +180,9 @@ def streams(idxs_ds, seq, mask=None, max_len=0, mv=core._mv):
                             streams.append(np.array(_idxs, dtype=idxs_ds.dtype))
                 else:
                     streams.append(np.array(idxs, dtype=idxs_ds.dtype))
+                # CHANGED in v0.5.2: add zero length LineString at pits
+                if pit:
+                    streams.append(np.array([idx_ds, idx_ds], dtype=idxs_ds.dtype))
                 break
             idx0 = idx_ds
     return streams

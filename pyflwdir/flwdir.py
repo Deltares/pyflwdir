@@ -12,6 +12,7 @@ from . import (
     core,
     dem,
     streams,
+    rivers,
 )
 
 # export
@@ -273,11 +274,58 @@ class Flwdir(object):
         return Flwdir(**kwargs)
 
     ### LOCAL METHODS ###
-    # TODO path, snap method
+    def path(
+        self,
+        idxs=None,
+        mask=None,
+        max_length=None,
+        direction="down",
+    ):
+        """Returns paths of indices in down- or upstream direction from the starting
+        points until:
+
+        1) a pit is found (including) or now more upstream cells are found; or
+        2) a True cell is found in mask (including); or
+        3) the max_length threshold is exceeded.
+
+        To define starting points, either idxs or xy should be provided.
+
+        Parameters
+        ----------
+        idxs : array_like, optional
+            linear indices of starting point, by default is None.
+        mask : 1D array of bool, optional
+            True for path end nodes.
+        max_length : float, optional
+            maximum length of trace in number of nodes
+        direction : {'up', 'down'}, optional
+            direction of path, be default 'down', i.e. downstream
+
+        Returns
+        -------
+        list of 1D-array of int
+            linear indices of path
+        1D-array of float
+            distance along path between start and end cell
+        """
+        direction = str(direction).lower()
+        if direction not in ["up", "down"]:
+            msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
+            raise ValueError(msg)
+        paths, dist = core.path(
+            idxs0=idxs,
+            idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
+            mask=self._check_data(mask, "mask", optional=True),
+            max_length=max_length,
+            real_length=False,
+            ncol=None,
+            mv=self._mv,
+        )
+        return paths, dist
 
     ### GLOBAL ARITHMETICS ###
 
-    def fillnodata(self, data, nodata, direction="down"):
+    def fillnodata(self, data, nodata, direction="down", how="max"):
         """Returns data where cells with nodata value have been filled
         with the nearest up- or downstream valid neighbor value.
 
@@ -289,11 +337,14 @@ class Flwdir(object):
             missing data value
         direction : {'up', 'down'}, optional
             direction of path, be default 'down', i.e. downstream
+        how: {'min', 'max', 'sum'}, optional.
+            Method to merge values at confluences. By default 'max'.
+            Only used in combination with `direction = 'down'`.
 
         Returns
         -------
         2D array
-            fill data
+            filled data
         """
         direction = str(direction).lower()
         dflat = self._check_data(data, "data")
@@ -301,7 +352,7 @@ class Flwdir(object):
             dout = core.fillnodata_upstream(self.idxs_ds, self.idxs_seq, dflat, nodata)
         elif direction == "down":
             dout = core.fillnodata_downstream(
-                self.idxs_ds, self.idxs_seq, dflat, nodata
+                self.idxs_ds, self.idxs_seq, dflat, nodata, how=how
             )
         else:
             msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
@@ -481,6 +532,43 @@ class Flwdir(object):
         uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)
 
+    def accuflux(self, data, nodata=-9999, direction="up"):
+        """Return accumulated data values along the flow directions.
+
+        Parameters
+        ----------
+        data : 2D array
+            values
+        nodata : int or float
+            Missing data value for cells outside domain
+        direction : {'up', 'down'}, optional
+            direction in which to accumulate data, by default upstream
+
+        Returns
+        -------
+        2D array with data.dtype
+            accumulated values
+        """
+        if direction == "up":
+            accu = streams.accuflux(
+                idxs_ds=self.idxs_ds,
+                seq=self.idxs_seq,
+                data=self._check_data(data, "data"),
+                nodata=nodata,
+            )
+        elif direction == "down":
+            accu = streams.accuflux_ds(
+                idxs_ds=self.idxs_ds,
+                seq=self.idxs_seq,
+                data=self._check_data(data, "data"),
+                nodata=nodata,
+            )
+        else:
+            raise ValueError(
+                'Unknown flow direction: {direction}, select from ["up", "down"].'
+            )
+        return accu.reshape(data.shape)
+
     ### ELEVATION ###
 
     def dem_adjust(self, elevtn):
@@ -504,6 +592,120 @@ class Flwdir(object):
             mv=self._mv,
         )
         return elevtn_out.reshape(elevtn.shape)
+
+    ### RIVERS ###
+
+    def classify_estuaries(
+        self, elevtn, rivwth, rivdst=None, min_convergence=1e-2, max_elevtn=0
+    ):
+        """Classifies estuaries based on a minimum width convergence.
+
+        Parameters
+        ----------
+        rivdst, rivwth, elevtn : np.ndarray
+            Distance to river outlet [m], river width [m], elevation [m+REF]
+        max_elevtn : float, optional
+            Maximum elevation for estuary outlet, by default 0 m+REF
+        min_convergence : float, optional
+            River width convergence threshold, by default 1e-2 m/m
+
+        Returns
+        -------
+        np.ndarray of int8
+            Estuary classification: >= 1 where estuary; 2 at upstream end of estaury.
+        """
+        rivdst = self.distnc if rivdst is None else rivdst
+        estuary = rivers.classify_estuary(
+            self.idxs_ds,
+            self.idxs_seq,
+            self.idxs_pit,
+            rivdst=self._check_data(rivdst, "rivdst"),
+            rivwth=self._check_data(rivwth, "rivwth"),
+            elevtn=self._check_data(elevtn, "elevtn"),
+            min_convergence=min_convergence,
+            max_elevtn=max_elevtn,
+        )
+        return estuary
+
+    def river_depth(
+        self,
+        qbankfull,
+        rivwth,
+        zs=None,
+        rivdst=None,
+        rivslp=None,
+        manning=0.03,
+        method="manning",
+        min_rivdph=1,
+        min_rivslp=1e-5,
+        **kwargs,
+    ):
+        """Return an estimated river depth based on mannings equations or a gradually
+        varying flow (gvf) solver a assuming a rectangular river profile.
+
+        Parameters
+        ----------
+        qbankfull : np.ndarray
+            bankfull discharge [m^3/s]
+        rivwth : np.ndarray
+            bankfull river width [m]
+        zs : np.ndarray, optional
+            bankfull water surface elevation profile [m+REF], required for gvf method
+        rivdst : np.ndarray, optional
+            distance to river outlet [m], required for gvf method
+        rivslp : np.ndarray, optional
+            river slope [m/m], required if `zs` or `rivdst` is not provided
+        manning : float, optional
+            manning roughness [s/m^{1/3}], by default 0.03
+        method : {'manning', 'gvf'}
+            Method to estimate river depth, by default 'manning'
+        min_rivdph : int, optional
+            Minimum river depth [m], by default 1
+        min_rivslp : [type], optional
+            Minimum river slope [m/m], by default 1e-5
+
+        Returns
+        -------
+        rivdph: np.ndarray
+            river depth [m]
+        """
+        methods = ["manning", "gvf"]
+        if method not in methods:
+            raise ValueError(f"Method unknown {method}, select from {methods}")
+        # required arguments
+        manning = self._check_data(manning, "manning")
+        qbankfull = self._check_data(qbankfull, "qbankfull")
+        rivwth = self._check_data(rivwth, "rivwth")
+        # in case of manning either rivslp or zs&rivdst are optional
+        _opt = method == "manning" and rivslp is not None
+        rivslp = self._check_data(rivslp, "rivslp", optional=True)
+        rivdst = self._check_data(rivdst, "rivdst", optional=_opt)
+        zs = self._check_data(zs, "zs", optional=_opt)
+        # get (initial) river slope from zs & rivdst
+        if rivslp is None:
+            dz = zs - self.downstream(zs)
+            dx = rivdst - self.downstream(rivdst)
+            rivslp = np.maximum(min_rivslp, np.where(dx > 0, dz / dx, min_rivslp))
+        # get (initial) river depth based on manning's equation
+        rivdph = ((manning * qbankfull) / (np.sqrt(rivslp) * rivwth)) ** (3 / 5)
+        rivdph = np.maximum(min_rivdph, rivdph)
+        rivdph[self.idxs_ds == self._mv] = -9999.0
+        # update river depth based on contraint gradually varying flow solver
+        if method == "gvf":
+            rivdph = rivers.rivdph_gvf(
+                self.idxs_ds,
+                self.idxs_seq,
+                zs=zs,
+                rivdph=rivdph,
+                qbankfull=qbankfull,
+                rivdst=rivdst,
+                rivwth=rivwth,
+                manning=manning,
+                min_rivslp=min_rivslp,
+                min_rivdph=min_rivdph,
+                **kwargs,
+            )
+        return rivdph.reshape(self.shape)
 
     ### SHORTCUTS ###
 
