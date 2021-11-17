@@ -868,43 +868,6 @@
         <span class="n">uparea</span><span class="p">[</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">9999</span>
         <span class="k">return</span> <span class="n">uparea</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.accuflux"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.accuflux">[docs]</a>    <span class="k">def</span> <span class="nf">accuflux</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mi">9999</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;up&quot;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return accumulated data values along the flow direction map.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        data : 2D array</span>
-<span class="sd">            values</span>
-<span class="sd">        nodata : int or float</span>
-<span class="sd">            Missing data value for cells outside domain</span>
-<span class="sd">        direction : {&#39;up&#39;, &#39;down&#39;}, optional</span>
-<span class="sd">            direction in which to accumulate data, by default upstream</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        2D array with data.dtype</span>
-<span class="sd">            accumulated values</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;up&quot;</span><span class="p">:</span>
-            <span class="n">accu</span> <span class="o">=</span> <span class="n">streams</span><span class="o">.</span><span class="n">accuflux</span><span class="p">(</span>
-                <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
-                <span class="n">seq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">),</span>
-                <span class="n">nodata</span><span class="o">=</span><span class="n">nodata</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;down&quot;</span><span class="p">:</span>
-            <span class="n">accu</span> <span class="o">=</span> <span class="n">streams</span><span class="o">.</span><span class="n">accuflux_ds</span><span class="p">(</span>
-                <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
-                <span class="n">seq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">),</span>
-                <span class="n">nodata</span><span class="o">=</span><span class="n">nodata</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Unknown flow direction: </span><span class="si">{direction}</span><span class="s1">, select from [&quot;up&quot;, &quot;down&quot;].&#39;</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">accu</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
-
     <span class="c1">### STREAMS ####</span>
     <span class="k">def</span> <span class="nf">inflow_idxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns linear indices of most upstream cells within region</span>
@@ -1002,6 +965,7 @@
         <span class="n">ys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">idxs_out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">max_len</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;up&quot;</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a list of stream segment as linestring geo-features.</span>
@@ -1022,13 +986,18 @@
 <span class="sd">            Mask of valid cells.</span>
 <span class="sd">        min_sto : int</span>
 <span class="sd">            Minimum Strahler Order recognized as river, by the default 1.</span>
-<span class="sd">            A stream order map can optioanlly be passed using the key-word argument `strord`.</span>
+<span class="sd">            A stream order map can optionally be passed using the key-word argument `strord`.</span>
 <span class="sd">        xs, ys : 2D array of float</span>
 <span class="sd">            Raster with cell x, y coordinates, by default None and inferred from cell</span>
 <span class="sd">            center.</span>
 <span class="sd">        idxs_out : 1D array of int</span>
-<span class="sd">            Linear indices of unit catchment outlet cells. Stream segments are created</span>
-<span class="sd">            by following the main upstream path to the next outlet cell. By default None.</span>
+<span class="sd">            Linear indices of segment end cells. Stream segments are based on  the path</span>
+<span class="sd">            between two segment end cells in up- or downstream flow direction, see</span>
+<span class="sd">            `direction` argument.</span>
+<span class="sd">            By default None in which case segements are based on confluences.</span>
+<span class="sd">        direction : {&quot;up&quot;, &quot;down&quot;}</span>
+<span class="sd">            Flow direction to define path between segment end points. Only used</span>
+<span class="sd">            in combination with `idxs_out`.</span>
 <span class="sd">        max_len: int, optional</span>
 <span class="sd">            Maximum length of a single stream segment measured in cells.</span>
 <span class="sd">            Longer streams segments are divided into smaller segments of equal length</span>
@@ -1051,13 +1020,14 @@
         <span class="k">if</span> <span class="n">idxs_out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">idxs</span> <span class="o">=</span> <span class="n">subgrid</span><span class="o">.</span><span class="n">segment_indices</span><span class="p">(</span>
                 <span class="n">idxs_out</span><span class="o">=</span><span class="n">idxs_out</span><span class="p">,</span>
-                <span class="n">idxs_nxt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_us_main</span><span class="p">,</span>  <span class="c1"># down- to upstream</span>
+                <span class="n">idxs_nxt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_us_main</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;up&quot;</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
                 <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span>
                 <span class="n">max_len</span><span class="o">=</span><span class="n">max_len</span><span class="p">,</span>
                 <span class="n">mv</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_mv</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="c1"># up to downstream for correct idx_ds column</span>
-            <span class="n">idxs</span> <span class="o">=</span> <span class="p">[</span><span class="n">idxs0</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">idxs0</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;up&quot;</span><span class="p">:</span>
+                <span class="n">idxs</span> <span class="o">=</span> <span class="p">[</span><span class="n">idxs0</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">idxs0</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">idxs</span> <span class="o">=</span> <span class="n">streams</span><span class="o">.</span><span class="n">streams</span><span class="p">(</span>
                 <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
@@ -1518,15 +1488,17 @@
 
     <span class="c1">### ELEVATION ###</span>
 
-<div class="viewcode-block" id="FlwdirRaster.dem_dig_d4"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.dem_dig_d4">[docs]</a>    <span class="k">def</span> <span class="nf">dem_dig_d4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.dem_dig_d4"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.dem_dig_d4">[docs]</a>    <span class="k">def</span> <span class="nf">dem_dig_d4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">rivmsk</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the hydrologically adjusted elevation where for</span>
-<span class="sd">        each cell there is an adjacent d4 connected cell which has</span>
+<span class="sd">        each cell river cell there is an adjacent D4 connected cell which has</span>
 <span class="sd">        has the same or lower elevation as the current cell.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        elevtn : 2D array of float</span>
 <span class="sd">            elevation raster</span>
+<span class="sd">        rivmsk : 2D array of bool, optional</span>
+<span class="sd">            river mask</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1537,6 +1509,7 @@
             <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
             <span class="n">seq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span>
             <span class="n">elv_flat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">elevtn</span><span class="p">,</span> <span class="s2">&quot;elevtn&quot;</span><span class="p">),</span>
+            <span class="n">mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">rivmsk</span><span class="p">,</span> <span class="s2">&quot;rivmsk&quot;</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
             <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
             <span class="n">nodata</span><span class="o">=</span><span class="n">nodata</span><span class="p">,</span>
         <span class="p">)</span>
