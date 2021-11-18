@@ -3,8 +3,8 @@ Change Log
 ###########
 
 
-0.5.3
-********
+0.5.3  (18-Nov-2021)
+********************
 
 Improved
 ---------
@@ -13,6 +13,7 @@ Improved
 Bugfix
 ------
 * min_rivdph argument was not always applied in FlwdirRaster.river_depth
+
 
 0.5.2 (17-Nov-2021)
 *******************
