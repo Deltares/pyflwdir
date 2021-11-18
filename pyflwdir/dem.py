@@ -16,12 +16,20 @@ __all__ = ["slope", "fill_depressions"]
 
 @njit
 def fill_depressions(
-    elevtn, outlets="edge", nodata=-9999.0, max_depth=-1.0, connectivity=8
+    elevtn,
+    outlets="edge",
+    idxs_pit=None,
+    nodata=-9999.0,
+    max_depth=-1.0,
+    connectivity=8,
 ):
     """Fill local depressions in elevation data and derived local
     D8 flow directions.
 
-    Outlets are assumed to only occur at the edge of valid elevation cells.
+    Outlets are assumed to occur at the edge of valid elevation cells `outlets='edge'`;
+    at the lowest valid edge cell to create one single outlet `outlets='min'`;
+    or at user provided outlet cells `idxs_pit`.
+
     Depressions elsewhere are filled based on its lowest pour point elevation.
     If the pour point depth is larger than the maximum pour point depth `max_depth` a pit
     is set at the depression local minimum elevation.
@@ -43,6 +51,8 @@ def fill_depressions(
     outlets: {'edge', 'min'}
         Position for basin outlet(s) at the all valid elevation edge cell ('edge')
         or only the minimum elevation edge cell ('min')
+    idxs_pit: 1D array of int
+        Linear indices of outlet cells.
 
     Returns
     -------
@@ -64,14 +74,17 @@ def fill_depressions(
         struct[0, -1], struct[-1, 0] = False, False
 
     # initiate queue
-    # 1) with edge cells
-    queued = gis_utils.get_edge(~done, structure=struct)
-    # TODO: 3) from mask with (potential) outlet cells
+    if idxs_pit is None:  # with edge cells
+        queued = gis_utils.get_edge(~done, structure=struct)
+    else:  # with user difinfed outlet cells
+        queued = np.array([bool(0) for s in range(elevtn.size)]).reshape((nrow, ncol))
+        for idx in idxs_pit:
+            queued.flat[idx] = True
     q = [(elevtn[0, 0], np.uint32(0), np.uint32(0)) for _ in range(0)]
     heapq.heapify(q)
     for r, c in zip(*np.where(queued)):
         heapq.heappush(q, (elevtn[r, c], np.uint32(r), np.uint32(c)))
-    # 2) global edge mimimum (single outlet)
+    # restrict queue to global edge mimimum (single outlet)
     if outlets == "min":
         q = [heapq.heappop(q)]
         queued[:, :] = False

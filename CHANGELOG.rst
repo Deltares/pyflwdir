@@ -2,6 +2,18 @@
 Change Log
 ###########
 
+
+0.5.3
+********
+
+Improved
+---------
+* add new idxs_pit argument to dem.fill_despressions
+
+Bugfix
+------
+* min_rivdph argument was not always applied in FlwdirRaster.river_depth
+
 0.5.2 (17-Nov-2021)
 *******************
 
