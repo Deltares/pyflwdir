@@ -1198,8 +1198,10 @@ scaled with upstream area (A) following h ~ A**b.</p>
 <span class="sig-prename descclassname"><span class="pre">dem.</span></span><span class="sig-name descname"><span class="pre">fill_depressions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.dem.fill_depressions" title="Permalink to this definition"></a></dt>
 <dd><p>Fill local depressions in elevation data and derived local
 D8 flow directions.</p>
-<p>Outlets are assumed to only occur at the edge of valid elevation cells.
-Depressions elsewhere are filled based on its lowest pour point elevation.
+<p>Outlets are assumed to occur at the edge of valid elevation cells <cite>outlets=’edge’</cite>;
+at the lowest valid edge cell to create one single outlet <cite>outlets=’min’</cite>;
+or at user provided outlet cells <cite>idxs_pit</cite>.</p>
+<p>Depressions elsewhere are filled based on its lowest pour point elevation.
 If the pour point depth is larger than the maximum pour point depth <cite>max_depth</cite> a pit
 is set at the depression local minimum elevation.</p>
 <p>Based on: Wang, L., &amp; Liu, H. (2006). <a class="reference external" href="https://doi.org/10.1080/13658810500433453">https://doi.org/10.1080/13658810500433453</a></p>
@@ -1214,6 +1216,7 @@ large pour point depth causing all depressions to be filled.</p></li>
 <li><p><strong>connectivity</strong> (<em>{4</em><em>, </em><em>8}</em>) – Number of neighboring cells to consider.</p></li>
 <li><p><strong>outlets</strong> (<em>{'edge'</em><em>, </em><em>'min'}</em>) – Position for basin outlet(s) at the all valid elevation edge cell (‘edge’)
 or only the minimum elevation edge cell (‘min’)</p></li>
+<li><p><strong>idxs_pit</strong> (<em>1D array of int</em>) – Linear indices of outlet cells.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
