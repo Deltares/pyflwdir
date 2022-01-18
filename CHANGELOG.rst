@@ -2,7 +2,7 @@
 Change Log
 ###########
 
-Unreleased
+0.5.4  (18-Jan-2022)
 ********************
 
 Improved
