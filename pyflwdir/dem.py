@@ -90,7 +90,7 @@ def fill_depressions(
     if outlets == "min":
         q = [heapq.heappop(q)]
         queued[:, :] = False
-        queued[q[0][1], q[0][2]] = True
+        queued[q[0][-2], q[0][-1]] = True
 
     # loop over cells and neighbors with ascending cell elevation.
     drs, dcs = np.where(struct)

@@ -24,12 +24,13 @@ def test_from_dem():
     )
     # NOTE: compared to paper same a_filled, but difference
     # in flowdir because row instead of col first ..
+    # and priority of non-boundary cells with same elevation
     d8 = np.array(
         [
             [2, 2, 4, 8, 1, 0, 16],
             [1, 1, 2, 2, 128, 64, 32],
             [128, 128, 1, 1, 2, 2, 4],
-            [64, 128, 128, 128, 1, 1, 0],
+            [128, 128, 128, 128, 1, 1, 0],
             [64, 128, 64, 32, 128, 128, 64],
         ],
         dtype=np.uint8,
