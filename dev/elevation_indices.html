@@ -308,7 +308,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt a.copybtn {
+.prompt .copybtn {
     display: none;
 }
 
@@ -375,8 +375,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># import pyflwdir, some dependencies and convenience methods</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># import pyflwdir, some dependencies and convenience methods</span>
 <span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">rasterio</span>
@@ -409,8 +408,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># first we derive the upstream area map</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># first we derive the upstream area map</span>
 <span class="n">uparea</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span><span class="s2">&quot;km2&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -419,8 +417,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># HAND based on streams defined by a minimal upstream area of 1000 km2</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># HAND based on streams defined by a minimal upstream area of 1000 km2</span>
 <span class="n">hand</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">hand</span><span class="p">(</span><span class="n">drain</span><span class="o">=</span><span class="n">uparea</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">elevtn</span><span class="o">=</span><span class="n">elevtn</span><span class="p">)</span>
 <span class="c1"># plot</span>
 <span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Height above nearest drain (HAND)&quot;</span><span class="p">)</span>
@@ -455,8 +452,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">floodplains</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">floodplains</span><span class="p">(</span><span class="n">elevtn</span><span class="o">=</span><span class="n">elevtn</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="n">uparea</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">floodplains</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">floodplains</span><span class="p">(</span><span class="n">elevtn</span><span class="o">=</span><span class="n">elevtn</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="n">uparea</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
 <span class="c1"># plot</span>
 <span class="n">floodmap</span> <span class="o">=</span> <span class="p">(</span><span class="n">floodplains</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Blues&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
 <span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">(</span>

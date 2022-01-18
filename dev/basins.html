@@ -310,7 +310,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt a.copybtn {
+.prompt .copybtn {
     display: none;
 }
 
@@ -377,8 +377,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># import pyflwdir, some dependencies and convenience methods</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># import pyflwdir, some dependencies and convenience methods</span>
 <span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">rasterio</span>
@@ -408,8 +407,7 @@ Here streams are defined by a minimum Strahler stream order of 4.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># define output locations</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># define output locations</span>
 <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">4.67916667</span><span class="p">,</span> <span class="mf">7.60416667</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">51.72083333</span><span class="p">,</span> <span class="mf">50.3625</span><span class="p">])</span>
 <span class="n">gdf_out</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">points_from_xy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="mi">4326</span><span class="p">))</span>
 <span class="c1"># delineate subbasins</span>
@@ -466,8 +464,7 @@ Here streams are defined by a minimum Strahler stream order of 4.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># plot</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot</span>
 <span class="c1"># key-word arguments passed to GeoDataFrame.plot()</span>
 <span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
     <span class="n">column</span><span class="o">=</span><span class="s2">&quot;basin&quot;</span><span class="p">,</span>
@@ -501,8 +498,7 @@ Here streams are defined by a minimum Strahler stream order of 4.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># calculate subbasins with a minimum stream order 7 and its outlets</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># calculate subbasins with a minimum stream order 7 and its outlets</span>
 <span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_streamorder</span><span class="p">(</span><span class="n">min_sto</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="c1"># transfrom map and point locations to GeoDataFrames</span>
 <span class="n">gdf_subbas</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">subbas</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;basin&quot;</span><span class="p">)</span>
@@ -534,8 +530,7 @@ levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># get the first level nine pfafstetter basins</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the first level nine pfafstetter basins</span>
 <span class="n">pfafbas1</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_pfafstetter</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="c1"># vectorize raster to obtain polygons</span>
 <span class="n">gdf_pfaf1</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">pfafbas1</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pfaf&quot;</span><span class="p">)</span>
@@ -605,8 +600,7 @@ levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># plot</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot</span>
 <span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
     <span class="n">column</span><span class="o">=</span><span class="s2">&quot;pfaf&quot;</span><span class="p">,</span>
     <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">Set3_r</span><span class="p">,</span>
@@ -636,8 +630,7 @@ levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># lets create a second pfafstetter layer with a minimum subbasin area of 5000 km2</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># lets create a second pfafstetter layer with a minimum subbasin area of 5000 km2</span>
 <span class="n">pfafbas2</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_pfafstetter</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
 <span class="n">gdf_pfaf2</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">pfafbas2</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pfaf2&quot;</span><span class="p">)</span>
 <span class="n">gdf_out</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">points_from_xy</span><span class="p">(</span><span class="o">*</span><span class="n">flw</span><span class="o">.</span><span class="n">xy</span><span class="p">(</span><span class="n">idxs_out</span><span class="p">),</span> <span class="n">crs</span><span class="o">=</span><span class="mi">4326</span><span class="p">))</span>
@@ -713,8 +706,7 @@ levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># plot</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot</span>
 <span class="n">bas</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_pfaf2</span><span class="p">,</span> <span class="n">gpd_plot_kwds</span><span class="p">)</span>
 <span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
 <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Subbasins based on pfafstetter coding (level=2)&quot;</span>
@@ -737,8 +729,7 @@ levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># calculate subbasins with a minimum stream order 7 and its outlets</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># calculate subbasins with a minimum stream order 7 and its outlets</span>
 <span class="n">min_area</span> <span class="o">=</span> <span class="mi">2000</span>
 <span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_area</span><span class="p">(</span><span class="n">min_area</span><span class="p">)</span>
 <span class="c1"># transfrom map and point locations to GeoDataFrames</span>
