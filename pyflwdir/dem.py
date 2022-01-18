@@ -143,8 +143,7 @@ def adjust_elevation(idxs_ds, seq, elevtn, mv=_mv):
             idxs0 = core._trace(idx0, idxs_ds, mv=mv, mask=mask)[0]
             # fix elevation
             elevtn1 = _adjust_elevation(elevtn_out[idxs0])
-            # assert np.all(np.diff(elevtn1) <= 0)
-            # assert elevtn_out[idxs0][-1] == elevtn1[-1]
+            # assert np.all(np.diff(elevtn1) <= 0), elevtn_out[idxs0]
             elevtn_out[idxs0] = elevtn1
             mask[idxs0] = True  # update mask
     return elevtn_out
@@ -167,7 +166,7 @@ def _adjust_elevation(elevtn):
             zmax = zi
             imax = i
         if (zi > zi_min1 and zi_min2 >= zi_min1) or (imin >= 0 and i + 1 == n):  # pit
-            if imin >= 0:  # starting from second pit or end of vector > fix pits
+            if imin >= 0:  # starting from second pit or end of vector
                 # option 1: dig -> zmod = zmin, for all values larger than zmin, after imin
                 idxs = np.arange(imin, i, dtype=np.uint32)
                 zmod = np.minimum(zmin, elevtn[idxs])
@@ -181,15 +180,15 @@ def _adjust_elevation(elevtn):
                 # option 3: dig & fill -> try all values between imin and imax
                 i0, j0, i1, j1 = 0, 0, imax, imax
                 zs = np.unique(elevtn[imin + 1 : i])[::-1]
-                for z in zs:
+                for z in zs[1:]:  # skip zmax
                     for j0 in range(i0, imin + 1):  # start of zmod
                         if elevtn[j0] <= z:
                             break
-                    for j1 in range(i1, i):  # end of zmod
+                    for j1 in range(i1, i + 1):  # end of zmod
                         if elevtn[j1] <= z:
                             break
                     i0, i1 = j0, j1
-                    idxs2 = np.arange(j0, j1, dtype=np.uint32)
+                    idxs2 = np.arange(j0, max(imax + 1, j1), dtype=np.uint32)
                     zmod2 = np.full(idxs2.size, z, dtype=elevtn.dtype)
                     cost2 = np.sum(np.abs(elevtn[idxs2] - zmod2))
                     if cost2 < cost:
@@ -199,7 +198,7 @@ def _adjust_elevation(elevtn):
             # update zmin & zmax
             imax = i
             zmax = elevtn[imax]
-            imin = i - 1
+            imin = max(0, i - 1)
             zmin = elevtn[imin]
         # update zi values
         if zi_min2 != zi_min1:

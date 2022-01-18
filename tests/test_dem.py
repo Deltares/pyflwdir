@@ -70,11 +70,11 @@ def test_from_dem():
 
 
 def test_dem_adjust():
-    # # option 1 digg
+    # option 1 dig
     dem0 = np.array([8, 7, 6, 5, 5, 6, 5, 4])
     dem1 = np.array([8, 7, 6, 5, 5, 5, 5, 4])
     assert np.all(dem._adjust_elevation(dem0) == dem1)
-    # # option 2 fill
+    # option 2 fill
     dem0 = np.array([8, 7, 6, 5, 6, 6, 5, 4])
     dem1 = np.array([8, 7, 6, 6, 6, 6, 5, 4])
     assert np.all(dem._adjust_elevation(dem0) == dem1)
@@ -82,9 +82,19 @@ def test_dem_adjust():
     dem0 = np.array([8, 7, 6, 5, 6, 7, 5, 4])
     dem1 = np.array([8, 7, 6, 6, 6, 6, 5, 4])
     assert np.all(dem._adjust_elevation(dem0) == dem1)
+    dem0 = np.array([84, 19, 5, 26, 34, 4])
+    dem1 = np.array([84, 26, 26, 26, 26, 4])
+    assert np.all(dem._adjust_elevation(dem0) == dem1)
+    dem0 = np.array([46, 26, 5, 20, 23, 21, 5])
+    dem1 = np.array([46, 26, 21, 21, 21, 21, 5])
+    assert np.all(dem._adjust_elevation(dem0) == dem1)
     # with large z on last position
     dem0 = np.array([8, 7, 6, 6, 6, 6, 5, 7])
     dem1 = np.array([8, 7, 7, 7, 7, 7, 7, 7])
+    assert np.all(dem._adjust_elevation(dem0) == dem1)
+    # pit at first value
+    dem0 = np.array([5, 41, 15])
+    dem1 = np.array([15, 15, 15])
     assert np.all(dem._adjust_elevation(dem0) == dem1)
     # multiple pits
     dem0 = np.array([60, 13, 54, 37, 49, 27, 22, 19, 42, 33, 40, 36, 7, 32, 8, 8, 2, 1])

@@ -334,6 +334,15 @@ def test_ucat():
         flw.subgrid_rivlen(idxs_out, direction="unknown")
 
 
+def test_dem1():
+    i = 867565
+    rng = np.random.default_rng(i)
+    dem = rng.random((15, 10), dtype=np.float32)
+    flwdir = pyflwdir.from_dem(dem)
+    dem1 = flwdir.dem_adjust(dem)
+    assert np.all((dem1 - flwdir.downstream(dem1)) >= 0), i
+
+
 def test_dem():
     elevtn = np.ones(flw.shape)
     # create values that need fix
@@ -343,11 +352,6 @@ def test_dem():
     assert np.all(elevtn_new == 1.0)
     with pytest.raises(ValueError, match="size does not match"):
         flw.dem_adjust(np.ones((2, 1)))
-    # check some DEM adjustments
-    dem = np.random.rand(15, 10)
-    flwdir = pyflwdir.from_dem(dem)
-    dem1 = flwdir.dem_adjust(dem)
-    assert np.all((dem1 - flwdir.downstream(dem1)) >= 0)
     # hand
     rank = flw.rank
     drain = rank == 0
