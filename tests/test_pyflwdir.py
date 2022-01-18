@@ -343,6 +343,11 @@ def test_dem():
     assert np.all(elevtn_new == 1.0)
     with pytest.raises(ValueError, match="size does not match"):
         flw.dem_adjust(np.ones((2, 1)))
+    # check some DEM adjustments
+    dem = np.random.rand(15, 10)
+    flwdir = pyflwdir.from_dem(dem)
+    dem1 = flwdir.dem_adjust(dem)
+    assert np.all((dem1 - flwdir.downstream(dem1)) >= 0)
     # hand
     rank = flw.rank
     drain = rank == 0
