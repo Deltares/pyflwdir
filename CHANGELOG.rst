@@ -2,6 +2,16 @@
 Change Log
 ###########
 
+Unreleased
+********************
+
+Improved
+---------
+* prioritize non-boundary cells with same elevation over boundary cells in dem.fill_depressions, #17
+
+Bugfix
+------
+
 
 0.5.3  (18-Nov-2021)
 ********************
