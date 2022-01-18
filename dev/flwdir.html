@@ -16,8 +16,8 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -368,7 +368,7 @@ div.rendered_html tbody tr:hover {
 <h1>Flow direction data<a class="headerlink" href="#Flow-direction-data" title="Permalink to this headline"></a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code> object is at the core of the pyflwdir package. It contains gridded flow direction data, parsed to an actionable common format which describes the linear index of the next dowsntream cell.</p>
 <p>Currently we support two local flow direction (D8) data types according to the arcgis <strong>D8</strong> and pcraster <strong>LDD</strong> conventions (see figure), and one global flow direction type according to the CaMa-Flood <strong>NEXTXY</strong> convention. Local flow direction data types describe the next downstream cell based on a relative direction from a cell towards one of its neighboring cells, while global flow direction types describe the next downstream cell based on its row and column indices.</p>
-<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="697647f6dc704cb4885bb2b2c8d59703" class="no-scaled-link" src="_images/ftypes.png" style="width: 500px;" /></p>
+<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="a08e98bf1b13475a819f7c3c03bbd7e4" class="no-scaled-link" src="_images/ftypes.png" style="width: 500px;" /></p>
 <p>We read the flow direction raster data, including meta-data, using <a class="reference external" href="https://rasterio.readthedocs.io/en/latest/">rasterio</a></p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -520,6 +520,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># local convenience methods (see utils.py script in notebooks folder)</span>
 <span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">quickplot</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">cm</span>  <span class="c1"># data specific quick plot method</span>
 
 <span class="c1"># key-word arguments passed to GeoDataFrame.plot method</span>
