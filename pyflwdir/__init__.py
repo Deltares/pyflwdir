@@ -4,6 +4,7 @@ import pkg_resources
 from .flwdir import *
 from .pyflwdir import *
 from .dem import *
+from .core_nextxy import *
 
 from . import gis_utils, regions
 

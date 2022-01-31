@@ -2,6 +2,19 @@
 Change Log
 ###########
 
+
+Unreleased
+**********
+
+New
+---
+* read_nextxy method to read binary nextxy data
+
+Bugfix
+------
+* Support -9 (river outlet at ocean) and -10 (inland river pit) pit values for nextxy data
+
+
 0.5.4  (18-Jan-2022)
 ********************
 

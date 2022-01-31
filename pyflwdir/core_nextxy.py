@@ -3,19 +3,22 @@
 nextidx. This type is mainly used for the CaMa-Flood model. Note that X (column) and Y 
 (row) coordinates are one-based."""
 
-from numba import njit, vectorize
+from pathlib import Path
+from typing import List, Union
+from numba import njit
 import numpy as np
-from . import core
+from . import core, gis_utils
 
-__all__ = []
+__all__ = ["read_nextxy"]
 
 # NEXTXY type
 _ftype = "nextxy"
 _mv = np.int32(-9999)
-_pv = np.int32(-9)
+# -10 is inland termination, -9 river outlet at ocean
+_pv = np.array([-9, -10], dtype=np.int32)
 # NOTE: data below for consistency with LDD / D8 types and testing
 _us = np.ones((2, 3, 3), dtype=np.int32) * 2
-_us[:, 1, 1] = _pv
+_us[:, 1, 1] = _pv[0]
 
 
 def from_array(flwdir, dtype=np.intp):
@@ -50,7 +53,7 @@ def _from_array(nextx, nexty, _mv=_mv, dtype=np.intp):
             continue
         c1 = nextx_flat[idx0]
         r1 = nexty_flat[idx0]
-        pit = r1 == _pv or c1 == _pv
+        pit = ispit(c1) or ispit(r1)
         # convert from one- to zero-based index
         r_ds, c_ds = np.intp(r1 - 1), np.intp(c1 - 1)
         outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
@@ -76,8 +79,8 @@ def _to_array(idxs_ds, shape, mv=core._mv):
         if idx_ds == mv:
             continue
         elif idx0 == idx_ds:  # pit
-            nextx[idx0] = _pv
-            nexty[idx0] = _pv
+            nextx[idx0] = _pv[0]
+            nexty[idx0] = _pv[0]
         else:
             # convert idx_ds to one-based row / col indices
             nextx[idx0] = idx_ds % ncol + 1
@@ -94,7 +97,7 @@ def isvalid(flwdir):
     if not (isfmt1 or isfmt2):
         return False
     nextx, nexty = flwdir  # should work for [2,:,:] and ([:,:], [:,:])
-    mask = np.logical_or(nextx == _mv, nextx == _pv)
+    mask = np.logical_or(isnodata(nextx), ispit(nextx))
     return (
         nexty.dtype == "int32"
         and nextx.dtype == "int32"
@@ -105,12 +108,37 @@ def isvalid(flwdir):
 
 
 @njit
-def ispit(dd):
+def ispit(dd, _pv=_pv):
     """True if NEXTXY pit"""
-    return dd == _pv
+    return np.logical_or(dd == _pv[0], dd == _pv[1])
 
 
 @njit
 def isnodata(dd):
     """True if NEXTXY nodata"""
     return dd == _mv
+
+
+def read_nextxy(fn: Union[str, Path], nrow: int, ncol: int, bbox: List) -> np.ndarray:
+    """Read nextxy data from binary file.
+
+    Parameters
+    ----------
+    fn : str, Path
+        Path to nextxy.bin file
+    nrow, ncol : int
+        Number or rows and columns in nextxy file.
+    bbox: list of float
+        domain bounding box [xmin, ymin, xmax, ymax]
+
+    Returns
+    -------
+    np.ndarray
+        Nextxy data
+    transform: Affine
+        Coefficients mapping pixel coordinates to coordinate reference system.
+    """
+    data = np.fromfile(fn, "i4").reshape(2, nrow, ncol)
+    assert len(bbox) == 4, "Bounding box should contain 4 coordinates."
+    transform = gis_utils.transform_from_bounds(*bbox, ncol, nrow)
+    return data, transform
