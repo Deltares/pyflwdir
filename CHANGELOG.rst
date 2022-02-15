@@ -13,6 +13,7 @@ New
 Bugfix
 ------
 * Support -9 (river outlet at ocean) and -10 (inland river pit) pit values for nextxy data
+* Fix 'argmin of an empty sequence' error in dem_dig_d4 
 
 Improved
 --------

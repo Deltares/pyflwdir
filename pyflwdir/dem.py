@@ -408,6 +408,8 @@ def dig_4connectivity(
             z0 = elv_out[idx0]  # elevtn of current cell
             zs = elv_out[idxs_d4]
             valid = zs != nodata
+            if not np.any(valid):
+                continue
             # find adjacent with smallest dz and lower elevation to <= z0
             idx_d4_min = idxs_d4[valid][np.argmin(zs[valid] - z0)]
             # force small change to detect d4 river
