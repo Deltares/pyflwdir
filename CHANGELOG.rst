@@ -14,6 +14,10 @@ Bugfix
 ------
 * Support -9 (river outlet at ocean) and -10 (inland river pit) pit values for nextxy data
 
+Improved
+--------
+* improve gvf and manning estimates in river_depth method
+
 
 0.5.4  (18-Jan-2022)
 ********************
