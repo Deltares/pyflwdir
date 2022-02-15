@@ -219,7 +219,7 @@ def effective_area(subidx, subncol, cellsize, r_ratio=0.5):
     ri = abs((subidx // subncol) % cellsize - offset)
     ci = abs((subidx % subncol) % cellsize - offset)
     # describes effective area
-    ea = (ri ** 0.5 + ci ** 0.5) <= R ** 0.5 or ri <= 0.5 or ci <= 0.5
+    ea = (ri**0.5 + ci**0.5) <= R**0.5 or ri <= 0.5 or ci <= 0.5
     return ea
 
 
@@ -1213,7 +1213,7 @@ def ihu(
     ncol = int(np.ceil(subncol / cellsize))
     shape = nrow, ncol
     minlen = cellsize * minlen_ratio
-    minupa = cellsize ** 2 * minupa_ratio
+    minupa = cellsize**2 * minupa_ratio
     # STEP 1
     # get representative cells
     subidxs_rep = eam_repcell(
