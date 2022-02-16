@@ -57,7 +57,7 @@ def lstsq(x: np.ndarray, y: np.ndarray):
         x_sq_sum += x[i] ** 2
         x_y_sum += x[i] * y[i]
 
-    slope = (n * x_y_sum - x_sum * y_sum) / (n * x_sq_sum - x_sum ** 2)
+    slope = (n * x_y_sum - x_sum * y_sum) / (n * x_sq_sum - x_sum**2)
     intercept = (y_sum - slope * x_sum) / n
 
     return slope, intercept

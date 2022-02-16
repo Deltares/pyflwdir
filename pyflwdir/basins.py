@@ -128,10 +128,10 @@ def subbasins_pfafstetter(
     # propagate basin labels upstream its main stem
     pfaf0 = 1
     for d0 in range(1, depth):
-        pfaf0 += 10 ** d0
+        pfaf0 += 10**d0
     for i, idx in enumerate(idxs_pit):
         idxs.append(idx)
-        pfaf1 = pfaf0 + (i + 1) * 10 ** depth
+        pfaf1 = pfaf0 + (i + 1) * 10**depth
         labs.append((pfaf1, 1))
         pfaf_branch[idx] = pfaf1
         while True:
@@ -187,7 +187,7 @@ def subbasins_pfafstetter(
                 if d0 < depth:  # next iter
                     labs.append((pfaf_int, d0 + 1))
     idxs1 = np.array(idxs, dtype=idxs_ds.dtype)
-    pfafbas = core.fillnodata_upstream(idxs_ds, seq, pfaf_branch, 0) % 10 ** depth
+    pfafbas = core.fillnodata_upstream(idxs_ds, seq, pfaf_branch, 0) % 10**depth
     return pfafbas, idxs1
 
 

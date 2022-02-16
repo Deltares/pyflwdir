@@ -254,7 +254,7 @@ def rowcol(transform, xs, ys, op=np.floor, precision=None):
     if precision is None:
         eps = 0.0
     else:
-        eps = 10.0 ** -precision * (1.0 - 2.0 * op(0.1))
+        eps = 10.0**-precision * (1.0 - 2.0 * op(0.1))
     invtransform = ~transform
     fcols, frows = invtransform * (xs + eps, ys - eps)
     cols, rows = op(fcols).astype(int), op(frows).astype(int)
@@ -409,7 +409,7 @@ def cellarea(lat, xres, yres):
     l1 = np.radians(lat - np.abs(yres) / 2.0)
     l2 = np.radians(lat + np.abs(yres) / 2.0)
     dx = np.radians(np.abs(xres))
-    return _R ** 2 * dx * (np.sin(l2) - np.sin(l1))
+    return _R**2 * dx * (np.sin(l2) - np.sin(l1))
 
 
 @njit

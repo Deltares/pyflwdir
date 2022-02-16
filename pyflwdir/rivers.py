@@ -43,7 +43,7 @@ def classify_estuary(
             continue
         dx = rivdst[idx] - rivdst[idx_ds]
         dw = rivwth[idx_ds] - rivwth[idx]
-        if (rivdst[idx_ds] == 0 and dw <= 0) or (dw / dx > min_convergence):
+        if (rivdst[idx_ds] == 0 and dw <= 0) or (dx > 0 and dw / dx > min_convergence):
             estuary[idx] = 1
         else:
             estuary[idx_ds] = 2  # most upstream estuary link
@@ -61,16 +61,17 @@ def rivdph_gvf(
     manning,
     min_rivslp=1e-5,
     min_rivdph=1,
-    eps=1e-2,
+    eps=1e-1,
     n_iter=2,
     logger=logger,
 ):
     # gradually varying flow solver for directed flw graph
     # NOTE: experimental!!
     def _gvf(x, h, n, q, s0, w, g=9.81, eps=eps):
-        sf = lambda h: n ** 2 * (q / (w * h)) ** 2 * ((w * h) / (2 * h + w)) ** (-4 / 3)
+        h = max(h, eps)
+        sf = lambda h: n**2 * (q / (w * h)) ** 2 * ((w * h) / (2 * h + w)) ** (-4 / 3)
         fr = lambda h: q / (w * np.sqrt(g * h))
-        dhdx = (s0 - sf(h)) / (1 - min(1 - eps, fr(h)) ** 2)
+        dhdx = (s0 - sf(h)) / (1 - fr(h) ** 2)
         return -dhdx
 
     rivdph_out = rivdph.copy()
@@ -79,17 +80,13 @@ def rivdph_gvf(
     for _ in range(n_iter):
         for idx in seq:  # from down- to upstream
             idx_ds = idxs_ds[idx]
-            if qbankfull[idx] <= 0 or rivwth[idx] <= 0:
+            if qbankfull[idx] <= 0 or rivwth[idx] <= 0 or idx == idx_ds:  # pit
                 continue
-            if idx == idx_ds:  # pit
-                slp = min_rivslp
-                dx = 10e3
-            else:
-                dz = zb[idx] - zb[idx_ds]
-                dx = rivdst[idx] - rivdst[idx_ds]
-                # FIXME force a positive slp for stable solutions
-                slp = max(min_rivslp, dz / dx)
-                # print(np.round(dz/dx,8), np.round(slp,8))
+            dz = zb[idx] - zb[idx_ds]
+            dx = rivdst[idx] - rivdst[idx_ds]
+            # FIXME force a positive slp for stable solutions
+            slp = max(min_rivslp, dz / dx)
+            # print(np.round(dz/dx,8), np.round(slp,8))
             h0 = rivdph_out[idx_ds]
             args = (manning[idx], qbankfull[idx], slp, rivwth[idx])
             # solve riv depth for single node with RK45 numerical integration

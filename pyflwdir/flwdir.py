@@ -685,7 +685,8 @@ class Flwdir(object):
         if rivslp is None:
             dz = zs - self.downstream(zs)
             dx = rivdst - self.downstream(rivdst)
-            rivslp = np.where(dx > 0, dz / dx, min_rivslp)
+            rivslp = np.where(dx >= 1, dz / np.maximum(1, dx), -9999)
+            rivslp = self.fillnodata(rivslp, nodata=-9999)
         rivslp = np.maximum(min_rivslp, rivslp)
         # get (initial) river depth based on manning's equation
         rivdph = ((manning * qbankfull) / (np.sqrt(rivslp) * rivwth)) ** (3 / 5)

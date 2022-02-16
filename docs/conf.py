@@ -151,7 +151,7 @@ latex_documents = [
     (
         master_doc,
         "pyflwdir.tex",
-        u"pyflwdir Documentation",
+        "pyflwdir Documentation",
         [author],
         "manual",
     ),
@@ -162,7 +162,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "pyflwdir", u"pyflwdir Documentation", [author], 1)]
+man_pages = [(master_doc, "pyflwdir", "pyflwdir Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -174,7 +174,7 @@ texinfo_documents = [
     (
         master_doc,
         "pyflwdir",
-        u"pyflwdir Documentation",
+        "pyflwdir Documentation",
         author,
         "pyflwdir",
         "Fast methods to work with hydro- and topography data in pure Python.",

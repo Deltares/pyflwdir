@@ -21,6 +21,7 @@ def fill_depressions(
     idxs_pit=None,
     nodata=-9999.0,
     max_depth=-1.0,
+    elv_max=None,
     connectivity=8,
 ):
     """Fill local depressions in elevation data and derived local
@@ -49,8 +50,11 @@ def fill_depressions(
     connectivity: {4, 8}
         Number of neighboring cells to consider.
     outlets: {'edge', 'min'}
-        Position for basin outlet(s) at the all valid elevation edge cell ('edge')
+        Initial basin outlet(s) at the edge of all cells ('edge'; default)
         or only the minimum elevation edge cell ('min')
+    elv_max, float, optional
+        Maximum elevation for outlets, only in combination with `outlets='edge'`.
+        By default None.
     idxs_pit: 1D array of int
         Linear indices of outlet cells.
 
@@ -76,10 +80,15 @@ def fill_depressions(
     # initiate queue
     if idxs_pit is None:  # with edge cells
         queued = gis_utils.get_edge(~done, structure=struct)
+        if elv_max is not None:
+            queued = np.logical_and(queued, elevtn <= elv_max)
+            if not np.any(queued):
+                raise ValueError("No initial outlet cells found.")
     else:  # with user defined outlet cells
         queued = np.array([bool(0) for s in range(elevtn.size)]).reshape((nrow, ncol))
         for idx in idxs_pit:
             queued.flat[idx] = True
+
     # queue contains (elevation, boundary, row, col)
     # boundary is included to favor non-boundary cells over boundary cells with same elevation
     q = [(elevtn[0, 0], np.uint8(1), np.uint32(0), np.uint32(0)) for _ in range(0)]
@@ -382,7 +391,9 @@ def _local_d4(idx0, idx_ds, ncol):
 
 
 @njit
-def dig_4connectivity(idxs_ds, seq, elv_flat, shape, mask=None, nodata=-9999):
+def dig_4connectivity(
+    idxs_ds, seq, elv_flat, shape, mask=None, nodata=-9999, dz_min=1e-3
+):
     """Make sure that for every diagonal D8 downstream flow direction
     there is an adjacent D4 cell with same or lower elevation"""
     elv_out = elv_flat.copy()
@@ -397,9 +408,12 @@ def dig_4connectivity(idxs_ds, seq, elv_flat, shape, mask=None, nodata=-9999):
             z0 = elv_out[idx0]  # elevtn of current cell
             zs = elv_out[idxs_d4]
             valid = zs != nodata
+            if not np.any(valid):
+                continue
             # find adjacent with smallest dz and lower elevation to <= z0
             idx_d4_min = idxs_d4[valid][np.argmin(zs[valid] - z0)]
-            elv_out[idx_d4_min] = min(elv_out[idx_d4_min], z0)
+            # force small change to detect d4 river
+            elv_out[idx_d4_min] = min(elv_out[idx_d4_min] - dz_min, z0)
         if idxs_ds[idx_ds] == idx_ds:  # next pit because we need to know upstream cell
             r = idx_ds // ncol
             c = idx_ds % ncol

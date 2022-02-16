@@ -7,7 +7,7 @@ from pyflwdir import gis_utils as gis
 from affine import Affine
 
 # glob total area
-glob_area = 4 * np.pi * gis._R ** 2
+glob_area = 4 * np.pi * gis._R**2
 glob_circ = 2 * np.pi * gis._R
 
 

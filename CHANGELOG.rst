@@ -13,6 +13,11 @@ New
 Bugfix
 ------
 * Support -9 (river outlet at ocean) and -10 (inland river pit) pit values for nextxy data
+* Fix 'argmin of an empty sequence' error in dem_dig_d4 
+
+Improved
+--------
+* improve gvf and manning estimates in river_depth method
 
 
 0.5.4  (18-Jan-2022)
