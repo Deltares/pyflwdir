@@ -43,7 +43,7 @@ def classify_estuary(
             continue
         dx = rivdst[idx] - rivdst[idx_ds]
         dw = rivwth[idx_ds] - rivwth[idx]
-        if (rivdst[idx_ds] == 0 and dw <= 0) or (dw / dx > min_convergence):
+        if (rivdst[idx_ds] == 0 and dw <= 0) or (dx > 0 and dw / dx > min_convergence):
             estuary[idx] = 1
         else:
             estuary[idx_ds] = 2  # most upstream estuary link
