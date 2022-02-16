@@ -3,8 +3,8 @@ Change Log
 ###########
 
 
-Unreleased
-**********
+0.5.5  (16-Feb-2022)
+********************
 
 New
 ---
@@ -37,7 +37,7 @@ Bugfix
 
 Improved
 ---------
-* add new idxs_pit argument to dem.fill_despressions
+* add new idxs_pit argument to dem.fill_depressions
 
 Bugfix
 ------
