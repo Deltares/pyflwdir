@@ -13,6 +13,9 @@
 .. image:: https://anaconda.org/conda-forge/pyflwdir/badges/version.svg
     :target: https://anaconda.org/conda-forge/pyflwdir
 
+.. image:: https://zenodo.org/badge/409871473.svg
+   :target: https://zenodo.org/badge/latestdoi/409871473
+
 ################################################################################
 PyFlwDir
 ################################################################################
@@ -149,6 +152,11 @@ Authors
 =======
 
 See `AUTHORS.txt <AUTHORS.txt>`__
+
+Citation
+========
+
+For citing our work see the Zenodo badge above, that points to the latest release.
 
 License
 =======

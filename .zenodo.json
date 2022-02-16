@@ -1,0 +1,14 @@
+{
+    "title": "pyFlwDir",
+    "description": "Fast methods to work with hydro- and topography data in pure Python.",
+    "upload_type": "software",
+    "creators": [
+        {
+            "affiliation": "Deltares",
+            "name": "Eilander, Dirk",
+            "orcid": "0000-0002-0951-8418"
+        }
+    ],
+    "access_right": "open",
+    "license": "MIT"
+}
