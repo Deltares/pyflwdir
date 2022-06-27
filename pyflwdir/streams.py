@@ -308,3 +308,44 @@ def stream_distance(
             d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
         dist[idx0] = dist[idx_ds] + d
     return dist
+
+@njit
+def smooth_rivlen(
+    idxs_ds,
+    seq,
+    rivlen,
+    min_rivlen,
+    smooth_cells=3,
+    mask=None,
+    mv=core._mv,
+):
+    nup = core.upstream_count(idxs_ds=idxs_ds, mask=mask, mv=mv)
+    rivlen_out = np.full(idxs_ds.size, mv, dtype=np.float32)
+    done = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
+    cnt = 0
+    for idx0 in seq[::-1]:  # up- to downstream
+        if done[idx0] or (mask is not None and ~mask[idx0]):
+            continue
+        idxs = [idx0]  # initiate with correct dtype
+        while True:
+            idx_ds = idxs_ds[idx0]
+            pit = idx_ds == idx0
+            if not pit: 
+                if not done[idx_ds]:
+                    idxs.append(idx_ds)
+            if nup[idx_ds] > 1 and len(idxs) > smooth_cells or pit:
+                if pit:
+                    l = len(idxs)
+                    inds = np.array(idxs, dtype=idxs_ds.dtype)
+                else:
+                    l = len(idxs) - 1
+                    inds = np.array(idxs[0:-1], dtype=idxs_ds.dtype)
+                if np.any(rivlen[inds] < min_rivlen):
+                    avg = np.sum(rivlen[inds])/(l)
+                    rivlen_out[inds] = avg
+                else:
+                    rivlen_out[inds] = rivlen[inds]
+                done[inds]=True
+                break
+            idx0 = idx_ds
+    return rivlen_out
