@@ -317,9 +317,9 @@ def smooth_rivlen(
     min_rivlen,
     smooth_cells=3,
     mask=None,
-    mv=core._mv,
 ):
-    nup = core.upstream_count(idxs_ds=idxs_ds, mask=mask, mv=mv)
+    mv = -9999.0
+    nup = core.upstream_count(idxs_ds=idxs_ds, mask=mask, mv=core._mv)
     rivlen_out = np.full(idxs_ds.size, mv, dtype=np.float32)
     done = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
     cnt = 0
