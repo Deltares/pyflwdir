@@ -318,6 +318,26 @@ def smooth_rivlen(
     smooth_cells=3,
     mask=None,
 ):
+    """Return smoothed river length, by taking the average of river length 
+    `rivlen` per branch (or a minimum river cells of `smooth_cells`) with a river 
+    length <= `min_rivlen`.
+
+    Parameters
+    ----------
+    rivlen : 1D array
+        River length values.
+    min_rivlen : float
+        Minimum river length.
+    smooth_cells : int
+        Minimum number of river cells to smooth, by default 3.
+    mask : 1D array of boolean
+        Mask of river cells to consider. 
+
+    Returns
+    -------
+    1D array of float
+        River length values.
+    """
     mv = -9999.0
     nup = core.upstream_count(idxs_ds=idxs_ds, mask=mask, mv=core._mv)
     rivlen_out = np.full(idxs_ds.size, mv, dtype=np.float32)
