@@ -571,8 +571,8 @@ class Flwdir(object):
 
     def smooth_rivlen(self, rivlen, min_rivlen, smooth_cells=3, mask=None):
         """Return smoothed river length map, by taking the average of river length 
-        `rivlen` per branch (or a minimum river cells of `smooth_cells`) with a river 
-        length <= `min_rivlen`.
+        `rivlen` per branch (or a minimum river cells of `smooth_cells`) containing a 
+        river length <= `min_rivlen`.
 
         Parameters
         ----------
@@ -581,14 +581,14 @@ class Flwdir(object):
         min_rivlen : float
             Minimum river length.
         smooth_cells : int
-            Minimum number of river cells to consider.
+            Minimum number of river cells to smooth.
         mask : 2D array of boolean
             Mask of river cells to consider. 
 
         Returns
         -------
         2D array of float
-            river length values
+            River length values.
         """
         rivlen_out = streams.smooth_rivlen(
             idxs_ds=self.idxs_ds,
