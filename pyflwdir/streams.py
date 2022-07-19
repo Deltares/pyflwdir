@@ -312,10 +312,15 @@ def stream_distance(
 
 @njit
 def smooth_rivlen(
-    idxs_ds, seq, rivlen, min_rivlen, smooth_cells=3, mask=None,
+    idxs_ds,
+    seq,
+    rivlen,
+    min_rivlen,
+    smooth_cells=3,
+    mask=None,
 ):
-    """Return smoothed river length, by taking the average of river length 
-    `rivlen` per branch (or a minimum river cells of `smooth_cells`) with a river 
+    """Return smoothed river length, by taking the average of river length
+    `rivlen` per branch (or a minimum river cells of `smooth_cells`) with a river
     length <= `min_rivlen`.
 
     Parameters
@@ -327,7 +332,7 @@ def smooth_rivlen(
     smooth_cells : int
         Minimum number of river cells to smooth, by default 3.
     mask : 1D array of boolean
-        Mask of river cells to consider. 
+        Mask of river cells to consider.
 
     Returns
     -------

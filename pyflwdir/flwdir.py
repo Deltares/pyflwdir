@@ -275,7 +275,11 @@ class Flwdir(object):
 
     ### LOCAL METHODS ###
     def path(
-        self, idxs=None, mask=None, max_length=None, direction="down",
+        self,
+        idxs=None,
+        mask=None,
+        max_length=None,
+        direction="down",
     ):
         """Returns paths of indices in down- or upstream direction from the starting
         points until:
@@ -520,7 +524,10 @@ class Flwdir(object):
             upstream area
         """
         uparea = streams.accuflux(
-            idxs_ds=self.idxs_ds, seq=self.idxs_seq, data=self.area, nodata=-9999,
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            data=self.area,
+            nodata=-9999,
         )
         uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)
@@ -563,8 +570,8 @@ class Flwdir(object):
         return accu.reshape(data.shape)
 
     def smooth_rivlen(self, rivlen, min_rivlen, smooth_cells=3, mask=None):
-        """Return smoothed river length map, by taking the average of river length 
-        `rivlen` per branch (or a minimum river cells of `smooth_cells`) containing a 
+        """Return smoothed river length map, by taking the average of river length
+        `rivlen` per branch (or a minimum river cells of `smooth_cells`) containing a
         river length <= `min_rivlen`.
 
         Parameters
@@ -576,7 +583,7 @@ class Flwdir(object):
         smooth_cells : int
             Minimum number of river cells to smooth.
         mask : 2D array of boolean
-            Mask of river cells to consider. 
+            Mask of river cells to consider.
 
         Returns
         -------
