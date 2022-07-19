@@ -275,11 +275,7 @@ class Flwdir(object):
 
     ### LOCAL METHODS ###
     def path(
-        self,
-        idxs=None,
-        mask=None,
-        max_length=None,
-        direction="down",
+        self, idxs=None, mask=None, max_length=None, direction="down",
     ):
         """Returns paths of indices in down- or upstream direction from the starting
         points until:
@@ -524,10 +520,7 @@ class Flwdir(object):
             upstream area
         """
         uparea = streams.accuflux(
-            idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
-            data=self.area,
-            nodata=-9999,
+            idxs_ds=self.idxs_ds, seq=self.idxs_seq, data=self.area, nodata=-9999,
         )
         uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)

@@ -309,14 +309,10 @@ def stream_distance(
         dist[idx0] = dist[idx_ds] + d
     return dist
 
+
 @njit
 def smooth_rivlen(
-    idxs_ds,
-    seq,
-    rivlen,
-    min_rivlen,
-    smooth_cells=3,
-    mask=None,
+    idxs_ds, seq, rivlen, min_rivlen, smooth_cells=3, mask=None,
 ):
     """Return smoothed river length, by taking the average of river length 
     `rivlen` per branch (or a minimum river cells of `smooth_cells`) with a river 
@@ -350,7 +346,7 @@ def smooth_rivlen(
         while True:
             idx_ds = idxs_ds[idx0]
             pit = idx_ds == idx0
-            if not pit: 
+            if not pit:
                 if not done[idx_ds]:
                     idxs.append(idx_ds)
             if nup[idx_ds] > 1 and len(idxs) > smooth_cells or pit:
@@ -361,11 +357,11 @@ def smooth_rivlen(
                     l = len(idxs) - 1
                     inds = np.array(idxs[0:-1], dtype=idxs_ds.dtype)
                 if np.any(rivlen[inds] < min_rivlen):
-                    avg = np.sum(rivlen[inds])/(l)
+                    avg = np.sum(rivlen[inds]) / (l)
                     rivlen_out[inds] = avg
                 else:
                     rivlen_out[inds] = rivlen[inds]
-                done[inds]=True
+                done[inds] = True
                 break
             idx0 = idx_ds
     return rivlen_out
