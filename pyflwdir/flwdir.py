@@ -569,6 +569,37 @@ class Flwdir(object):
             )
         return accu.reshape(data.shape)
 
+    def smooth_rivlen(self, rivlen, min_rivlen, smooth_cells=3, mask=None):
+        """Return smoothed river length map, by taking the average of river length
+        `rivlen` per branch (or a minimum river cells of `smooth_cells`) containing a
+        river length <= `min_rivlen`.
+
+        Parameters
+        ----------
+        rivlen : 2D array
+            River length values.
+        min_rivlen : float
+            Minimum river length.
+        smooth_cells : int
+            Minimum number of river cells to smooth.
+        mask : 2D array of boolean
+            Mask of river cells to consider.
+
+        Returns
+        -------
+        2D array of float
+            River length values.
+        """
+        rivlen_out = streams.smooth_rivlen(
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            rivlen=rivlen.ravel(),
+            min_rivlen=min_rivlen,
+            smooth_cells=smooth_cells,
+            mask=self._check_data(mask, "mask", optional=True),
+        )
+        return rivlen_out.reshape(rivlen.shape)
+
     ### ELEVATION ###
 
     def dem_adjust(self, elevtn):
