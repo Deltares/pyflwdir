@@ -151,3 +151,25 @@ def test_streams(parsed, flwdir):
     assert np.max(strlen[idxs_headwater]) == np.max(strlen)
     ranks1 = streams.stream_distance(idxs_ds, seq, ncol, real_length=False)
     assert np.all(ranks1[rank >= 0] == rank[rank >= 0])
+
+
+def test_smooth_rivlen():
+    (idxs_ds, idxs_pit, seq, rank, mv), flwdir0 = test_data[0]
+    ncol = flwdir0.shape[1]
+    upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
+    idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
+    rivlen = np.random.rand(idxs_ds.size)
+    rivlen[upa <= 3] = -9999.0  # river cells with at least 3 upstream cells
+    min_rivlen = 0.2
+    rivlen_out = streams.smooth_rivlen2(
+        idxs_ds,
+        idxs_us_main,
+        rivlen,
+        min_rivlen=min_rivlen,
+        max_window=10,
+        nodata=-9999.0,
+        mv=mv,
+    )
+    # NOTE: there could still be cells with rivlen < min_rivlen
+    assert rivlen_out[rivlen_out < min_rivlen].size < rivlen[rivlen < min_rivlen].size
+    assert np.isclose(np.sum(rivlen_out[rivlen_out > 0]), np.sum(rivlen[rivlen > 0]))

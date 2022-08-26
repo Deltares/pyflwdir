@@ -569,34 +569,39 @@ class Flwdir(object):
             )
         return accu.reshape(data.shape)
 
-    def smooth_rivlen(self, rivlen, min_rivlen, smooth_cells=3, mask=None):
-        """Return smoothed river length map, by taking the average of river length
-        `rivlen` per branch (or a minimum river cells of `smooth_cells`) containing a
-        river length <= `min_rivlen`.
+    def smooth_rivlen(
+        self,
+        rivlen,
+        min_rivlen,
+        max_window=10,
+        nodata=-9999.0,
+    ):
+        """Return smoothed river length, by taking the window average of river length.
+        The window size is increased until the average exceeds the `min_rivlen` threshold
+        or the `max_window` size is reached.
 
         Parameters
         ----------
-        rivlen : 2D array
+        rivlen : 2D array of float
             River length values.
         min_rivlen : float
             Minimum river length.
-        smooth_cells : int
-            Minimum number of river cells to smooth.
-        mask : 2D array of boolean
-            Mask of river cells to consider.
+        max_window : int
+            maximum window size
 
         Returns
         -------
         2D array of float
             River length values.
         """
-        rivlen_out = streams.smooth_rivlen(
+        rivlen_out = streams.smooth_rivlen2(
             idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
-            rivlen=rivlen.ravel(),
+            idxs_us_main=self.idxs_us_main,
+            rivlen=self._check_data(rivlen, "rivlen"),
             min_rivlen=min_rivlen,
-            smooth_cells=smooth_cells,
-            mask=self._check_data(mask, "mask", optional=True),
+            max_window=max_window,
+            nodata=nodata,
+            mv=self._mv,
         )
         return rivlen_out.reshape(rivlen.shape)
 
@@ -743,7 +748,7 @@ class Flwdir(object):
     ### SHORTCUTS ###
 
     def _check_data(self, data, name, optional=False, flatten=True, **kwargs):
-        """check or calculate upstream area cells; return flattened array"""
+        """check data shape and size; by default return flattened array"""
         if data is None and optional:
             return
         if data is None:
