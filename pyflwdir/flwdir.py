@@ -594,7 +594,7 @@ class Flwdir(object):
         2D array of float
             River length values.
         """
-        rivlen_out = streams.smooth_rivlen2(
+        rivlen_out = streams.smooth_rivlen(
             idxs_ds=self.idxs_ds,
             idxs_us_main=self.idxs_us_main,
             rivlen=self._check_data(rivlen, "rivlen"),

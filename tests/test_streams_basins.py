@@ -161,7 +161,7 @@ def test_smooth_rivlen():
     rivlen = np.random.rand(idxs_ds.size)
     rivlen[upa <= 3] = -9999.0  # river cells with at least 3 upstream cells
     min_rivlen = 0.2
-    rivlen_out = streams.smooth_rivlen2(
+    rivlen_out = streams.smooth_rivlen(
         idxs_ds,
         idxs_us_main,
         rivlen,
