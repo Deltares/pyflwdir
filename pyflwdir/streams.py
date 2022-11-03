@@ -308,3 +308,57 @@ def stream_distance(
             d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
         dist[idx0] = dist[idx_ds] + d
     return dist
+
+
+@njit
+def smooth_rivlen(
+    idxs_ds,
+    idxs_us_main,
+    rivlen,
+    min_rivlen,
+    max_window=10,
+    nodata=-9999.0,
+    mv=core._mv,
+):
+    """Return smoothed river length, by taking the window average of river length.
+    The window size is increased until the average exceeds the `min_rivlen` threshold
+    or the max_window size is reached.
+
+    Parameters
+    ----------
+    rivlen : 1D array
+        River length values.
+    min_rivlen : float
+        Minimum river length.
+    max_window : int
+        maximum window size
+
+    Returns
+    -------
+    1D array of float
+        River length values.
+    """
+    rivlen_out = rivlen.copy()
+    n = max_window // 2
+    for idx0 in range(rivlen.size):
+        len0 = rivlen_out[idx0]
+        if len0 != nodata and len0 < min_rivlen:
+            len_avg1 = len0
+            idxs = core._window(idx0, n, idxs_ds, idxs_us_main, mv=mv)
+            # smooth over increasing window until min river length is reached
+            for i in range(1, n):
+                idxs0 = idxs[n - i : n + i + 1]
+                idxs0 = idxs0[idxs0 != mv]
+                idxs0 = idxs0[rivlen_out[idxs0] != nodata]
+                len_avg0 = np.mean(rivlen_out[idxs0])
+                if len_avg0 > len_avg1:
+                    idxs1 = idxs0
+                    len_avg1 = len_avg0
+                # break at smallest window if average > min_rivlen
+                if len_avg1 > min_rivlen:
+                    break
+            # replace lengths in window with average
+            if len_avg1 > len0:
+                rivlen_out[idxs1] = len_avg1
+
+    return rivlen_out

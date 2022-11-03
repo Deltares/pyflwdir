@@ -289,6 +289,9 @@ def test_streams():
         flw.stream_distance(unit="km")
     with pytest.raises(ValueError, match="size does not match"):
         flw.stream_distance(mask=np.ones((2, 1)))
+    # river length
+    data_smooth1 = flw.smooth_rivlen(data, min_rivlen=0)
+    assert np.all(data_smooth1 == data)
 
 
 def test_upscale():

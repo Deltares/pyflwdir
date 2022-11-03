@@ -378,7 +378,11 @@ def _window(idx0, n, idxs_ds, idxs_us_main, strord=None, mv=_mv):
     # get n downstream cells
     for i in range(n):
         idx_ds = idxs_ds[idx0]
-        if idx_ds == idx0 or (strord is not None and strord[idx_ds] > strord0):  # pit
+        if (
+            idx_ds == idx0
+            or idx_ds == mv
+            or (strord is not None and strord[idx_ds] > strord0)
+        ):  # pit
             break
         idx0 = idx_ds
         idxs[n + i + 1] = idx0
