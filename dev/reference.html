@@ -14,7 +14,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -61,21 +63,110 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#flwdirraster">FlwdirRaster</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#input-output">Input/Output</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#flow-direction-attributes">Flow direction attributes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#flow-direction-methods">Flow direction methods</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#raster-geospatial-attributes-and-methods">Raster &amp; geospatial attributes and methods</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#streams-and-flow-paths">Streams and flow paths</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#sub-basins">(Sub)basins</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#up-and-downstream-values">Up- and downstream values</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#up-and-downstream-arithmetics">Up- and downstream arithmetics</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#upscale-and-subgrid-methods">Upscale and subgrid methods</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#elevation">Elevation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.FlwdirRaster"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#input-output">Input/Output</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.pyflwdir.from_array"><code class="docutils literal notranslate"><span class="pre">pyflwdir.from_array()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.pyflwdir.from_dem"><code class="docutils literal notranslate"><span class="pre">pyflwdir.from_dem()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.to_array"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.to_array()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.load"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.dump"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.dump()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#elevation-raster-methods">Elevation raster methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#gis-raster-utility-methods">GIS raster utility methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#region-utility-methods">Region utility methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#flow-direction-attributes">Flow direction attributes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.idxs_ds"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.idxs_ds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.idxs_us_main"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.idxs_us_main</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.idxs_seq"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.idxs_seq</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.idxs_pit"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.idxs_pit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.ncells"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.ncells</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.rank"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.rank</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.isvalid"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.isvalid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.mask"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.mask</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#flow-direction-methods">Flow direction methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.order_cells"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.order_cells()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.main_upstream"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.main_upstream()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.add_pits"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.add_pits()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.repair_loops"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.repair_loops()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.vectorize"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.vectorize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#raster-geospatial-attributes-and-methods">Raster &amp; geospatial attributes and methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.set_transform"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.set_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.index"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.xy"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.xy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.bounds"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.bounds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.extent"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.extent</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#streams-and-flow-paths">Streams and flow paths</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.stream_order"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.stream_order()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.path"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.snap"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.snap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.stream_distance"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.stream_distance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.streams"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.streams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.geofeatures"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.geofeatures()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sub-basins">(Sub)basins</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.basins"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.basins()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.subbasins_streamorder"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_streamorder()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.subbasins_pfafstetter"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_pfafstetter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.subbasins_area"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_area()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.basin_outlets"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.basin_outlets()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.basin_bounds"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.basin_bounds()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#up-and-downstream-values">Up- and downstream values</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.downstream"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.downstream()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.upstream_sum"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_sum()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#up-and-downstream-arithmetics">Up- and downstream arithmetics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.moving_average"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.moving_average()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.accuflux"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.accuflux()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.upstream_area"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_area()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#upscale-and-subgrid-methods">Upscale and subgrid methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.upscale"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upscale()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.upscale_error"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upscale_error()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.subgrid_rivlen"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivlen()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.subgrid_rivslp"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivslp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.subgrid_rivavg"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivavg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.subgrid_rivmed"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivmed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.ucat_area"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.ucat_area()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.ucat_outlets"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.ucat_outlets()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#elevation">Elevation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.dem_adjust"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.dem_adjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.dem_dig_d4"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.dem_dig_d4()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.hand"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.hand()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyflwdir.FlwdirRaster.floodplains"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.floodplains()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#elevation-raster-methods">Elevation raster methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.dem.fill_depressions"><code class="docutils literal notranslate"><span class="pre">dem.fill_depressions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.dem.slope"><code class="docutils literal notranslate"><span class="pre">dem.slope()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#gis-raster-utility-methods">GIS raster utility methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.gis_utils.spread2d"><code class="docutils literal notranslate"><span class="pre">gis_utils.spread2d()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.gis_utils.get_edge"><code class="docutils literal notranslate"><span class="pre">gis_utils.get_edge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.gis_utils.reggrid_area"><code class="docutils literal notranslate"><span class="pre">gis_utils.reggrid_area()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#region-utility-methods">Region utility methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.regions.region_bounds"><code class="docutils literal notranslate"><span class="pre">regions.region_bounds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.regions.region_slices"><code class="docutils literal notranslate"><span class="pre">regions.region_slices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.regions.region_sum"><code class="docutils literal notranslate"><span class="pre">regions.region_sum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.regions.region_area"><code class="docutils literal notranslate"><span class="pre">regions.region_area()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyflwdir.regions.region_dissolve"><code class="docutils literal notranslate"><span class="pre">regions.region_dissolve()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
@@ -99,8 +190,8 @@
         <div class="rst-content style-external-links">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Reference</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Reference</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/reference.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -135,17 +226,17 @@
 }
 </style>
 <section id="reference">
-<h1>Reference<a class="headerlink" href="#reference" title="Permalink to this headline"></a></h1>
+<h1>Reference<a class="headerlink" href="#reference" title="Permalink to this heading"></a></h1>
 <section id="flwdirraster">
-<h2>FlwdirRaster<a class="headerlink" href="#flwdirraster" title="Permalink to this headline"></a></h2>
+<h2>FlwdirRaster<a class="headerlink" href="#flwdirraster" title="Permalink to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyflwdir.</span></span><span class="sig-name descname"><span class="pre">FlwdirRaster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idxs_ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idxs_pit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idxs_outlet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idxs_seq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nnodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Affine(1.0,</span> <span class="pre">0.0,</span> <span class="pre">0.0,</span> <span class="pre">0.0,</span> <span class="pre">-</span> <span class="pre">1.0,</span> <span class="pre">0.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latlon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyflwdir.</span></span><span class="sig-name descname"><span class="pre">FlwdirRaster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idxs_ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idxs_pit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idxs_outlet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idxs_seq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nnodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Affine(1.0,</span> <span class="pre">0.0,</span> <span class="pre">0.0,</span> <span class="pre">0.0,</span> <span class="pre">-1.0,</span> <span class="pre">0.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latlon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster" title="Permalink to this definition"></a></dt>
 <dd><p>Flow direction raster array parsed to general actionable format.</p>
 </dd></dl>
 
 <section id="input-output">
-<h3>Input/Output<a class="headerlink" href="#input-output" title="Permalink to this headline"></a></h3>
+<h3>Input/Output<a class="headerlink" href="#input-output" title="Permalink to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.pyflwdir.from_array">
 <span class="sig-prename descclassname"><span class="pre">pyflwdir.</span></span><span class="sig-name descname"><span class="pre">from_array</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.pyflwdir.from_array" title="Permalink to this definition"></a></dt>
@@ -156,7 +247,7 @@
 <li><p><strong>data</strong> (<em>2D array</em>) – flow direction raster data</p></li>
 <li><p><strong>ftype</strong> (<em>{'d8'</em><em>, </em><em>'ldd'</em><em>, </em><em>'nextxy'</em><em>, </em><em>'infer'}</em><em>, </em><em>optional</em>) – name of flow direction type, infer from data if ‘infer’, by default is ‘infer’</p></li>
 <li><p><strong>check_ftype</strong> (<em>bool</em><em>, </em><em>optional</em>) – check if valid flow direction raster if ftype is not ‘infer’, by default True</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool</em><em>, </em><em>optional</em>) – True for valid cells. Can be used to mask out subbasins.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool</em><em>, </em><em>optional</em>) – True for valid cells. Can be used to mask out subbasins.</p></li>
 <li><p><strong>transform</strong> (<em>affine transform</em>) – Two dimensional affine transform for 2D linear mapping, by default using the
 identity transform.</p></li>
 <li><p><strong>latlon</strong> (<em>bool</em><em>, </em><em>optional</em>) – True if WGS84 coordinate reference system, by default False. If True it
@@ -246,7 +337,7 @@ or only the minimum elevation edge cell (‘min’)</p></li>
 
 </section>
 <section id="flow-direction-attributes">
-<h3>Flow direction attributes<a class="headerlink" href="#flow-direction-attributes" title="Permalink to this headline"></a></h3>
+<h3>Flow direction attributes<a class="headerlink" href="#flow-direction-attributes" title="Permalink to this heading"></a></h3>
 <p>The following attributes describe the flow direction and are at the core to the object.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.idxs_ds">
@@ -298,7 +389,7 @@ largest contributing area.</p>
 
 </section>
 <section id="flow-direction-methods">
-<h3>Flow direction methods<a class="headerlink" href="#flow-direction-methods" title="Permalink to this headline"></a></h3>
+<h3>Flow direction methods<a class="headerlink" href="#flow-direction-methods" title="Permalink to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.order_cells">
 <span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">order_cells</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.order_cells" title="Permalink to this definition"></a></dt>
@@ -326,8 +417,8 @@ If <cite>streams</cite> is given, the pits are snapped to the first downstream T
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>idxs</strong> (<em>array_like</em><em>, </em><em>optional</em>) – linear indices of pits, by default is None.</p></li>
-<li><p><strong>xy</strong> (<em>tuple of array_like of float</em><em>, </em><em>optional</em>) – x, y coordinates of pits, by default is None.</p></li>
-<li><p><strong>streams</strong> (<em>2D array of bool</em><em>, </em><em>optional</em>) – 2D raster with cells flagged ‘True’ at stream cells, only used
+<li><p><strong>xy</strong> (<em>tuple</em><em> of </em><em>array_like</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – x, y coordinates of pits, by default is None.</p></li>
+<li><p><strong>streams</strong> (<em>2D array</em><em> of </em><em>bool</em><em>, </em><em>optional</em>) – 2D raster with cells flagged ‘True’ at stream cells, only used
 in combination with idx or xy, by default None.</p></li>
 </ul>
 </dd>
@@ -348,10 +439,10 @@ in combination with idx or xy, by default None.</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>kind</strong> (<em>{streams</em><em>, </em><em>flwdir}</em>) – Kind of LineString features: either streams of local flow directions.</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool</em>) – Mask of valid cells.</p></li>
-<li><p><strong>xs</strong> (<em>2D array of float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool</em>) – Mask of valid cells.</p></li>
+<li><p><strong>xs</strong> (<em>2D array</em><em> of </em><em>float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
 center.</p></li>
-<li><p><strong>ys</strong> (<em>2D array of float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
+<li><p><strong>ys</strong> (<em>2D array</em><em> of </em><em>float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
 center.</p></li>
 <li><p><strong>kwargs</strong> (<em>extra sample maps key-word arguments</em>) – optional maps to sample from</p></li>
 </ul>
@@ -367,7 +458,7 @@ center.</p></li>
 
 </section>
 <section id="raster-geospatial-attributes-and-methods">
-<h3>Raster &amp; geospatial attributes and methods<a class="headerlink" href="#raster-geospatial-attributes-and-methods" title="Permalink to this headline"></a></h3>
+<h3>Raster &amp; geospatial attributes and methods<a class="headerlink" href="#raster-geospatial-attributes-and-methods" title="Permalink to this heading"></a></h3>
 <p>The FlwdirRaster object contains <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.shape</span></code>, <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.transform</span></code>
 and <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.latlon</span></code> attributes describing its geospatial location. The first
 attribute is required at initializiation, while the others can be set later.</p>
@@ -395,8 +486,8 @@ metres. The default is False.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>xs</strong> (<em>ndarray of float</em>) – x, y coordinates.</p></li>
-<li><p><strong>ys</strong> (<em>ndarray of float</em>) – x, y coordinates.</p></li>
+<li><p><strong>xs</strong> (<em>ndarray</em><em> of </em><em>float</em>) – x, y coordinates.</p></li>
+<li><p><strong>ys</strong> (<em>ndarray</em><em> of </em><em>float</em>) – x, y coordinates.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -414,7 +505,7 @@ metres. The default is False.</p></li>
 <dd><p>Returns x, y coordinates of the cell center based on linear cell indices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>idxs</strong> (<em>ndarray of int</em>) – linear cell indices</p>
+<dd class="field-odd"><p><strong>idxs</strong> (<em>ndarray</em><em> of </em><em>int</em>) – linear cell indices</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ul class="simple">
@@ -440,7 +531,7 @@ metres. The default is False.</p></li>
 
 </section>
 <section id="streams-and-flow-paths">
-<h3>Streams and flow paths<a class="headerlink" href="#streams-and-flow-paths" title="Permalink to this headline"></a></h3>
+<h3>Streams and flow paths<a class="headerlink" href="#streams-and-flow-paths" title="Permalink to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.stream_order">
 <span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">stream_order</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.stream_order" title="Permalink to this definition"></a></dt>
@@ -457,7 +548,7 @@ given the maximum of the two order.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>type</strong> (<em>{&quot;strahler&quot;</em><em>, </em><em>&quot;classic&quot;}</em>) – Stream order type. By default Strahler.</p></li>
-<li><p><strong>mask</strong> (<em>2D array of boolean</em>) – Mask of streams to consider. This can be used to compute the stream order
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>boolean</em>) – Mask of streams to consider. This can be used to compute the stream order
 for streams with a minimum upstream area or streams within a specific
 (sub)basin only.</p></li>
 </ul>
@@ -484,8 +575,8 @@ points until:
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>idxs</strong> (<em>array_like</em><em>, </em><em>optional</em>) – linear indices of starting point, by default is None.</p></li>
-<li><p><strong>xy</strong> (<em>tuple of array_like of float</em><em>, </em><em>optional</em>) – x, y coordinates of starting point, by default is None.</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool</em><em>, </em><em>optional</em>) – True if stream cell.</p></li>
+<li><p><strong>xy</strong> (<em>tuple</em><em> of </em><em>array_like</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – x, y coordinates of starting point, by default is None.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool</em><em>, </em><em>optional</em>) – True if stream cell.</p></li>
 <li><p><strong>max_length</strong> (<em>float</em><em>, </em><em>optional</em>) – maximum length of trace</p></li>
 <li><p><strong>unit</strong> (<em>{'m'</em><em>, </em><em>'cell'}</em><em>, </em><em>optional</em>) – unit of length, by default ‘cell’</p></li>
 <li><p><strong>direction</strong> (<em>{'up'</em><em>, </em><em>'down'}</em><em>, </em><em>optional</em>) – direction of path, be default ‘down’, i.e. downstream</p></li>
@@ -516,8 +607,8 @@ points where:</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>idxs</strong> (<em>array_like</em><em>, </em><em>optional</em>) – linear indices of starting point, by default is None.</p></li>
-<li><p><strong>xy</strong> (<em>tuple of array_like of float</em><em>, </em><em>optional</em>) – x, y coordinates of starting point, by default is None.</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool</em>) – True at cell where to snap to</p></li>
+<li><p><strong>xy</strong> (<em>tuple</em><em> of </em><em>array_like</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – x, y coordinates of starting point, by default is None.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool</em>) – True at cell where to snap to</p></li>
 <li><p><strong>max_length</strong> (<em>float</em><em>, </em><em>optional</em>) – maximum length of trace</p></li>
 <li><p><strong>unit</strong> (<em>{'m'</em><em>, </em><em>'cell'}</em><em>, </em><em>optional</em>) – unit of length, by default ‘cell’</p></li>
 <li><p><strong>direction</strong> (<em>{'up'</em><em>, </em><em>'down'}</em><em>, </em><em>optional</em>) – direction of path, be default ‘down’, i.e. downstream</p></li>
@@ -540,7 +631,7 @@ points where:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mask</strong> (<em>1D-array of bool</em><em>, </em><em>optional</em>) – True if stream cell</p></li>
+<li><p><strong>mask</strong> (<em>1D-array</em><em> of </em><em>bool</em><em>, </em><em>optional</em>) – True if stream cell</p></li>
 <li><p><strong>unit</strong> (<em>{'m'</em><em>, </em><em>'cell'}</em><em>, </em><em>optional</em>) – length unit, by default ‘cell’</p></li>
 <li><p><strong>-------</strong> – </p></li>
 <li><p><strong>float</strong> (<em>1D array of</em>) – distance to next downstream True cell, or outlet</p></li>
@@ -563,14 +654,14 @@ at the most downstram cell of a stream segment.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>kind</strong> (<em>{streams</em><em>, </em><em>flwdir}</em>) – Kind of LineString features: either streams of local flow directions.</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool</em>) – Mask of valid cells.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool</em>) – Mask of valid cells.</p></li>
 <li><p><strong>min_sto</strong> (<em>int</em>) – Minimum Strahler Order recognized as river, by the default 1.
 A stream order map can optionally be passed using the key-word argument <cite>strord</cite>.</p></li>
-<li><p><strong>xs</strong> (<em>2D array of float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
+<li><p><strong>xs</strong> (<em>2D array</em><em> of </em><em>float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
 center.</p></li>
-<li><p><strong>ys</strong> (<em>2D array of float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
+<li><p><strong>ys</strong> (<em>2D array</em><em> of </em><em>float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
 center.</p></li>
-<li><p><strong>idxs_out</strong> (<em>1D array of int</em>) – Linear indices of segment end cells. Stream segments are based on  the path
+<li><p><strong>idxs_out</strong> (<em>1D array</em><em> of </em><em>int</em>) – Linear indices of segment end cells. Stream segments are based on  the path
 between two segment end cells in up- or downstream flow direction, see
 <cite>direction</cite> argument.
 By default None in which case segements are based on confluences.</p></li>
@@ -602,10 +693,10 @@ coordinates are provided.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>flowpaths</strong> (<em>list</em><em> or </em><em>1D array of int</em>) – list of flow paths described by linear indices</p></li>
-<li><p><strong>xs</strong> (<em>2D array of float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
+<li><p><strong>flowpaths</strong> (<em>list</em><em> or </em><em>1D array</em><em> of </em><em>int</em>) – list of flow paths described by linear indices</p></li>
+<li><p><strong>xs</strong> (<em>2D array</em><em> of </em><em>float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
 center.</p></li>
-<li><p><strong>ys</strong> (<em>2D array of float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
+<li><p><strong>ys</strong> (<em>2D array</em><em> of </em><em>float</em>) – Raster with cell x, y coordinates, by default None and inferred from cell
 center.</p></li>
 <li><p><strong>kwargs</strong> (<em>extra sample maps key-word arguments</em>) – optional maps to sample from
 e.g.: strord=flw.stream_order()</p></li>
@@ -622,7 +713,7 @@ e.g.: strord=flw.stream_order()</p></li>
 
 </section>
 <section id="sub-basins">
-<h3>(Sub)basins<a class="headerlink" href="#sub-basins" title="Permalink to this headline"></a></h3>
+<h3>(Sub)basins<a class="headerlink" href="#sub-basins" title="Permalink to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.basins">
 <span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">basins</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.basins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.basins" title="Permalink to this definition"></a></dt>
@@ -636,8 +727,8 @@ background value of the basins map is zero, the IDs may not contain zeros.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>idxs</strong> (<em>array_like</em><em>, </em><em>optional</em>) – linear indices of sub(basin) outlets, by default is None.</p></li>
-<li><p><strong>xy</strong> (<em>tuple of array_like of float</em><em>, </em><em>optional</em>) – x, y coordinates of sub(basin) outlets, by default is None.</p></li>
-<li><p><strong>ids</strong> (<em>1D array of uint32</em><em>, </em><em>optional</em>) – IDs of (sub)basins in same order as idxs, by default None</p></li>
+<li><p><strong>xy</strong> (<em>tuple</em><em> of </em><em>array_like</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – x, y coordinates of sub(basin) outlets, by default is None.</p></li>
+<li><p><strong>ids</strong> (<em>1D array</em><em> of </em><em>uint32</em><em>, </em><em>optional</em>) – IDs of (sub)basins in same order as idxs, by default None</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -657,8 +748,8 @@ Subbasins are defined based on a minimum stream order.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>strord</strong> (<em>1D-array of uint8</em>) – stream order</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool</em>) – Mask of valid cells.</p></li>
+<li><p><strong>strord</strong> (<em>1D-array</em><em> of </em><em>uint8</em>) – stream order</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool</em>) – Mask of valid cells.</p></li>
 <li><p><strong>min_sto</strong> (<em>int</em><em>, </em><em>optional</em>) – minimum stream order of subbasins, by default the stream order is set to
 two under the global maxmium stream order.</p></li>
 </ul>
@@ -681,7 +772,7 @@ two under the global maxmium stream order.</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>depth</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of pfafsterrer layers, by default 1.</p></li>
-<li><p><strong>uparea</strong> (<em>2D array of float</em><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
 <li><p><strong>upa_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum upstream area theshold for subbasins, by default 0.0.</p></li>
 </ul>
 </dd>
@@ -706,7 +797,7 @@ exceeds the <cite>area_min</cite>.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>area_min</strong> (<em>float</em>) – subbasin area theshold; same unit as <cite>uparea</cite>, by default km2.</p></li>
-<li><p><strong>uparea</strong> (<em>2D array of float</em><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -725,7 +816,7 @@ exceeds the <cite>area_min</cite>.</p>
 <dd><p>Returns the linear index of the outlet cell of <cite>basins</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>basins</strong> (<em>2D array of int</em>) – raster with unique IDs for each basin, where the background value must be zero.</p>
+<dd class="field-odd"><p><strong>basins</strong> (<em>2D array</em><em> of </em><em>int</em>) – raster with unique IDs for each basin, where the background value must be zero.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ul class="simple">
@@ -745,7 +836,7 @@ exceeds the <cite>area_min</cite>.</p>
 create a basins map if none is provided.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>basins</strong> (<em>2D array of uint32</em><em>, </em><em>optional</em>) – basin ids, by default None and calculated on the fly.</p>
+<dd class="field-odd"><p><strong>basins</strong> (<em>2D array</em><em> of </em><em>uint32</em><em>, </em><em>optional</em>) – basin ids, by default None and calculated on the fly.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ul class="simple">
@@ -760,7 +851,7 @@ create a basins map if none is provided.</p>
 
 </section>
 <section id="up-and-downstream-values">
-<h3>Up- and downstream values<a class="headerlink" href="#up-and-downstream-values" title="Permalink to this headline"></a></h3>
+<h3>Up- and downstream values<a class="headerlink" href="#up-and-downstream-values" title="Permalink to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.downstream">
 <span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">downstream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.downstream" title="Permalink to this definition"></a></dt>
@@ -800,7 +891,7 @@ create a basins map if none is provided.</p>
 
 </section>
 <section id="up-and-downstream-arithmetics">
-<h3>Up- and downstream arithmetics<a class="headerlink" href="#up-and-downstream-arithmetics" title="Permalink to this headline"></a></h3>
+<h3>Up- and downstream arithmetics<a class="headerlink" href="#up-and-downstream-arithmetics" title="Permalink to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.moving_average">
 <span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">moving_average</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.moving_average" title="Permalink to this definition"></a></dt>
@@ -812,7 +903,7 @@ create a basins map if none is provided.</p>
 <li><p><strong>n</strong> (<em>int</em>) – number of up/downstream neighbors to include</p></li>
 <li><p><strong>weights</strong> (<em>2D array</em><em>, </em><em>optional</em>) – weights, by default equal weights are assumed</p></li>
 <li><p><strong>restrict_strord</strong> (<em>bool</em>) – If True, limit the window to cells of same or smaller stream order.</p></li>
-<li><p><strong>strord</strong> (<em>2D array of int</em><em>, </em><em>optional</em>) – Stream order map.</p></li>
+<li><p><strong>strord</strong> (<em>2D array</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – Stream order map.</p></li>
 <li><p><strong>nodata</strong> (<em>float</em><em>, </em><em>optional</em>) – Nodata values which is ignored when calculating the average, by default -9999.0</p></li>
 </ul>
 </dd>
@@ -867,7 +958,7 @@ assumes the coordinate unit is metres.</p>
 
 </section>
 <section id="upscale-and-subgrid-methods">
-<h3>Upscale and subgrid methods<a class="headerlink" href="#upscale-and-subgrid-methods" title="Permalink to this headline"></a></h3>
+<h3>Upscale and subgrid methods<a class="headerlink" href="#upscale-and-subgrid-methods" title="Permalink to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.upscale">
 <span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">upscale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.upscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.upscale" title="Permalink to this definition"></a></dt>
@@ -895,7 +986,7 @@ Online: <a class="reference external" href="http://doi.wiley.com/10.1029/2001WR0
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>scale_factor</strong> (<em>int</em>) – number gridcells in resulting upscaled gridcell</p></li>
 <li><p><strong>method</strong> (<em>{'ihu'</em><em>, </em><em>'eam_plus'</em><em>, </em><em>'eam'</em><em>, </em><em>'dmm'}</em>) – upscaling method, by default ‘ihu’</p></li>
-<li><p><strong>uparea</strong> (<em>2D array of int</em><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
 <li><p><strong>uparea</strong> – 2D raster with basin IDs, by default None. If provided it is used as an
 additional constrain to the IHU method to increase the upscaling speed.</p></li>
 </ul>
@@ -922,7 +1013,7 @@ downstream of cell 1 is located in cell 2</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>other</strong> (<a class="reference internal" href="#pyflwdir.FlwdirRaster" title="pyflwdir.FlwdirRaster"><em>FlwdirRaster</em></a>) – upscaled Flow Direction Raster</p></li>
-<li><p><strong>idxs_out</strong> (<em>2D array of int</em>) – linear indices of grid outlets</p></li>
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><em>int</em>) – linear indices of grid outlets</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -945,9 +1036,9 @@ the pixel with the largest upstream area is selected.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>idxs_out</strong> (<em>2D array of int</em>) – Linear indices of unit catchment outlets. If None (default) the cell
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><em>int</em>) – Linear indices of unit catchment outlets. If None (default) the cell
 size (instead of subgrid length) will be used.</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
 <li><p><strong>direction</strong> (<em>{&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction in which river length is measured, by default ‘up’.</p></li>
 <li><p><strong>unit</strong> (<em>{'m'</em><em>, </em><em>'cell'}</em>) – Upstream area unit.</p></li>
 </ul>
@@ -971,13 +1062,13 @@ pixel. The slope is estimated from the elevation around the outlet pixel
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>idxs_out</strong> (<em>2D array of int</em>) – Linear indices of unit catchment outlets, if None the cell
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><em>int</em>) – Linear indices of unit catchment outlets, if None the cell
 size (instead of subgrid length) will be used.</p></li>
-<li><p><strong>elevtn</strong> (<em>2D array of float with self.shape</em><em>, </em><em>optional</em>) – Elevation raster, required to calculate slope.</p></li>
+<li><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><em>float with self.shape</em><em>, </em><em>optional</em>) – Elevation raster, required to calculate slope.</p></li>
 <li><p><strong>length</strong> (<em>float</em><em>, </em><em>optional</em>) – Subgrid river length [m] over which to calculate the slope, by default
 1000 m. Only used in combination with direction = ‘both’</p></li>
 <li><p><strong>direction</strong> (<em>{&quot;both&quot;</em><em>, </em><em>&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction in which river slope is measured, by default ‘both’.</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
 <li><p><strong>method</strong> (<em>{'mean'</em><em>, </em><em>'lstsq'}</em>) – Estimate the segment slope based on the <cite>mean</cite> slope: i.e.: net difference
 in elevation divided by length; or <cite>lstsq</cite> slope: i.e.: a simple ordinary
 least squares regression estimate of slope</p></li>
@@ -1003,12 +1094,12 @@ the pixel with the largest upstream area is selected.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>idxs_out</strong> (<em>2D array of int</em>) – Linear indices of unit catchment outlets. If None (default) the cell
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><em>int</em>) – Linear indices of unit catchment outlets. If None (default) the cell
 size (instead of subgrid length) will be used.</p></li>
 <li><p><strong>data</strong> (<em>2D array</em>) – values</p></li>
 <li><p><strong>weigths</strong> (<em>2D array</em><em>, </em><em>optional</em>) – weights used for averaging, by default None.</p></li>
 <li><p><strong>nodata</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Missing data value for cells outside domain, by default -9999.0</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
 <li><p><strong>direction</strong> (<em>{&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction in which segment is defined, by default ‘up’.</p></li>
 </ul>
 </dd>
@@ -1032,12 +1123,12 @@ the pixel with the largest upstream area is selected.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>idxs_out</strong> (<em>2D array of int</em>) – Linear indices of unit catchment outlets. If None (default) the cell
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><em>int</em>) – Linear indices of unit catchment outlets. If None (default) the cell
 size (instead of subgrid length) will be used.</p></li>
 <li><p><strong>data</strong> (<em>2D array</em>) – values</p></li>
 <li><p><strong>weigths</strong> (<em>2D array</em><em>, </em><em>optional</em>) – weights used for averaging, by default None.</p></li>
 <li><p><strong>nodata</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Missing data value for cells outside domain, by default -9999.0</p></li>
-<li><p><strong>mask</strong> (<em>2D array of bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
 <li><p><strong>direction</strong> (<em>{&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction in which river length is measured, by default ‘up’.</p></li>
 </ul>
 </dd>
@@ -1057,7 +1148,7 @@ size (instead of subgrid length) will be used.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>idxs_out</strong> (<em>2D array of int</em>) – linear indices of unit catchment outlets</p></li>
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><em>int</em>) – linear indices of unit catchment outlets</p></li>
 <li><p><strong>unit</strong> (<em>{'m2'</em><em>, </em><em>'ha'</em><em>, </em><em>'km2'</em><em>, </em><em>'cell'}</em>) – Upstream area unit.</p></li>
 </ul>
 </dd>
@@ -1080,7 +1171,7 @@ size (instead of subgrid length) will be used.</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cellsize</strong> (<em>int</em>) – size of unit catchment measured in no. of higres cells</p></li>
-<li><p><strong>uparea</strong> (<em>2D array of float</em><em>, </em><em>optional</em>) – upstream area</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – upstream area</p></li>
 <li><p><strong>method</strong> (<em>{&quot;eam_plus&quot;</em><em>, </em><em>&quot;dmm&quot;}</em><em>, </em><em>optional</em>) – method to derive outlet cell indices, by default ‘eam_plus’</p></li>
 </ul>
 </dd>
@@ -1095,7 +1186,7 @@ size (instead of subgrid length) will be used.</p></li>
 
 </section>
 <section id="elevation">
-<h3>Elevation<a class="headerlink" href="#elevation" title="Permalink to this headline"></a></h3>
+<h3>Elevation<a class="headerlink" href="#elevation" title="Permalink to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.dem_adjust">
 <span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">dem_adjust</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.dem_adjust" title="Permalink to this definition"></a></dt>
@@ -1103,7 +1194,7 @@ size (instead of subgrid length) will be used.</p></li>
 has the same or lower elevation as the current cell.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>elevtn</strong> (<em>2D array of float</em>) – elevation raster</p>
+<dd class="field-odd"><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><em>float</em>) – elevation raster</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>elevation raster</p>
@@ -1123,8 +1214,8 @@ has the same or lower elevation as the current cell.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>elevtn</strong> (<em>2D array of float</em>) – elevation raster</p></li>
-<li><p><strong>rivmsk</strong> (<em>2D array of bool</em><em>, </em><em>optional</em>) – river mask</p></li>
+<li><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><em>float</em>) – elevation raster</p></li>
+<li><p><strong>rivmsk</strong> (<em>2D array</em><em> of </em><em>bool</em><em>, </em><em>optional</em>) – river mask</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1149,8 +1240,8 @@ topography and flowpaths.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>drain</strong> (<em>2D array of bool</em>) – drainage mask</p></li>
-<li><p><strong>elevtn</strong> (<em>2D array of float</em>) – elevation raster</p></li>
+<li><p><strong>drain</strong> (<em>2D array</em><em> of </em><em>bool</em>) – drainage mask</p></li>
+<li><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><em>float</em>) – elevation raster</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1174,8 +1265,8 @@ scaled with upstream area (A) following h ~ A**b.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>elevtn</strong> (<em>2D array of float</em>) – elevation raster [m]</p></li>
-<li><p><strong>uparea</strong> (<em>2D array of float</em><em>, </em><em>optional</em>) – upstream area raster [km2], by default calculated on the fly</p></li>
+<li><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><em>float</em>) – elevation raster [m]</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – upstream area raster [km2], by default calculated on the fly</p></li>
 <li><p><strong>b</strong> (<em>float</em><em>, </em><em>optional</em>) – scale parameter, by default 0.3</p></li>
 <li><p><strong>upa_min</strong> (<em>float</em><em>, </em><em>optional</em>) – minimum upstream area threshold for streams [km2].</p></li>
 </ul>
@@ -1192,7 +1283,7 @@ scaled with upstream area (A) following h ~ A**b.</p>
 </section>
 </section>
 <section id="elevation-raster-methods">
-<h2>Elevation raster methods<a class="headerlink" href="#elevation-raster-methods" title="Permalink to this headline"></a></h2>
+<h2>Elevation raster methods<a class="headerlink" href="#elevation-raster-methods" title="Permalink to this heading"></a></h2>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.dem.fill_depressions">
 <span class="sig-prename descclassname"><span class="pre">dem.</span></span><span class="sig-name descname"><span class="pre">fill_depressions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.dem.fill_depressions" title="Permalink to this definition"></a></dt>
@@ -1222,7 +1313,7 @@ By default None.</p></li>
 By default None.</p></li>
 <li><p><strong>optional</strong> – Maximum elevation for outlets, only in combination with <cite>outlets=’edge’</cite>.
 By default None.</p></li>
-<li><p><strong>idxs_pit</strong> (<em>1D array of int</em>) – Linear indices of outlet cells.</p></li>
+<li><p><strong>idxs_pit</strong> (<em>1D array</em><em> of </em><em>int</em>) – Linear indices of outlet cells.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1241,7 +1332,7 @@ By default None.</p></li>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>elevnt</strong> (<em>1D array of float</em>) – elevation raster</p></li>
+<li><p><strong>elevnt</strong> (<em>1D array</em><em> of </em><em>float</em>) – elevation raster</p></li>
 <li><p><strong>nodata</strong> (<em>float</em><em>, </em><em>optional</em>) – nodata value, by default -9999.0</p></li>
 <li><p><strong>latlon</strong> (<em>bool</em><em>, </em><em>optional</em>) – True if WGS84 coordinates, by default False</p></li>
 <li><p><strong>transform</strong> (<em>affine transform</em>) – Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY</p></li>
@@ -1258,7 +1349,7 @@ By default None.</p></li>
 
 </section>
 <section id="gis-raster-utility-methods">
-<h2>GIS raster utility methods<a class="headerlink" href="#gis-raster-utility-methods" title="Permalink to this headline"></a></h2>
+<h2>GIS raster utility methods<a class="headerlink" href="#gis-raster-utility-methods" title="Permalink to this heading"></a></h2>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.gis_utils.spread2d">
 <span class="sig-prename descclassname"><span class="pre">gis_utils.</span></span><span class="sig-name descname"><span class="pre">spread2d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.gis_utils.spread2d" title="Permalink to this definition"></a></dt>
@@ -1269,9 +1360,9 @@ The diagonal distance is taken as the hypot of the vertical and horizontal dista
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>osb</strong> (<em>2D array</em>) – Initial array with observations.</p></li>
-<li><p><strong>msk</strong> (<em>2D array of bool</em><em>, </em><em>optional</em>) – Mask of valid cells to consider for filling.</p></li>
+<li><p><strong>msk</strong> (<em>2D array</em><em> of </em><em>bool</em><em>, </em><em>optional</em>) – Mask of valid cells to consider for filling.</p></li>
 <li><p><strong>nodata</strong> (<em>int</em><em>, </em><em>float</em>) – Missing data value in obs. Cells with this value and where mask equals True are filled, by default 0.</p></li>
-<li><p><strong>frc</strong> (<em>2D array of float</em>) – Friction values, by default a uniform value of 1 is used.</p></li>
+<li><p><strong>frc</strong> (<em>2D array</em><em> of </em><em>float</em>) – Friction values, by default a uniform value of 1 is used.</p></li>
 <li><p><strong>latlon</strong> (<em>bool</em>) – True for geographic CRS, False for projected CRS.
 If True, the transform units are assumed to be degrees and converted to metric distances.</p></li>
 <li><p><strong>transform</strong> (<em>Affine</em>) – Coefficients mapping pixel coordinates to coordinate reference system.</p></li>
@@ -1295,8 +1386,8 @@ If True, the transform units are assumed to be degrees and converted to metric d
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>a</strong> (<em>2D array of bool</em>) – Boolean array valid cells.</p></li>
-<li><p><strong>structure</strong> (<em>2D array with shape</em><em> (</em><em>3</em><em>,</em><em>3</em><em>) </em><em>of bool</em>) – Structuring element used to define which cells are neighbors.</p></li>
+<li><p><strong>a</strong> (<em>2D array</em><em> of </em><em>bool</em>) – Boolean array valid cells.</p></li>
+<li><p><strong>structure</strong> (<em>2D array with shape</em><em> (</em><em>3</em><em>,</em><em>3</em><em>) of </em><em>bool</em>) – Structuring element used to define which cells are neighbors.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1317,7 +1408,7 @@ lats &amp; lons [m2].</p>
 
 </section>
 <section id="region-utility-methods">
-<h2>Region utility methods<a class="headerlink" href="#region-utility-methods" title="Permalink to this headline"></a></h2>
+<h2>Region utility methods<a class="headerlink" href="#region-utility-methods" title="Permalink to this heading"></a></h2>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyflwdir.regions.region_bounds">
 <span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">region_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.regions.region_bounds" title="Permalink to this definition"></a></dt>
@@ -1327,7 +1418,7 @@ where ID are integer values larger than zero.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>regions</strong> (<em>2D array of int</em>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p></li>
+<li><p><strong>regions</strong> (<em>2D array</em><em> of </em><em>int</em>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p></li>
 <li><p><strong>transform</strong> (<em>Affine</em>) – Coefficients mapping pixel coordinates to coordinate reference system.</p></li>
 </ul>
 </dd>
@@ -1350,7 +1441,7 @@ where ID are integer values larger than zero.</p>
 where ID are integer values larger than zero.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>regions</strong> (<em>2D array of int</em>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p>
+<dd class="field-odd"><p><strong>regions</strong> (<em>2D array</em><em> of </em><em>int</em>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ul class="simple">
@@ -1370,7 +1461,7 @@ where ID are integer values larger than zero.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<em>2D array</em>) – input data</p></li>
-<li><p><strong>regions</strong> (<em>2D array of int</em>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p></li>
+<li><p><strong>regions</strong> (<em>2D array</em><em> of </em><em>int</em>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1389,7 +1480,7 @@ where ID are integer values larger than zero.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>regions</strong> (<em>2D array of int</em>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p></li>
+<li><p><strong>regions</strong> (<em>2D array</em><em> of </em><em>int</em>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p></li>
 <li><p><strong>latlon</strong> (<em>bool</em>) – True for geographic CRS, False for projected CRS.
 If True, the transform units are assumed to be degrees and converted to metric distances.</p></li>
 <li><p><strong>transform</strong> (<em>Affine</em>) – Coefficients mapping pixel coordinates to coordinate reference system.</p></li>
@@ -1416,9 +1507,9 @@ dissolve basins based on the distance from its outlet.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>regions</strong> (<em>2D-array of int</em>) – raster with unique non-zero positive IDs for each region</p></li>
-<li><p><strong>labels</strong> (<em>1D-array of int</em>) – labels of regions to be dissolved. Must be unique and larger than zero.</p></li>
-<li><p><strong>idxs</strong> (<em>1D-array of int</em>) – linear index of one location per region to be dissolved</p></li>
+<li><p><strong>regions</strong> (<em>2D-array</em><em> of </em><em>int</em>) – raster with unique non-zero positive IDs for each region</p></li>
+<li><p><strong>labels</strong> (<em>1D-array</em><em> of </em><em>int</em>) – labels of regions to be dissolved. Must be unique and larger than zero.</p></li>
+<li><p><strong>idxs</strong> (<em>1D-array</em><em> of </em><em>int</em>) – linear index of one location per region to be dissolved</p></li>
 <li><p><strong>latlon</strong> (<em>bool</em>) – True for geographic CRS, False for projected CRS.
 If True, the transform units are assumed to be degrees and converted to metric distances.</p></li>
 <li><p><strong>transform</strong> (<em>Affine</em>) – Coefficients mapping pixel coordinates to coordinate reference system.</p></li>

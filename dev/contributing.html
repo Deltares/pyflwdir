@@ -14,7 +14,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -95,8 +97,8 @@
         <div class="rst-content style-external-links">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Contributing</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Contributing</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/contributing.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -131,20 +133,20 @@
 }
 </style>
 <section id="contributing">
-<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline"></a></h1>
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this heading"></a></h1>
 <p>Welcome to the pyflwdir project. All contributions, bug reports, bug fixes,
 documentation improvements, enhancements, and ideas are welcome. Here’s how we work.</p>
 <section id="code-of-conduct">
-<h2>Code of Conduct<a class="headerlink" href="#code-of-conduct" title="Permalink to this headline"></a></h2>
+<h2>Code of Conduct<a class="headerlink" href="#code-of-conduct" title="Permalink to this heading"></a></h2>
 <p>First of all: the pyflwdir project has a code of conduct. Please read the
 CODE_OF_CONDUCT.txt file, it’s important to all of us.</p>
 </section>
 <section id="rights">
-<h2>Rights<a class="headerlink" href="#rights" title="Permalink to this headline"></a></h2>
+<h2>Rights<a class="headerlink" href="#rights" title="Permalink to this heading"></a></h2>
 <p>The MIT license (see LICENSE.txt) applies to all contributions.</p>
 </section>
 <section id="issue-conventions">
-<h2>Issue Conventions<a class="headerlink" href="#issue-conventions" title="Permalink to this headline"></a></h2>
+<h2>Issue Conventions<a class="headerlink" href="#issue-conventions" title="Permalink to this heading"></a></h2>
 <p>The pyflwdir issue tracker is for actionable issues.</p>
 <p>Pyflwdir is a relatively new project and highly active. We have bugs, both
 known and unknown.</p>
@@ -153,7 +155,7 @@ known and unknown.</p>
 datasets demonstrating the issue are especially helpful!</p>
 </section>
 <section id="design-principles">
-<h2>Design Principles<a class="headerlink" href="#design-principles" title="Permalink to this headline"></a></h2>
+<h2>Design Principles<a class="headerlink" href="#design-principles" title="Permalink to this heading"></a></h2>
 <p>Pyflwdir contains methods to work with hydro- and topography data in Numpy arrays.</p>
 <ul class="simple">
 <li><p>I/O from the filesystem to numpy arrays is not part of this package, other packages
@@ -165,7 +167,7 @@ downstream cell. Based on this general concept many methods can be applied.</p><
 </ul>
 </section>
 <section id="git-conventions">
-<h2>Git Conventions<a class="headerlink" href="#git-conventions" title="Permalink to this headline"></a></h2>
+<h2>Git Conventions<a class="headerlink" href="#git-conventions" title="Permalink to this heading"></a></h2>
 <p>After discussing a new proposal or implementation in the issue tracker, you can start
 working on the code. You write your code locally in a new branch pyflwdir repo or in a
 branch of a fork. Once you’re done with your first iteration, you commit your code and
@@ -197,7 +199,7 @@ developers a heads up and to provide an opportunity for valuable early feedback.
 can create a merge request online or by pushing your branch to a feature-branch.</p>
 </section>
 <section id="code-conventions">
-<h2>Code Conventions<a class="headerlink" href="#code-conventions" title="Permalink to this headline"></a></h2>
+<h2>Code Conventions<a class="headerlink" href="#code-conventions" title="Permalink to this heading"></a></h2>
 <p>We use <a class="reference external" href="https://black.readthedocs.io/en/stable/">black</a> for standardized code formatting.</p>
 <p>Tests are mandatory for new features. We use <a class="reference external" href="https://pytest.org">pytest</a>. All tests
 should go in the tests directory.</p>
@@ -205,12 +207,12 @@ should go in the tests directory.</p>
 based on pytest, but also stylistic errors.</p>
 </section>
 <section id="development-environment">
-<h2>Development Environment<a class="headerlink" href="#development-environment" title="Permalink to this headline"></a></h2>
+<h2>Development Environment<a class="headerlink" href="#development-environment" title="Permalink to this heading"></a></h2>
 <p>Developing pyflwdir requires Python &gt;= 3.6. We prefer developing with the most recent
 version of Python. We strongly encourage you to develop in a seperate conda environment.
 All Python dependencies required to develop pyflwdir can be found in <a class="reference external" href="environment.yml">environment.yml</a>.</p>
 <section id="initial-setup">
-<h3>Initial Setup<a class="headerlink" href="#initial-setup" title="Permalink to this headline"></a></h3>
+<h3>Initial Setup<a class="headerlink" href="#initial-setup" title="Permalink to this heading"></a></h3>
 <p>First, clone pyflwdir’s <code class="docutils literal notranslate"><span class="pre">git</span></code> repo and navigate into the repository:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git clone git@github.com:Deltares/pyflwdir.git
 <span class="gp">$ </span><span class="nb">cd</span> pyflwdir
@@ -228,7 +230,7 @@ file contained in the repository:</p>
 </div>
 </section>
 <section id="running-the-tests">
-<h3>Running the tests<a class="headerlink" href="#running-the-tests" title="Permalink to this headline"></a></h3>
+<h3>Running the tests<a class="headerlink" href="#running-the-tests" title="Permalink to this heading"></a></h3>
 <p>Pyflwdir’s tests live in the tests folder and generally match the main package layout.
 Test should be run from the tests folder.</p>
 <p>Note that to get a coverage report we need to disable numba jit. This can be done
@@ -251,7 +253,7 @@ by setting the environment variable <code class="docutils literal notranslate"><
 </div>
 </section>
 <section id="running-code-format-checks">
-<h3>Running code format checks<a class="headerlink" href="#running-code-format-checks" title="Permalink to this headline"></a></h3>
+<h3>Running code format checks<a class="headerlink" href="#running-code-format-checks" title="Permalink to this heading"></a></h3>
 <p>The code formatting will be checked based on the <a class="reference external" href="https://black.readthedocs.io/en/stable/the_black_code_style.html">black clode style</a> during ci.
 Make sure the check below returns <em>All done!</em> before commiting your edits.</p>
 <p>To check the formatting of your code:</p>
@@ -264,7 +266,7 @@ Make sure the check below returns <em>All done!</em> before commiting your edits
 </div>
 </section>
 <section id="creating-a-release">
-<h3>Creating a release<a class="headerlink" href="#creating-a-release" title="Permalink to this headline"></a></h3>
+<h3>Creating a release<a class="headerlink" href="#creating-a-release" title="Permalink to this heading"></a></h3>
 <ol class="arabic simple">
 <li><p>First create a new release on github under <a class="reference external" href="https://github.com/Deltares/pyflwdir/releases">https://github.com/Deltares/pyflwdir/releases</a>. We use semantic versioning and describe the release based on the CHANGELOG.</p></li>
 <li><p>Make sure to update and clean your local git folder. This remmoves all files which are not tracked by git.</p></li>

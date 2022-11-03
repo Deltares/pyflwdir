@@ -14,7 +14,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -87,8 +89,8 @@
         <div class="rst-content style-external-links">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Tracing flow directions</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Tracing flow directions</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/tracing.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -313,6 +315,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -321,10 +324,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -336,12 +343,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -369,7 +379,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Tracing-flow-directions">
-<h1>Tracing flow directions<a class="headerlink" href="#Tracing-flow-directions" title="Permalink to this headline"></a></h1>
+<h1>Tracing flow directions<a class="headerlink" href="#Tracing-flow-directions" title="Permalink to this heading"></a></h1>
 <p>Here we assume that flow directions are known. We read the flow direction raster data, including meta-data, using <a class="reference external" href="https://rasterio.readthedocs.io/en/latest/">rasterio</a> and parse it to a pyflwdir <code class="docutils literal notranslate"><span class="pre">FlwDirRaster</span></code> object, see earlier examples for more background.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -399,7 +409,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Flow-paths">
-<h2>Flow paths<a class="headerlink" href="#Flow-paths" title="Permalink to this headline"></a></h2>
+<h2>Flow paths<a class="headerlink" href="#Flow-paths" title="Permalink to this heading"></a></h2>
 <p>To trace flow paths downstream from a point, for instance to trace polutants from a point source, we can use the <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.path"><span class="std std-ref">path()</span></a> method. Here we trace three point sources along a maximum distance of 400 km.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -458,7 +468,7 @@ array([399.65154926, 399.27247071, 399.98337107])
 </div>
 </section>
 <section id="Snap-points-to-stream">
-<h2>Snap points to stream<a class="headerlink" href="#Snap-points-to-stream" title="Permalink to this headline"></a></h2>
+<h2>Snap points to stream<a class="headerlink" href="#Snap-points-to-stream" title="Permalink to this heading"></a></h2>
 <p>With the <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.snap"><span class="std std-ref">snap()</span></a> method we can find the nearest downstream stream for any given point and calculate the distance to this point.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:

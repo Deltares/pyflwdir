@@ -14,7 +14,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -86,8 +88,8 @@
         <div class="rst-content style-external-links">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Flow direction upscaling</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Flow direction upscaling</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/upscaling.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -312,6 +314,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -320,10 +323,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -335,12 +342,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -368,7 +378,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Flow-direction-upscaling">
-<h1>Flow direction upscaling<a class="headerlink" href="#Flow-direction-upscaling" title="Permalink to this headline"></a></h1>
+<h1>Flow direction upscaling<a class="headerlink" href="#Flow-direction-upscaling" title="Permalink to this heading"></a></h1>
 <p>Here we assume that flow directions are known. We read the flow direction raster data, including meta-data, using <a class="reference external" href="https://rasterio.readthedocs.io/en/latest/">rasterio</a> and parse it to a pyflwdir <code class="docutils literal notranslate"><span class="pre">FlwDirRaster</span></code> object, see earlier examples for more background.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -433,7 +443,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="id1">
-<h2>Flow direction upscaling<a class="headerlink" href="#id1" title="Permalink to this headline"></a></h2>
+<h2>Flow direction upscaling<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h2>
 <p>Methods to upcale flow directions are required as models often have a coarser resolution than the elevation data used to build them. Instead of deriving flow directions from upscaled elevation data, it is better to directly upscaling the flow direction data itself. The <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.upscale"><span class="std std-ref">upscale()</span></a> method implements the recently developed Iterative Hydrography Upscaling (<strong>IHU</strong>) algorithm (<a class="reference external" href="https://doi.org/10.5194/hess-2020-582">Eilander et al 2020</a>). The method
 takes high resolution flow directions and upstream area grid to iterativly determine the best stream segment to represent in each upscaled cell. This stream segment is than traced towards the next downstream upscaled cell to determine the upscaled flow directions. Full details can be found in the referenced paper.</p>
 <div class="nbinput nblast docutils container">

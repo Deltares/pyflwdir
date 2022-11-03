@@ -14,7 +14,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -87,8 +89,8 @@
         <div class="rst-content style-external-links">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Flow directions from elevation data</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Flow directions from elevation data</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/from_dem.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -313,6 +315,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -321,10 +324,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -336,12 +343,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -369,7 +379,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Flow-directions-from-elevation-data">
-<h1>Flow directions from elevation data<a class="headerlink" href="#Flow-directions-from-elevation-data" title="Permalink to this headline"></a></h1>
+<h1>Flow directions from elevation data<a class="headerlink" href="#Flow-directions-from-elevation-data" title="Permalink to this heading"></a></h1>
 <p>Flow directions are typically derived from a conditioned (high resolution) Digital Elevation Models (DEMs) using the so-called ‘steepest gradient’ method. This method selects the lowest direct neighbor of each cell as its donstream flow direction. HydroMT implements the algorithm proposed by <a class="reference external" href="https://doi.org/10.1080/13658810500433453">Wang &amp; Liu (2006)</a> which is used in this example.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -435,7 +445,7 @@ Text(0, 0.5, &#39;elevation [m+EGM96]&#39;)
 </div>
 </div>
 <section id="Derive-flow-direction">
-<h2>Derive flow direction<a class="headerlink" href="#Derive-flow-direction" title="Permalink to this headline"></a></h2>
+<h2>Derive flow direction<a class="headerlink" href="#Derive-flow-direction" title="Permalink to this heading"></a></h2>
 <p>Here we use the <a class="reference internal" href="reference.html#pyflwdir.pyflwdir.from_dem"><span class="std std-ref">from_dem()</span></a> method to retrieve a <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster"><span class="std std-ref">FlwDirRaster</span></a> object based on the flow directions as derived with steepest gradient algorithm. This method wraps the <a class="reference internal" href="reference.html#pyflwdir.dem.fill_depressions"><span class="std std-ref">dem.fill_depressions()</span></a> method which returns a depression-filled elevation raster and a local flow directions array following the arcgis D8 convention.</p>
 <p>The algorithm assumes that outlets occur at the edge of valid elevation cells. Elevation depressions are filled based on its lowest pour point elevation. If the depression depth relative to the pour point is larger than the maximum pour point depth <code class="docutils literal notranslate"><span class="pre">max_depth</span></code> a pit is set at the depression local minimum elevation (not used in this example). Optionally, all flow direction can be forced towards a single outlet at the lowest edge cell by setting the <code class="docutils literal notranslate"><span class="pre">outlets='min'</span></code> keyword. The <code class="docutils literal notranslate"><span class="pre">trasform</span></code>
 and <code class="docutils literal notranslate"><span class="pre">latlon</span></code> arguments define the geospatial location of the data.</p>
@@ -494,7 +504,7 @@ and <code class="docutils literal notranslate"><span class="pre">latlon</span></
 </div>
 </section>
 <section id="Save-flow-direction-raster">
-<h2>Save flow direction raster<a class="headerlink" href="#Save-flow-direction-raster" title="Permalink to this headline"></a></h2>
+<h2>Save flow direction raster<a class="headerlink" href="#Save-flow-direction-raster" title="Permalink to this heading"></a></h2>
 <p>With the <a class="reference internal" href="reference.html#pyflwdir.FlwdirRaster.to_array"><span class="std std-ref">to_array()</span></a> method we can return a flow direction numpy array from the <code class="docutils literal notranslate"><span class="pre">FlwDirRaster</span></code> object in any supported convention. This can be saved to a geospatial raster file using rasterio as shown below.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
