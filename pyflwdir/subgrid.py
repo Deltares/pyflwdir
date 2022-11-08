@@ -125,7 +125,7 @@ def floodplain_volume(
     """
     # initialize outputs
     ucatch_map = np.full(idxs_ds.size, 0, dtype=idxs_ds.dtype)
-    fldpln_vol = np.full((idxs_out.size, bins.size), -9999, dtype=np.float32)
+    fldpln_vol = np.full((idxs_out.size, depths.size), -9999, dtype=np.float32)
     for i in range(idxs_out.size):
         idx0 = idxs_out[i]
         if idx0 != mv:
@@ -138,7 +138,7 @@ def floodplain_volume(
         if ucatch_map[idx0] == 0 and ucat_ds != 0:
             ucatch_map[idx0] = ucat_ds
             dh = np.maximum(0, depths - hand[idx0])
-            ucatch_are[ucat_ds - 1] += area[idx0] * dh
+            fldpln_vol[ucat_ds - 1] += area[idx0] * dh
     return ucatch_map, fldpln_vol
 
 
