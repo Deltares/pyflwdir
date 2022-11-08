@@ -67,7 +67,7 @@ def segment_area(
     seq : 1D array of int
         ordered cell indices from down- to upstream
     area : ndarray of float
-        flattened area of each node/cell
+        area of each node/cell in a flattened array
 
     Returns
     -------
@@ -91,6 +91,55 @@ def segment_area(
             ucatch_map[idx0] = ucat_ds
             ucatch_are[ucat_ds - 1] += area[idx0]
     return ucatch_map, ucatch_are
+
+
+@njit
+def floodplain_volume(
+    idxs_out,
+    idxs_ds,
+    seq,
+    hand,
+    area,
+    depths=np.arange(0.5, 3.0, 0.5, dtype=np.float32),
+    mv=_mv,
+):
+    """Returns the floodplain volume as function of the depth.
+
+    Parameters
+    ----------
+    idxs_out : ndarray of int
+        linear indices of unit catchment outlet cells
+    idxs_ds : ndarray of int
+        linear indices of downstream cells
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    hand, area : ndarray of float
+        height above nearest drain, area of each node/cell in a flattened array
+
+    Returns
+    -------
+    1D array of float of size idxs_ds
+        unit catchment map
+    1D array of float of size idxs_out
+        unit catchment floodplain profile
+    """
+    # initialize outputs
+    ucatch_map = np.full(idxs_ds.size, 0, dtype=idxs_ds.dtype)
+    fldpln_vol = np.full((idxs_out.size, bins.size), -9999, dtype=np.float32)
+    for i in range(idxs_out.size):
+        idx0 = idxs_out[i]
+        if idx0 != mv:
+            ucatch_map[idx0] = i + 1
+            dh = np.maximum(0, depths - hand[idx0])
+            fldpln_vol[i, :] = area[idx0] * dh
+    for idx0 in seq:  # down- to upstream
+        idx_ds = idxs_ds[idx0]
+        ucat_ds = ucatch_map[idx_ds]
+        if ucatch_map[idx0] == 0 and ucat_ds != 0:
+            ucatch_map[idx0] = ucat_ds
+            dh = np.maximum(0, depths - hand[idx0])
+            ucatch_are[ucat_ds - 1] += area[idx0] * dh
+    return ucatch_map, fldpln_vol
 
 
 @njit
