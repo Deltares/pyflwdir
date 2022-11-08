@@ -22,7 +22,7 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="eam_plus", mv=_mv):
     uparea : ndarray of float
         flattened upstream area
     cellsize : int
-        size of unit catchment measured in no. of higres cells
+        size of unit catchment measured in no. of high resolution cells
     shape : tuple of int
         raster shape
     method : {"eam_plus", "dmm"}, optional
@@ -56,7 +56,7 @@ def segment_area(
     area,
     mv=_mv,
 ):
-    """Returns the segment catchment map (highres) and contributing area.
+    """Returns the segment catchment map and contributing area.
 
     Parameters
     ----------
@@ -166,7 +166,7 @@ def segment_average(
     nodata=-9999.0,
     mv=_mv,
 ):
-    """Returns the mean channel value. The channel is defined by the flow path starting
+    """Returns the mean value over a river segment. The segment is defined by the flow path starting
     at the outlet pixel of each cell moving up- or downstream until it reaches the next
     upstream outlet pixel.
 
@@ -187,8 +187,8 @@ def segment_average(
 
     Returns
     -------
-    rivlen : 1D array of float
-        channel section length [m]
+    data_out : 1D array of float
+        segment mean value [m]
     """
     # temp binary array with outlets
     outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
@@ -233,7 +233,7 @@ def segment_median(
     nodata=-9999.0,
     mv=_mv,
 ):
-    """Returns the median value along the segment. The segment is defined by the flow path starting
+    """Returns the median value along a river segment. The segment is defined by the flow path starting
     at the segment outlet pixel of each cell moving up- or downstream until it reaches the next
     segment outlet pixel.
 
@@ -252,8 +252,8 @@ def segment_median(
 
     Returns
     -------
-    rivlen : 1D array of float
-        channel section length [m]
+    data_out : 1D array of float
+        segment median value [m]
     """
     # temp binary array with outlets
     outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
@@ -297,7 +297,7 @@ def segment_indices(
     max_len=0,
     mv=_mv,
 ):
-    """Returns the fitted lineaer slopeof the segment. The segment is defined by the flow path starting
+    """Returns the linear indices of river segments. The segment is defined by the flow path starting
     at the segment outlet pixel of each cell moving up- or downstream until it reaches the next
     segment outlet pixel.
 
@@ -373,18 +373,19 @@ def segment_slope(
     lstsq=True,
     mv=_mv,
 ):
-    """Returns the fitted lineaer slopeof the segment. The segment is defined by the flow path starting
+    """Returns the slope of the river segment segment slope. The segment is defined by the flow path starting
     at the segment outlet pixel of each cell moving up- or downstream until it reaches the next
-    segment outlet pixel.
+    segment outlet pixel. The slope is calculated based on a linear fit if `lstsq` equals True,
+    else it based on the average slope.
 
     Parameters
     ----------
-    elevtn, distnc : 1D (sparse) array
-        elevation [m], downstream distance to outlet [m]
     idxs_out : ndarray of int
         linear indices of unit catchment outlet cells
     idxs_nxt : ndarray of int
         linear indices the next main upstream or downstream cell.
+    elevtn, distnc : 1D (sparse) array
+        elevation [m], downstream distance to outlet [m]
     mask : ndarray of boolean, optional
         only consider True cells to calculate channel average value
     nodata : float, optional
@@ -392,8 +393,8 @@ def segment_slope(
 
     Returns
     -------
-    rivlen : 1D array of float
-        channel section length [m]
+    rivslp : 1D array of float
+        channel section slope [m]
     """
     # temp binary array with outlets
     outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
@@ -449,6 +450,7 @@ def fixed_length_slope(
 ):
     """Returns the channel slope at the outlet pixel. The slope is based on the elevation values
     within half length distance around from the segment outlet pixel based on least squared error fit.
+    The slope is calculated based on a linear fit if `lstsq` equals True, else it based on the average slope.
 
     Parameters
     ----------
