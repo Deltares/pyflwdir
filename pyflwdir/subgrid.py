@@ -49,7 +49,7 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="eam_plus", mv=_mv):
 
 
 @njit
-def segment_area(
+def ucat_area(
     idxs_out,
     idxs_ds,
     seq,
@@ -94,7 +94,7 @@ def segment_area(
 
 
 @njit
-def floodplain_volume(
+def ucat_volume(
     idxs_out,
     idxs_ds,
     seq,

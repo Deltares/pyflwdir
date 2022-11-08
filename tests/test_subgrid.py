@@ -28,7 +28,7 @@ def test_subgridch(method, cellsize):
         idxs_out, _ = subgrid.outlets(
             idxs_ds, upa, cellsize, shape, method=method, mv=mv
         )
-    umap, uare = subgrid.segment_area(
+    umap, uare = subgrid.ucat_area(
         idxs_out, idxs_ds, seq, area=np.ones(idxs_ds.size, dtype=np.int32), mv=mv
     )
     # upstream

@@ -125,7 +125,7 @@ def test_hand_fldpln():
     idxs_out = np.where(drain.ravel())[0]
     area = np.ones(idxs_ds.size, dtype=np.int32)
     depths = np.linspace(1, hand.max(), 5)
-    drain_map, fldpln_vol = subgrid.floodplain_volume(
+    drain_map, fldpln_vol = subgrid.ucat_volume(
         idxs_out, idxs_ds, seq, hand, area, depths=depths
     )
     assert fldpln_vol.shape == (drain_map.max(), depths.size)
