@@ -1347,7 +1347,7 @@ class FlwdirRaster(Flwdir):
         mask=None,
         direction="up",
     ):
-        """Returns the average value over the subgrid river, based on unit catchment outlet
+        """Returns the median value over the subgrid river, based on unit catchment outlet
         locations. The subgrid river is defined by the path starting at the unit
         catchment outlet pixel moving up- or downstream until it reaches the next
         outlet pixel. If moving upstream and a pixel has multiple upstream neighbors,
@@ -1371,8 +1371,8 @@ class FlwdirRaster(Flwdir):
 
         Returns
         -------
-        rivlen : 2D array of float with idxs_out.shape
-            subgrid river length [m]
+        rivmed : 2D array of float with idxs_out.shape
+            subgrid segment median
         """
         direction = str(direction).lower()
         if direction not in ["up", "down"]:
@@ -1382,7 +1382,7 @@ class FlwdirRaster(Flwdir):
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
         if weights is None:
             weights = np.ones(self.size, dtype=np.float32)
-        rivlen = subgrid.segment_average(
+        rivmed = subgrid.segment_median(
             idxs_out=idxs_out.ravel(),
             idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             data=self._check_data(data, "data"),
@@ -1392,7 +1392,7 @@ class FlwdirRaster(Flwdir):
             mv=self._mv,
         )
         shape = idxs_out.shape
-        return rivlen.reshape(shape)
+        return rivmed.reshape(shape)
 
     ### ELEVATION ###
 
