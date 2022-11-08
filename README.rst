@@ -71,14 +71,13 @@ Install the package from pip using:
 
     $ pip install pyflwdir
 
-In order to run the examples in the notebook folder some aditional packages to read 
+In order to run the examples in the notebook folder some additional packages to read 
 and write raster and vector data, as well as to plot these data are required. 
 A complete environment can be installed from the environment.yml file using:
 
 .. code-block:: console
 
     $ conda env create -f environment.yml
-    $ pip install pyflwdir
 
 Quickstart
 ==========

@@ -8,13 +8,9 @@ channels:
 # install_requires in setup.py
 dependencies:
   # required
-  - affine
-  - numba>=0.48
-  - numpy
-  - python>=3.6
-  - scipy
-  - setuptools_scm
-  # optional recommended
+  - python>=3.7
+  - pyflwdir
+  # optional for notebooks
   - cartopy
   - descartes
   - geopandas

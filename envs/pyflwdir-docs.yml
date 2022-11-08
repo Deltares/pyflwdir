@@ -5,22 +5,21 @@ channels:
 
 dependencies:
   # required
-  - python>=3.7
   - affine
+  - flit
   - numba>=0.54
   - numpy
-  - scipy
-  - setuptools_scm
   - pip
+  - python>=3.7
+  - scipy
   # docs
   - sphinx
   - sphinx_rtd_theme
   - nbsphinx
   # notebooks
-  - geopandas
-  - rasterio
-  - ipython
-  - ipykernel
-  - matplotlib
   - cartopy
   - descartes
+  - geopandas
+  - jupyter
+  - matplotlib
+  - rasterio
