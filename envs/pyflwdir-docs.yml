@@ -10,16 +10,16 @@ dependencies:
   - numba>=0.54
   - numpy
   - pip
-  - python>=3.7
+  - python>=3.8
   - scipy
   # docs
   - sphinx
   - sphinx_rtd_theme
   - nbsphinx
   # notebooks
-  - cartopy
+  - cartopy>=0.20 
   - descartes
-  - geopandas
+  - geopandas>=0.8
   - jupyter
-  - matplotlib
+  - matplotlib==3.5.*
   - rasterio

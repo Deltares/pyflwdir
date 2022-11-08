@@ -8,12 +8,12 @@ channels:
 # install_requires in setup.py
 dependencies:
   # required
-  - python>=3.7
+  - python>=3.8
   - pyflwdir
   # optional for notebooks
-  - cartopy
+  - cartopy>=0.20 
   - descartes
-  - geopandas
+  - geopandas>=0.8
   - jupyter
-  - matplotlib
+  - matplotlib==3.5.*
   - rasterio
