@@ -146,6 +146,8 @@ Upscale and subgrid methods
 
 .. automethod:: pyflwdir.FlwdirRaster.ucat_area()
 
+.. automethod:: pyflwdir.FlwdirRaster.ucat_volume()
+
 .. automethod:: pyflwdir.FlwdirRaster.ucat_outlets()
 
 
