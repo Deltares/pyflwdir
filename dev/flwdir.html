@@ -35,7 +35,7 @@
             <a href="index.html" class="icon icon-home"> pyflwdir
           </a>
               <div class="version">
-                0.1.
+                0.5.6.
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -378,7 +378,7 @@ div.rendered_html tbody tr:hover {
 <h1>Flow direction data<a class="headerlink" href="#Flow-direction-data" title="Permalink to this heading"></a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code> object is at the core of the pyflwdir package. It contains gridded flow direction data, parsed to an actionable common format which describes the linear index of the next dowsntream cell.</p>
 <p>Currently we support two local flow direction (D8) data types according to the arcgis <strong>D8</strong> and pcraster <strong>LDD</strong> conventions (see figure), and one global flow direction type according to the CaMa-Flood <strong>NEXTXY</strong> convention. Local flow direction data types describe the next downstream cell based on a relative direction from a cell towards one of its neighboring cells, while global flow direction types describe the next downstream cell based on its row and column indices.</p>
-<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="e585ccf0de0a479ca92b78d3cf9e6939" class="no-scaled-link" src="_images/ftypes.png" style="width: 500px;" /></p>
+<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="a9619e14c29f4e13a2f94697335dcce2" class="no-scaled-link" src="_images/ftypes.png" style="width: 500px;" /></p>
 <p>We read the flow direction raster data, including meta-data, using <a class="reference external" href="https://rasterio.readthedocs.io/en/latest/">rasterio</a></p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:

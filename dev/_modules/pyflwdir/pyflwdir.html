@@ -30,7 +30,7 @@
             <a href="../../index.html" class="icon icon-home"> pyflwdir
           </a>
               <div class="version">
-                0.1.
+                0.5.6.
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -169,7 +169,7 @@
 <span class="sd">        Missing data value, by default -9999.0</span>
 <span class="sd">    max_depth: float, optional</span>
 <span class="sd">        Maximum pour point depth. Depressions with a larger pour point</span>
-<span class="sd">        depth are set as pit. A negative value (default) equals an infitely</span>
+<span class="sd">        depth are set as pit. A negative value (default) equals an infinitely</span>
 <span class="sd">        large pour point depth causing all depressions to be filled.</span>
 <span class="sd">    transform : affine transform</span>
 <span class="sd">        Two dimensional affine transform for 2D linear mapping, by default using the</span>
@@ -225,7 +225,7 @@
 <span class="sd">        converts the cell areas from degree to metres, otherwise it assumes cell areas</span>
 <span class="sd">        are in unit metres.</span>
 <span class="sd">    **kwargs</span>
-<span class="sd">        key-word argumetns passed to FlwdirRaster</span>
+<span class="sd">        key-word arguments passed to FlwdirRaster</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -258,7 +258,7 @@
 
     <span class="c1"># use smallest possible dtype to represent indices</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span>
-    <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">2147483647</span> <span class="k">else</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">4294967294</span> <span class="k">else</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">2147483647</span> <span class="k">else</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">4294967294</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
     <span class="n">idxs_ds</span><span class="p">,</span> <span class="n">idxs_pit</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">fd</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
     <span class="n">idxs_outlet</span> <span class="o">=</span> <span class="n">idxs_pit</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">idxs_pit</span><span class="p">],</span> <span class="n">fd</span><span class="o">.</span><span class="n">_pv</span><span class="p">)]</span>
 
@@ -303,7 +303,7 @@
 <span class="sd">            name of flow direction type</span>
 <span class="sd">        idxs_pit, idxs_outlet : 2D array of int, optional</span>
 <span class="sd">            linear indices of all pits/outlets,</span>
-<span class="sd">            outlets exclude pits of inclomplete basins at the domain boundary</span>
+<span class="sd">            outlets exclude pits of incomplete basins at the domain boundary</span>
 <span class="sd">        idxs_seq : 2D array of int, optional</span>
 <span class="sd">            linear indices of valid cells ordered from down- to upstream</span>
 <span class="sd">        nnodes : integer</span>
@@ -336,7 +336,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_core</span> <span class="o">=</span> <span class="n">FTYPES</span><span class="p">[</span><span class="n">ftype</span><span class="p">]</span>
 
         <span class="c1"># raster dimensions and spatial attributes</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">))</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Invalid FlwdirRaster: shape </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2"> does not match size </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
@@ -680,7 +680,7 @@
 <span class="sd">            Mask of valid cells.</span>
 <span class="sd">        min_sto : int, optional</span>
 <span class="sd">            minimum stream order of subbasins, by default the stream order is set to</span>
-<span class="sd">            two under the global maxmium stream order.</span>
+<span class="sd">            two under the global maximum stream order.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -704,11 +704,11 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        depth : int, optional</span>
-<span class="sd">            Number of pfafsterrer layers, by default 1.</span>
+<span class="sd">            Number of pfafstetter layers, by default 1.</span>
 <span class="sd">        uparea : 2D array of float, optional</span>
 <span class="sd">            2D raster with upstream area, by default None; calculated on the fly.</span>
 <span class="sd">        upa_min : float, optional</span>
-<span class="sd">            Minimum upstream area theshold for subbasins, by default 0.0.</span>
+<span class="sd">            Minimum upstream area threshold for subbasins, by default 0.0.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1091,7 +1091,7 @@
 <span class="sd">          &quot;An Improved Upscaling Method to Construct a Global River Map&quot; APHW</span>
 <span class="sd">        .. [4] Olivera F, Lear M S, Famiglietti J S and Asante K 2002</span>
 <span class="sd">          &quot;Extracting low-resolution river networks from high-resolution digital</span>
-<span class="sd">          elevation models&quot; Water Resour. Res. 38 13-1-13–8</span>
+<span class="sd">          elevation models&quot; Water Resour. Res. 38 13-1-13-8</span>
 <span class="sd">          Online: http://doi.wiley.com/10.1029/2001WR000726</span>
 
 
@@ -1519,11 +1519,11 @@
 
 <div class="viewcode-block" id="FlwdirRaster.hand"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.hand">[docs]</a>    <span class="k">def</span> <span class="nf">hand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drain</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the height above the nearest drain (HAND), i.e.: the relative vertical</span>
-<span class="sd">        distance (drop) to the nearest dowstream river based on drainage‐normalized</span>
+<span class="sd">        distance (drop) to the nearest dowstream river based on drainage-normalized</span>
 <span class="sd">        topography and flowpaths.</span>
 
 <span class="sd">        Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent</span>
-<span class="sd">            Hydrol. Process. 30 320–33</span>
+<span class="sd">            Hydrol. Process. 30 320-33</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1549,7 +1549,7 @@
         <span class="sd">&quot;&quot;&quot;Returns floodplain boundaries based on a maximum treshold (h) of HAND which is</span>
 <span class="sd">        scaled with upstream area (A) following h ~ A**b.</span>
 
-<span class="sd">        Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s</span>
+<span class="sd">        Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth&#39;s</span>
 <span class="sd">            floodplains Sci. Data 6 180309</span>
 
 <span class="sd">        Parameters</span>

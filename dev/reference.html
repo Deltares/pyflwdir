@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> pyflwdir
           </a>
               <div class="version">
-                0.1.
+                0.5.6.
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -253,7 +253,7 @@ identity transform.</p></li>
 <li><p><strong>latlon</strong> (<em>bool</em><em>, </em><em>optional</em>) – True if WGS84 coordinate reference system, by default False. If True it
 converts the cell areas from degree to metres, otherwise it assumes cell areas
 are in unit metres.</p></li>
-<li><p><strong>**kwargs</strong> – key-word argumetns passed to FlwdirRaster</p></li>
+<li><p><strong>**kwargs</strong> – key-word arguments passed to FlwdirRaster</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -281,7 +281,7 @@ is set at the depression local minimum elevation.</p>
 <li><p><strong>data</strong> (<em>2D array</em>) – digital elevation data</p></li>
 <li><p><strong>nodata</strong> (<em>float</em><em>, </em><em>optional</em>) – Missing data value, by default -9999.0</p></li>
 <li><p><strong>max_depth</strong> (<em>float</em><em>, </em><em>optional</em>) – Maximum pour point depth. Depressions with a larger pour point
-depth are set as pit. A negative value (default) equals an infitely
+depth are set as pit. A negative value (default) equals an infinitely
 large pour point depth causing all depressions to be filled.</p></li>
 <li><p><strong>transform</strong> (<em>affine transform</em>) – Two dimensional affine transform for 2D linear mapping, by default using the
 identity transform.</p></li>
@@ -751,7 +751,7 @@ Subbasins are defined based on a minimum stream order.</p>
 <li><p><strong>strord</strong> (<em>1D-array</em><em> of </em><em>uint8</em>) – stream order</p></li>
 <li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool</em>) – Mask of valid cells.</p></li>
 <li><p><strong>min_sto</strong> (<em>int</em><em>, </em><em>optional</em>) – minimum stream order of subbasins, by default the stream order is set to
-two under the global maxmium stream order.</p></li>
+two under the global maximum stream order.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -771,9 +771,9 @@ two under the global maxmium stream order.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>depth</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of pfafsterrer layers, by default 1.</p></li>
+<li><p><strong>depth</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of pfafstetter layers, by default 1.</p></li>
 <li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
-<li><p><strong>upa_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum upstream area theshold for subbasins, by default 0.0.</p></li>
+<li><p><strong>upa_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum upstream area threshold for subbasins, by default 0.0.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -977,7 +977,7 @@ Effective Area Method (EAM) <a class="footnote-reference brackets" href="#id5" i
 <dt class="label" id="id6"><span class="brackets"><a class="fn-backref" href="#id3">4</a></span></dt>
 <dd><p>Olivera F, Lear M S, Famiglietti J S and Asante K 2002
 “Extracting low-resolution river networks from high-resolution digital
-elevation models” Water Resour. Res. 38 13-1-13–8
+elevation models” Water Resour. Res. 38 13-1-13-8
 Online: <a class="reference external" href="http://doi.wiley.com/10.1029/2001WR000726">http://doi.wiley.com/10.1029/2001WR000726</a></p>
 </dd>
 </dl>
@@ -1231,10 +1231,10 @@ has the same or lower elevation as the current cell.</p>
 <dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.hand">
 <span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">hand</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.hand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.hand" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the height above the nearest drain (HAND), i.e.: the relative vertical
-distance (drop) to the nearest dowstream river based on drainage‐normalized
+distance (drop) to the nearest dowstream river based on drainage-normalized
 topography and flowpaths.</p>
 <dl class="simple">
-<dt>Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent</dt><dd><p>Hydrol. Process. 30 320–33</p>
+<dt>Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent</dt><dd><p>Hydrol. Process. 30 320-33</p>
 </dd>
 </dl>
 <dl class="field-list simple">
