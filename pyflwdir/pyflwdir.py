@@ -75,7 +75,7 @@ def from_dem(
         Missing data value, by default -9999.0
     max_depth: float, optional
         Maximum pour point depth. Depressions with a larger pour point
-        depth are set as pit. A negative value (default) equals an infitely
+        depth are set as pit. A negative value (default) equals an infinitely
         large pour point depth causing all depressions to be filled.
     transform : affine transform
         Two dimensional affine transform for 2D linear mapping, by default using the
@@ -131,7 +131,7 @@ def from_array(
         converts the cell areas from degree to metres, otherwise it assumes cell areas
         are in unit metres.
     **kwargs
-        key-word argumetns passed to FlwdirRaster
+        key-word arguments passed to FlwdirRaster
 
     Returns
     -------
@@ -164,7 +164,7 @@ def from_array(
 
     # use smallest possible dtype to represent indices
     n = data.size
-    dtype = np.int32 if n < 2147483647 else (np.uint32 if n < 4294967294 else int)
+    dtype = np.int32 if n < 2147483647 else (np.uint32 if n < 4294967294 else np.uint64)
     idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
     idxs_outlet = idxs_pit[np.isin(data.flat[idxs_pit], fd._pv)]
 
@@ -209,7 +209,7 @@ class FlwdirRaster(Flwdir):
             name of flow direction type
         idxs_pit, idxs_outlet : 2D array of int, optional
             linear indices of all pits/outlets,
-            outlets exclude pits of inclomplete basins at the domain boundary
+            outlets exclude pits of incomplete basins at the domain boundary
         idxs_seq : 2D array of int, optional
             linear indices of valid cells ordered from down- to upstream
         nnodes : integer
@@ -242,7 +242,7 @@ class FlwdirRaster(Flwdir):
         self._core = FTYPES[ftype]
 
         # raster dimensions and spatial attributes
-        if np.multiply(*shape) != self.size:
+        if np.multiply(*np.array(shape, np.uint64)) != self.size:
             msg = f"Invalid FlwdirRaster: shape {shape} does not match size {self.size}"
             raise ValueError(msg)
         self.shape = shape
@@ -586,7 +586,7 @@ class FlwdirRaster(Flwdir):
             Mask of valid cells.
         min_sto : int, optional
             minimum stream order of subbasins, by default the stream order is set to
-            two under the global maxmium stream order.
+            two under the global maximum stream order.
 
         Returns
         -------
@@ -610,11 +610,11 @@ class FlwdirRaster(Flwdir):
         Parameters
         ----------
         depth : int, optional
-            Number of pfafsterrer layers, by default 1.
+            Number of pfafstetter layers, by default 1.
         uparea : 2D array of float, optional
             2D raster with upstream area, by default None; calculated on the fly.
         upa_min : float, optional
-            Minimum upstream area theshold for subbasins, by default 0.0.
+            Minimum upstream area threshold for subbasins, by default 0.0.
 
         Returns
         -------
@@ -997,7 +997,7 @@ class FlwdirRaster(Flwdir):
           "An Improved Upscaling Method to Construct a Global River Map" APHW
         .. [4] Olivera F, Lear M S, Famiglietti J S and Asante K 2002
           "Extracting low-resolution river networks from high-resolution digital
-          elevation models" Water Resour. Res. 38 13-1-13–8
+          elevation models" Water Resour. Res. 38 13-1-13-8
           Online: http://doi.wiley.com/10.1029/2001WR000726
 
 
@@ -1425,11 +1425,11 @@ class FlwdirRaster(Flwdir):
 
     def hand(self, drain, elevtn):
         """Returns the height above the nearest drain (HAND), i.e.: the relative vertical
-        distance (drop) to the nearest dowstream river based on drainage‐normalized
+        distance (drop) to the nearest dowstream river based on drainage-normalized
         topography and flowpaths.
 
         Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent
-            Hydrol. Process. 30 320–33
+            Hydrol. Process. 30 320-33
 
         Parameters
         ----------
@@ -1455,7 +1455,7 @@ class FlwdirRaster(Flwdir):
         """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is
         scaled with upstream area (A) following h ~ A**b.
 
-        Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s
+        Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth's
             floodplains Sci. Data 6 180309
 
         Parameters

@@ -169,7 +169,7 @@ def region_dissolve(
     idxs=None,
     transform=gis_utils.IDENTITY,
     latlon=False,
-    **kwargs
+    **kwargs,
 ):
     """Dissolve regions into its nearest neighboring regions.
 

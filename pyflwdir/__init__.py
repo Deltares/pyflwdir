@@ -1,15 +1,11 @@
-import pkg_resources
+"""Fast methods to work with hydro- and topography data in pure Python."""
+
+# version number without 'v' at start
+__version__ = "0.5.6.dev"
 
 # submodules
 from .flwdir import *
 from .pyflwdir import *
 from .dem import *
 from .core_nextxy import *
-
 from . import gis_utils, regions
-
-try:
-    __version__ = pkg_resources.get_distribution(__name__).version
-except pkg_resources.DistributionNotFound:
-    # package is not installed
-    pass
