@@ -6,7 +6,7 @@ channels:
 # note that these are minimal packages required for testing purposes
 dependencies:
   # required
-  - python>=3.7
+  - python>=3.8
   - affine
   - numba>=0.54
   - numpy

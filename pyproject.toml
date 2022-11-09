@@ -1,0 +1,45 @@
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "pyflwdir"
+authors = [{name = "Dirk Eilander", email = "dirk.eilander@deltares.nl"}]
+readme = "README.rst"
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: MIT License"]
+dynamic = ["version", "description"]
+dependencies = [
+    "numba>=0.54",
+    "numpy",
+    "scipy",
+    "affine",
+]
+
+[project.urls]
+Home = "https://github.com/Deltares/pyflwdir"
+Documentation = "https://deltares.github.io/pyflwdir"
+
+[project.optional-dependencies]
+test = [
+    "black",
+	"pytest>=2.7.3",
+	"pytest-cov",
+]
+doc = [
+	"nbsphinx",
+    "pydata-sphinx-theme",
+    "sphinx",
+    "sphinx_design",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py37']
+
+[tool.flit.sdist]
+include = ["pyflwdir"]
+exclude = ["docs", "notebooks", "envs", "tests", "binder", ".github"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -2,6 +2,13 @@
 Change Log
 ###########
 
+unreleased
+**********
+
+Changed
+-------
+* Move to flit and pyproject.toml for installation and publication
+* drop support for python 3.7
 
 0.5.5  (16-Feb-2022)
 ********************
