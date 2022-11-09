@@ -125,7 +125,7 @@ def ucat_volume(
     """
     # initialize outputs
     ucatch_map = np.full(idxs_ds.size, 0, dtype=idxs_ds.dtype)
-    fldpln_vol = np.full((depths.size, idxs_out.size), -9999, dtype=np.float32)
+    fldpln_vol = np.full((depths.size, idxs_out.size), -9999, dtype=depths.dtype)
     for i in range(idxs_out.size):
         idx0 = idxs_out[i]
         if idx0 != mv:
