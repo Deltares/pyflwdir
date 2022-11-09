@@ -128,8 +128,8 @@ def test_hand_fldpln():
     drain_map, fldpln_vol = subgrid.ucat_volume(
         idxs_out, idxs_ds, seq, hand, area, depths=depths
     )
-    assert fldpln_vol.shape == (drain_map.max(), depths.size)
-    assert np.all(np.diff(fldpln_vol, axis=1) > 0)
+    assert fldpln_vol.shape == (*depths.shape, drain_map.max())
+    assert np.all(np.diff(fldpln_vol, axis=0) > 0)
     # max h = 1
     uparea = np.where(drain, 1, 0)
     upa_min = 1

@@ -125,20 +125,20 @@ def ucat_volume(
     """
     # initialize outputs
     ucatch_map = np.full(idxs_ds.size, 0, dtype=idxs_ds.dtype)
-    fldpln_vol = np.full((idxs_out.size, depths.size), -9999, dtype=np.float32)
+    fldpln_vol = np.full((depths.size, idxs_out.size), -9999, dtype=np.float32)
     for i in range(idxs_out.size):
         idx0 = idxs_out[i]
         if idx0 != mv:
             ucatch_map[idx0] = i + 1
             dh = np.maximum(0, depths - hand[idx0])
-            fldpln_vol[i, :] = area[idx0] * dh
+            fldpln_vol[:, i] = area[idx0] * dh
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
         ucat_ds = ucatch_map[idx_ds]
         if ucatch_map[idx0] == 0 and ucat_ds != 0:
             ucatch_map[idx0] = ucat_ds
             dh = np.maximum(0, depths - hand[idx0])
-            fldpln_vol[ucat_ds - 1] += area[idx0] * dh
+            fldpln_vol[:, ucat_ds - 1] += area[idx0] * dh
     return ucatch_map, fldpln_vol
 
 

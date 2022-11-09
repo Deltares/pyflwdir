@@ -1170,11 +1170,12 @@ class FlwdirRaster(Flwdir):
     def ucat_volume(
         self, idxs_out, hand, depths=np.arange(0.5, 3.0, 0.5, dtype=np.float32)
     ):
-        """Returns the unit catchment map (highres) and a depth-volume distributions (lowres) [m3].
+        """Returns the unit catchment map (highres) and the
+        flood volume at given flood depths (lowres) [m3].
 
         Parameters
         ----------
-        idxs_out : 2D array of int
+        idxs_out : 1D or 2D array of int
             linear indices of unit catchment outlets
         hand : 2D array of float
             Height Above Nearest Drain, see also :py:meth:`pyflwdir.FlwdirRaster.hand`
@@ -1185,7 +1186,7 @@ class FlwdirRaster(Flwdir):
         -------
         ucat_map: 2D array of int with self.shape
             unit catchment map [-]
-        ucat_vol: nD array of float
+        ucat_vol: nD array of float with shape (depths.size, *idxs_out.shape)
             subgrid volume as function of depths [m3]
         """
         ucat_map, ucat_vol = subgrid.ucat_volume(
@@ -1197,7 +1198,7 @@ class FlwdirRaster(Flwdir):
             depths=depths,
             mv=self._mv,
         )
-        shape_out = (*idxs_out.shape, depths.size)
+        shape_out = (depths.size, *idxs_out.shape)
         return ucat_map.reshape(self.shape), ucat_vol.reshape(shape_out)
 
     def subgrid_rivlen(
