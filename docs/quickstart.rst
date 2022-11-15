@@ -45,3 +45,16 @@ Vectorize the stream network and save to a geojson file:
     feat = flw.streams()
     gdf = gpd.GeoDataFrame.from_features(feats, crs=crs)
     gdf.to_file('streams.geojson', driver='GeoJSON')
+
+
+.. toctree::
+  :maxdepth: 2
+  :hidden:
+  
+  Flow direction data <_examples/flwdir>
+  Flow directions from elevation data <_examples/from_dem>
+  Deliniation of (sub)basins <_examples/basins>
+  Stream order <_examples/streams>
+  Tracing flow directions <_examples/tracing>
+  Elevation indices <_examples/elevation_indices>
+  Flow direction upscaling <_examples/upscaling>
