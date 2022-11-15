@@ -7,7 +7,11 @@ PyFlwDir: Fast methods to work with hydro- and topography data in pure Python
 
 .. image:: https://img.shields.io/badge/docs-latest-brightgreen.svg
     :target: https://deltares.github.io/PyFlwDir/latest
-    :alt: Latest developers docs
+    :alt: Latest docs
+
+.. image:: https://mybinder.org/badge_logo.svg
+    :alt: Binder
+    :target: https://mybinder.org/v2/gh/Deltares/pyflwdir/main?urlpath=lab/tree/examples
 
 .. image:: https://badge.fury.io/py/PyFlwDir.svg
     :target: https://pypi.org/project/PyFlwDir/
@@ -18,6 +22,12 @@ PyFlwDir: Fast methods to work with hydro- and topography data in pure Python
 
 .. image:: https://zenodo.org/badge/409871473.svg
    :target: https://zenodo.org/badge/latestdoi/409871473
+
+.. image:: https://img.shields.io/github/license/Deltares/pyflwdir?style=flat
+    :alt: License
+    :target: https://github.com/Deltares/pyflwdir/blob/main/LICENSE
+
+
 
 Intro
 -----
@@ -60,7 +70,7 @@ See `installation guide <https://deltares.github.io/PyFlwDir/latest/installation
 Quickstart
 ----------
 
-See `User guide <https://deltares.github.io/PyFlwDir/latest/quickstart.html>`_
+See `user guide <https://deltares.github.io/PyFlwDir/latest/quickstart.html>`_
 
 
 Reference API
@@ -72,27 +82,5 @@ See `reference API <https://deltares.github.io/PyFlwDir/latest/reference.html>`_
 Development and Testing
 -----------------------
 
-Welcome to the PyFlwDir project. All contributions, bug reports, bug fixes, 
-documentation improvements, enhancements, and ideas are welcome. 
-See `CONTRIBUTING.rst <CONTRIBUTING.rst/>`__ for how we work.
-
-Changes
--------
-
-See `CHANGELOG.rst <CHANGELOG.rst>`__
-
-Authors
--------
-
-See `AUTHORS.txt <AUTHORS.txt>`__
-
-Citation
---------
-
-For citing our work see the Zenodo badge above, that points to the latest release.
-
-License
--------
-
-This is free software: you can redistribute it and/or modify it under the terms of the
-MIT License. A copy of this license is provided in `LICENSE <LICENSE>`__
+Welcome to the PyFlwDir project. All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome. 
+See `Contributing to PyFlwDir <https://deltares.github.io/pyflwdir/latest/contributing.html>`__ for how we work.
