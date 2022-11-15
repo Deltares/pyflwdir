@@ -18,7 +18,6 @@
 #
 import os
 import sys
-import shutil
 from distutils.dir_util import copy_tree
 import pyflwdir
 
@@ -36,9 +35,9 @@ author = "Dirk Eilander"
 version = pyflwdir.__version__.split("dev")[0]
 
 # # -- Copy notebooks to include in docs -------
-# if not os.path.isdir("_examples"):
-#     os.makedirs("_examples")
-#     copy_tree("../examples", "_examples")
+if not os.path.isdir("_examples"):
+    os.makedirs("_examples")
+    copy_tree("../examples", "_examples")
 
 # -- General configuration ------------------------------------------------
 
