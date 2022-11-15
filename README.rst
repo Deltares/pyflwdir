@@ -48,7 +48,7 @@ Featured methods
 - vectorizing streams
 - many more!
 
-.. image:: https://raw.githubusercontent.com/Deltares/pyflwdir/master/docs/_static/pyflwdir.png
+.. image:: https://raw.githubusercontent.com/Deltares/pyflwdir/main/docs/_static/pyflwdir.png
   :width: 100%
 
 

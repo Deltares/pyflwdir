@@ -2,8 +2,12 @@
 Change Log
 ###########
 
-unreleased
-**********
+0.5.6  (15-Nov-2022)
+********************
+
+New
+---
+* `FlwdirRaster.smooth_rivlen` method to smooth river length with a moving window operation over a river network.
 
 Changed
 -------
