@@ -24,12 +24,12 @@ jobs:
       - name: Setup environment
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: "3.9"
+          python-version: "3.10"
           mamba-version: "*"
           channels: conda-forge,defaults
           channel-priority: true
-          environment-file: envs/pyflwdir-docs.yml
-          activate-environment: pyflwdir-docs
+          environment-file: envs/pyflwdir-dev.yml
+          activate-environment: pyflwdir-dev
 
       - name: Install pyflwdir
         run: pip install .
@@ -37,7 +37,6 @@ jobs:
       # Move examples folder before make html for nbsphinx
       - name: Build docs
         run: |
-          cp notebooks/* docs
           pushd docs
           make html
           popd
@@ -45,7 +44,6 @@ jobs:
       # This overrides the version "dev" with the proper version if we're building off a
       # branch that's not master (which is confined to n.nn.x above) or on a tag.
       - name: Set doc version
-        if: ${{ github.event_name != 'push' || !contains(github.ref, 'master') }}
         run: echo "DOC_VERSION=$(python -c 'from pyflwdir import __version__ as v; print("dev" if "dev" in v else v)')" >> $GITHUB_ENV
 
       - name: Upload to GitHub Pages
