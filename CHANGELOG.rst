@@ -9,6 +9,7 @@ Changed
 -------
 * Move to flit and pyproject.toml for installation and publication
 * drop support for python 3.7
+* update docs to Sphinx pydata style
 
 0.5.5  (16-Feb-2022)
 ********************

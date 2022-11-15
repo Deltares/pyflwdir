@@ -2,3 +2,4 @@ Authors
 -------
 
 * Dirk Eilander
+* Willem van Verseveld

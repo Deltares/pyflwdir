@@ -1,4 +1,4 @@
-name: pyflwdir-docs
+name: pyflwdir-dev
 
 channels:
   - conda-forge
@@ -7,16 +7,19 @@ dependencies:
   # required
   - affine
   - flit
+  - python>=3.8
   - numba>=0.54
   - numpy
-  - pip
-  - python>=3.8
   - scipy
+  # test
+  - black
+  - pytest
+  - pytest-cov
   # docs
-  - sphinx
-  - sphinx_rtd_theme
+  - pydata-sphinx-theme
   - nbsphinx
-  # notebooks
+  - sphinx
+  # examples
   - cartopy>=0.20 
   - descartes
   - geopandas>=0.8

@@ -110,15 +110,15 @@ venv.bak/
 .ropeproject
 
 # notebooks
-notebooks/*.png
+examples/.ipynb_checkpoints
+examples/tmp*
+examples/*.png
+examples/*.tif
 
 # Sphinx documentation
 docs/_build/
-/site
-docs/*.png
-docs/*.ipynb
-docs/*.tif
-docs/ipynb_checkpoints
+docs/_generated/
+docs/_examples/
 
 # mypy
 .mypy_cache/

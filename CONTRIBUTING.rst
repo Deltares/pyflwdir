@@ -28,7 +28,7 @@ datasets demonstrating the issue are especially helpful!
 Design Principles
 -----------------
 
-Pyflwdir contains methods to work with hydro- and topography data in Numpy arrays. 
+PyFlwDir contains methods to work with hydro- and topography data in Numpy arrays. 
 
 - I/O from the filesystem to numpy arrays is not part of this package, other packages
   such as `xarray <https://github.com/pydata/xarray>`__. or 
@@ -42,9 +42,9 @@ Git Conventions
 ---------------
 
 After discussing a new proposal or implementation in the issue tracker, you can start 
-working on the code. You write your code locally in a new branch pyflwdir repo or in a 
+working on the code. You write your code locally in a new branch PyFlwDir repo or in a 
 branch of a fork. Once you're done with your first iteration, you commit your code and 
-push to your pyflwdir repository. 
+push to your PyFlwDir repository. 
 
 To create a new branch after you've downloaded the latest changes in the project: 
 
@@ -94,9 +94,9 @@ based on pytest, but also stylistic errors.
 Development Environment
 -----------------------
 
-Developing pyflwdir requires Python >= 3.6. We prefer developing with the most recent 
-version of Python. We strongly encourage you to develop in a seperate conda environment.
-All Python dependencies required to develop pyflwdir can be found in `environment.yml <environment.yml>`__.
+Developing PyFlwDir requires Python >= 3.6. We prefer developing with the most recent 
+version of Python. We strongly encourage you to develop in a separate conda environment.
+All Python dependencies required to develop PyFlwDir can be found in `environment.yml <environment.yml>`__.
 
 Initial Setup
 ^^^^^^^^^^^^^
@@ -113,10 +113,10 @@ file contained in the repository:
 
 .. code-block:: console
 
-    $ conda env create -f environment.yml
-    $ conda activate pyflwdir
+    $ conda env create -f envs/pyflwdir-dev.yml
+    $ conda activate pyflwdir-dev
 
-Finally, build and install pyflwdir:
+Finally, build and install PyFlwDir:
 
 .. code-block:: console
 
@@ -125,7 +125,7 @@ Finally, build and install pyflwdir:
 Running the tests
 ^^^^^^^^^^^^^^^^^
 
-Pyflwdir's tests live in the tests folder and generally match the main package layout. 
+PyFlwDir's tests live in the tests folder and generally match the main package layout. 
 Test should be run from the tests folder.
 
 Note that to get a coverage report we need to disable numba jit. This can be done
@@ -177,7 +177,7 @@ Creating a release
 ^^^^^^^^^^^^^^^^^^
 
 1. First create a new release on github under https://github.com/Deltares/pyflwdir/releases. We use semantic versioning and describe the release based on the CHANGELOG.
-2. Make sure to update and clean your local git folder. This remmoves all files which are not tracked by git. 
+2. Make sure to update and clean your local git folder. This removes all files which are not tracked by git. 
 
 .. code-block:: console
 
