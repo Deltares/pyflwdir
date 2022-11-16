@@ -662,7 +662,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <section id="id1">
 <h2>Flow direction upscaling<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h2>
-<p>Methods to upcale flow directions are required as models often have a coarser resolution than the elevation data used to build them. Instead of deriving flow directions from upscaled elevation data, it is better to directly upscaling the flow direction data itself. The <a class="reference external" href="https://deltares.github.io/PyFlwDir/latest/_generated/pyflwdir.FlwdirRaster.upscale.html">upscale()</a> method implements the recently developed Iterative Hydrography Upscaling (<strong>IHU</strong>) algorithm (<a class="reference external" href="https://doi.org/10.5194/hess-2020-582">Eilander et al
+<p>Methods to upcale flow directions are required as models often have a coarser resolution than the elevation data used to build them. Instead of deriving flow directions from upscaled elevation data, it is better to directly upscaling the flow direction data itself. The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.upscale.html">upscale()</a> method implements the recently developed Iterative Hydrography Upscaling (<strong>IHU</strong>) algorithm (<a class="reference external" href="https://doi.org/10.5194/hess-2020-582">Eilander et al
 2020</a>). The method takes high resolution flow directions and upstream area grid to iterativly determine the best stream segment to represent in each upscaled cell. This stream segment is than traced towards the next downstream upscaled cell to determine the upscaled flow directions. Full details can be found in the referenced paper.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -674,7 +674,7 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-<p>Several methods are implemented based on the most downstream high-res pixel of each upscaled cell, the so-called outlet pixels. The location of these pixels can be used to derive the contributing area to each cell using the <a class="reference external" href="https://deltares.github.io/PyFlwDir/latest/_generated/pyflwdir.FlwdirRaster.ucat_area.html">ucat_area()</a> method.</p>
+<p>Several methods are implemented based on the most downstream high-res pixel of each upscaled cell, the so-called outlet pixels. The location of these pixels can be used to derive the contributing area to each cell using the <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.ucat_area.html">ucat_area()</a> method.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>

@@ -628,8 +628,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <section id="Outlet-based-(sub)basins">
 <h2>Outlet based (sub)basins<a class="headerlink" href="#Outlet-based-(sub)basins" title="Permalink to this heading">#</a></h2>
-<p>The <a class="reference external" href="https://deltares.github.io/PyFlwDir/latest/_generated/pyflwdir.FlwdirRaster.basins.html">basins()</a> method delineates (sub)basins defined by its outlet location. By default the method uses pits from the flow direction raster as outlets to delineate basins, but if outlet locations are profided these are used instead. An additional <code class="docutils literal notranslate"><span class="pre">streams</span></code> argument can be added to make sure the outlet locations are snapped to the nearest downstream stream cell, using the
-[snap()](<a class="reference external" href="https://deltares.github.io/PyFlwDir/latest/_generated/pyflwdir.FlwdirRaster.snap.html">https://deltares.github.io/PyFlwDir/latest/_generated/pyflwdir.FlwdirRaster.snap.html</a> method under the hood. Here streams are defined by a minimum Strahler stream order of 4.</p>
+<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.basins.html">basins()</a> method delineates (sub)basins defined by its outlet location. By default the method uses pits from the flow direction raster as outlets to delineate basins, but if outlet locations are profided these are used instead. An additional <code class="docutils literal notranslate"><span class="pre">streams</span></code> argument can be added to make sure the outlet locations are snapped to the nearest downstream stream cell, using the
+[snap()](<a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.snap.html">https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.snap.html</a> method under the hood. Here streams are defined by a minimum Strahler stream order of 4.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -720,7 +720,7 @@ div.rendered_html tbody tr:hover {
 </section>
 <section id="Stream-order-subbasins">
 <h2>Stream order subbasins<a class="headerlink" href="#Stream-order-subbasins" title="Permalink to this heading">#</a></h2>
-<p>The <a class="reference external" href="https://deltares.github.io/PyFlwDir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_streamorder.html">subbasins_streamorder()</a> method creates subbasins at all confluences where each branch has a minimal stream order set by <code class="docutils literal notranslate"><span class="pre">min_sto</span></code>. An optional mask can be added to select a subset of the outlets (i.e. confluences) which are located inside the mask.</p>
+<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_streamorder.html">subbasins_streamorder()</a> method creates subbasins at all confluences where each branch has a minimal stream order set by <code class="docutils literal notranslate"><span class="pre">min_sto</span></code>. An optional mask can be added to select a subset of the outlets (i.e. confluences) which are located inside the mask.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -751,7 +751,7 @@ div.rendered_html tbody tr:hover {
 </section>
 <section id="Pfafstetter-subbasins">
 <h2>Pfafstetter subbasins<a class="headerlink" href="#Pfafstetter-subbasins" title="Permalink to this heading">#</a></h2>
-<p>The <a class="reference external" href="https://deltares.github.io/PyFlwDir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_pfafstetter.html">subbasins_pfafstetter()</a> method creates subbasins with the hierarchical pfafstetter coding system. It is designed such that topological information is embedded in the code, which makes it easy to determine whether a subbasin is downstream of another subbasin. At each level the four largest subbasins have even numbers and five largest interbasins have odd numbers. The <code class="docutils literal notranslate"><span class="pre">depth</span></code> argument
+<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_pfafstetter.html">subbasins_pfafstetter()</a> method creates subbasins with the hierarchical pfafstetter coding system. It is designed such that topological information is embedded in the code, which makes it easy to determine whether a subbasin is downstream of another subbasin. At each level the four largest subbasins have even numbers and five largest interbasins have odd numbers. The <code class="docutils literal notranslate"><span class="pre">depth</span></code> argument
 is used to set the number of subbasin levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth=1</span></code> nine, and with <code class="docutils literal notranslate"><span class="pre">depth=2</span></code> 81 sub/interbasins are found. The <code class="docutils literal notranslate"><span class="pre">subbasins_pfafstetter</span></code> method requires upstream area of each cell, which is calculated on the fly if not provided with the <code class="docutils literal notranslate"><span class="pre">uparea</span></code> argument.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -951,7 +951,7 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
 </section>
 <section id="Minimal-area-based-subbasins">
 <h2>Minimal area based subbasins<a class="headerlink" href="#Minimal-area-based-subbasins" title="Permalink to this heading">#</a></h2>
-<p>The <a class="reference external" href="https://deltares.github.io/PyFlwDir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_area.html">subbasins_area()</a> method creates subbasins with a minimal area of <code class="docutils literal notranslate"><span class="pre">area_min</span></code>. Moving upstream from the basin outlets a new subbasin starts at tributaries with a contributing area larger than <code class="docutils literal notranslate"><span class="pre">area_min</span></code> and new interbasins when its area exceeds the <code class="docutils literal notranslate"><span class="pre">area_min</span></code>.</p>
+<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_area.html">subbasins_area()</a> method creates subbasins with a minimal area of <code class="docutils literal notranslate"><span class="pre">area_min</span></code>. Moving upstream from the basin outlets a new subbasin starts at tributaries with a contributing area larger than <code class="docutils literal notranslate"><span class="pre">area_min</span></code> and new interbasins when its area exceeds the <code class="docutils literal notranslate"><span class="pre">area_min</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
