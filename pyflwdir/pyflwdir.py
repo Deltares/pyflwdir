@@ -998,7 +998,7 @@ class FlwdirRaster(Flwdir):
         .. [4] Olivera F, Lear M S, Famiglietti J S and Asante K 2002
           "Extracting low-resolution river networks from high-resolution digital
           elevation models" Water Resour. Res. 38 13-1-13-8
-          Online: http://doi.wiley.com/10.1029/2001WR000726
+          Online: https://doi.org/10.1029/2001WR000726
 
 
         Parameters

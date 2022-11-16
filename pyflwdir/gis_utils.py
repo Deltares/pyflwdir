@@ -145,7 +145,7 @@ def get_edge(a, structure=np.ones((3, 3), dtype=bool)):
 
 
 ## TRANSFORM
-# Adapted from https://github.com/mapbox/rasterio/blob/master/rasterio/transform.py
+# Adapted from https://github.com/rasterio/rasterio/blob/main/rasterio/transform.py
 # changed xy and rowcol to work directly on numpy arrays
 # avoid gdal dependency
 
