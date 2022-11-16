@@ -6,7 +6,7 @@ PyFlwDir: Fast methods to work with hydro- and topography data in pure Python
     :target: https://codecov.io/gh/Deltares/PyFlwDir
 
 .. image:: https://img.shields.io/badge/docs-latest-brightgreen.svg
-    :target: https://deltares.github.io/PyFlwDir/latest
+    :target: https://deltares.github.io/pyflwdir/latest
     :alt: Latest docs
 
 .. image:: https://mybinder.org/badge_logo.svg
@@ -65,18 +65,18 @@ Featured methods
 Installation
 ------------
 
-See `installation guide <https://deltares.github.io/PyFlwDir/latest/installation.html>`_
+See `installation guide <https://deltares.github.io/pyflwdir/latest/installation.html>`_
 
 Quickstart
 ----------
 
-See `user guide <https://deltares.github.io/PyFlwDir/latest/quickstart.html>`_
+See `user guide <https://deltares.github.io/pyflwdir/latest/quickstart.html>`_
 
 
 Reference API
 -------------
 
-See `reference API <https://deltares.github.io/PyFlwDir/latest/reference.html>`_
+See `reference API <https://deltares.github.io/pyflwdir/latest/reference.html>`_
 
 
 Development and Testing
