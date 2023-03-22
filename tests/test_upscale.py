@@ -38,6 +38,7 @@ tests = [
     (flwdir, idxs_ds, idxs_pit, 5, "ihu", 7),
 ]
 
+
 # configure tests with different upscale methods
 @pytest.mark.parametrize("flwdir, idxs_ds, idxs_pit, cellsize, name, nflwerr", tests)
 def test_upscale(flwdir, idxs_ds, idxs_pit, cellsize, name, nflwerr):
