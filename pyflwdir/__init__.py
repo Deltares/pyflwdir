@@ -1,7 +1,7 @@
 """Fast methods to work with hydro- and topography data in pure Python."""
 
 # version number without 'v' at start
-__version__ = "0.5.6.dev"
+__version__ = "0.5.7.dev"
 
 # submodules
 from .flwdir import *

@@ -1,20 +1,15 @@
-.. currentmodule:: pyflwdir
-
 Reference
 =========
 
-FlwdirRaster
-------------
+.. toctree::
+  :maxdepth: 2
 
-.. autoclass:: pyflwdir.FlwdirRaster
+  api/flwdirraster
+  api/elevation
+  api/gis_utils
+  api/region_utils
 
 
-Input/Output
-^^^^^^^^^^^^
-
-.. automethod:: pyflwdir.from_array()
-
-.. automethod:: pyflwdir.from_dem()
 
 .. automethod:: pyflwdir.FlwdirRaster.to_array()
 
@@ -173,14 +168,6 @@ Elevation raster methods
 
 
 
-GIS raster utility methods
---------------------------
-
-.. automethod:: pyflwdir.gis_utils.spread2d()
-
-.. automethod:: pyflwdir.gis_utils.get_edge()
-
-.. automethod:: pyflwdir.gis_utils.reggrid_area()
 
 
 

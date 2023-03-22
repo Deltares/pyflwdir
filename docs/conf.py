@@ -18,6 +18,7 @@
 #
 import os
 import sys
+from distutils.dir_util import copy_tree
 import pyflwdir
 
 here = os.path.dirname(__file__)
@@ -26,12 +27,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(here, "..")))
 
 # -- Project information -----------------------------------------------------
 
-project = "pyflwdir"
+project = "PyFlwDir"
 copyright = "Deltares"
 author = "Dirk Eilander"
 
 # The short version which is displayed
 version = pyflwdir.__version__.split("dev")[0]
+
+# # -- Copy notebooks to include in docs -------
+if not os.path.isdir("_examples"):
+    os.makedirs("_examples")
+    copy_tree("../examples", "_examples")
 
 # -- General configuration ------------------------------------------------
 
@@ -47,22 +53,25 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.todo",
     "sphinx.ext.napoleon",
-    # "sphinx.ext.intersphinx",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.githubpages",
+    "sphinx.ext.intersphinx",
+    "IPython.sphinxext.ipython_directive",
+    "IPython.sphinxext.ipython_console_highlighting",
     "nbsphinx",
 ]
 
-# overwrite kernel name in ipynb files
-# nbsphinx_kernel_name = ""
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
-
+templates_path = [
+    "_templates",
+]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
 source_suffix = ".rst"
-
 # The master toctree document.
 master_doc = "index"
 
@@ -71,7 +80,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-# language = "en"
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -94,18 +103,51 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "pydata_sphinx_theme"
+html_logo = "_static/pyflwdir_icon.png"
+autodoc_member_order = "bysource"  # overwrite default alphabetical sort
+autoclass_content = "both"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {"style_external_links": True}
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_css_files = ["theme-deltares.css"]
+html_theme_options = {
+    "show_nav_level": 1,
+    "navbar_align": "content",
+    "use_edit_page_button": True,
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/Deltares/pyflwdir",  # required
+            "icon": "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg",
+            "type": "url",
+        },
+        {
+            "name": "Deltares",
+            "url": "https://www.deltares.nl/en/",
+            "icon": "_static/deltares-blue.svg",
+            "type": "local",
+        },
+    ],
+    "logo": {
+        "text": "PyFlwDir",
+    },
+    "navbar_end": ["navbar-icon-links"],  # remove dark mode switch
+}
+
+html_context = {
+    "github_url": "https://github.com",  # or your GitHub Enterprise interprise
+    "github_user": "Deltares",
+    "github_repo": "pyflwdir",
+    "github_version": "main",
+    "doc_path": "docs",
+    "default_mode": "light",
+}
+
+# remove_from_toctrees = ["_generated/*"]
 
 
 # Custom sidebar templates, must be a dictionary that maps document names
@@ -185,14 +227,22 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "geopandas": ("https://geopandas.org/", None),
-    # "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
-    # "iris": ("https://scitools.org.uk/iris/docs/latest", None),
-    # "numpy": ("https://docs.scipy.org/doc/numpy", None),
-    # "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "geopandas": (" https://geopandas.org/en/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy", None),
     # "numba": ("https://numba.pydata.org/numba-doc/latest", None),
-    # "matplotlib": ("https://matplotlib.org", None),
-    # "dask": ("https://docs.dask.org/en/latest", None),
-    # "cftime": ("https://unidata.github.io/cftime", None),
-    # "xarray": ("https://xarray.pydata.org/en/stable", None)
 }
+
+# This is processed by Jinja2 and inserted before each notebook
+nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base=None).split('\\')[-1].split('/')[-1] %}
+
+.. TIP::
+
+    .. raw:: html
+
+        <div>
+            For an interactive online version click here: 
+            <a href="https://mybinder.org/v2/gh/Deltares/pyflwdir/main?urlpath=lab/tree/examples/{{ docname|e }}" target="_blank" rel="noopener noreferrer"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg"></a>
+        </div>
+"""

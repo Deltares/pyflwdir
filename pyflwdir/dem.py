@@ -218,7 +218,7 @@ def _adjust_elevation(elevtn):
 
 @njit
 def slope(elevtn, nodata=-9999.0, latlon=False, transform=gis_utils.IDENTITY):
-    """
+    """Returns the local gradient
 
     Parameters
     ----------
@@ -234,7 +234,7 @@ def slope(elevtn, nodata=-9999.0, latlon=False, transform=gis_utils.IDENTITY):
     Returns
     -------
     1D array of float
-        slop
+        slope
     """
     xres, yres, north = transform[0], transform[4], transform[5]
     slope = np.zeros(elevtn.shape, dtype=np.float32)

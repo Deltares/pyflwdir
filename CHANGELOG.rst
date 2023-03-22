@@ -9,10 +9,21 @@ New
 ---
 * add FlwdirRaster.ucat_volume & subgrid.ucat_volume methods
 
+Bugfix
+------
+
+0.5.6  (15-Nov-2022)
+********************
+
+New
+---
+* `FlwdirRaster.smooth_rivlen` method to smooth river length with a moving window operation over a river network.
+
 Changed
 -------
 * Move to flit and pyproject.toml for installation and publication
 * drop support for python 3.7
+* update docs to Sphinx pydata style
 
 Bugfix
 ------
