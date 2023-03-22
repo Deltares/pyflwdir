@@ -2,15 +2,13 @@
 Change Log
 ###########
 
-unreleased
-**********
+0.5.7  (22-Mar-2023)
+********************
 
 New
 ---
 * add FlwdirRaster.ucat_volume & subgrid.ucat_volume methods
 
-Bugfix
-------
 
 0.5.6  (15-Nov-2022)
 ********************
