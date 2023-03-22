@@ -1,0 +1,1904 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Reference &#8212; PyFlwDir  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/theme-deltares.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d" />
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="FlwdirRaster" href="api/flwdirraster.html" />
+    <link rel="prev" title="Flow direction upscaling" href="_examples/upscaling.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="_static/pyflwdir_icon.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="_static/pyflwdir_icon.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+    <p class="title logo__title">PyFlwDir</p>
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="quickstart.html">
+                        User Guide
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        API reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="changelog.html">
+                        Developments
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="quickstart.html">
+                        User Guide
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        API reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="changelog.html">
+                        Developments
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/flwdirraster.html">FlwdirRaster</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.html">pyflwdir.FlwdirRaster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.from_array.html">pyflwdir.from_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.from_dem.html">pyflwdir.from_dem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.to_array.html">pyflwdir.FlwdirRaster.to_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.load.html">pyflwdir.FlwdirRaster.load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.dump.html">pyflwdir.FlwdirRaster.dump</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.idxs_ds.html">pyflwdir.FlwdirRaster.idxs_ds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.idxs_us_main.html">pyflwdir.FlwdirRaster.idxs_us_main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.idxs_seq.html">pyflwdir.FlwdirRaster.idxs_seq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.idxs_pit.html">pyflwdir.FlwdirRaster.idxs_pit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.ncells.html">pyflwdir.FlwdirRaster.ncells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.rank.html">pyflwdir.FlwdirRaster.rank</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.isvalid.html">pyflwdir.FlwdirRaster.isvalid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.mask.html">pyflwdir.FlwdirRaster.mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.area.html">pyflwdir.FlwdirRaster.area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.distnc.html">pyflwdir.FlwdirRaster.distnc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.n_upstream.html">pyflwdir.FlwdirRaster.n_upstream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.order_cells.html">pyflwdir.FlwdirRaster.order_cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.main_upstream.html">pyflwdir.FlwdirRaster.main_upstream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.add_pits.html">pyflwdir.FlwdirRaster.add_pits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.repair_loops.html">pyflwdir.FlwdirRaster.repair_loops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.vectorize.html">pyflwdir.FlwdirRaster.vectorize</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.set_transform.html">pyflwdir.FlwdirRaster.set_transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.index.html">pyflwdir.FlwdirRaster.index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.xy.html">pyflwdir.FlwdirRaster.xy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.bounds.html">pyflwdir.FlwdirRaster.bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.extent.html">pyflwdir.FlwdirRaster.extent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.stream_order.html">pyflwdir.FlwdirRaster.stream_order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.path.html">pyflwdir.FlwdirRaster.path</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.snap.html">pyflwdir.FlwdirRaster.snap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.outflow_idxs.html">pyflwdir.FlwdirRaster.outflow_idxs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.inflow_idxs.html">pyflwdir.FlwdirRaster.inflow_idxs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.stream_distance.html">pyflwdir.FlwdirRaster.stream_distance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.streams.html">pyflwdir.FlwdirRaster.streams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.geofeatures.html">pyflwdir.FlwdirRaster.geofeatures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.basins.html">pyflwdir.FlwdirRaster.basins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.subbasins_streamorder.html">pyflwdir.FlwdirRaster.subbasins_streamorder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.subbasins_pfafstetter.html">pyflwdir.FlwdirRaster.subbasins_pfafstetter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.subbasins_area.html">pyflwdir.FlwdirRaster.subbasins_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.basin_outlets.html">pyflwdir.FlwdirRaster.basin_outlets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.basin_bounds.html">pyflwdir.FlwdirRaster.basin_bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.downstream.html">pyflwdir.FlwdirRaster.downstream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.upstream_sum.html">pyflwdir.FlwdirRaster.upstream_sum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.accuflux.html">pyflwdir.FlwdirRaster.accuflux</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.upstream_area.html">pyflwdir.FlwdirRaster.upstream_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.moving_average.html">pyflwdir.FlwdirRaster.moving_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.moving_median.html">pyflwdir.FlwdirRaster.moving_median</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.smooth_rivlen.html">pyflwdir.FlwdirRaster.smooth_rivlen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.fillnodata.html">pyflwdir.FlwdirRaster.fillnodata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.upscale.html">pyflwdir.FlwdirRaster.upscale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.upscale_error.html">pyflwdir.FlwdirRaster.upscale_error</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.subgrid_rivlen.html">pyflwdir.FlwdirRaster.subgrid_rivlen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.subgrid_rivslp.html">pyflwdir.FlwdirRaster.subgrid_rivslp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.subgrid_rivavg.html">pyflwdir.FlwdirRaster.subgrid_rivavg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.subgrid_rivmed.html">pyflwdir.FlwdirRaster.subgrid_rivmed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.ucat_area.html">pyflwdir.FlwdirRaster.ucat_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.ucat_outlets.html">pyflwdir.FlwdirRaster.ucat_outlets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.dem_adjust.html">pyflwdir.FlwdirRaster.dem_adjust</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.dem_dig_d4.html">pyflwdir.FlwdirRaster.dem_dig_d4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.hand.html">pyflwdir.FlwdirRaster.hand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.floodplains.html">pyflwdir.FlwdirRaster.floodplains</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/elevation.html">Elevation raster methods</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.dem.fill_depressions.html">pyflwdir.dem.fill_depressions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.dem.slope.html">pyflwdir.dem.slope</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/gis_utils.html">GIS raster utility methods</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.gis_utils.spread2d.html">pyflwdir.gis_utils.spread2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.gis_utils.get_edge.html">pyflwdir.gis_utils.get_edge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.gis_utils.reggrid_area.html">pyflwdir.gis_utils.reggrid_area</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/region_utils.html">Region utility methods</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_bounds.html">pyflwdir.regions.region_bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_slices.html">pyflwdir.regions.region_slices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_sum.html">pyflwdir.regions.region_sum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_area.html">pyflwdir.regions.region_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_dissolve.html">pyflwdir.regions.region_dissolve</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Reference</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="reference">
+<h1>Reference<a class="headerlink" href="#reference" title="Permalink to this heading">#</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/flwdirraster.html">FlwdirRaster</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.html">pyflwdir.FlwdirRaster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#input-output">Input/Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#flow-direction-attributes">Flow direction attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#flow-direction-methods">Flow direction methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#raster-geospatial-attributes-and-methods">Raster &amp; geospatial attributes and methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#streams-and-flow-paths">Streams and flow paths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#sub-basins">(Sub)basins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#up-and-downstream-values">Up- and downstream values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#up-and-downstream-arithmetics">Up- and downstream arithmetics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#upscale-and-subgrid-methods">Upscale and subgrid methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flwdirraster.html#elevation">Elevation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/elevation.html">Elevation raster methods</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.dem.fill_depressions.html">pyflwdir.dem.fill_depressions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.dem.slope.html">pyflwdir.dem.slope</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/gis_utils.html">GIS raster utility methods</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.gis_utils.spread2d.html">pyflwdir.gis_utils.spread2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.gis_utils.get_edge.html">pyflwdir.gis_utils.get_edge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.gis_utils.reggrid_area.html">pyflwdir.gis_utils.reggrid_area</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/region_utils.html">Region utility methods</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_bounds.html">pyflwdir.regions.region_bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_slices.html">pyflwdir.regions.region_slices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_sum.html">pyflwdir.regions.region_sum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_area.html">pyflwdir.regions.region_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_generated/pyflwdir.regions.region_dissolve.html">pyflwdir.regions.region_dissolve</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.to_array">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">to_array</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.to_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.to_array" title="Permalink to this definition">#</a></dt>
+<dd><p>Return 2D flow direction raster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ftype</strong> (<em>{'d8'</em><em>, </em><em>'ldd'</em><em>, </em><em>'nextxy'}</em><em>, </em><em>optional</em>) – name of flow direction type, by default None; use input ftype.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>flow direction raster</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.load" title="Permalink to this definition">#</a></dt>
+<dd><p>Load serialized FlwdirRaster object from file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.dump">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">dump</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.dump" title="Permalink to this definition">#</a></dt>
+<dd><p>Serialize object to file using pickle library.</p>
+</dd></dl>
+
+<section id="flow-direction-attributes">
+<h2>Flow direction attributes<a class="headerlink" href="#flow-direction-attributes" title="Permalink to this heading">#</a></h2>
+<p>The following attributes describe the flow direction and are at the core to the object.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.idxs_ds">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">idxs_ds</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.idxs_ds" title="Permalink to this definition">#</a></dt>
+<dd><p>Linear indices of downstream cell.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.idxs_us_main">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">idxs_us_main</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.idxs_us_main" title="Permalink to this definition">#</a></dt>
+<dd><p>Linear indices of main upstream cell, i.e. the upstream cell with the
+largest contributing area.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.idxs_seq">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">idxs_seq</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.idxs_seq" title="Permalink to this definition">#</a></dt>
+<dd><p>Linear indices of valid cells ordered from down- to upstream.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.idxs_pit">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">idxs_pit</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.idxs_pit" title="Permalink to this definition">#</a></dt>
+<dd><p>Linear indices of pits/outlets.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.ncells">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">ncells</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.ncells" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.rank">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">rank</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.rank" title="Permalink to this definition">#</a></dt>
+<dd><p>Cell Rank, i.e. distance to the outlet in no. of cells.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.isvalid">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">isvalid</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.isvalid" title="Permalink to this definition">#</a></dt>
+<dd><p>True if the flow direction map is valid.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.mask">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">mask</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.mask" title="Permalink to this definition">#</a></dt>
+<dd><p>Boolean array of valid cells in flow direction raster.</p>
+</dd></dl>
+
+</section>
+<section id="flow-direction-methods">
+<h2>Flow direction methods<a class="headerlink" href="#flow-direction-methods" title="Permalink to this heading">#</a></h2>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.order_cells">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">order_cells</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.order_cells" title="Permalink to this definition">#</a></dt>
+<dd><p>Order cells from down- to upstream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>method</strong> (<em>{'sort'</em><em>, </em><em>'walk'}</em><em>, </em><em>optional</em>) – Method to order nodes, based on a “sorting” algorithm where nodes are
+sorted based on their rank (might be slow for large arrays) or “walking”
+algorithm where nodes are traced from down- to upstream (uses more memory)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.main_upstream">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">main_upstream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.main_upstream" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.add_pits">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">add_pits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.add_pits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.add_pits" title="Permalink to this definition">#</a></dt>
+<dd><p>Add pits the flow direction raster.
+If <cite>streams</cite> is given, the pits are snapped to the first downstream True cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs</strong> (<em>array_like</em><em>, </em><em>optional</em>) – linear indices of pits, by default is None.</p></li>
+<li><p><strong>xy</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)"><em>tuple</em></a><em> of </em><em>array_like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – x, y coordinates of pits, by default is None.</p></li>
+<li><p><strong>streams</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a><em>, </em><em>optional</em>) – 2D raster with cells flagged ‘True’ at stream cells, only used
+in combination with idx or xy, by default None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.repair_loops">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">repair_loops</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.repair_loops" title="Permalink to this definition">#</a></dt>
+<dd><p>Repair loops by setting a pit at every cell which does not drain to a pit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.vectorize">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">vectorize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.vectorize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.vectorize" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns each flow direction as a linestring geo-feature</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kind</strong> (<em>{streams</em><em>, </em><em>flwdir}</em>) – Kind of LineString features: either streams of local flow directions.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – Mask of valid cells.</p></li>
+<li><p><strong>xs</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Raster with cell x, y coordinates, by default None and inferred from cell
+center.</p></li>
+<li><p><strong>ys</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Raster with cell x, y coordinates, by default None and inferred from cell
+center.</p></li>
+<li><p><strong>direction</strong> (<em>{&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction to define path between segment end points.</p></li>
+<li><p><strong>kwargs</strong> (<em>extra sample maps key-word arguments</em>) – optional maps to sample from</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>feats</strong> – Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="raster-geospatial-attributes-and-methods">
+<h2>Raster &amp; geospatial attributes and methods<a class="headerlink" href="#raster-geospatial-attributes-and-methods" title="Permalink to this heading">#</a></h2>
+<p>The FlwdirRaster object contains <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.shape</span></code>, <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.transform</span></code>
+and <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.latlon</span></code> attributes describing its geospatial location. The first
+attribute is required at initializiation, while the others can be set later.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.set_transform">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">set_transform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.set_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.set_transform" title="Permalink to this definition">#</a></dt>
+<dd><p>Set transform affine.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>affine transform</em>) – Two dimensional affine transform for 2D linear mapping. The default is an
+identity transform.</p></li>
+<li><p><strong>latlon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a><em>, </em><em>optional</em>) – True if WGS84 coordinate reference system. If True it converts the cell
+areas from degree to metres, otherwise it assumes cell areas are in unit
+metres. The default is False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.index">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.index" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns linear cell indices based on x, y coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xs</strong> (<em>ndarray</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – x, y coordinates.</p></li>
+<li><p><strong>ys</strong> (<em>ndarray</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – x, y coordinates.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>idxs</strong> – linear cell indices</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.xy">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">xy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.xy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.xy" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns x, y coordinates of the cell center based on linear cell indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>idxs</strong> (<em>ndarray</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – linear cell indices</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>xs</strong> (<em>ndarray of float</em>) – x coordinates.</p></li>
+<li><p><strong>ys</strong> (<em>ndarray of float</em>) – y coordinates.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.bounds">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">bounds</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.bounds" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the raster bounding box [xmin, ymin, xmax, ymax].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.extent">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">extent</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.extent" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the raster extent in cartopy format [xmin, xmax, ymin, ymax].</p>
+</dd></dl>
+
+</section>
+<section id="streams-and-flow-paths">
+<h2>Streams and flow paths<a class="headerlink" href="#streams-and-flow-paths" title="Permalink to this heading">#</a></h2>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.stream_order">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">stream_order</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.stream_order" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the Strahler (default) or classic stream order map.</p>
+<p>In the <em>classic</em> “bottum up” stream order map, the main river stem has order 1.
+Each tributary is given a number one greater than that of the
+river or stream into which they discharge.</p>
+<p>In the <em>strahler</em> “top down” stream order map, rivers of the first order are
+the most upstream tributaries or head water cells. If two streams of the same
+order merge, the resulting stream has an order of one higher.
+If two rivers with different stream orders merge, the resulting stream is
+given the maximum of the two order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>type</strong> (<em>{&quot;strahler&quot;</em><em>, </em><em>&quot;classic&quot;}</em>) – Stream order type. By default Strahler.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>boolean</em>) – Mask of streams to consider. This can be used to compute the stream order
+for streams with a minimum upstream area or streams within a specific
+(sub)basin only.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>strahler order map</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.path">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.path" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns paths of indices in down- or upstream direction from the starting
+points until:
+1) a pit is found (including) or now more upstream cells are found; or
+2) a True cell is found in mask (including); or
+3) the max_length threshold is exceeded.</p>
+<p>To define starting points, either idxs or xy should be provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs</strong> (<em>array_like</em><em>, </em><em>optional</em>) – linear indices of starting point, by default is None.</p></li>
+<li><p><strong>xy</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)"><em>tuple</em></a><em> of </em><em>array_like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – x, y coordinates of starting point, by default is None.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a><em>, </em><em>optional</em>) – True if stream cell.</p></li>
+<li><p><strong>max_length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – maximum length of trace</p></li>
+<li><p><strong>unit</strong> (<em>{'m'</em><em>, </em><em>'cell'}</em><em>, </em><em>optional</em>) – unit of length, by default ‘cell’</p></li>
+<li><p><strong>direction</strong> (<em>{'up'</em><em>, </em><em>'down'}</em><em>, </em><em>optional</em>) – direction of path, be default ‘down’, i.e. downstream</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>list of 1D-array of int</em> – linear indices of path</p></li>
+<li><p><em>1D-array of float</em> – distance along path between start and end cell</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.snap">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">snap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.snap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.snap" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the last index in down- or upstream direction from the starting
+points where:</p>
+<ol class="arabic simple">
+<li><p>a pit is found (including) or now more upstream cells are found; or</p></li>
+<li><p>a True cell is found in mask (including)</p></li>
+<li><p>the max_length threshold is exceeded.</p></li>
+</ol>
+<p>To define starting points, either idxs or xy should be provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs</strong> (<em>array_like</em><em>, </em><em>optional</em>) – linear indices of starting point, by default is None.</p></li>
+<li><p><strong>xy</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)"><em>tuple</em></a><em> of </em><em>array_like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – x, y coordinates of starting point, by default is None.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – True at cell where to snap to</p></li>
+<li><p><strong>max_length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – maximum length of trace</p></li>
+<li><p><strong>unit</strong> (<em>{'m'</em><em>, </em><em>'cell'}</em><em>, </em><em>optional</em>) – unit of length, by default ‘cell’</p></li>
+<li><p><strong>direction</strong> (<em>{'up'</em><em>, </em><em>'down'}</em><em>, </em><em>optional</em>) – direction of path, be default ‘down’, i.e. downstream</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>array_like of int</em> – linear index of snapped cell</p></li>
+<li><p><em>array_like of float</em> – distance along path between start and snap cell.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.stream_distance">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">stream_distance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.stream_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.stream_distance" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns distance to outlet or next downstream True cell in mask</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mask</strong> (<em>1D-array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a><em>, </em><em>optional</em>) – True if stream cell</p></li>
+<li><p><strong>unit</strong> (<em>{'m'</em><em>, </em><em>'cell'}</em><em>, </em><em>optional</em>) – length unit, by default ‘cell’</p></li>
+<li><p><strong>-------</strong> – </p></li>
+<li><p><strong>float</strong> (<em>1D array of</em>) – distance to next downstream True cell, or outlet</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.streams">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">streams</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.streams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.streams" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a list of stream segment as linestring geo-features.</p>
+<p>A stream segment is defined by flow path between two confluences
+or if <cite>idxs_out</cite> is given, two outlet cells by idxs_out. The stream cells
+can be set using a boolean <cite>mask</cite> or a minimum stream order <cite>min_sto</cite>.
+Note that if a mask is given the minimum stream order is ignored.</p>
+<p>Additional key-word arguments are maps from which a value is sampled
+at the most downstram cell of a stream segment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kind</strong> (<em>{streams</em><em>, </em><em>flwdir}</em>) – Kind of LineString features: either streams of local flow directions.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – Mask of valid cells.</p></li>
+<li><p><strong>min_sto</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – Minimum Strahler Order recognized as river, by the default 1.
+A stream order map can optionally be passed using the key-word argument <cite>strord</cite>.</p></li>
+<li><p><strong>xs</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Raster with cell x, y coordinates, by default None and inferred from cell
+center.</p></li>
+<li><p><strong>ys</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Raster with cell x, y coordinates, by default None and inferred from cell
+center.</p></li>
+<li><p><strong>idxs_out</strong> (<em>1D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – Linear indices of segment end cells. Stream segments are based on  the path
+between two segment end cells in up- or downstream flow direction, see
+<cite>direction</cite> argument.
+By default None in which case segements are based on confluences.</p></li>
+<li><p><strong>direction</strong> (<em>{&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction to define path between segment end points. Only used
+in combination with <cite>idxs_out</cite>.</p></li>
+<li><p><strong>max_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) – Maximum length of a single stream segment measured in cells.
+Longer streams segments are divided into smaller segments of equal length
+as close as possible to max_len.</p></li>
+<li><p><strong>kwargs</strong> (<em>extra sample maps key-word arguments</em>) – optional maps to sample from</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>feats</strong> – Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.geofeatures">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">geofeatures</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.geofeatures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.geofeatures" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a geo-features of flowpaths defined by a list of arrays of linear
+indices.</p>
+<p>The coordinates are based on the cell center as calculated
+using the affine transform, unless maps with (subgrid) x and y
+coordinates are provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flowpaths</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em> or </em><em>1D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – list of flow paths described by linear indices</p></li>
+<li><p><strong>xs</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Raster with cell x, y coordinates, by default None and inferred from cell
+center.</p></li>
+<li><p><strong>ys</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Raster with cell x, y coordinates, by default None and inferred from cell
+center.</p></li>
+<li><p><strong>kwargs</strong> (<em>extra sample maps key-word arguments</em>) – optional maps to sample from
+e.g.: strord=flw.stream_order()</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>feats</strong> – Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="sub-basins">
+<h2>(Sub)basins<a class="headerlink" href="#sub-basins" title="Permalink to this heading">#</a></h2>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.basins">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">basins</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.basins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.basins" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a (sub)basin map with a unique ID for every (sub)basin.</p>
+<p>To return a subbasin map either linear indices or x,y coordinates of subbasin
+outlets should be provided. Additional key-word arguments are passed to the
+snap method to snap the outlets to a downstream stream.</p>
+<p>By default, if IDs are not provided (sub)basin IDs start from 1. As the the
+background value of the basins map is zero, the IDs may not contain zeros.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs</strong> (<em>array_like</em><em>, </em><em>optional</em>) – linear indices of sub(basin) outlets, by default is None.</p></li>
+<li><p><strong>xy</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)"><em>tuple</em></a><em> of </em><em>array_like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – x, y coordinates of sub(basin) outlets, by default is None.</p></li>
+<li><p><strong>ids</strong> (<em>1D array</em><em> of </em><em>uint32</em><em>, </em><em>optional</em>) – IDs of (sub)basins in same order as idxs, by default None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(sub)basin map</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of uint32</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.subbasins_streamorder">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">subbasins_streamorder</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.subbasins_streamorder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.subbasins_streamorder" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a subbasin map with unique IDs and its outlet linear indices.
+Subbasins are defined based on a minimum stream order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strord</strong> (<em>1D-array</em><em> of </em><em>uint8</em>) – stream order</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – Mask of valid cells.</p></li>
+<li><p><strong>min_sto</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) – minimum stream order of subbasins, by default the stream order is set to
+two under the global maximum stream order.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>subbas</strong> (<em>2D-array of int32</em>) – map with unique IDs for stream_order&gt;=min_sto subbasins</p></li>
+<li><p><strong>idxs_out</strong> (<em>1D array of int</em>) – linear indices of subbasin outlet cells</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.subbasins_pfafstetter">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">subbasins_pfafstetter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.subbasins_pfafstetter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.subbasins_pfafstetter" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the pfafstetter subbasins.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>depth</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) – Number of pfafstetter layers, by default 1.</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
+<li><p><strong>upa_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – Minimum upstream area threshold for subbasins, by default 0.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>subbas</strong> (<em>2D array of int32</em>) – subbasin map with pfafstetter coding</p></li>
+<li><p><strong>idxs_out</strong> (<em>1D array of int</em>) – linear indices of subbasin outlet cells</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.subbasins_area">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">subbasins_area</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.subbasins_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.subbasins_area" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns map with basin IDs, with a minimal area of <cite>area_min</cite>.
+Moving upstream from the basin outlets a new subbasin starts at tributaries
+with a contributing area larger than <cite>area_min</cite> and new interbasins when its area
+exceeds the <cite>area_min</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>area_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – subbasin area theshold; same unit as <cite>uparea</cite>, by default km2.</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>subbas</strong> (<em>2D array of int32</em>) – subbasin map with pfafstetter coding</p></li>
+<li><p><strong>idxs_out</strong> (<em>1D array of int</em>) – linear indices of subbasin outlet cells</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.basin_outlets">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">basin_outlets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.basin_outlets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.basin_outlets" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the linear index of the outlet cell of <cite>basins</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>basins</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – raster with unique IDs for each basin, where the background value must be zero.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>lbs</strong> (<em>1D array</em>) – array of the unique region IDs</p></li>
+<li><p><strong>idxs_out</strong> (<em>1D array</em>) – linear index of outlet cell per region</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.basin_bounds">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">basin_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.basin_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.basin_bounds" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a the basin boundaries.</p>
+<p>Additional key-word arguments are passed to the basins method which is used to
+create a basins map if none is provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>basins</strong> (<em>2D array</em><em> of </em><em>uint32</em><em>, </em><em>optional</em>) – basin ids, by default None and calculated on the fly.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>lbs</strong> (<em>1D array of int</em>) – labels of basins</p></li>
+<li><p><strong>bboxs</strong> (<em>2D array of float</em>) – bounding boxes of basins, the columns represent [xmin, ymin, xmax, ymax]</p></li>
+<li><p><strong>total_bbox</strong> (<em>1D array of float</em>) – the total bounding box of all basins [xmin, ymin, xmax, ymax]</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="up-and-downstream-values">
+<h2>Up- and downstream values<a class="headerlink" href="#up-and-downstream-values" title="Permalink to this heading">#</a></h2>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.downstream">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">downstream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.downstream" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns next downstream value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>2D array</em>) – values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>downstream data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.upstream_sum">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">upstream_sum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.upstream_sum" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns sum of next upstream values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>2D array</em>) – values</p></li>
+<li><p><strong>mv</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – missing value</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>sum of upstream data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="up-and-downstream-arithmetics">
+<h2>Up- and downstream arithmetics<a class="headerlink" href="#up-and-downstream-arithmetics" title="Permalink to this heading">#</a></h2>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.moving_average">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">moving_average</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.moving_average" title="Permalink to this definition">#</a></dt>
+<dd><p>Take the moving weighted average over the flow direction network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>2D array</em>) – values</p></li>
+<li><p><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – number of up/downstream neighbors to include</p></li>
+<li><p><strong>weights</strong> (<em>2D array</em><em>, </em><em>optional</em>) – weights, by default equal weights are assumed</p></li>
+<li><p><strong>restrict_strord</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – If True, limit the window to cells of same or smaller stream order.</p></li>
+<li><p><strong>strord</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) – Stream order map.</p></li>
+<li><p><strong>nodata</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – Nodata values which is ignored when calculating the average, by default -9999.0</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>averaged data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.accuflux">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">accuflux</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.accuflux" title="Permalink to this definition">#</a></dt>
+<dd><p>Return accumulated data values along the flow directions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>2D array</em>) – values</p></li>
+<li><p><strong>nodata</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Missing data value for cells outside domain</p></li>
+<li><p><strong>direction</strong> (<em>{'up'</em><em>, </em><em>'down'}</em><em>, </em><em>optional</em>) – direction in which to accumulate data, by default upstream</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>accumulated values</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array with data.dtype</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.upstream_area">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">upstream_area</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.upstream_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.upstream_area" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the upstream area map based on the flow direction map.</p>
+<p>If latlon is True it converts the cell areas to metres, otherwise it
+assumes the coordinate unit is metres.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>unit</strong> (<em>{'m2'</em><em>, </em><em>'ha'</em><em>, </em><em>'km2'</em><em>, </em><em>'cell'}</em>) – Upstream area unit.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>upstream area map [m2]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="upscale-and-subgrid-methods">
+<h2>Upscale and subgrid methods<a class="headerlink" href="#upscale-and-subgrid-methods" title="Permalink to this heading">#</a></h2>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.upscale">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">upscale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.upscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.upscale" title="Permalink to this definition">#</a></dt>
+<dd><p>Upscale flow direction network to lower resolution.
+Available methods are Iterative hydrography upscaling method (IHU) <a class="footnote-reference brackets" href="#id4" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>,
+Effective Area Method (EAM) <a class="footnote-reference brackets" href="#id5" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a> and Double Maximum Method (DMM) <a class="footnote-reference brackets" href="#id6" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>4<span class="fn-bracket">]</span></a>.</p>
+<p>Note: This method only works for D8 or LDD flow directon data.</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id4" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">2</a><span class="fn-bracket">]</span></span>
+<p>Eilander et al. in preperation (TODO update ref)</p>
+</aside>
+<aside class="footnote brackets" id="id5" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">3</a><span class="fn-bracket">]</span></span>
+<p>Yamazaki D, Masutomi Y, Oki T and Kanae S 2008
+“An Improved Upscaling Method to Construct a Global River Map” APHW</p>
+</aside>
+<aside class="footnote brackets" id="id6" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">4</a><span class="fn-bracket">]</span></span>
+<p>Olivera F, Lear M S, Famiglietti J S and Asante K 2002
+“Extracting low-resolution river networks from high-resolution digital
+elevation models” Water Resour. Res. 38 13-1-13-8
+Online: <a class="reference external" href="https://doi.org/10.1029/2001WR000726">https://doi.org/10.1029/2001WR000726</a></p>
+</aside>
+</aside>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scale_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – number gridcells in resulting upscaled gridcell</p></li>
+<li><p><strong>method</strong> (<em>{'ihu'</em><em>, </em><em>'eam_plus'</em><em>, </em><em>'eam'</em><em>, </em><em>'dmm'}</em>) – upscaling method, by default ‘ihu’</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) – 2D raster with upstream area, by default None; calculated on the fly.</p></li>
+<li><p><strong>uparea</strong> – 2D raster with basin IDs, by default None. If provided it is used as an
+additional constrain to the IHU method to increase the upscaling speed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>flw</strong> (<em>FlwdirRaster</em>) – upscaled Flow Direction Raster</p></li>
+<li><p><strong>idxs_out</strong> (<em>2D array of int</em>) – linear indices of subgrid outlets</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.upscale_error">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">upscale_error</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.upscale_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.upscale_error" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns an array with ones (True) where the upscaled flow directions are
+valid and zeros (False) where erroneous.</p>
+<p>The flow direction from cell 1 to cell 2 is valid if the first outlet pixel
+downstream of cell 1 is located in cell 2</p>
+<p>Cells with missing flow direction data have a value -1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>other</strong> (<a class="reference internal" href="_generated/pyflwdir.FlwdirRaster.html#pyflwdir.FlwdirRaster" title="pyflwdir.FlwdirRaster"><em>FlwdirRaster</em></a>) – upscaled Flow Direction Raster</p></li>
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – linear indices of grid outlets</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>flwerr</strong> – valid subgrid connection</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of int8 with other.shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.subgrid_rivlen">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">subgrid_rivlen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.subgrid_rivlen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.subgrid_rivlen" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the subgrid river length [m] based on unit catchment outlet locations.
+A cell’s subgrid river is defined by the path starting at the unit
+catchment outlet pixel moving up- or downstream until it reaches the next
+outlet pixel. If moving upstream and a pixel has multiple upstream neighbors,
+the pixel with the largest upstream area is selected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – Linear indices of unit catchment outlets. If None (default) the cell
+size (instead of subgrid length) will be used.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
+<li><p><strong>direction</strong> (<em>{&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction in which river length is measured, by default ‘up’.</p></li>
+<li><p><strong>unit</strong> (<em>{'m'</em><em>, </em><em>'cell'}</em>) – Upstream area unit.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rivlen</strong> – subgrid river length [m]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of float with idxs_out.shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.subgrid_rivslp">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">subgrid_rivslp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.subgrid_rivslp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.subgrid_rivslp" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the subgrid river slope [m/m] estimated at unit catchment outlet
+pixel. The slope is estimated from the elevation around the outlet pixel
+(<cite>direction=’both’</cite>), or between the outlet pixel and the next downstream
+(<cite>direction=’down’</cite>) or next upstream (<cite>direction=’up’</cite>) outlet pixel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – Linear indices of unit catchment outlets, if None the cell
+size (instead of subgrid length) will be used.</p></li>
+<li><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><em>float with self.shape</em><em>, </em><em>optional</em>) – Elevation raster, required to calculate slope.</p></li>
+<li><p><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – Subgrid river length [m] over which to calculate the slope, by default
+1000 m. Only used in combination with direction = ‘both’</p></li>
+<li><p><strong>direction</strong> (<em>{&quot;both&quot;</em><em>, </em><em>&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction in which river slope is measured, by default ‘both’.</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
+<li><p><strong>method</strong> (<em>{'mean'</em><em>, </em><em>'lstsq'}</em>) – Estimate the segment slope based on the <cite>mean</cite> slope: i.e.: net difference
+in elevation divided by length; or <cite>lstsq</cite> slope: i.e.: a simple ordinary
+least squares regression estimate of slope</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rivslp</strong> – subgrid river slope [m/m]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of float with idxs_out.shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.subgrid_rivavg">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">subgrid_rivavg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.subgrid_rivavg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.subgrid_rivavg" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the average value over the subgrid river, based on unit catchment outlet
+locations. The subgrid river is defined by the path starting at the unit
+catchment outlet pixel moving up- or downstream until it reaches the next
+outlet pixel. If moving upstream and a pixel has multiple upstream neighbors,
+the pixel with the largest upstream area is selected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – Linear indices of unit catchment outlets. If None (default) the cell
+size (instead of subgrid length) will be used.</p></li>
+<li><p><strong>data</strong> (<em>2D array</em>) – values</p></li>
+<li><p><strong>weigths</strong> (<em>2D array</em><em>, </em><em>optional</em>) – weights used for averaging, by default None.</p></li>
+<li><p><strong>nodata</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – Missing data value for cells outside domain, by default -9999.0</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
+<li><p><strong>direction</strong> (<em>{&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction in which segment is defined, by default ‘up’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rivavg</strong> – subgrid segment average</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of float with idxs_out.shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.subgrid_rivmed">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">subgrid_rivmed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.subgrid_rivmed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.subgrid_rivmed" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the median value over the subgrid river, based on unit catchment outlet
+locations. The subgrid river is defined by the path starting at the unit
+catchment outlet pixel moving up- or downstream until it reaches the next
+outlet pixel. If moving upstream and a pixel has multiple upstream neighbors,
+the pixel with the largest upstream area is selected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – Linear indices of unit catchment outlets. If None (default) the cell
+size (instead of subgrid length) will be used.</p></li>
+<li><p><strong>data</strong> (<em>2D array</em>) – values</p></li>
+<li><p><strong>weigths</strong> (<em>2D array</em><em>, </em><em>optional</em>) – weights used for averaging, by default None.</p></li>
+<li><p><strong>nodata</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – Missing data value for cells outside domain, by default -9999.0</p></li>
+<li><p><strong>mask</strong> (<em>2D array</em><em> of </em><em>bool with self.shape</em><em>, </em><em>optional</em>) – True for valid pixels. can be used to mask out pixels of small rivers.</p></li>
+<li><p><strong>direction</strong> (<em>{&quot;up&quot;</em><em>, </em><em>&quot;down&quot;}</em>) – Flow direction in which river length is measured, by default ‘up’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rivmed</strong> – subgrid segment median</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of float with idxs_out.shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.ucat_area">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">ucat_area</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.ucat_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.ucat_area" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the unit catchment map (highres) and area (lowres) [unit].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – linear indices of unit catchment outlets</p></li>
+<li><p><strong>unit</strong> (<em>{'m2'</em><em>, </em><em>'ha'</em><em>, </em><em>'km2'</em><em>, </em><em>'cell'}</em>) – area unit.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ucat_map</strong> (<em>2D array of int with self.shape</em>) – unit catchment map [-]</p></li>
+<li><p><strong>ucat_are</strong> (<em>2D array of float with idxs_out.shape</em>) – subgrid cell area [unit]</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.ucat_volume">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">ucat_volume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.ucat_volume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.ucat_volume" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the unit catchment map (highres) and the
+flood volume at given flood depths (lowres) [m3].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idxs_out</strong> (<em>1D</em><em> or </em><em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – linear indices of unit catchment outlets</p></li>
+<li><p><strong>hand</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Height Above Nearest Drain, see also <a class="reference internal" href="#pyflwdir.FlwdirRaster.hand" title="pyflwdir.FlwdirRaster.hand"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyflwdir.FlwdirRaster.hand()</span></code></a></p></li>
+<li><p><strong>depths</strong> (<em>1D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – Depth distribution of which to calculate the volume</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ucat_map</strong> (<em>2D array of int with self.shape</em>) – unit catchment map [-]</p></li>
+<li><p><strong>ucat_vol</strong> (<em>nD array of float with shape (depths.size, *idxs_out.shape)</em>) – subgrid volume as function of depths [m3]</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.ucat_outlets">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">ucat_outlets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.ucat_outlets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.ucat_outlets" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns linear indices of unit catchment outlet pixel.</p>
+<p>For more information about the methods see upscale script.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cellsize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – size of unit catchment measured in no. of higres cells</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – upstream area</p></li>
+<li><p><strong>method</strong> (<em>{&quot;eam_plus&quot;</em><em>, </em><em>&quot;dmm&quot;}</em><em>, </em><em>optional</em>) – method to derive outlet cell indices, by default ‘eam_plus’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>idxs_out</strong> – linear indices of unit catchment outlet cells</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="elevation">
+<h2>Elevation<a class="headerlink" href="#elevation" title="Permalink to this heading">#</a></h2>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.dem_adjust">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">dem_adjust</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.dem_adjust" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the hydrologically adjusted elevation where each downstream cell
+has the same or lower elevation as the current cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – elevation raster</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>elevation raster</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.dem_dig_d4">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">dem_dig_d4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.dem_dig_d4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.dem_dig_d4" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the hydrologically adjusted elevation where for
+each cell river cell there is an adjacent D4 connected cell which has
+has the same or lower elevation as the current cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – elevation raster</p></li>
+<li><p><strong>rivmsk</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a><em>, </em><em>optional</em>) – river mask</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>elv_out</strong> – elevation raster</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.hand">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">hand</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.hand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.hand" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the height above the nearest drain (HAND), i.e.: the relative vertical
+distance (drop) to the nearest dowstream river based on drainage-normalized
+topography and flowpaths.</p>
+<dl class="simple">
+<dt>Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent</dt><dd><p>Hydrol. Process. 30 320-33</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>drain</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – drainage mask</p></li>
+<li><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – elevation raster</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>height above nearest drain</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D array of <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.floodplains">
+<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">floodplains</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyflwdir/pyflwdir.html#FlwdirRaster.floodplains"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.floodplains" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns floodplain boundaries based on a maximum treshold (h) of HAND which is
+scaled with upstream area (A) following h ~ A**b.</p>
+<dl class="simple">
+<dt>Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s</dt><dd><p>floodplains Sci. Data 6 180309</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elevtn</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – elevation raster [m]</p></li>
+<li><p><strong>uparea</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – upstream area raster [km2], by default calculated on the fly</p></li>
+<li><p><strong>b</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – scale parameter, by default 0.3</p></li>
+<li><p><strong>upa_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – minimum upstream area threshold for streams [km2].</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>floodplain</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>1D array of int8</p>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="elevation-raster-methods">
+<h3>Elevation raster methods<a class="headerlink" href="#elevation-raster-methods" title="Permalink to this heading">#</a></h3>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.dem.fill_depressions">
+<span class="sig-prename descclassname"><span class="pre">dem.</span></span><span class="sig-name descname"><span class="pre">fill_depressions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.dem.fill_depressions" title="Permalink to this definition">#</a></dt>
+<dd><p>Fill local depressions in elevation data and derived local
+D8 flow directions.</p>
+<p>Outlets are assumed to occur at the edge of valid elevation cells <cite>outlets=’edge’</cite>;
+at the lowest valid edge cell to create one single outlet <cite>outlets=’min’</cite>;
+or at user provided outlet cells <cite>idxs_pit</cite>.</p>
+<p>Depressions elsewhere are filled based on its lowest pour point elevation.
+If the pour point depth is larger than the maximum pour point depth <cite>max_depth</cite> a pit
+is set at the depression local minimum elevation.</p>
+<p>Based on: Wang, L., &amp; Liu, H. (2006). <a class="reference external" href="https://doi.org/10.1080/13658810500433453">https://doi.org/10.1080/13658810500433453</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elevtn</strong> (<em>2D array</em>) – elevation raster</p></li>
+<li><p><strong>nodata</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – nodata value, by default -9999.0</p></li>
+<li><p><strong>max_depth</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – Maximum pour point depth. Depressions with a larger pour point
+depth are set as pit. A negative value (default) equals an infitely
+large pour point depth causing all depressions to be filled.</p></li>
+<li><p><strong>connectivity</strong> (<em>{4</em><em>, </em><em>8}</em>) – Number of neighboring cells to consider.</p></li>
+<li><p><strong>outlets</strong> (<em>{'edge'</em><em>, </em><em>'min'}</em>) – Initial basin outlet(s) at the edge of all cells (‘edge’; default)
+or only the minimum elevation edge cell (‘min’)</p></li>
+<li><p><strong>elv_max</strong> – Maximum elevation for outlets, only in combination with <cite>outlets=’edge’</cite>.
+By default None.</p></li>
+<li><p><strong>float</strong> – Maximum elevation for outlets, only in combination with <cite>outlets=’edge’</cite>.
+By default None.</p></li>
+<li><p><strong>optional</strong> – Maximum elevation for outlets, only in combination with <cite>outlets=’edge’</cite>.
+By default None.</p></li>
+<li><p><strong>idxs_pit</strong> (<em>1D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – Linear indices of outlet cells.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>elevtn_out</strong> (<em>2D array</em>) – Depression filled elevation</p></li>
+<li><p><strong>d8</strong> (<em>2D array of uint8</em>) – D8 flow directions</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.dem.slope">
+<span class="sig-prename descclassname"><span class="pre">dem.</span></span><span class="sig-name descname"><span class="pre">slope</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.dem.slope" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the local gradient</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elevnt</strong> (<em>1D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – elevation raster</p></li>
+<li><p><strong>nodata</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) – nodata value, by default -9999.0</p></li>
+<li><p><strong>latlon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a><em>, </em><em>optional</em>) – True if WGS84 coordinates, by default False</p></li>
+<li><p><strong>transform</strong> (<em>affine transform</em>) – Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>slope</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>1D array of <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="region-utility-methods">
+<h3>Region utility methods<a class="headerlink" href="#region-utility-methods" title="Permalink to this heading">#</a></h3>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.regions.region_bounds">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">region_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.regions.region_bounds" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the bounding box each unique label in <cite>regions</cite>.</p>
+<p>NOTE: a region must be a connected area with the same ID,
+where ID are integer values larger than zero.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>regions</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p></li>
+<li><p><strong>transform</strong> (<em>Affine</em>) – Coefficients mapping pixel coordinates to coordinate reference system.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>lbs</strong> (<em>1D array</em>) – array of the unique region IDs</p></li>
+<li><p><strong>bboxs</strong> (<em>2D array with shape (lbs.size, 4)</em>) – bounding box [xmin, ymin, xmax, ymax] for each label</p></li>
+<li><p><strong>total_bbox</strong> (<em>1D array</em>) – total bounding box of all regions</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.regions.region_slices">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">region_slices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.regions.region_slices" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns slices for each unique label in <cite>regions</cite>.</p>
+<p>NOTE: a region must be a connected area with the same ID,
+where ID are integer values larger than zero.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>regions</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>lbs</strong> (<em>1D array</em>) – array of the unique region IDs</p></li>
+<li><p><strong>slices</strong> (<em>list of tuples</em>) – Each tuple contains slices, one for each dimension</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.regions.region_sum">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">region_sum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.regions.region_sum" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the sum of values in <cite>data</cite> for each unique label in <cite>regions</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>2D array</em>) – input data</p></li>
+<li><p><strong>regions</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>lbs, sum</strong> – arrays of the unique region IDs, and associated sum of input data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>1D array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.regions.region_area">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">region_area</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.regions.region_area" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the area [m2] for each unique label in <cite>regions</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>regions</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – raster with unique IDs for each region, must have the same shape as <cite>data</cite>.</p></li>
+<li><p><strong>latlon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – True for geographic CRS, False for projected CRS.
+If True, the transform units are assumed to be degrees and converted to metric distances.</p></li>
+<li><p><strong>transform</strong> (<em>Affine</em>) – Coefficients mapping pixel coordinates to coordinate reference system.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>lbs, areas</strong> – array of the unique region IDs, and associated areas [m2]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>1D array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyflwdir.regions.region_dissolve">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">region_dissolve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.regions.region_dissolve" title="Permalink to this definition">#</a></dt>
+<dd><p>Dissolve regions into its nearest neighboring regions.</p>
+<p>Regions to be dissolved are provided by either their <cite>labels</cite> or one location
+per region expressed with a linear index in <cite>idxs</cite>. These regions are assigned the
+label of the nearest neighboring region. If a locations <cite>idxs</cite> are provided the
+proximitity to other regions from that location. This can be  usefull to e.g.
+dissolve basins based on the distance from its outlet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>regions</strong> (<em>2D-array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – raster with unique non-zero positive IDs for each region</p></li>
+<li><p><strong>labels</strong> (<em>1D-array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – labels of regions to be dissolved. Must be unique and larger than zero.</p></li>
+<li><p><strong>idxs</strong> (<em>1D-array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – linear index of one location per region to be dissolved</p></li>
+<li><p><strong>latlon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – True for geographic CRS, False for projected CRS.
+If True, the transform units are assumed to be degrees and converted to metric distances.</p></li>
+<li><p><strong>transform</strong> (<em>Affine</em>) – Coefficients mapping pixel coordinates to coordinate reference system.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>basins_out</strong> – raster with basin IDs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D-array of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+                <footer class="bd-footer-article">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="_examples/upscaling.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Flow direction upscaling</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="api/flwdirraster.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">FlwdirRaster</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.to_array"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.to_array()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.load"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.load()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.dump"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.dump()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#flow-direction-attributes">Flow direction attributes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.idxs_ds"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.idxs_ds</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.idxs_us_main"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.idxs_us_main</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.idxs_seq"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.idxs_seq</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.idxs_pit"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.idxs_pit</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.ncells"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.ncells</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.rank"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.rank</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.isvalid"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.isvalid</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.mask"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.mask</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#flow-direction-methods">Flow direction methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.order_cells"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.order_cells()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.main_upstream"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.main_upstream()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.add_pits"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.add_pits()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.repair_loops"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.repair_loops()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.vectorize"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.vectorize()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#raster-geospatial-attributes-and-methods">Raster &amp; geospatial attributes and methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.set_transform"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.set_transform()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.index"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.index()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.xy"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.xy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.bounds"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.bounds</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.extent"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.extent</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#streams-and-flow-paths">Streams and flow paths</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.stream_order"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.stream_order()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.path"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.path()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.snap"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.snap()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.stream_distance"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.stream_distance()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.streams"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.streams()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.geofeatures"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.geofeatures()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sub-basins">(Sub)basins</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.basins"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.basins()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.subbasins_streamorder"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_streamorder()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.subbasins_pfafstetter"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_pfafstetter()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.subbasins_area"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_area()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.basin_outlets"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.basin_outlets()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.basin_bounds"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.basin_bounds()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#up-and-downstream-values">Up- and downstream values</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.downstream"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.downstream()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.upstream_sum"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_sum()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#up-and-downstream-arithmetics">Up- and downstream arithmetics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.moving_average"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.moving_average()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.accuflux"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.accuflux()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.upstream_area"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_area()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upscale-and-subgrid-methods">Upscale and subgrid methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.upscale"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upscale()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.upscale_error"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upscale_error()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.subgrid_rivlen"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivlen()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.subgrid_rivslp"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivslp()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.subgrid_rivavg"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivavg()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.subgrid_rivmed"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivmed()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.ucat_area"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.ucat_area()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.ucat_volume"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.ucat_volume()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.ucat_outlets"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.ucat_outlets()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#elevation">Elevation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.dem_adjust"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.dem_adjust()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.dem_dig_d4"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.dem_dig_d4()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.hand"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.hand()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.floodplains"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.floodplains()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#elevation-raster-methods">Elevation raster methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.dem.fill_depressions"><code class="docutils literal notranslate"><span class="pre">dem.fill_depressions()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.dem.slope"><code class="docutils literal notranslate"><span class="pre">dem.slope()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#region-utility-methods">Region utility methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.regions.region_bounds"><code class="docutils literal notranslate"><span class="pre">regions.region_bounds()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.regions.region_slices"><code class="docutils literal notranslate"><span class="pre">regions.region_slices()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.regions.region_sum"><code class="docutils literal notranslate"><span class="pre">regions.region_sum()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.regions.region_area"><code class="docutils literal notranslate"><span class="pre">regions.region_area()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.regions.region_dissolve"><code class="docutils literal notranslate"><span class="pre">regions.region_dissolve()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/reference.rst">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div class="tocsection sourcelink">
+    <a href="_sources/reference.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            <div class="bd-footer-content__inner"></div>
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright Deltares.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://sphinx-doc.org/">Sphinx</a> 6.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
