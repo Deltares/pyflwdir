@@ -4,12 +4,8 @@ channels:
   - conda-forge
 
 dependencies:
-  # required
   - affine
   - numba>=0.54
   - numpy
-  - scipy
-  # test
-  - black
   - pytest
-  - pytest-cov
+  - scipy
