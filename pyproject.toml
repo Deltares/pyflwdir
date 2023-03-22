@@ -10,11 +10,12 @@ license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 dependencies = [
+    "affine",
     "numba>=0.54",
     "numpy",
     "scipy",
-    "affine",
 ]
+requires-python = ">=3.8"
 
 [project.urls]
 Home = "https://github.com/Deltares/pyflwdir"
