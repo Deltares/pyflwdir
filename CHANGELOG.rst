@@ -2,17 +2,13 @@
 Change Log
 ###########
 
-unreleased
-**********
+0.5.7  (22-Mar-2023)
+********************
 
 New
 ---
+* add FlwdirRaster.ucat_volume & subgrid.ucat_volume methods
 
-Changed
--------
-
-Bugfix
-------
 
 0.5.6  (15-Nov-2022)
 ********************
@@ -26,6 +22,10 @@ Changed
 * Move to flit and pyproject.toml for installation and publication
 * drop support for python 3.7
 * update docs to Sphinx pydata style
+
+Bugfix
+------
+* use np.uint64 as dtype for large arrays
 
 0.5.5  (16-Feb-2022)
 ********************

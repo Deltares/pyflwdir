@@ -23,6 +23,7 @@ with rasterio.open(fn, "r") as src:
 ls = matplotlib.colors.LightSource(azdeg=115, altdeg=45)
 hs = ls.hillshade(np.ma.masked_equal(elevtn, -9999), vert_exag=1e3)
 
+
 # convenience method for plotting
 def quickplot(
     gdfs=[], raster=None, hillshade=True, extent=extent, hs=hs, title="", filename=""

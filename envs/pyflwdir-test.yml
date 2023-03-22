@@ -1,0 +1,11 @@
+name: pyflwdir-test
+
+channels:
+  - conda-forge
+
+dependencies:
+  - affine
+  - numba>=0.54
+  - numpy
+  - pytest
+  - scipy

@@ -10,6 +10,7 @@ from . import core
 _mv = core._mv
 __all__ = []
 
+
 # NOTE np.average (with) weights is not yet supoorted by numpy
 # all functions are faster than numpy.
 @njit

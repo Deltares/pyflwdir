@@ -312,13 +312,18 @@ def test_upscale():
 
 def test_ucat():
     elevtn = flw.rank
+    hand = flw.hand(elevtn=elevtn, drain=elevtn == 0)
+    depths = np.linspace(0.5, 1, 2)
     idxs_out = flw.ucat_outlets(5)
     ucat, ugrd = flw.ucat_area(idxs_out)
+    ucat1, uvol = flw.ucat_volume(idxs_out, hand=hand, depths=depths)
     rivlen = flw.subgrid_rivlen(idxs_out)
     rivslp = flw.subgrid_rivslp(idxs_out, elevtn, length=1)
     rivwth = flw.subgrid_rivavg(idxs_out, np.ones(flw.shape))
     assert ugrd.shape == idxs_out.shape
+    assert uvol.shape == (depths.size, *idxs_out.shape)
     assert ucat.shape == flw.shape
+    assert np.all(ucat1 == ucat)
     assert ugrd[idxs_out != flw._mv].min() > 0
     assert ugrd[idxs_out != flw._mv].min() > 0
     assert rivlen.shape == idxs_out.shape

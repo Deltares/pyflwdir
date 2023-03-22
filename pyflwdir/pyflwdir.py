@@ -838,7 +838,7 @@ class FlwdirRaster(Flwdir):
         )
         return stream_dist.reshape(self.shape)
 
-    def vectorize(self, mask=None, xs=None, ys=None, **kwargs):
+    def vectorize(self, mask=None, xs=None, ys=None, direction="down", **kwargs):
         """Returns each flow direction as a linestring geo-feature
 
         Parameters
@@ -850,6 +850,8 @@ class FlwdirRaster(Flwdir):
         xs, ys : 2D array of float
             Raster with cell x, y coordinates, by default None and inferred from cell
             center.
+        direction : {"up", "down"}
+            Flow direction to define path between segment end points.
         kwargs : extra sample maps key-word arguments
             optional maps to sample from
 
@@ -859,7 +861,7 @@ class FlwdirRaster(Flwdir):
             Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
         """
         idxs = core.flwdir_tuples(
-            self.idxs_ds,
+            self.idxs_ds if direction == "down" else self.idxs_us_main,
             mask=self._check_data(mask, "mask", optional=True),
             mv=self._mv,
         )
@@ -1132,21 +1134,21 @@ class FlwdirRaster(Flwdir):
         return idxs_out.reshape(shape1)
 
     def ucat_area(self, idxs_out, unit="cell"):
-        """Returns the unit catchment map (highres) and area (lowres) [m2].
+        """Returns the unit catchment map (highres) and area (lowres) [unit].
 
         Parameters
         ----------
         idxs_out : 2D array of int
             linear indices of unit catchment outlets
         unit : {'m2', 'ha', 'km2', 'cell'}
-            Upstream area unit.
+            area unit.
 
         Returns
         -------
         ucat_map: 2D array of int with self.shape
             unit catchment map [-]
         ucat_are: 2D array of float with idxs_out.shape
-            subgrid cell area [m2]
+            subgrid cell area [unit]
         """
         unit = str(unit).lower()
         if unit not in gis.AREA_FACTORS:
@@ -1156,7 +1158,7 @@ class FlwdirRaster(Flwdir):
             area = np.ones(self.size, dtype=np.int32)
         else:
             area = self.area.ravel() / gis.AREA_FACTORS[unit]
-        ucat_map, ucat_are = subgrid.segment_area(
+        ucat_map, ucat_are = subgrid.ucat_area(
             idxs_out=idxs_out.ravel(),
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
@@ -1164,6 +1166,40 @@ class FlwdirRaster(Flwdir):
             mv=self._mv,
         )
         return ucat_map.reshape(self.shape), ucat_are.reshape(idxs_out.shape)
+
+    def ucat_volume(
+        self, idxs_out, hand, depths=np.arange(0.5, 3.0, 0.5, dtype=np.float32)
+    ):
+        """Returns the unit catchment map (highres) and the
+        flood volume at given flood depths (lowres) [m3].
+
+        Parameters
+        ----------
+        idxs_out : 1D or 2D array of int
+            linear indices of unit catchment outlets
+        hand : 2D array of float
+            Height Above Nearest Drain, see also :py:meth:`pyflwdir.FlwdirRaster.hand`
+        depths : 1D array of float, optional
+            Depth distribution of which to calculate the volume
+
+        Returns
+        -------
+        ucat_map: 2D array of int with self.shape
+            unit catchment map [-]
+        ucat_vol: nD array of float with shape (depths.size, *idxs_out.shape)
+            subgrid volume as function of depths [m3]
+        """
+        ucat_map, ucat_vol = subgrid.ucat_volume(
+            idxs_out=idxs_out.ravel(),
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            area=self.area.ravel() / gis.AREA_FACTORS["m2"],
+            hand=self._check_data(hand, "hand"),
+            depths=depths,
+            mv=self._mv,
+        )
+        shape_out = (depths.size, *idxs_out.shape)
+        return ucat_map.reshape(self.shape), ucat_vol.reshape(shape_out)
 
     def subgrid_rivlen(
         self,

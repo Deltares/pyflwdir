@@ -3,7 +3,7 @@
 
 import pytest
 import numpy as np
-from pyflwdir import dem
+from pyflwdir import dem, subgrid
 from test_core import test_data
 
 parsed, flwdir = test_data[0]
@@ -121,6 +121,15 @@ def test_hand_fldpln():
     # hand == elevtn
     hand = dem.height_above_nearest_drain(idxs_ds, seq, drain, elevtn)
     assert np.all(hand == elevtn)
+    # subgrid floodplain volume
+    idxs_out = np.where(drain.ravel())[0]
+    area = np.ones(idxs_ds.size, dtype=np.int32)
+    depths = np.linspace(1, hand.max(), 5)
+    drain_map, fldpln_vol = subgrid.ucat_volume(
+        idxs_out, idxs_ds, seq, hand, area, depths=depths
+    )
+    assert fldpln_vol.shape == (*depths.shape, drain_map.max())
+    assert np.all(np.diff(fldpln_vol, axis=0) > 0)
     # max h = 1
     uparea = np.where(drain, 1, 0)
     upa_min = 1
