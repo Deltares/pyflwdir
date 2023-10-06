@@ -12,7 +12,7 @@ import geopandas as gpd
 np.random.seed(seed=101)
 matplotlib.rcParams["savefig.bbox"] = "tight"
 matplotlib.rcParams["savefig.dpi"] = 256
-plt.style.use("seaborn-whitegrid")
+plt.style.use("whitegrid")
 
 # read example elevation data and derive background hillslope
 fn = os.path.join(os.path.dirname(__file__), "rhine_elv0.tif")
