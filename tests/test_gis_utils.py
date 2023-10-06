@@ -152,7 +152,7 @@ def test_edge():
     assert np.all(gis.get_edge(a) == a)
     b = a.copy()
     b[1, 3], b[3, 1] = False, False
-    d4 = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+    d4 = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=bool)
     assert np.all(gis.get_edge(a, structure=d4) == b)
 
 
