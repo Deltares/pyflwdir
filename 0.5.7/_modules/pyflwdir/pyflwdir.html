@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 
 
@@ -18,26 +17,27 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
-<link href="../../_static/styles/bootstrap.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css?v=c406d1fd" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/documentation_options.js?v=8a448e45"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pyflwdir/pyflwdir';</script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -52,6 +52,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -92,7 +101,8 @@
     <span class="fa-solid fa-bars"></span>
   </label>
   
-  <div class="navbar-header-items__start">
+  
+  <div class="col-lg-3 navbar-header-items__start">
     
       <div class="navbar-item">
   
@@ -114,7 +124,6 @@
 </a></div>
     
   </div>
-  
   
   <div class="col-lg-9 navbar-header-items">
     
@@ -166,13 +175,15 @@
       
         <div class="navbar-item navbar-persistent--container">
           
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
-  </button>
-`);
-</script>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
@@ -208,13 +219,15 @@ document.write(`
   
   
     <div class="navbar-persistent--mobile">
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
-  </button>
-`);
-</script>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
@@ -334,8 +347,8 @@ document.write(`
 
 
 
-<nav aria-label="Breadcrumbs">
-  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../index.html" class="nav-link" aria-label="Home">
@@ -413,7 +426,9 @@ document.write(`
     <span class="k">return</span> <span class="n">ftype</span>
 
 
-<div class="viewcode-block" id="from_dem"><a class="viewcode-back" href="../../_generated/pyflwdir.from_dem.html#pyflwdir.from_dem">[docs]</a><span class="k">def</span> <span class="nf">from_dem</span><span class="p">(</span>
+<div class="viewcode-block" id="from_dem">
+<a class="viewcode-back" href="../../_generated/pyflwdir.from_dem.html#pyflwdir.from_dem">[docs]</a>
+<span class="k">def</span> <span class="nf">from_dem</span><span class="p">(</span>
     <span class="n">data</span><span class="p">,</span>
     <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">,</span>
     <span class="n">max_depth</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span>
@@ -467,7 +482,10 @@ document.write(`
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="from_array"><a class="viewcode-back" href="../../_generated/pyflwdir.from_array.html#pyflwdir.from_array">[docs]</a><span class="k">def</span> <span class="nf">from_array</span><span class="p">(</span>
+
+<div class="viewcode-block" id="from_array">
+<a class="viewcode-back" href="../../_generated/pyflwdir.from_array.html#pyflwdir.from_array">[docs]</a>
+<span class="k">def</span> <span class="nf">from_array</span><span class="p">(</span>
     <span class="n">data</span><span class="p">,</span>
     <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;infer&quot;</span><span class="p">,</span>
     <span class="n">check_ftype</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -546,10 +564,15 @@ document.write(`
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="FlwdirRaster"><a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.html#pyflwdir.FlwdirRaster">[docs]</a><span class="k">class</span> <span class="nc">FlwdirRaster</span><span class="p">(</span><span class="n">Flwdir</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster">
+<a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.html#pyflwdir.FlwdirRaster">[docs]</a>
+<span class="k">class</span> <span class="nc">FlwdirRaster</span><span class="p">(</span><span class="n">Flwdir</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Flow direction raster array parsed to general actionable format.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="FlwdirRaster.__init__"><a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.html#pyflwdir.FlwdirRaster.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="FlwdirRaster.__init__">
+<a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.html#pyflwdir.FlwdirRaster.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">idxs_ds</span><span class="p">,</span>
         <span class="n">shape</span><span class="p">,</span>
@@ -613,6 +636,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_transform</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">latlon</span><span class="p">)</span></div>
 
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -639,7 +663,9 @@ document.write(`
 
     <span class="c1">### SET/MODIFY PROPERTIES ###</span>
 
-<div class="viewcode-block" id="FlwdirRaster.add_pits"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.add_pits">[docs]</a>    <span class="k">def</span> <span class="nf">add_pits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idxs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">streams</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.add_pits">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.add_pits">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_pits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idxs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">streams</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add pits the flow direction raster.</span>
 <span class="sd">        If `streams` is given, the pits are snapped to the first downstream True cell.</span>
 
@@ -656,7 +682,10 @@ document.write(`
         <span class="n">idxs1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_idxs_xy</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">xy</span><span class="p">,</span> <span class="n">streams</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add_pits</span><span class="p">(</span><span class="n">idxs</span><span class="o">=</span><span class="n">idxs1</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.set_transform"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.set_transform">[docs]</a>    <span class="k">def</span> <span class="nf">set_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.set_transform">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.set_transform">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set transform affine.</span>
 
 <span class="sd">        Parameters</span>
@@ -677,9 +706,12 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">latlon</span> <span class="o">=</span> <span class="n">latlon</span></div>
 
+
     <span class="c1">### WRITE / EXPORT ###</span>
 
-<div class="viewcode-block" id="FlwdirRaster.to_array"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.to_array">[docs]</a>    <span class="k">def</span> <span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.to_array">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.to_array">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return 2D flow direction raster.</span>
 
 <span class="sd">        Parameters</span>
@@ -700,7 +732,10 @@ document.write(`
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ftype &quot;</span><span class="si">{</span><span class="n">ftype</span><span class="si">}</span><span class="s1">&quot; unknown&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">flwdir</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.load"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.load">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="FlwdirRaster.load">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.load">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load serialized FlwdirRaster object from file</span>
 
@@ -713,9 +748,12 @@ document.write(`
             <span class="n">kwargs</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">FlwdirRaster</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
+
     <span class="c1">### spatial methods ###</span>
 
-<div class="viewcode-block" id="FlwdirRaster.index"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.index">[docs]</a>    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.index">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.index">[docs]</a>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns linear cell indices based on x, y coordinates.</span>
 
 <span class="sd">        Parameters</span>
@@ -730,7 +768,10 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">gis</span><span class="o">.</span><span class="n">coords_to_idxs</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.xy"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.xy">[docs]</a>    <span class="k">def</span> <span class="nf">xy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idxs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.xy">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.xy">[docs]</a>
+    <span class="k">def</span> <span class="nf">xy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idxs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns x, y coordinates of the cell center based on linear cell indices.</span>
 
 <span class="sd">        Parameters</span>
@@ -746,6 +787,7 @@ document.write(`
 <span class="sd">            y coordinates.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">gis</span><span class="o">.</span><span class="n">idxs_to_coords</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -781,7 +823,9 @@ document.write(`
         <span class="k">return</span> <span class="n">area</span>
 
     <span class="c1">### LOCAL METHODS ###</span>
-<div class="viewcode-block" id="FlwdirRaster.path"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.path">[docs]</a>    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span>
+<div class="viewcode-block" id="FlwdirRaster.path">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.path">[docs]</a>
+    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">idxs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">xy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -840,7 +884,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">paths</span><span class="p">,</span> <span class="n">dist</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.snap"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.snap">[docs]</a>    <span class="k">def</span> <span class="nf">snap</span><span class="p">(</span>
+
+<div class="viewcode-block" id="FlwdirRaster.snap">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.snap">[docs]</a>
+    <span class="k">def</span> <span class="nf">snap</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">idxs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">xy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -900,9 +947,12 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">idxs1</span><span class="p">,</span> <span class="n">dist</span></div>
 
+
     <span class="c1">### BASINS ###</span>
 
-<div class="viewcode-block" id="FlwdirRaster.basins"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.basins">[docs]</a>    <span class="k">def</span> <span class="nf">basins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idxs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.basins">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.basins">[docs]</a>
+    <span class="k">def</span> <span class="nf">basins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idxs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a (sub)basin map with a unique ID for every (sub)basin.</span>
 
 <span class="sd">        To return a subbasin map either linear indices or x,y coordinates of subbasin</span>
@@ -939,7 +989,10 @@ document.write(`
         <span class="n">basids</span> <span class="o">=</span> <span class="n">basins</span><span class="o">.</span><span class="n">basins</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">idxs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">basids</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.subbasins_streamorder"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subbasins_streamorder">[docs]</a>    <span class="k">def</span> <span class="nf">subbasins_streamorder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strord</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_sto</span><span class="o">=-</span><span class="mi">2</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.subbasins_streamorder">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subbasins_streamorder">[docs]</a>
+    <span class="k">def</span> <span class="nf">subbasins_streamorder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strord</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_sto</span><span class="o">=-</span><span class="mi">2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a subbasin map with unique IDs and its outlet linear indices.</span>
 <span class="sd">        Subbasins are defined based on a minimum stream order.</span>
 
@@ -969,7 +1022,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">subbas</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">idxs_out</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.subbasins_pfafstetter"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subbasins_pfafstetter">[docs]</a>    <span class="k">def</span> <span class="nf">subbasins_pfafstetter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.subbasins_pfafstetter">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subbasins_pfafstetter">[docs]</a>
+    <span class="k">def</span> <span class="nf">subbasins_pfafstetter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the pfafstetter subbasins.</span>
 
 <span class="sd">        Parameters</span>
@@ -1003,7 +1059,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">subbas</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">idxs_out</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.subbasins_area"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subbasins_area">[docs]</a>    <span class="k">def</span> <span class="nf">subbasins_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">area_min</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.subbasins_area">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subbasins_area">[docs]</a>
+    <span class="k">def</span> <span class="nf">subbasins_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">area_min</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns map with basin IDs, with a minimal area of `area_min`.</span>
 <span class="sd">        Moving upstream from the basin outlets a new subbasin starts at tributaries</span>
 <span class="sd">        with a contributing area larger than `area_min` and new interbasins when its area</span>
@@ -1032,7 +1091,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">subbas</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">idxs_out</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.basin_bounds"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.basin_bounds">[docs]</a>    <span class="k">def</span> <span class="nf">basin_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.basin_bounds">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.basin_bounds">[docs]</a>
+    <span class="k">def</span> <span class="nf">basin_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a the basin boundaries.</span>
 
 <span class="sd">        Additional key-word arguments are passed to the basins method which is used to</span>
@@ -1058,7 +1120,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">lbs</span><span class="p">,</span> <span class="n">bboxs</span><span class="p">,</span> <span class="n">total_bbox</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.basin_outlets"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.basin_outlets">[docs]</a>    <span class="k">def</span> <span class="nf">basin_outlets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basins</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.basin_outlets">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.basin_outlets">[docs]</a>
+    <span class="k">def</span> <span class="nf">basin_outlets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basins</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the linear index of the outlet cell of `basins`.</span>
 
 <span class="sd">        Parameters</span>
@@ -1079,6 +1144,7 @@ document.write(`
             <span class="n">seq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">lbs</span><span class="p">,</span> <span class="n">idxs_out</span></div>
+
 
     <span class="k">def</span> <span class="nf">interbasin_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns most downstream contiguous area within region, i.e.: if a stream flows</span>
@@ -1108,7 +1174,9 @@ document.write(`
 
     <span class="c1">### ACCUMULATE ####</span>
 
-<div class="viewcode-block" id="FlwdirRaster.upstream_area"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.upstream_area">[docs]</a>    <span class="k">def</span> <span class="nf">upstream_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.upstream_area">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.upstream_area">[docs]</a>
+    <span class="k">def</span> <span class="nf">upstream_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the upstream area map based on the flow direction map.</span>
 
 <span class="sd">        If latlon is True it converts the cell areas to metres, otherwise it</span>
@@ -1141,8 +1209,11 @@ document.write(`
         <span class="n">uparea</span><span class="p">[</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">9999</span>
         <span class="k">return</span> <span class="n">uparea</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
+
     <span class="c1">### STREAMS ####</span>
-<div class="viewcode-block" id="FlwdirRaster.inflow_idxs"><a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.inflow_idxs.html#pyflwdir.FlwdirRaster.inflow_idxs">[docs]</a>    <span class="k">def</span> <span class="nf">inflow_idxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.inflow_idxs">
+<a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.inflow_idxs.html#pyflwdir.FlwdirRaster.inflow_idxs">[docs]</a>
+    <span class="k">def</span> <span class="nf">inflow_idxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns linear indices of most upstream cells within region</span>
 
 <span class="sd">        Parameters</span>
@@ -1158,7 +1229,10 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="s2">&quot;region&quot;</span><span class="p">)</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.outflow_idxs"><a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.outflow_idxs.html#pyflwdir.FlwdirRaster.outflow_idxs">[docs]</a>    <span class="k">def</span> <span class="nf">outflow_idxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.outflow_idxs">
+<a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.outflow_idxs.html#pyflwdir.FlwdirRaster.outflow_idxs">[docs]</a>
+    <span class="k">def</span> <span class="nf">outflow_idxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns linear indices of most downstream cells within region</span>
 
 <span class="sd">        Parameters</span>
@@ -1175,7 +1249,10 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="s2">&quot;region&quot;</span><span class="p">)</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.stream_distance"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.stream_distance">[docs]</a>    <span class="k">def</span> <span class="nf">stream_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.stream_distance">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.stream_distance">[docs]</a>
+    <span class="k">def</span> <span class="nf">stream_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns distance to outlet or next downstream True cell in mask</span>
 
 <span class="sd">        Parameters</span>
@@ -1203,7 +1280,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">stream_dist</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.vectorize"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.vectorize">[docs]</a>    <span class="k">def</span> <span class="nf">vectorize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;down&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.vectorize">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.vectorize">[docs]</a>
+    <span class="k">def</span> <span class="nf">vectorize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;down&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns each flow direction as a linestring geo-feature</span>
 
 <span class="sd">        Parameters</span>
@@ -1232,7 +1312,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">geofeatures</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="n">ys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.streams"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.streams">[docs]</a>    <span class="k">def</span> <span class="nf">streams</span><span class="p">(</span>
+
+<div class="viewcode-block" id="FlwdirRaster.streams">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.streams">[docs]</a>
+    <span class="k">def</span> <span class="nf">streams</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">min_sto</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -1314,7 +1397,10 @@ document.write(`
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">geofeatures</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="n">ys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.geofeatures"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.geofeatures">[docs]</a>    <span class="k">def</span> <span class="nf">geofeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flowpaths</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.geofeatures">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.geofeatures">[docs]</a>
+    <span class="k">def</span> <span class="nf">geofeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flowpaths</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a geo-features of flowpaths defined by a list of arrays of linear</span>
 <span class="sd">        indices.</span>
 
@@ -1350,9 +1436,12 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">feats</span></div>
 
+
     <span class="c1">### UPSCALE FLOW DIRECTIONOS ###</span>
 
-<div class="viewcode-block" id="FlwdirRaster.upscale"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.upscale">[docs]</a>    <span class="k">def</span> <span class="nf">upscale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;ihu&quot;</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.upscale">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.upscale">[docs]</a>
+    <span class="k">def</span> <span class="nf">upscale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;ihu&quot;</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Upscale flow direction network to lower resolution.</span>
 <span class="sd">        Available methods are Iterative hydrography upscaling method (IHU) [2]_,</span>
 <span class="sd">        Effective Area Method (EAM) [3]_ and Double Maximum Method (DMM) [4]_.</span>
@@ -1432,7 +1521,10 @@ document.write(`
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">flw1</span><span class="p">,</span> <span class="n">idxs_out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape1</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.upscale_error"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.upscale_error">[docs]</a>    <span class="k">def</span> <span class="nf">upscale_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">idxs_out</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.upscale_error">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.upscale_error">[docs]</a>
+    <span class="k">def</span> <span class="nf">upscale_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">idxs_out</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns an array with ones (True) where the upscaled flow directions are</span>
 <span class="sd">        valid and zeros (False) where erroneous.</span>
 
@@ -1462,9 +1554,12 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">flwerr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
+
     <span class="c1">### UNIT CATCHMENT ###</span>
 
-<div class="viewcode-block" id="FlwdirRaster.ucat_outlets"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.ucat_outlets">[docs]</a>    <span class="k">def</span> <span class="nf">ucat_outlets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cellsize</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;eam_plus&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.ucat_outlets">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.ucat_outlets">[docs]</a>
+    <span class="k">def</span> <span class="nf">ucat_outlets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cellsize</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;eam_plus&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns linear indices of unit catchment outlet pixel.</span>
 
 <span class="sd">        For more information about the methods see upscale script.</span>
@@ -1498,7 +1593,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">idxs_out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape1</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.ucat_area"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.ucat_area">[docs]</a>    <span class="k">def</span> <span class="nf">ucat_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idxs_out</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.ucat_area">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.ucat_area">[docs]</a>
+    <span class="k">def</span> <span class="nf">ucat_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idxs_out</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the unit catchment map (highres) and area (lowres) [unit].</span>
 
 <span class="sd">        Parameters</span>
@@ -1532,7 +1630,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">ucat_map</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">ucat_are</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">idxs_out</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.ucat_volume"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.ucat_volume">[docs]</a>    <span class="k">def</span> <span class="nf">ucat_volume</span><span class="p">(</span>
+
+<div class="viewcode-block" id="FlwdirRaster.ucat_volume">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.ucat_volume">[docs]</a>
+    <span class="k">def</span> <span class="nf">ucat_volume</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">idxs_out</span><span class="p">,</span> <span class="n">hand</span><span class="p">,</span> <span class="n">depths</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the unit catchment map (highres) and the</span>
@@ -1566,7 +1667,10 @@ document.write(`
         <span class="n">shape_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">depths</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">*</span><span class="n">idxs_out</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ucat_map</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">ucat_vol</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape_out</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.subgrid_rivlen"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subgrid_rivlen">[docs]</a>    <span class="k">def</span> <span class="nf">subgrid_rivlen</span><span class="p">(</span>
+
+<div class="viewcode-block" id="FlwdirRaster.subgrid_rivlen">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subgrid_rivlen">[docs]</a>
+    <span class="k">def</span> <span class="nf">subgrid_rivlen</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">idxs_out</span><span class="p">,</span>
         <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1615,7 +1719,10 @@ document.write(`
         <span class="n">shape</span> <span class="o">=</span> <span class="n">idxs_out</span><span class="o">.</span><span class="n">shape</span>
         <span class="k">return</span> <span class="n">rivlen</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.subgrid_rivslp"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subgrid_rivslp">[docs]</a>    <span class="k">def</span> <span class="nf">subgrid_rivslp</span><span class="p">(</span>
+
+<div class="viewcode-block" id="FlwdirRaster.subgrid_rivslp">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subgrid_rivslp">[docs]</a>
+    <span class="k">def</span> <span class="nf">subgrid_rivslp</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">idxs_out</span><span class="p">,</span>
         <span class="n">elevtn</span><span class="p">,</span>
@@ -1683,7 +1790,10 @@ document.write(`
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">rivslp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">idxs_out</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.subgrid_rivavg"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subgrid_rivavg">[docs]</a>    <span class="k">def</span> <span class="nf">subgrid_rivavg</span><span class="p">(</span>
+
+<div class="viewcode-block" id="FlwdirRaster.subgrid_rivavg">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subgrid_rivavg">[docs]</a>
+    <span class="k">def</span> <span class="nf">subgrid_rivavg</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">idxs_out</span><span class="p">,</span>
         <span class="n">data</span><span class="p">,</span>
@@ -1739,7 +1849,10 @@ document.write(`
         <span class="n">shape</span> <span class="o">=</span> <span class="n">idxs_out</span><span class="o">.</span><span class="n">shape</span>
         <span class="k">return</span> <span class="n">rivavg</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.subgrid_rivmed"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subgrid_rivmed">[docs]</a>    <span class="k">def</span> <span class="nf">subgrid_rivmed</span><span class="p">(</span>
+
+<div class="viewcode-block" id="FlwdirRaster.subgrid_rivmed">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.subgrid_rivmed">[docs]</a>
+    <span class="k">def</span> <span class="nf">subgrid_rivmed</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">idxs_out</span><span class="p">,</span>
         <span class="n">data</span><span class="p">,</span>
@@ -1795,9 +1908,12 @@ document.write(`
         <span class="n">shape</span> <span class="o">=</span> <span class="n">idxs_out</span><span class="o">.</span><span class="n">shape</span>
         <span class="k">return</span> <span class="n">rivmed</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
 
+
     <span class="c1">### ELEVATION ###</span>
 
-<div class="viewcode-block" id="FlwdirRaster.dem_dig_d4"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.dem_dig_d4">[docs]</a>    <span class="k">def</span> <span class="nf">dem_dig_d4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">rivmsk</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">):</span>
+<div class="viewcode-block" id="FlwdirRaster.dem_dig_d4">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.dem_dig_d4">[docs]</a>
+    <span class="k">def</span> <span class="nf">dem_dig_d4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">rivmsk</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the hydrologically adjusted elevation where for</span>
 <span class="sd">        each cell river cell there is an adjacent D4 connected cell which has</span>
 <span class="sd">        has the same or lower elevation as the current cell.</span>
@@ -1824,7 +1940,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">elv_out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.hand"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.hand">[docs]</a>    <span class="k">def</span> <span class="nf">hand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drain</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.hand">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.hand">[docs]</a>
+    <span class="k">def</span> <span class="nf">hand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drain</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the height above the nearest drain (HAND), i.e.: the relative vertical</span>
 <span class="sd">        distance (drop) to the nearest dowstream river based on drainage-normalized</span>
 <span class="sd">        topography and flowpaths.</span>
@@ -1852,7 +1971,10 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">hand</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FlwdirRaster.floodplains"><a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.floodplains">[docs]</a>    <span class="k">def</span> <span class="nf">floodplains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FlwdirRaster.floodplains">
+<a class="viewcode-back" href="../../reference.html#pyflwdir.FlwdirRaster.floodplains">[docs]</a>
+    <span class="k">def</span> <span class="nf">floodplains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">uparea</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns floodplain boundaries based on a maximum treshold (h) of HAND which is</span>
 <span class="sd">        scaled with upstream area (A) following h ~ A**b.</span>
 
@@ -1885,6 +2007,7 @@ document.write(`
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">fldpln</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
+
     <span class="c1">### SHORTCUTS ###</span>
 
     <span class="k">def</span> <span class="nf">_check_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1906,13 +2029,16 @@ document.write(`
         <span class="k">elif</span> <span class="n">xy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="o">*</span><span class="n">xy</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_check_idxs_xy</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">streams</span><span class="p">)</span></div>
+
 </pre></div>
 
                 </article>
               
               
               
-                <footer class="bd-footer-article">
+              
+              
+                <footer class="prev-next-footer">
                   <!-- Previous / next buttons -->
 <div class="prev-next-area">
 </div>
@@ -1925,7 +2051,7 @@ document.write(`
             
           </div>
           <footer class="bd-footer-content">
-            <div class="bd-footer-content__inner"></div>
+            
           </footer>
         
       </main>
@@ -1933,8 +2059,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d"></script>
-<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d"></script>
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1952,7 +2078,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://sphinx-doc.org/">Sphinx</a> 6.1.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
     <br/>
   </p>
 </div>
@@ -1960,10 +2086,11 @@ document.write(`
     </div>
   
   
+  
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>

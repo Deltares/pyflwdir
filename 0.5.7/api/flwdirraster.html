@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 
 
@@ -7,7 +6,7 @@
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>FlwdirRaster &#8212; PyFlwDir  documentation</title>
   
@@ -19,26 +18,27 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/theme-deltares.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/theme-deltares.css?v=c406d1fd" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/documentation_options.js?v=8a448e45"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/flwdirraster';</script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -55,6 +55,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -95,7 +104,8 @@
     <span class="fa-solid fa-bars"></span>
   </label>
   
-  <div class="navbar-header-items__start">
+  
+  <div class="col-lg-3 navbar-header-items__start">
     
       <div class="navbar-item">
   
@@ -117,7 +127,6 @@
 </a></div>
     
   </div>
-  
   
   <div class="col-lg-9 navbar-header-items">
     
@@ -169,13 +178,15 @@
       
         <div class="navbar-item navbar-persistent--container">
           
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
-  </button>
-`);
-</script>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
@@ -211,18 +222,20 @@ document.write(`
   
   
     <div class="navbar-persistent--mobile">
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
-  </button>
-`);
-</script>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
       <span class="fa-solid fa-outdent"></span>
     </label>
   
@@ -434,8 +447,8 @@ document.write(`
 
 
 
-<nav aria-label="Breadcrumbs">
-  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../index.html" class="nav-link" aria-label="Home">
@@ -463,7 +476,7 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <section id="flwdirraster">
-<h1>FlwdirRaster<a class="headerlink" href="#flwdirraster" title="Permalink to this heading">#</a></h1>
+<h1>FlwdirRaster<a class="headerlink" href="#flwdirraster" title="Link to this heading">#</a></h1>
 <table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.html#pyflwdir.FlwdirRaster" title="pyflwdir.FlwdirRaster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster</span></code></a>(idxs_ds, shape, ftype[, ...])</p></td>
@@ -472,7 +485,7 @@ document.write(`
 </tbody>
 </table>
 <section id="input-output">
-<h2>Input/Output<a class="headerlink" href="#input-output" title="Permalink to this heading">#</a></h2>
+<h2>Input/Output<a class="headerlink" href="#input-output" title="Link to this heading">#</a></h2>
 <table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.from_array.html#pyflwdir.from_array" title="pyflwdir.from_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_array</span></code></a>(data[, ftype, check_ftype, mask, ...])</p></td>
@@ -494,7 +507,7 @@ document.write(`
 </table>
 </section>
 <section id="flow-direction-attributes">
-<h2>Flow direction attributes<a class="headerlink" href="#flow-direction-attributes" title="Permalink to this heading">#</a></h2>
+<h2>Flow direction attributes<a class="headerlink" href="#flow-direction-attributes" title="Link to this heading">#</a></h2>
 <p>The following attributes describe the flow direction and are at the core to the object.</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
@@ -535,7 +548,7 @@ document.write(`
 </table>
 </section>
 <section id="flow-direction-methods">
-<h2>Flow direction methods<a class="headerlink" href="#flow-direction-methods" title="Permalink to this heading">#</a></h2>
+<h2>Flow direction methods<a class="headerlink" href="#flow-direction-methods" title="Link to this heading">#</a></h2>
 <table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../reference.html#pyflwdir.FlwdirRaster.order_cells" title="pyflwdir.FlwdirRaster.order_cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.order_cells</span></code></a>([method])</p></td>
@@ -557,7 +570,7 @@ document.write(`
 </table>
 </section>
 <section id="raster-geospatial-attributes-and-methods">
-<h2>Raster &amp; geospatial attributes and methods<a class="headerlink" href="#raster-geospatial-attributes-and-methods" title="Permalink to this heading">#</a></h2>
+<h2>Raster &amp; geospatial attributes and methods<a class="headerlink" href="#raster-geospatial-attributes-and-methods" title="Link to this heading">#</a></h2>
 <p>The FlwdirRaster object contains <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.shape</span></code>, <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.transform</span></code>
 and <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.latlon</span></code> attributes describing its geospatial location. The first
 attribute is required at initializiation, while the others can be set later.</p>
@@ -582,7 +595,7 @@ attribute is required at initializiation, while the others can be set later.</p>
 </table>
 </section>
 <section id="streams-and-flow-paths">
-<h2>Streams and flow paths<a class="headerlink" href="#streams-and-flow-paths" title="Permalink to this heading">#</a></h2>
+<h2>Streams and flow paths<a class="headerlink" href="#streams-and-flow-paths" title="Link to this heading">#</a></h2>
 <table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../reference.html#pyflwdir.FlwdirRaster.stream_order" title="pyflwdir.FlwdirRaster.stream_order"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.stream_order</span></code></a>([type, mask])</p></td>
@@ -613,7 +626,7 @@ attribute is required at initializiation, while the others can be set later.</p>
 </table>
 </section>
 <section id="sub-basins">
-<h2>(Sub)basins<a class="headerlink" href="#sub-basins" title="Permalink to this heading">#</a></h2>
+<h2>(Sub)basins<a class="headerlink" href="#sub-basins" title="Link to this heading">#</a></h2>
 <table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../reference.html#pyflwdir.FlwdirRaster.basins" title="pyflwdir.FlwdirRaster.basins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.basins</span></code></a>([idxs, xy, ids])</p></td>
@@ -638,7 +651,7 @@ attribute is required at initializiation, while the others can be set later.</p>
 </table>
 </section>
 <section id="up-and-downstream-values">
-<h2>Up- and downstream values<a class="headerlink" href="#up-and-downstream-values" title="Permalink to this heading">#</a></h2>
+<h2>Up- and downstream values<a class="headerlink" href="#up-and-downstream-values" title="Link to this heading">#</a></h2>
 <table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../reference.html#pyflwdir.FlwdirRaster.downstream" title="pyflwdir.FlwdirRaster.downstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.downstream</span></code></a>(data)</p></td>
@@ -651,7 +664,7 @@ attribute is required at initializiation, while the others can be set later.</p>
 </table>
 </section>
 <section id="up-and-downstream-arithmetics">
-<h2>Up- and downstream arithmetics<a class="headerlink" href="#up-and-downstream-arithmetics" title="Permalink to this heading">#</a></h2>
+<h2>Up- and downstream arithmetics<a class="headerlink" href="#up-and-downstream-arithmetics" title="Link to this heading">#</a></h2>
 <table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../reference.html#pyflwdir.FlwdirRaster.accuflux" title="pyflwdir.FlwdirRaster.accuflux"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.accuflux</span></code></a>(data[, nodata, direction])</p></td>
@@ -676,7 +689,7 @@ attribute is required at initializiation, while the others can be set later.</p>
 </table>
 </section>
 <section id="upscale-and-subgrid-methods">
-<h2>Upscale and subgrid methods<a class="headerlink" href="#upscale-and-subgrid-methods" title="Permalink to this heading">#</a></h2>
+<h2>Upscale and subgrid methods<a class="headerlink" href="#upscale-and-subgrid-methods" title="Link to this heading">#</a></h2>
 <table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../reference.html#pyflwdir.FlwdirRaster.upscale" title="pyflwdir.FlwdirRaster.upscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.upscale</span></code></a>(scale_factor[, method, ...])</p></td>
@@ -707,7 +720,7 @@ attribute is required at initializiation, while the others can be set later.</p>
 </table>
 </section>
 <section id="elevation">
-<h2>Elevation<a class="headerlink" href="#elevation" title="Permalink to this heading">#</a></h2>
+<h2>Elevation<a class="headerlink" href="#elevation" title="Link to this heading">#</a></h2>
 <table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../reference.html#pyflwdir.FlwdirRaster.dem_adjust" title="pyflwdir.FlwdirRaster.dem_adjust"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.dem_adjust</span></code></a>(elevtn)</p></td>
@@ -732,7 +745,9 @@ attribute is required at initializiation, while the others can be set later.</p>
               
               
               
-                <footer class="bd-footer-article">
+              
+              
+                <footer class="prev-next-footer">
                   <!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
@@ -809,7 +824,7 @@ attribute is required at initializiation, while the others can be set later.</p>
             
           </div>
           <footer class="bd-footer-content">
-            <div class="bd-footer-content__inner"></div>
+            
           </footer>
         
       </main>
@@ -817,8 +832,8 @@ attribute is required at initializiation, while the others can be set later.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -836,7 +851,7 @@ attribute is required at initializiation, while the others can be set later.</p>
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://sphinx-doc.org/">Sphinx</a> 6.1.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
     <br/>
   </p>
 </div>
@@ -844,10 +859,11 @@ attribute is required at initializiation, while the others can be set later.</p>
     </div>
   
   
+  
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>
