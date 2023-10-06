@@ -1,0 +1,881 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pyflwdir.dem &#8212; PyFlwDir  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css?v=c406d1fd" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../../_static/documentation_options.js?v=8a448e45"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pyflwdir/dem';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/pyflwdir_icon.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/pyflwdir_icon.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+    <p class="title logo__title">PyFlwDir</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../quickstart.html">
+                        User Guide
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../reference.html">
+                        API reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../changelog.html">
+                        Developments
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="../../_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../quickstart.html">
+                        User Guide
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../reference.html">
+                        API reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../changelog.html">
+                        Developments
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="../../_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">pyflwdir.dem</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for pyflwdir.dem</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Methods to derive topo/hydrographical paramters from elevation data, in some cases </span>
+<span class="sd"> in combination with flow direction data.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">heapq</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">gis_utils</span><span class="p">,</span> <span class="n">core</span><span class="p">,</span> <span class="n">core_d8</span>
+
+<span class="n">_mv</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">_mv</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;slope&quot;</span><span class="p">,</span> <span class="s2">&quot;fill_depressions&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="fill_depressions">
+<a class="viewcode-back" href="../../_generated/pyflwdir.dem.fill_depressions.html#pyflwdir.dem.fill_depressions">[docs]</a>
+<span class="nd">@njit</span>
+<span class="k">def</span> <span class="nf">fill_depressions</span><span class="p">(</span>
+    <span class="n">elevtn</span><span class="p">,</span>
+    <span class="n">outlets</span><span class="o">=</span><span class="s2">&quot;edge&quot;</span><span class="p">,</span>
+    <span class="n">idxs_pit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">,</span>
+    <span class="n">max_depth</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">elv_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">connectivity</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fill local depressions in elevation data and derived local</span>
+<span class="sd">    D8 flow directions.</span>
+
+<span class="sd">    Outlets are assumed to occur at the edge of valid elevation cells `outlets=&#39;edge&#39;`;</span>
+<span class="sd">    at the lowest valid edge cell to create one single outlet `outlets=&#39;min&#39;`;</span>
+<span class="sd">    or at user provided outlet cells `idxs_pit`.</span>
+
+<span class="sd">    Depressions elsewhere are filled based on its lowest pour point elevation.</span>
+<span class="sd">    If the pour point depth is larger than the maximum pour point depth `max_depth` a pit</span>
+<span class="sd">    is set at the depression local minimum elevation.</span>
+
+<span class="sd">    Based on: Wang, L., &amp; Liu, H. (2006). https://doi.org/10.1080/13658810500433453</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    elevtn: 2D array</span>
+<span class="sd">        elevation raster</span>
+<span class="sd">    nodata: float, optional</span>
+<span class="sd">        nodata value, by default -9999.0</span>
+<span class="sd">    max_depth: float, optional</span>
+<span class="sd">        Maximum pour point depth. Depressions with a larger pour point</span>
+<span class="sd">        depth are set as pit. A negative value (default) equals an infitely</span>
+<span class="sd">        large pour point depth causing all depressions to be filled.</span>
+<span class="sd">    connectivity: {4, 8}</span>
+<span class="sd">        Number of neighboring cells to consider.</span>
+<span class="sd">    outlets: {&#39;edge&#39;, &#39;min&#39;}</span>
+<span class="sd">        Initial basin outlet(s) at the edge of all cells (&#39;edge&#39;; default)</span>
+<span class="sd">        or only the minimum elevation edge cell (&#39;min&#39;)</span>
+<span class="sd">    elv_max, float, optional</span>
+<span class="sd">        Maximum elevation for outlets, only in combination with `outlets=&#39;edge&#39;`.</span>
+<span class="sd">        By default None.</span>
+<span class="sd">    idxs_pit: 1D array of int</span>
+<span class="sd">        Linear indices of outlet cells.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    elevtn_out: 2D array</span>
+<span class="sd">        Depression filled elevation</span>
+<span class="sd">    d8: 2D array of uint8</span>
+<span class="sd">        D8 flow directions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">elevtn</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">delv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">elevtn</span><span class="p">)</span>
+    <span class="n">done</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">elevtn</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">nodata</span><span class="p">)</span> <span class="k">else</span> <span class="n">elevtn</span> <span class="o">==</span> <span class="n">nodata</span>
+    <span class="n">d8</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">done</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">247</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">connectivity</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;connectivity&quot; should either be 4 or 8&#39;</span><span class="p">)</span>
+    <span class="c1"># pfff.. numba does not allow creation of numpy bool arrays using normal methods</span>
+    <span class="n">struct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">bool</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">)])</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">connectivity</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">struct</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">struct</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="n">struct</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">struct</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span>
+
+    <span class="c1"># initiate queue</span>
+    <span class="k">if</span> <span class="n">idxs_pit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># with edge cells</span>
+        <span class="n">queued</span> <span class="o">=</span> <span class="n">gis_utils</span><span class="o">.</span><span class="n">get_edge</span><span class="p">(</span><span class="o">~</span><span class="n">done</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">struct</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">elv_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">queued</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">queued</span><span class="p">,</span> <span class="n">elevtn</span> <span class="o">&lt;=</span> <span class="n">elv_max</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">queued</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No initial outlet cells found.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># with user defined outlet cells</span>
+        <span class="n">queued</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">bool</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">elevtn</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">idxs_pit</span><span class="p">:</span>
+            <span class="n">queued</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># queue contains (elevation, boundary, row, col)</span>
+    <span class="c1"># boundary is included to favor non-boundary cells over boundary cells with same elevation</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="p">[(</span><span class="n">elevtn</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>
+    <span class="n">heapq</span><span class="o">.</span><span class="n">heapify</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">queued</span><span class="p">)):</span>
+        <span class="n">heapq</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">elevtn</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">c</span><span class="p">)))</span>
+    <span class="c1"># restrict queue to global edge mimimum (single outlet)</span>
+    <span class="k">if</span> <span class="n">outlets</span> <span class="o">==</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="p">[</span><span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="n">q</span><span class="p">)]</span>
+        <span class="n">queued</span><span class="p">[:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">queued</span><span class="p">[</span><span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># loop over cells and neighbors with ascending cell elevation.</span>
+    <span class="n">drs</span><span class="p">,</span> <span class="n">dcs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
+    <span class="n">drs</span><span class="p">,</span> <span class="n">dcs</span> <span class="o">=</span> <span class="n">drs</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dcs</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">z0</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">c0</span> <span class="o">=</span> <span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">dr</span><span class="p">,</span> <span class="n">dc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">drs</span><span class="p">,</span> <span class="n">dcs</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">r0</span> <span class="o">+</span> <span class="n">dr</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">c0</span> <span class="o">+</span> <span class="n">dc</span>
+            <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">r</span> <span class="o">==</span> <span class="n">nrow</span> <span class="ow">or</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">c</span> <span class="o">==</span> <span class="n">ncol</span> <span class="ow">or</span> <span class="n">done</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]:</span>
+                <span class="k">continue</span>
+            <span class="n">z1</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span>
+            <span class="n">dz</span> <span class="o">=</span> <span class="n">z0</span> <span class="o">-</span> <span class="n">z1</span>  <span class="c1"># local depression if dz &gt; 0</span>
+            <span class="k">if</span> <span class="n">max_depth</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># if positive max_depth: don&#39;t fill when dz &gt; max_depth</span>
+                <span class="k">if</span> <span class="n">dz</span> <span class="o">&gt;=</span> <span class="n">max_depth</span><span class="p">:</span>
+                    <span class="n">heapq</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">z1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">c</span><span class="p">)))</span>
+                    <span class="n">queued</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">for</span> <span class="n">dr</span><span class="p">,</span> <span class="n">dc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">drs</span><span class="p">,</span> <span class="n">dcs</span><span class="p">):</span>  <span class="c1"># (re)visit neighbors</span>
+                        <span class="n">done</span><span class="p">[</span><span class="n">r</span> <span class="o">+</span> <span class="n">dr</span><span class="p">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">dc</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">continue</span>
+                <span class="k">elif</span> <span class="n">delv</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># reset cell if previously filled &amp; revisited</span>
+                    <span class="n">queued</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">delv</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">dz</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># check if local depression (dz&gt;0)</span>
+                <span class="n">delv</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">dz</span>
+                <span class="n">z1</span> <span class="o">+=</span> <span class="n">dz</span>
+            <span class="k">if</span> <span class="o">~</span><span class="n">queued</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]:</span>  <span class="c1"># add to queue</span>
+                <span class="n">heapq</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">z1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">c</span><span class="p">)))</span>
+                <span class="n">queued</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">done</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">d8</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">core_d8</span><span class="o">.</span><span class="n">_us</span><span class="p">[</span><span class="n">dr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">elevtn</span> <span class="o">+</span> <span class="n">delv</span><span class="p">,</span> <span class="n">d8</span></div>
+
+
+
+<span class="nd">@njit</span>
+<span class="k">def</span> <span class="nf">adjust_elevation</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">mv</span><span class="o">=</span><span class="n">_mv</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a flow direction map, remove pits in the elevation map.</span>
+<span class="sd">    Algorithm based on Yamazaki et al. (2012)</span>
+
+<span class="sd">    .. ref: Yamazaki, D., Baugh, C. A., Bates, P. D., Kanae, S., Alsdorf, D. E. and</span>
+<span class="sd">    Oki, T.: Adjustment of a spaceborne DEM for use in floodplain hydrodynamic</span>
+<span class="sd">    modeling, J. Hydrol., 436-437, 81-91, doi:10.1016/j.jhydrol.2012.02.045,</span>
+<span class="sd">    2012.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">elevtn_out</span> <span class="o">=</span> <span class="n">elevtn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">bool</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">elevtn</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span>  <span class="c1"># True for checked cells</span>
+    <span class="k">for</span> <span class="n">idx0</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># from up- to downstream starting from longest stream paths</span>
+        <span class="k">if</span> <span class="n">mask</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>  <span class="c1"># @ head water cell</span>
+            <span class="c1"># get downstream indices up to earlier fixed stream path</span>
+            <span class="n">idxs0</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">_trace</span><span class="p">(</span><span class="n">idx0</span><span class="p">,</span> <span class="n">idxs_ds</span><span class="p">,</span> <span class="n">mv</span><span class="o">=</span><span class="n">mv</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># fix elevation</span>
+            <span class="n">elevtn1</span> <span class="o">=</span> <span class="n">_adjust_elevation</span><span class="p">(</span><span class="n">elevtn_out</span><span class="p">[</span><span class="n">idxs0</span><span class="p">])</span>
+            <span class="c1"># assert np.all(np.diff(elevtn1) &lt;= 0), elevtn_out[idxs0]</span>
+            <span class="n">elevtn_out</span><span class="p">[</span><span class="n">idxs0</span><span class="p">]</span> <span class="o">=</span> <span class="n">elevtn1</span>
+            <span class="n">mask</span><span class="p">[</span><span class="n">idxs0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># update mask</span>
+    <span class="k">return</span> <span class="n">elevtn_out</span>
+
+
+<span class="nd">@njit</span>
+<span class="k">def</span> <span class="nf">_adjust_elevation</span><span class="p">(</span><span class="n">elevtn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;fix elevation on single streamline based on minimum modification</span>
+<span class="sd">    elevtn oderdered from up- to downstream</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">elevtn</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">imax</span><span class="p">,</span> <span class="n">imin</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">zmax</span><span class="p">,</span> <span class="n">zmin</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">elevtn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># local max / min elevation</span>
+    <span class="n">zi_min1</span><span class="p">,</span> <span class="n">zi_min2</span> <span class="o">=</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">zmin</span>  <span class="c1"># initialize</span>
+    <span class="c1"># all elevtn should be larger than last value</span>
+    <span class="n">elevtn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">elevtn</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">elevtn</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">zi</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">zi</span> <span class="o">&gt;=</span> <span class="n">zmax</span><span class="p">:</span>
+            <span class="n">zmax</span> <span class="o">=</span> <span class="n">zi</span>
+            <span class="n">imax</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">zi</span> <span class="o">&gt;</span> <span class="n">zi_min1</span> <span class="ow">and</span> <span class="n">zi_min2</span> <span class="o">&gt;=</span> <span class="n">zi_min1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">imin</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">n</span><span class="p">):</span>  <span class="c1"># pit</span>
+            <span class="k">if</span> <span class="n">imin</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># starting from second pit or end of vector</span>
+                <span class="c1"># option 1: dig -&gt; zmod = zmin, for all values larger than zmin, after imin</span>
+                <span class="n">idxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">imin</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+                <span class="n">zmod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">idxs</span><span class="p">])</span>
+                <span class="n">cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">elevtn</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span> <span class="o">-</span> <span class="n">zmod</span><span class="p">))</span>
+                <span class="c1"># option 2: fill -&gt; zmod = zmax, for all values smaller than zmax, previous to imax</span>
+                <span class="n">idxs2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">imax</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+                <span class="n">zmod2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">zmax</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">idxs2</span><span class="p">])</span>
+                <span class="n">cost2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">elevtn</span><span class="p">[</span><span class="n">idxs2</span><span class="p">]</span> <span class="o">-</span> <span class="n">zmod2</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">cost2</span> <span class="o">&lt;</span> <span class="n">cost</span><span class="p">:</span>
+                    <span class="n">cost</span><span class="p">,</span> <span class="n">idxs</span><span class="p">,</span> <span class="n">zmod</span> <span class="o">=</span> <span class="n">cost2</span><span class="p">,</span> <span class="n">idxs2</span><span class="p">,</span> <span class="n">zmod2</span>
+                <span class="c1"># option 3: dig &amp; fill -&gt; try all values between imin and imax</span>
+                <span class="n">i0</span><span class="p">,</span> <span class="n">j0</span><span class="p">,</span> <span class="n">i1</span><span class="p">,</span> <span class="n">j1</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">imax</span><span class="p">,</span> <span class="n">imax</span>
+                <span class="n">zs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">elevtn</span><span class="p">[</span><span class="n">imin</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">i</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">zs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>  <span class="c1"># skip zmax</span>
+                    <span class="k">for</span> <span class="n">j0</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i0</span><span class="p">,</span> <span class="n">imin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># start of zmod</span>
+                        <span class="k">if</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">j0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">z</span><span class="p">:</span>
+                            <span class="k">break</span>
+                    <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i1</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># end of zmod</span>
+                        <span class="k">if</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">j1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">z</span><span class="p">:</span>
+                            <span class="k">break</span>
+                    <span class="n">i0</span><span class="p">,</span> <span class="n">i1</span> <span class="o">=</span> <span class="n">j0</span><span class="p">,</span> <span class="n">j1</span>
+                    <span class="n">idxs2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">j0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">imax</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+                    <span class="n">zmod2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">idxs2</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">elevtn</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                    <span class="n">cost2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">elevtn</span><span class="p">[</span><span class="n">idxs2</span><span class="p">]</span> <span class="o">-</span> <span class="n">zmod2</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">cost2</span> <span class="o">&lt;</span> <span class="n">cost</span><span class="p">:</span>
+                        <span class="n">cost</span><span class="p">,</span> <span class="n">idxs</span><span class="p">,</span> <span class="n">zmod</span> <span class="o">=</span> <span class="n">cost2</span><span class="p">,</span> <span class="n">idxs2</span><span class="p">,</span> <span class="n">zmod2</span>
+                <span class="c1"># update elevation</span>
+                <span class="n">elevtn</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span> <span class="o">=</span> <span class="n">zmod</span>
+            <span class="c1"># update zmin &amp; zmax</span>
+            <span class="n">imax</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">zmax</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">imax</span><span class="p">]</span>
+            <span class="n">imin</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">zmin</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">imin</span><span class="p">]</span>
+        <span class="c1"># update zi values</span>
+        <span class="k">if</span> <span class="n">zi_min2</span> <span class="o">!=</span> <span class="n">zi_min1</span><span class="p">:</span>
+            <span class="n">zi_min2</span> <span class="o">=</span> <span class="n">zi_min1</span>
+        <span class="n">zi_min1</span> <span class="o">=</span> <span class="n">zi</span>
+    <span class="k">return</span> <span class="n">elevtn</span>
+
+
+<div class="viewcode-block" id="slope">
+<a class="viewcode-back" href="../../_generated/pyflwdir.dem.slope.html#pyflwdir.dem.slope">[docs]</a>
+<span class="nd">@njit</span>
+<span class="k">def</span> <span class="nf">slope</span><span class="p">(</span><span class="n">elevtn</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the local gradient</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    elevnt : 1D array of float</span>
+<span class="sd">        elevation raster</span>
+<span class="sd">    nodata : float, optional</span>
+<span class="sd">        nodata value, by default -9999.0</span>
+<span class="sd">    latlon : bool, optional</span>
+<span class="sd">        True if WGS84 coordinates, by default False</span>
+<span class="sd">    transform : affine transform</span>
+<span class="sd">        Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    1D array of float</span>
+<span class="sd">        slope</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="n">north</span> <span class="o">=</span> <span class="n">transform</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">transform</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">transform</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+    <span class="n">slope</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">elevtn</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">elevtn</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">elev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">elevtn</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nrow</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ncol</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nodata</span><span class="p">:</span>
+                <span class="c1"># start with matrix based on central value (inside loop)</span>
+                <span class="n">elev</span><span class="p">[:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span>
+
+                <span class="k">for</span> <span class="n">dr</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                    <span class="n">row</span> <span class="o">=</span> <span class="n">r</span> <span class="o">+</span> <span class="n">dr</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="n">dr</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">row</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="n">nrow</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">dc</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                            <span class="n">col</span> <span class="o">=</span> <span class="n">c</span> <span class="o">+</span> <span class="n">dc</span>
+                            <span class="n">j</span> <span class="o">=</span> <span class="n">dc</span> <span class="o">+</span> <span class="mi">1</span>
+                            <span class="k">if</span> <span class="n">col</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">col</span> <span class="o">&lt;</span> <span class="n">ncol</span><span class="p">:</span>
+                                <span class="c1"># fill matrix with elevation, except when nodata</span>
+                                <span class="k">if</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nodata</span><span class="p">:</span>
+                                    <span class="n">elev</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span>
+
+                <span class="n">dzdx</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">elev</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">elev</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">elev</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+                    <span class="o">-</span> <span class="p">(</span><span class="n">elev</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">elev</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">elev</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+                <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">xres</span><span class="p">))</span>
+                <span class="n">dzdy</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">elev</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">elev</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">elev</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+                    <span class="o">-</span> <span class="p">(</span><span class="n">elev</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">elev</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">elev</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+                <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">yres</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">latlon</span><span class="p">:</span>
+                    <span class="n">lat</span> <span class="o">=</span> <span class="n">north</span> <span class="o">+</span> <span class="p">(</span><span class="n">r</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">yres</span>
+                    <span class="n">deg_y</span> <span class="o">=</span> <span class="n">gis_utils</span><span class="o">.</span><span class="n">degree_metres_y</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span>
+                    <span class="n">deg_x</span> <span class="o">=</span> <span class="n">gis_utils</span><span class="o">.</span><span class="n">degree_metres_x</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span>
+                    <span class="n">slp</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">dzdx</span> <span class="o">/</span> <span class="n">deg_x</span><span class="p">,</span> <span class="n">dzdy</span> <span class="o">/</span> <span class="n">deg_y</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">slp</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">dzdx</span><span class="p">,</span> <span class="n">dzdy</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">slp</span> <span class="o">=</span> <span class="n">nodata</span>
+
+            <span class="n">slope</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">slp</span>
+
+    <span class="k">return</span> <span class="n">slope</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">height_above_nearest_drain</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">drain</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the height above the nearest drain (HAND), i.e.: the relative vertical</span>
+<span class="sd">    distance (drop) to the nearest dowstream river based on drainage‐normalized</span>
+<span class="sd">    topography and flowpaths.</span>
+
+<span class="sd">    Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent</span>
+<span class="sd">        Hydrol. Process. 30 320–33</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    idxs_ds : 1D-array of intp</span>
+<span class="sd">        index of next downstream cell</span>
+<span class="sd">    seq : 1D array of int</span>
+<span class="sd">        ordered cell indices from down- to upstream</span>
+<span class="sd">    drain : 1D array of bool</span>
+<span class="sd">        flattened drainage mask</span>
+<span class="sd">    elevnt : 1D array of float</span>
+<span class="sd">        flattened elevation raster</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    1D array of float</span>
+<span class="sd">        height above nearest drain</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">drain</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">hand</span><span class="p">[</span><span class="n">seq</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">idx0</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">drain</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">idx_ds</span> <span class="o">=</span> <span class="n">idxs_ds</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span>
+            <span class="n">dz</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">-</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">idx_ds</span><span class="p">]</span>
+            <span class="n">hand</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">=</span> <span class="n">hand</span><span class="p">[</span><span class="n">idx_ds</span><span class="p">]</span> <span class="o">+</span> <span class="n">dz</span>
+    <span class="k">return</span> <span class="n">hand</span>
+
+
+<span class="k">def</span> <span class="nf">floodplains</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">uparea</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mf">1000.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns floodplain boundaries based on a maximum treshold (h) of HAND which is</span>
+<span class="sd">    scaled with upstream area following h ~ A**b.</span>
+
+<span class="sd">    Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s</span>
+<span class="sd">        floodplains Sci. Data 6 180309</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    idxs_ds : 1D-array of intp</span>
+<span class="sd">        index of next downstream cell</span>
+<span class="sd">    seq : 1D array of int</span>
+<span class="sd">        ordered cell indices from down- to upstream</span>
+<span class="sd">    elevnt : 1D array of float</span>
+<span class="sd">        flattened elevation raster [m]</span>
+<span class="sd">    uparea : 1D array of float</span>
+<span class="sd">        flattened upstream area raster [km2]</span>
+<span class="sd">    upa_min : float, optional</span>
+<span class="sd">        minimum upstream area threshold for streams.</span>
+<span class="sd">    b : float</span>
+<span class="sd">        scale parameter</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    1D array of int8</span>
+<span class="sd">        floodplain</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">drainh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">uparea</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">drainz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">uparea</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">fldpln</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">uparea</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="n">fldpln</span><span class="p">[</span><span class="n">seq</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">idx0</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">:</span>  <span class="c1"># down- to upstream</span>
+        <span class="k">if</span> <span class="n">uparea</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">upa_min</span><span class="p">:</span>
+            <span class="n">drainh</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">=</span> <span class="n">uparea</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">**</span> <span class="n">b</span>
+            <span class="n">drainz</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span>
+            <span class="n">fldpln</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">idx_ds</span> <span class="o">=</span> <span class="n">idxs_ds</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">fldpln</span><span class="p">[</span><span class="n">idx_ds</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">z0</span> <span class="o">=</span> <span class="n">drainz</span><span class="p">[</span><span class="n">idx_ds</span><span class="p">]</span>
+                <span class="n">h0</span> <span class="o">=</span> <span class="n">drainh</span><span class="p">[</span><span class="n">idx_ds</span><span class="p">]</span>
+                <span class="n">dh</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">-</span> <span class="n">z0</span>
+                <span class="k">if</span> <span class="n">dh</span> <span class="o">&lt;=</span> <span class="n">h0</span><span class="p">:</span>
+                    <span class="n">fldpln</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="n">drainz</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">=</span> <span class="n">z0</span>
+                    <span class="n">drainh</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="o">=</span> <span class="n">h0</span>
+    <span class="k">return</span> <span class="n">fldpln</span>
+
+
+<span class="nd">@njit</span>
+<span class="k">def</span> <span class="nf">_local_d4</span><span class="p">(</span><span class="n">idx0</span><span class="p">,</span> <span class="n">idx_ds</span><span class="p">,</span> <span class="n">ncol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return indices of d4 neighbors in diagonal d8 direction, e.g.: indices of N, W neigbors if flowdir is NW.&quot;&quot;&quot;</span>
+    <span class="n">idxs_d4</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">idx0</span> <span class="o">-</span> <span class="n">ncol</span><span class="p">,</span>
+        <span class="n">idx0</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">idx0</span> <span class="o">+</span> <span class="n">ncol</span><span class="p">,</span>
+        <span class="n">idx0</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">idx0</span> <span class="o">-</span> <span class="n">ncol</span><span class="p">,</span>
+    <span class="p">]</span>  <span class="c1"># n, w, s, e, n</span>
+    <span class="k">if</span> <span class="n">idx_ds</span> <span class="o">!=</span> <span class="n">idx0</span><span class="p">:</span>
+        <span class="n">idxs_diag</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">idx0</span> <span class="o">-</span> <span class="n">ncol</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">idx0</span> <span class="o">+</span> <span class="n">ncol</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">idx0</span> <span class="o">+</span> <span class="n">ncol</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">idx0</span> <span class="o">-</span> <span class="n">ncol</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">]</span>  <span class="c1"># nw, sw, se, ne</span>
+        <span class="n">di</span> <span class="o">=</span> <span class="n">idxs_diag</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">idx_ds</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idxs_d4</span><span class="p">[</span><span class="n">di</span> <span class="p">:</span> <span class="n">di</span> <span class="o">+</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idxs_d4</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+
+<span class="nd">@njit</span>
+<span class="k">def</span> <span class="nf">dig_4connectivity</span><span class="p">(</span>
+    <span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">elv_flat</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mi">9999</span><span class="p">,</span> <span class="n">dz_min</span><span class="o">=</span><span class="mf">1e-3</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make sure that for every diagonal D8 downstream flow direction</span>
+<span class="sd">    there is an adjacent D4 cell with same or lower elevation&quot;&quot;&quot;</span>
+    <span class="n">elv_out</span> <span class="o">=</span> <span class="n">elv_flat</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">shape</span>
+    <span class="k">for</span> <span class="n">idx0</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># up- to downstream</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">mask</span><span class="p">[</span><span class="n">idx0</span><span class="p">]:</span>
+            <span class="k">continue</span>
+        <span class="n">idx_ds</span> <span class="o">=</span> <span class="n">idxs_ds</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span>
+        <span class="n">dd</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">idx0</span> <span class="o">-</span> <span class="n">idx_ds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dd</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">dd</span> <span class="o">!=</span> <span class="n">ncol</span><span class="p">:</span>  <span class="c1"># diagonal</span>
+            <span class="n">idxs_d4</span> <span class="o">=</span> <span class="n">_local_d4</span><span class="p">(</span><span class="n">idx0</span><span class="p">,</span> <span class="n">idx_ds</span><span class="p">,</span> <span class="n">ncol</span><span class="p">)</span>  <span class="c1"># indices of adjacent d4 cells</span>
+            <span class="n">z0</span> <span class="o">=</span> <span class="n">elv_out</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span>  <span class="c1"># elevtn of current cell</span>
+            <span class="n">zs</span> <span class="o">=</span> <span class="n">elv_out</span><span class="p">[</span><span class="n">idxs_d4</span><span class="p">]</span>
+            <span class="n">valid</span> <span class="o">=</span> <span class="n">zs</span> <span class="o">!=</span> <span class="n">nodata</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="c1"># find adjacent with smallest dz and lower elevation to &lt;= z0</span>
+            <span class="n">idx_d4_min</span> <span class="o">=</span> <span class="n">idxs_d4</span><span class="p">[</span><span class="n">valid</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">zs</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">-</span> <span class="n">z0</span><span class="p">)]</span>
+            <span class="c1"># force small change to detect d4 river</span>
+            <span class="n">elv_out</span><span class="p">[</span><span class="n">idx_d4_min</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">elv_out</span><span class="p">[</span><span class="n">idx_d4_min</span><span class="p">]</span> <span class="o">-</span> <span class="n">dz_min</span><span class="p">,</span> <span class="n">z0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">idxs_ds</span><span class="p">[</span><span class="n">idx_ds</span><span class="p">]</span> <span class="o">==</span> <span class="n">idx_ds</span><span class="p">:</span>  <span class="c1"># next pit because we need to know upstream cell</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">idx_ds</span> <span class="o">//</span> <span class="n">ncol</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">idx_ds</span> <span class="o">%</span> <span class="n">ncol</span>
+            <span class="k">if</span> <span class="n">r</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">r</span> <span class="o">==</span> <span class="n">nrow</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">c</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">c</span> <span class="o">==</span> <span class="n">ncol</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># edge</span>
+                <span class="k">continue</span>
+            <span class="n">idxs_d4</span> <span class="o">=</span> <span class="n">_local_d4</span><span class="p">(</span><span class="n">idx_ds</span><span class="p">,</span> <span class="n">idx_ds</span><span class="p">,</span> <span class="n">ncol</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">elv_out</span><span class="p">[</span><span class="n">idxs_d4</span><span class="p">]</span> <span class="o">==</span> <span class="n">nodata</span><span class="p">):</span>  <span class="c1"># D4 link with nodata</span>
+                <span class="k">continue</span>
+            <span class="n">idxs_d4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">idxs_d4</span> <span class="k">if</span> <span class="n">idx</span> <span class="o">!=</span> <span class="n">idx0</span><span class="p">])</span>
+            <span class="n">elv_out</span><span class="p">[</span><span class="n">idxs_d4</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">elv_out</span><span class="p">[</span><span class="n">idx_ds</span><span class="p">],</span> <span class="n">elv_out</span><span class="p">[</span><span class="n">idxs_d4</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">elv_out</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright Deltares.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

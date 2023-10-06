@@ -1,0 +1,614 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pyflwdir.FlwdirRaster.rank &#8212; PyFlwDir  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/theme-deltares.css?v=c406d1fd" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+
+    <script src="../_static/documentation_options.js?v=8a448e45"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_generated/pyflwdir.FlwdirRaster.rank';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pyflwdir.FlwdirRaster.isvalid" href="pyflwdir.FlwdirRaster.isvalid.html" />
+    <link rel="prev" title="pyflwdir.FlwdirRaster.ncells" href="pyflwdir.FlwdirRaster.ncells.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/pyflwdir_icon.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../_static/pyflwdir_icon.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+    <p class="title logo__title">PyFlwDir</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../quickstart.html">
+                        User Guide
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../reference.html">
+                        API reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../changelog.html">
+                        Developments
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="../_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../quickstart.html">
+                        User Guide
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../reference.html">
+                        API reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../changelog.html">
+                        Developments
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="../_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../api/flwdirraster.html">FlwdirRaster</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.html">pyflwdir.FlwdirRaster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.from_array.html">pyflwdir.from_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.from_dem.html">pyflwdir.from_dem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.to_array.html">pyflwdir.FlwdirRaster.to_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.load.html">pyflwdir.FlwdirRaster.load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.dump.html">pyflwdir.FlwdirRaster.dump</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.idxs_ds.html">pyflwdir.FlwdirRaster.idxs_ds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.idxs_us_main.html">pyflwdir.FlwdirRaster.idxs_us_main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.idxs_seq.html">pyflwdir.FlwdirRaster.idxs_seq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.idxs_pit.html">pyflwdir.FlwdirRaster.idxs_pit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.ncells.html">pyflwdir.FlwdirRaster.ncells</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">pyflwdir.FlwdirRaster.rank</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.isvalid.html">pyflwdir.FlwdirRaster.isvalid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.mask.html">pyflwdir.FlwdirRaster.mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.area.html">pyflwdir.FlwdirRaster.area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.distnc.html">pyflwdir.FlwdirRaster.distnc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.n_upstream.html">pyflwdir.FlwdirRaster.n_upstream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.order_cells.html">pyflwdir.FlwdirRaster.order_cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.main_upstream.html">pyflwdir.FlwdirRaster.main_upstream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.add_pits.html">pyflwdir.FlwdirRaster.add_pits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.repair_loops.html">pyflwdir.FlwdirRaster.repair_loops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.vectorize.html">pyflwdir.FlwdirRaster.vectorize</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.set_transform.html">pyflwdir.FlwdirRaster.set_transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.index.html">pyflwdir.FlwdirRaster.index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.xy.html">pyflwdir.FlwdirRaster.xy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.bounds.html">pyflwdir.FlwdirRaster.bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.extent.html">pyflwdir.FlwdirRaster.extent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.stream_order.html">pyflwdir.FlwdirRaster.stream_order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.path.html">pyflwdir.FlwdirRaster.path</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.snap.html">pyflwdir.FlwdirRaster.snap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.outflow_idxs.html">pyflwdir.FlwdirRaster.outflow_idxs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.inflow_idxs.html">pyflwdir.FlwdirRaster.inflow_idxs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.stream_distance.html">pyflwdir.FlwdirRaster.stream_distance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.streams.html">pyflwdir.FlwdirRaster.streams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.geofeatures.html">pyflwdir.FlwdirRaster.geofeatures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.basins.html">pyflwdir.FlwdirRaster.basins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subbasins_streamorder.html">pyflwdir.FlwdirRaster.subbasins_streamorder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subbasins_pfafstetter.html">pyflwdir.FlwdirRaster.subbasins_pfafstetter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subbasins_area.html">pyflwdir.FlwdirRaster.subbasins_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.basin_outlets.html">pyflwdir.FlwdirRaster.basin_outlets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.basin_bounds.html">pyflwdir.FlwdirRaster.basin_bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.downstream.html">pyflwdir.FlwdirRaster.downstream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.upstream_sum.html">pyflwdir.FlwdirRaster.upstream_sum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.accuflux.html">pyflwdir.FlwdirRaster.accuflux</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.upstream_area.html">pyflwdir.FlwdirRaster.upstream_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.moving_average.html">pyflwdir.FlwdirRaster.moving_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.moving_median.html">pyflwdir.FlwdirRaster.moving_median</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.smooth_rivlen.html">pyflwdir.FlwdirRaster.smooth_rivlen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.fillnodata.html">pyflwdir.FlwdirRaster.fillnodata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.upscale.html">pyflwdir.FlwdirRaster.upscale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.upscale_error.html">pyflwdir.FlwdirRaster.upscale_error</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subgrid_rivlen.html">pyflwdir.FlwdirRaster.subgrid_rivlen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subgrid_rivslp.html">pyflwdir.FlwdirRaster.subgrid_rivslp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subgrid_rivavg.html">pyflwdir.FlwdirRaster.subgrid_rivavg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subgrid_rivmed.html">pyflwdir.FlwdirRaster.subgrid_rivmed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.ucat_area.html">pyflwdir.FlwdirRaster.ucat_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.ucat_outlets.html">pyflwdir.FlwdirRaster.ucat_outlets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.dem_adjust.html">pyflwdir.FlwdirRaster.dem_adjust</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.dem_dig_d4.html">pyflwdir.FlwdirRaster.dem_dig_d4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.hand.html">pyflwdir.FlwdirRaster.hand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.floodplains.html">pyflwdir.FlwdirRaster.floodplains</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/elevation.html">Elevation raster methods</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.dem.fill_depressions.html">pyflwdir.dem.fill_depressions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.dem.slope.html">pyflwdir.dem.slope</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/gis_utils.html">GIS raster utility methods</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.gis_utils.spread2d.html">pyflwdir.gis_utils.spread2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.gis_utils.get_edge.html">pyflwdir.gis_utils.get_edge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.gis_utils.reggrid_area.html">pyflwdir.gis_utils.reggrid_area</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/region_utils.html">Region utility methods</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.regions.region_bounds.html">pyflwdir.regions.region_bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.regions.region_slices.html">pyflwdir.regions.region_slices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.regions.region_sum.html">pyflwdir.regions.region_sum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.regions.region_area.html">pyflwdir.regions.region_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.regions.region_dissolve.html">pyflwdir.regions.region_dissolve</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../api/flwdirraster.html" class="nav-link">FlwdirRaster</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">pyflwdir.Flw...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="pyflwdir-flwdirraster-rank">
+<h1>pyflwdir.FlwdirRaster.rank<a class="headerlink" href="#pyflwdir-flwdirraster-rank" title="Link to this heading">#</a></h1>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.rank">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">rank</span></span><a class="headerlink" href="#pyflwdir.FlwdirRaster.rank" title="Link to this definition">#</a></dt>
+<dd><p>Cell Rank, i.e. distance to the outlet in no. of cells.</p>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="pyflwdir.FlwdirRaster.ncells.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pyflwdir.FlwdirRaster.ncells</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="pyflwdir.FlwdirRaster.isvalid.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pyflwdir.FlwdirRaster.isvalid</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.rank"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.rank</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/_generated/pyflwdir.FlwdirRaster.rank.rst">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div class="tocsection sourcelink">
+    <a href="../_sources/_generated/pyflwdir.FlwdirRaster.rank.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright Deltares.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
