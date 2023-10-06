@@ -7,7 +7,7 @@ dependencies:
   # required
   - affine
   - flit
-  - python>=3.8
+  - python>=3.9
   - numba>=0.54
   - numpy
   - scipy
@@ -24,5 +24,5 @@ dependencies:
   - descartes
   - geopandas>=0.8
   - jupyter
-  - matplotlib==3.5.*
+  - matplotlib
   - rasterio
