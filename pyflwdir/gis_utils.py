@@ -131,7 +131,7 @@ def get_edge(a, structure=np.ones((3, 3), dtype=bool)):
         Boolean array edge cells.
     """
     assert structure.shape == (3, 3)
-    s = np.where(structure.ravel() != 0)[0]
+    s = np.where(structure.ravel())[0]
     edge = a.copy()
     nrow, ncol = a.shape
     for r in range(0, nrow):

@@ -15,7 +15,7 @@ dependencies = [
     "numpy",
     "scipy",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 [project.urls]
 Home = "https://github.com/Deltares/pyflwdir"
@@ -36,7 +36,7 @@ doc = [
 
 [tool.black]
 line-length = 88
-target-version = ['py37']
+target-version = ['py39']
 
 [tool.flit.sdist]
 include = ["pyflwdir"]
