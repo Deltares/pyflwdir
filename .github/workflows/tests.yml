@@ -20,13 +20,14 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"] # numba release required
     
     steps:
-      - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v3
+      - name: Setup Mambaforge
+        uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: ${{ matrix.python-version }}
-          mamba-version: "*"
-          channels: conda-forge,defaults
-          channel-priority: true
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          use-mamba: true
           environment-file: envs/pyflwdir-test.yml
           activate-environment: pyflwdir-test
 

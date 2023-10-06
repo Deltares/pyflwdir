@@ -15,13 +15,14 @@ jobs:
         shell: bash -l {0}
     
     steps:
-      - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v3
+      - name: Setup Mambaforge
+        uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: "3.11"
-          mamba-version: "*"
-          channels: conda-forge,defaults
-          channel-priority: true
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          use-mamba: true
           environment-file: envs/pyflwdir-dev.yml
           activate-environment: pyflwdir-dev
 
