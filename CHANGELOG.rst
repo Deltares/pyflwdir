@@ -2,6 +2,11 @@
 Change Log
 ###########
 
+in development
+**************
+
+* Fixed support for interger type DEMs in `from_dem` and `dem.fill_depressions` methods
+
 0.5.8  (06-Oct-2023)
 ********************
 

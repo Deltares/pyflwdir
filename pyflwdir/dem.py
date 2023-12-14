@@ -70,7 +70,7 @@ def fill_depressions(
     done = np.isnan(elevtn) if np.isnan(nodata) else elevtn == nodata
     d8 = np.where(done, np.uint8(247), np.uint8(0))
     if connectivity not in [4, 8]:
-        raise ValueError(f'"connectivity" should either be 4 or 8')
+        raise ValueError('"connectivity" should either be 4 or 8')
     # pfff.. numba does not allow creation of numpy bool arrays using normal methods
     struct = np.array([bool(1) for s in range(9)]).reshape((3, 3))
     if connectivity == 4:
@@ -91,10 +91,15 @@ def fill_depressions(
 
     # queue contains (elevation, boundary, row, col)
     # boundary is included to favor non-boundary cells over boundary cells with same elevation
-    q = [(elevtn[0, 0], np.uint8(1), np.uint32(0), np.uint32(0)) for _ in range(0)]
+    q = [
+        (np.float32(elevtn[0, 0]), np.uint8(1), np.uint32(0), np.uint32(0))
+        for _ in range(0)
+    ]
     heapq.heapify(q)
     for r, c in zip(*np.where(queued)):
-        heapq.heappush(q, (elevtn[r, c], np.uint8(1), np.uint32(r), np.uint32(c)))
+        heapq.heappush(
+            q, (np.float32(elevtn[r, c]), np.uint8(1), np.uint32(r), np.uint32(c))
+        )
     # restrict queue to global edge mimimum (single outlet)
     if outlets == "min":
         q = [heapq.heappop(q)]
@@ -115,7 +120,9 @@ def fill_depressions(
             dz = z0 - z1  # local depression if dz > 0
             if max_depth >= 0:  # if positive max_depth: don't fill when dz > max_depth
                 if dz >= max_depth:
-                    heapq.heappush(q, (z1, np.uint8(0), np.uint32(r), np.uint32(c)))
+                    heapq.heappush(
+                        q, (np.float32(z1), np.uint8(0), np.uint32(r), np.uint32(c))
+                    )
                     queued[r, c] = True
                     for dr, dc in zip(drs, dcs):  # (re)visit neighbors
                         done[r + dr, c + dc] = False
@@ -127,7 +134,9 @@ def fill_depressions(
                 delv[r, c] = dz
                 z1 += dz
             if ~queued[r, c]:  # add to queue
-                heapq.heappush(q, (z1, np.uint8(0), np.uint32(r), np.uint32(c)))
+                heapq.heappush(
+                    q, (np.float32(z1), np.uint8(0), np.uint32(r), np.uint32(c))
+                )
                 queued[r, c] = True
             done[r, c] = True
             d8[r, c] = core_d8._us[dr + 1, dc + 1]
