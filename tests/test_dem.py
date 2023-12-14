@@ -10,7 +10,8 @@ parsed, flwdir = test_data[0]
 idxs_ds, idxs_pit, seq, rank, mv = parsed
 
 
-def test_from_dem():
+@pytest.mark.parametrize('dtype', [np.float32, np.int32])
+def test_from_dem(dtype):
     # example from Wang & Lui (2015)
     a = np.array(
         [
@@ -20,7 +21,7 @@ def test_from_dem():
             [16, 17, 8, 16, 15, 7, 5],
             [19, 18, 19, 18, 17, 15, 14],
         ],
-        dtype=np.float32,
+        dtype=dtype,
     )
     # NOTE: compared to paper same a_filled, but difference
     # in flowdir because row instead of col first ..
@@ -45,6 +46,15 @@ def test_from_dem():
     a2[0, 5] = 12
     a_filled = dem.fill_depressions(a, outlets="min")[0]
     assert np.all(a2 == a_filled)
+    # test with nodata values
+    a2 = a.copy()
+    a2[3, 5:] = -9999
+    _d8 = dem.fill_depressions(a2)[1]
+    assert np.all(_d8[3, 5:] == 247)
+    assert _d8[2, 4] == 0
+    # test max depth
+    _a = dem.fill_depressions(a, max_depth=2)[0]
+    assert np.all(a == _a)
     # test with 4-connectivity
     a2 = np.array(
         [
@@ -59,14 +69,6 @@ def test_from_dem():
     a_filled, _d8 = dem.fill_depressions(a, connectivity=4)
     assert np.all(a_filled == a2)
     assert np.all(np.isin(np.unique(_d8), [0, 1, 4, 16, 64]))
-    # test with nodata values
-    a[3, 5:] = -9999
-    _d8 = dem.fill_depressions(a)[1]
-    assert np.all(_d8[3, 5:] == 247)
-    assert _d8[2, 4] == 0
-    # test max depth
-    _a = dem.fill_depressions(a, max_depth=2)[0]
-    assert np.all(a == _a)
 
 
 def test_dem_adjust():
