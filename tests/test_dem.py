@@ -10,7 +10,7 @@ parsed, flwdir = test_data[0]
 idxs_ds, idxs_pit, seq, rank, mv = parsed
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.int32])
+@pytest.mark.parametrize("dtype", [np.float32, np.int32])
 def test_from_dem(dtype):
     # example from Wang & Lui (2015)
     a = np.array(
