@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for the pyflwdir module."""
 
-import pytest
 import numpy as np
 
 from pyflwdir import arithmetics

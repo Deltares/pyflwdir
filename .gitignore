@@ -52,7 +52,7 @@ coverage.xml
 *.cover
 .hypothesis/
 tests/data/*.tif
-tests/data/*.gpkg*
+tests/data/*.gpkg
 tests/data/*.xml
 tests/data/*.qml
 tests/data/*.qgz

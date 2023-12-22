@@ -2,16 +2,13 @@
 """Tests for the pyflwdir.upscael module."""
 
 import pytest
-from affine import Affine
-import time
 import numpy as np
-import os
 
 # local
-from pyflwdir import upscale, core_d8, core, streams, basins
-from test_core import test_data
+from pyflwdir import upscale, core, streams, basins
 
 # # large test data
+# from pyflwdir import core_d8
 # flwdir = np.fromfile(r"./data/d8.bin", dtype=np.uint8).reshape((678, 776))
 # tests = [("dmm", 1073), ("eam", 406), ("com", 138), ("com2", 54)]
 # idxs_ds, idxs_pit, _ = core_d8.from_array(flwdir)
@@ -19,29 +16,24 @@ from test_core import test_data
 # seq = np.argsort(rank)[-n:]
 # cellsize = 10
 
-# small test data
-mv = np.uint32(core._mv)
-# parsed0, flwdir0 = test_data[0]
-# idxs_ds0, idxs_pit0 = [p.copy() for p in parsed0[:2]]
-testdir = os.path.dirname(__file__)
-flwdir = np.loadtxt(os.path.join(testdir, "flwdir1.asc"), dtype=np.uint8)
-idxs_ds, idxs_pit, _ = core_d8.from_array(flwdir, dtype=np.uint32)
-
 # cellsize = 20
 tests = [
-    (flwdir, idxs_ds, idxs_pit, 20, "dmm", 33),
-    (flwdir, idxs_ds, idxs_pit, 20, "eam", 4),
-    (flwdir, idxs_ds, idxs_pit, 20, "eam_plus", 2),
-    (flwdir, idxs_ds, idxs_pit, 40, "ihu", 0),
-    (flwdir, idxs_ds, idxs_pit, 20, "ihu", 1),
-    (flwdir, idxs_ds, idxs_pit, 10, "ihu", 4),
-    (flwdir, idxs_ds, idxs_pit, 5, "ihu", 7),
+    (20, "dmm", 33),
+    (20, "eam", 4),
+    (20, "eam_plus", 2),
+    (40, "ihu", 0),
+    (20, "ihu", 1),
+    (10, "ihu", 4),
+    (5, "ihu", 7),
 ]
 
 
 # configure tests with different upscale methods
-@pytest.mark.parametrize("flwdir, idxs_ds, idxs_pit, cellsize, name, nflwerr", tests)
-def test_upscale(flwdir, idxs_ds, idxs_pit, cellsize, name, nflwerr):
+@pytest.mark.parametrize("cellsize, name, nflwerr", tests)
+def test_upscale(cellsize, name, nflwerr, flwdir_large, flwdir_large_idxs):
+    mv = np.uint32(core._mv)
+    flwdir = flwdir_large
+    idxs_ds, idxs_pit = flwdir_large_idxs
     # caculate upstream area and basin
     rank, n = core.rank(idxs_ds, mv=np.uint32(mv))
     seq = np.argsort(rank)[-n:]
@@ -64,6 +56,7 @@ def test_upscale(flwdir, idxs_ds, idxs_pit, cellsize, name, nflwerr):
 
 
 # TODO: extend tests
-def test_map():
-    upscale.map_celledge(idxs_ds, flwdir.shape, 20, mv=mv)
-    upscale.map_effare(idxs_ds, flwdir.shape, 20, mv=mv)
+def test_map(flwdir_large, flwdir_large_idxs):
+    mv = np.uint32(core._mv)
+    upscale.map_celledge(flwdir_large_idxs[0], flwdir_large.shape, 20, mv=mv)
+    upscale.map_effare(flwdir_large_idxs[0], flwdir_large.shape, 20, mv=mv)

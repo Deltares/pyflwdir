@@ -7,30 +7,39 @@ import os
 
 from pyflwdir import core, core_d8, streams, from_dem
 
-_mv = core._mv
+# _mv = core._mv
 
-# test data
-# slice from real data
-testdir = os.path.dirname(__file__)
-flwdir0 = np.loadtxt(os.path.join(testdir, "flwdir.asc"), dtype=np.uint8)
-idxs_ds0, idxs_pit0, _ = core_d8.from_array(flwdir0, dtype=np.uint32)
-rank0, n0 = core.rank(idxs_ds0, mv=np.uint32(_mv))
-seq0 = np.argsort(rank0)[-n0:]
-parsed0 = (idxs_ds0, idxs_pit0, seq0, rank0, np.uint32(_mv))
-# random data
-# np.random.seed(2345)
-flwdir1 = from_dem(np.random.rand(15, 10)).to_array("d8")
-idxs_ds1, idxs_pit1, _ = core_d8.from_array(flwdir1, dtype=np.uint32)
-rank1, n1 = core.rank(idxs_ds1, mv=np.uint32(_mv))
-seq1 = np.argsort(rank1)[-n1:]
-parsed1 = (idxs_ds1, idxs_pit1, seq1, rank1, np.uint32(_mv))
-# combined
-test_data = [(parsed0, flwdir0), (parsed1, flwdir1)]
+# # test data
+# # slice from real data
+# testdir = os.path.dirname(__file__)
+# flwdir0 = np.loadtxt(os.path.join(testdir, "flwdir.asc"), dtype=np.uint8)
+# idxs_ds0, idxs_pit0, _ = core_d8.from_array(flwdir0, dtype=np.uint32)
+# rank0, n0 = core.rank(idxs_ds0, mv=np.uint32(_mv))
+# seq0 = np.argsort(rank0)[-n0:]
+# parsed0 = (idxs_ds0, idxs_pit0, seq0, rank0, np.uint32(_mv))
+# # random data
+# # np.random.seed(2345)
+# flwdir1 = from_dem(np.random.rand(15, 10)).to_array("d8")
+# idxs_ds1, idxs_pit1, _ = core_d8.from_array(flwdir1, dtype=np.uint32)
+# rank1, n1 = core.rank(idxs_ds1, mv=np.uint32(_mv))
+# seq1 = np.argsort(rank1)[-n1:]
+# parsed1 = (idxs_ds1, idxs_pit1, seq1, rank1, np.uint32(_mv))
+# # combined
+# test_data = [(parsed0, flwdir0), (parsed1, flwdir1)]
 
 
-@pytest.mark.parametrize("parsed, flwdir", test_data)
-def test_downstream(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
+def test_downstream0(test_data0, flwdir0):
+    _test_downstream(test_data0, flwdir0)
+
+
+def test_downstream1(test_data1, flwdir1):
+    _test_downstream(test_data1, flwdir1)
+
+
+# @pytest.mark.parametrize("parsed, flwdir", test_data)
+# def test_downstream(test_data0, flwdir0):
+def _test_downstream(test_data, flwdir):
+    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     n, ncol = np.sum(idxs_ds != mv), flwdir.shape[1]
     # rank
     assert np.sum(rank == 0) == idxs_pit.size
@@ -77,8 +86,16 @@ def test_downstream(parsed, flwdir):
         assert np.all(rank3[idxs1] == n_up)
 
 
-@pytest.mark.parametrize("parsed, flwdir", test_data)
-def test_upstream(parsed, flwdir):
+def test_upstream0(test_data0, flwdir0):
+    _test_upstream(test_data0, flwdir0)
+
+
+def test_upstream1(test_data1, flwdir1):
+    _test_upstream(test_data1, flwdir1)
+
+
+# @pytest.mark.parametrize("parsed, flwdir", test_data)
+def _test_upstream(parsed, flwdir):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
     idxs_ds[rank == -1] = mv
     n, ncol = np.sum(idxs_ds != mv), flwdir.shape[1]
