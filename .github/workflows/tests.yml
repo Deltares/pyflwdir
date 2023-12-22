@@ -2,34 +2,61 @@ name: Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - tests/*
+      - pyflwdir/*
+      - pyproject.toml
   pull_request:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - tests/*
+      - pyflwdir/*
+      - pyproject.toml
+
 
 jobs:
-  Test:
-    name: ${{ matrix.os }} - py${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+  build:
     defaults:
       run:
         shell: bash -l {0}
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest"] #, "windows-latest"]
-        python-version: ["3.9", "3.10", "3.11"] # numba release required
-    
+        os: [ubuntu-latest]
+        python-version: ['3.9', '3.10','3.11']
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: ${{ github.workflow }}-${{ matrix.python-version }}-${{ github.ref }}
+      cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Mambaforge
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          use-mamba: true
-          environment-file: envs/pyflwdir-test.yml
-          activate-environment: pyflwdir-test
 
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v5
+        id: pip
+        with:
+          # caching, see https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md#caching-packages
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
+
+      # true if cache-hit occurred on the primary key
+      - name: Cache hit
+        run: echo '${{ steps.pip.outputs.cache-hit }}'
+
+      # build environment with pip
+      - name: Install pyflwdir
+        run: |
+          pip install --upgrade pip
+          pip install .[test]
+          pip list
+
+      # run test
       - name: Test
-        run: python -m pytest --verbose
+        run: |
+          python -m pytest --verbose --cov=pyflwdir --cov-report xml
+
+      # upload coverage
+      - uses: codecov/codecov-action@v3

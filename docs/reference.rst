@@ -59,7 +59,7 @@ Raster & geospatial attributes and methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The FlwdirRaster object contains :py:attr:`FlwdirRaster.shape`, :py:attr:`FlwdirRaster.transform`
-and :py:attr:`FlwdirRaster.latlon` attributes describing its geospatial location. The first 
+and :py:attr:`FlwdirRaster.latlon` attributes describing its geospatial location. The first
 attribute is required at initializiation, while the others can be set later.
 
 .. automethod:: pyflwdir.FlwdirRaster.set_transform()
@@ -183,4 +183,3 @@ Region utility methods
 .. automethod:: pyflwdir.regions.region_area()
 
 .. automethod:: pyflwdir.regions.region_dissolve()
-

@@ -1,9 +1,9 @@
 Quickstart
 ==========
 
-The most common workflow to derive flow direction from digital elevation data and 
+The most common workflow to derive flow direction from digital elevation data and
 subsequent delineate basins or vectorize a stream network can be done in just a few
-lines of code. 
+lines of code.
 
 To read elevation data from a geotiff raster file *elevation.tif* do:
 
@@ -15,7 +15,7 @@ To read elevation data from a geotiff raster file *elevation.tif* do:
         nodata = src.nodata
         transform = src.transform
         crs = src.crs
-        
+
 
 Derive a FlwdirRaster object from this data:
 
@@ -30,7 +30,7 @@ Derive a FlwdirRaster object from this data:
     )
 
 Delineate basins and retrieve a raster with unique IDs per basin:
-Tip: This raster can directly be written to geotiff and/or vectorized to save as 
+Tip: This raster can directly be written to geotiff and/or vectorized to save as
 vector file with `rasterio <https://rasterio.readthedocs.io/>`__
 
 .. code-block:: python
@@ -50,7 +50,7 @@ Vectorize the stream network and save to a geojson file:
 .. toctree::
   :maxdepth: 2
   :hidden:
-  
+
   Flow direction data <_examples/flwdir>
   Flow directions from elevation data <_examples/from_dem>
   Deliniation of (sub)basins <_examples/basins>

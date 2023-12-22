@@ -1,0 +1,33 @@
+[project]
+name = "pyflwdir"
+channels = ["conda-forge"]
+platforms = ["linux-64", "win-64"]
+
+[tasks]
+# dev environment
+dev = { depends_on = [
+  "dev-env-file",
+  "dev-create-mamba-env",
+  "dev-install-hydromt",
+  "dev-install-pre-commit",
+] }
+dev-env-file = "python make_env.py full -n pyflwdir-dev -o pyflwdir-dev.yml"
+min-env-file = "python make_env.py min -n pyflwdir-min -o pyflwdir-min.yml"
+dev-create-mamba-env = "mamba env remove -n pyflwdir-dev; mamba env create -f pyflwdir-dev.yml"
+dev-install-hydromt = "mamba run -n pyflwdir-dev pip install -e ."
+dev-install-pre-commit = "mamba run -n pyflwdir-dev pre-commit install"
+
+# linting
+lint = "pre-commit run --all"
+
+# docs
+docs = "sphinx-build -M html docs docs/_build"
+docs-skip-examples = "export SKIP_DOC_EXAMPLES=1; sphinx-build -M html docs docs/_build"
+docs-clean = "python docs/clean.py; sphinx-build -M html docs docs/_build"
+docs-serve = "python -m http.server -d docs/_build/html"
+
+# tests
+tests = "pytest -v"
+tests-no-jit = "export NUMBA_DISABLE_JIT=1; pytest -v --cov=pyflwdir -cov-report=term-missing"
+
+[dependencies]

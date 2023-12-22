@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Methods to derive topo/hydrographical paramters from elevation data, in some cases 
+"""Methods to derive topo/hydrographical paramters from elevation data, in some cases
  in combination with flow direction data."""
 
 import numpy as np

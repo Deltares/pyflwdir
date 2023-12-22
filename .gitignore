@@ -126,3 +126,6 @@ docs/_examples/
 # temp
 _pyflwdir
 scripts
+
+pyflwdir*.yml
+pixi.lock

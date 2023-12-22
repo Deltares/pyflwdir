@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Description of NEXTXY flow direction type and methods to convert to/from general 
-nextidx. This type is mainly used for the CaMa-Flood model. Note that X (column) and Y 
+"""Description of NEXTXY flow direction type and methods to convert to/from general
+nextidx. This type is mainly used for the CaMa-Flood model. Note that X (column) and Y
 (row) coordinates are one-based."""
 
 from pathlib import Path

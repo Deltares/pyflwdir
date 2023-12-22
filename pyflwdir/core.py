@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Core flow direction functionality. All functions work based on the an array of 
+"""Core flow direction functionality. All functions work based on the an array of
 next downstream indices (idxs_ds) and mostly return indices."""
 
 from numba import njit

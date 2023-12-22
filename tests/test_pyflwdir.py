@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the pyflwdir module, specifically the wrapping of the methods which 
+"""Tests for the pyflwdir module, specifically the wrapping of the methods which
 themselves are testes elsewhere"""
 
 import pytest

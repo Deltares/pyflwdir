@@ -47,7 +47,7 @@ New
 Bugfix
 ------
 * Support -9 (river outlet at ocean) and -10 (inland river pit) pit values for nextxy data
-* Fix 'argmin of an empty sequence' error in dem_dig_d4 
+* Fix 'argmin of an empty sequence' error in dem_dig_d4
 
 Improved
 --------
@@ -106,7 +106,7 @@ New
 ---
 * General Flwdir object for 1D vector based (instead of raster based) flow directions
 * flwdir.from_dataframe methods to derive a Flwdir object from a (Geo)DataFrame based on the row index and a column with downstream row indices.
-* dem.fill_depressions and pyflwdir.from_dem methods to derive flow directions from DEMs based on Wang & Lui (2015) 
+* dem.fill_depressions and pyflwdir.from_dem methods to derive flow directions from DEMs based on Wang & Lui (2015)
 * gis_utils.get_edge method to get a boolean mask of valid cells at the interface with nodata cells or the array edge.
 * gis_utils.spread2d method to spread valid values on a 2D raster with optional friction and mask rasters
 * FlwdirRaster.dem_dig_d4 method to adjust a DEM such that each cell has a 4D neighbor with equal or lower elevation.
@@ -122,7 +122,7 @@ Improved
 * improved subgrid slope method with optional lstsq regression based slope
 * FlwdirRaster.streams takes an optional `idxs_out` argument to derive stream vectors for unit catchments
 * FlwdirRaster.streams takes an optional `max_len` argument to split large segments into multiple smaller ones.
-* Using the new Flwdir object as common base of FlwdirRaster to share methods and properties 
+* Using the new Flwdir object as common base of FlwdirRaster to share methods and properties
 * gis_utils.IDENTITY transform has North -> South orientation (yres < 0) instead of S->N orientation which is in line with flow direction rasters.
 * new `restrict_strord` argument in FlwdirRaster.moving_average and FlwdirRaster.moving_median methods to restrict the moving window to cells with same or larger stream order.
 
@@ -235,7 +235,7 @@ New
 
 * setup_network - Setup all upstream - downstream connections based on the flow direcion map.
 * get_pits - Return the indices of the pits/outlets in the flow direction map.
-* upstream_area - Returns the upstream area [km] based on the flow direction map. 
+* upstream_area - Returns the upstream area [km] based on the flow direction map.
 * stream_order - Returns the Strahler Order map
 * delineate_basins - Returns a map with basin ids and corresponding bounding boxes.
 * basin_map - Returns a map with (sub)basins based on the up- downstream network.
@@ -246,4 +246,3 @@ New
 * propagate_downstream - Returns a map with accumulated material from all upstream cells.
 * propagate_upstream - Returns a map with accumulated material from all downstream cells.
 * adjust_elevation - Returns hydrologically adjusted elevation map.
-
