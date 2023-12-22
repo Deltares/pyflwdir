@@ -251,8 +251,9 @@ def test_streams(flw0, flwdir0_rank):
     fstrord = np.array([f["properties"]["strord"] for f in feats])
     findex = np.array([f["properties"]["idx"] for f in feats])
     assert np.all(fstrord == strord.flat[findex])
-    findex_ds = np.array([f["properties"]["idx_ds"] for f in feats])
     # check agains Flwdir
+    # FIXME this fails, but only locally ??!#
+    findex_ds = np.array([f["properties"]["idx_ds"] for f in feats])
     flw1 = pyflwdir.Flwdir(pyflwdir.flwdir.get_lin_indices(findex, findex_ds))
     assert np.all(fstrord == flw1.stream_order().ravel())
     # vectorize

@@ -33,9 +33,9 @@ min-env-file = "python make_env.py min -n pyflwdir-min -o pyflwdir-min.yml"
 lint = "pre-commit run --all"
 
 # docs
-docs = "sphinx-build -M html docs docs/_build"
-docs-skip-examples = "export SKIP_DOC_EXAMPLES=1; sphinx-build -M html docs docs/_build"
-docs-clean = "python docs/clean.py; sphinx-build -M html docs docs/_build"
+docs = "export PYDEVD_DISABLE_FILE_VALIDATION=1; sphinx-build -M html docs docs/_build"
+docs-skip-examples = "export SKIP_DOC_EXAMPLES=1; export PYDEVD_DISABLE_FILE_VALIDATION=1;sphinx-build -M html docs docs/_build"
+docs-clean = "python docs/clean.py; export PYDEVD_DISABLE_FILE_VALIDATION=1; sphinx-build -M html docs docs/_build"
 docs-serve = "python -m http.server -d docs/_build/html"
 
 # tests

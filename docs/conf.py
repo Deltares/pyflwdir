@@ -35,7 +35,8 @@ author = "Dirk Eilander"
 version = pyflwdir.__version__.split("dev")[0]
 
 # # -- Copy notebooks to include in docs -------
-if not os.path.isdir("_examples"):
+SKIP_DOC_EXAMPLES = bool(os.environ.get("SKIP_DOC_EXAMPLES", False))
+if not os.path.isdir("_examples") and not SKIP_DOC_EXAMPLES:
     os.makedirs("_examples")
     copy_tree("../examples", "_examples")
 
@@ -58,8 +59,11 @@ extensions = [
     "sphinx.ext.intersphinx",
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
-    "nbsphinx",
 ]
+
+if not SKIP_DOC_EXAMPLES:
+    extensions.append("nbsphinx")
+
 
 autosummary_generate = True
 
