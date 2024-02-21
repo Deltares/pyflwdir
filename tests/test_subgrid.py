@@ -1,26 +1,20 @@
 # -*- coding: utf-8 -*-
 """Tests for the unitcatchments.py submodule"""
 
-import pytest
 import numpy as np
+import pytest
 
-from pyflwdir import subgrid, core, streams
-
-# test data
-from test_core import test_data
-
-parsed, flwdir = test_data[0]
-idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
-ncol, shape = flwdir.shape[1], flwdir.shape
-upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
-idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
-elv = rank
-
-test = [("eam_plus", 5), ("", 1), ("dmm", 4)]
+from pyflwdir import core, streams, subgrid
 
 
-@pytest.mark.parametrize("method, cellsize", test)
-def test_subgridch(method, cellsize):
+@pytest.mark.parametrize("method, cellsize", [("eam_plus", 5), ("", 1), ("dmm", 4)])
+def test_subgridch(method, cellsize, test_data0, flwdir0):
+    idxs_ds, _, seq, rank, mv = [p.copy() for p in test_data0]
+    ncol, shape = flwdir0.shape[1], flwdir0.shape
+    upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
+    idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
+    elv = rank
+
     if cellsize == 1:
         idxs_out = np.arange(idxs_ds.size)
         idxs_out[idxs_ds == mv] = mv

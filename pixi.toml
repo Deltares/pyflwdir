@@ -1,0 +1,45 @@
+[project]
+name = "pyflwdir"
+channels = ["conda-forge"]
+platforms = ["linux-64", "win-64"]
+
+[tasks]
+# dev environment
+dev-env = { depends_on = [
+  "dev-env-file",
+  "dev-create-mamba-env",
+  "dev-install-pyflwdir",
+  "dev-install-pre-commit",
+] }
+dev-env-file = "python make_env.py full -n pyflwdir-dev -o pyflwdir-dev.yml"
+dev-create-mamba-env = "mamba env remove -n pyflwdir-dev; mamba env create -f pyflwdir-dev.yml"
+dev-install-pyflwdir = "mamba run -n pyflwdir-dev pip install -e ."
+dev-install-pre-commit = "mamba run -n pyflwdir-dev pre-commit install"
+# test env
+test-env = { depends_on = [
+  "test-env-file",
+  "test-create-mamba-env",
+  "test-install-pyflwdir",
+  "test-install-pre-commit",
+] }
+test-env-file = "python make_env.py test -p 3.9 -n pyflwdir-test -o pyflwdir-test.yml"
+test-create-mamba-env = "mamba env remove -n pyflwdir-test; mamba env create -f pyflwdir-test.yml"
+test-install-pyflwdir = "mamba run -n pyflwdir-test pip install -e ."
+test-install-pre-commit = "mamba run -n pyflwdir-test pre-commit install"
+
+min-env-file = "python make_env.py min -n pyflwdir-min -o pyflwdir-min.yml"
+
+# linting
+lint = "pre-commit run --all"
+
+# docs
+docs = "export PYDEVD_DISABLE_FILE_VALIDATION=1; sphinx-build -M html docs docs/_build"
+docs-skip-examples = "export SKIP_DOC_EXAMPLES=1; export PYDEVD_DISABLE_FILE_VALIDATION=1;sphinx-build -M html docs docs/_build"
+docs-clean = "python docs/clean.py; export PYDEVD_DISABLE_FILE_VALIDATION=1; sphinx-build -M html docs docs/_build"
+docs-serve = "python -m http.server -d docs/_build/html"
+
+# tests
+tests = "pytest -v"
+tests-no-jit = "export NUMBA_DISABLE_JIT=1; pytest -v --cov=pyflwdir -cov-report=term-missing"
+
+[dependencies]

@@ -32,11 +32,11 @@ PyFlwDir: Fast methods to work with hydro- and topography data in pure Python
 Intro
 -----
 
-PyFlwDir contains a series of methods to work with gridded DEM and flow direction 
-datasets, which are key to many workflows in many earth sciences. 
-PyFlwDir supports several flow direction data conventions and can easily be extended to include more. 
-The package contains some unique methods such as Iterative Hydrography Upscaling (IHU) 
-method to upscale flow directions from high resolution data to coarser model resolution. 
+PyFlwDir contains a series of methods to work with gridded DEM and flow direction
+datasets, which are key to many workflows in many earth sciences.
+PyFlwDir supports several flow direction data conventions and can easily be extended to include more.
+The package contains some unique methods such as Iterative Hydrography Upscaling (IHU)
+method to upscale flow directions from high resolution data to coarser model resolution.
 
 PyFlwDir is in pure python and powered by `numba <https://numba.pydata.org/>`_ to keep it fast.
 
@@ -50,7 +50,7 @@ Featured methods
 - (sub)basin delineation
 - pfafstetter subbasins delineation
 - classic stream order
-- height above nearest drainage (HAND) 
+- height above nearest drainage (HAND)
 - geomorphic floodplain delineation
 - up- and downstream tracing and arithmetics
 - hydrologically adjusting elevation
@@ -82,5 +82,5 @@ See `reference API <https://deltares.github.io/pyflwdir/latest/reference.html>`_
 Development and Testing
 -----------------------
 
-Welcome to the PyFlwDir project. All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome. 
+Welcome to the PyFlwDir project. All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome.
 See `Contributing to PyFlwDir <https://deltares.github.io/pyflwdir/latest/contributing.html>`__ for how we work.

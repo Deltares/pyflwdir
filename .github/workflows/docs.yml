@@ -1,48 +1,62 @@
-name: Build Docs
+name: Build Documentation
 
-# We don't want pushes (or PRs) to gh-pages to kick anything off
 on:
+  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - tests/*
+      - pyflwdir/*
+      - docs/*
+      - examples/*
+      - pyproject.toml
   pull_request:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - tests/*
+      - pyflwdir/*
+      - docs/*
+      - examples/*
+      - pyproject.toml
 
 jobs:
   # Build docs on Linux
-  Docs:
-    name: linux docs
-    runs-on: ubuntu-latest
+  test-docs:
     env:
       DOC_VERSION: dev
-    defaults:
-      run:
-        shell: bash -l {0}
+      PYDEVD_DISABLE_FILE_VALIDATION: 1
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: checkout code
+        uses: actions/checkout@v3
+
       - name: Setup Mambaforge
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: "3.11"
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          use-mamba: true
-          environment-file: envs/pyflwdir-dev.yml
-          activate-environment: pyflwdir-dev
+            python-version: '3.11'
+            miniforge-variant: Mambaforge
+            miniforge-version: latest
+            use-mamba: true
 
-      - name: Install pyflwdir
-        run: pip install .
-
-      # Move examples folder before make html for nbsphinx
-      - name: Build docs
+      - name: Setup env
         run: |
-          pushd docs
-          make html
-          popd
+          python make_env.py full -p 3.11 -n pyflwdir -o environment-doc.yml
+          mamba env create -f environment-doc.yml
+          mamba run -n pyflwdir pip install -e .
 
-      # This overrides the version "dev" with the proper version if we're building off a
-      # branch that's not master (which is confined to n.nn.x above) or on a tag.
-      - name: Set doc version
-        run: echo "DOC_VERSION=$(python -c 'from pyflwdir import __version__ as v; print("dev" if "dev" in v else v)')" >> $GITHUB_ENV
+      # if we're not publishing we don't have to write them, so we might as well
+      # save ourself a bunch of IO time
+      - name: Build dummy docs
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          mamba run -n pyflwdir sphinx-build ./docs ./docs/_build -b dummy -W
+
+      - name: Build html docs
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          mamba run -n pyflwdir sphinx-build -M html ./docs ./docs/_build -W
+          echo "DOC_VERSION=$(mamba run -n pyflwdir python -c 'from pyflwdir import __version__ as v; print("dev" if "dev" in v else "v"+v)')" >> $GITHUB_ENV
 
       - name: Upload to GitHub Pages
         if: ${{ github.event_name != 'pull_request'}}

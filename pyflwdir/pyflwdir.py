@@ -159,7 +159,7 @@ def from_array(
         raise ValueError(f'The flow direction data with type "{ftype}" is invalid.')
     if mask is not None:
         if mask.shape != data.shape:
-            raise ValueError(f'"mask" shape does not match with data shape')
+            raise ValueError('"mask" shape does not match with data shape')
         data = np.where(mask != 0, data, fd._mv)
 
     # use smallest possible dtype to represent indices

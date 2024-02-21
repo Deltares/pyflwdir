@@ -11,7 +11,7 @@ dependencies:
   - python>=3.9
   - pyflwdir
   # optional for notebooks
-  - cartopy>=0.20 
+  - cartopy>=0.20
   - descartes
   - geopandas>=0.8
   - jupyter

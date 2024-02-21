@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 """Tests for the pyflwdir.dem module."""
 
-import pytest
 import numpy as np
-from pyflwdir import dem, subgrid
-from test_core import test_data
+import pytest
 
-parsed, flwdir = test_data[0]
-idxs_ds, idxs_pit, seq, rank, mv = parsed
+from pyflwdir import dem, subgrid
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.int32])
@@ -117,7 +114,8 @@ def test_slope():
     assert np.all(dem.slope(elv, nodata) == 0)
 
 
-def test_hand_fldpln():
+def test_hand_fldpln(test_data0, flwdir0):
+    idxs_ds, _, seq, rank, _ = test_data0
     elevtn = rank  # dz along flow path is 1
     drain = rank == 0  # only outlets are
     # hand == elevtn
@@ -145,7 +143,7 @@ def test_hand_fldpln():
     assert np.all(fldpln[elevtn > hmax] == 0)
     assert np.all(fldpln[elevtn < hmin] != 0)
     # hand == 1 for non-drain cells
-    elevtn = np.ones(flwdir.size)
+    elevtn = np.ones(flwdir0.size)
     elevtn[drain] = 0
     hand = dem.height_above_nearest_drain(idxs_ds, seq, drain, elevtn)
     assert np.all(hand[rank > 0] == 1)

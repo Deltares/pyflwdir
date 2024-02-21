@@ -35,7 +35,8 @@ author = "Dirk Eilander"
 version = pyflwdir.__version__.split("dev")[0]
 
 # # -- Copy notebooks to include in docs -------
-if not os.path.isdir("_examples"):
+SKIP_DOC_EXAMPLES = bool(os.environ.get("SKIP_DOC_EXAMPLES", False))
+if not os.path.isdir("_examples") and not SKIP_DOC_EXAMPLES:
     os.makedirs("_examples")
     copy_tree("../examples", "_examples")
 
@@ -58,8 +59,11 @@ extensions = [
     "sphinx.ext.intersphinx",
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
-    "nbsphinx",
 ]
+
+if not SKIP_DOC_EXAMPLES:
+    extensions.append("nbsphinx")
+
 
 autosummary_generate = True
 
@@ -242,7 +246,7 @@ nbsphinx_prolog = r"""
     .. raw:: html
 
         <div>
-            For an interactive online version click here: 
+            For an interactive online version click here:
             <a href="https://mybinder.org/v2/gh/Deltares/pyflwdir/main?urlpath=lab/tree/examples/{{ docname|e }}" target="_blank" rel="noopener noreferrer"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg"></a>
         </div>
 """

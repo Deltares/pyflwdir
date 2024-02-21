@@ -7,9 +7,6 @@ import numpy as np
 from pyflwdir import core_d8, core_nextxy, core_ldd
 from pyflwdir.core_conversion import ldd_to_d8, d8_to_ldd
 
-# test data
-from test_core import test_data
-
 
 @pytest.mark.parametrize("fd", [core_nextxy, core_d8, core_ldd])
 def test_core(fd):
@@ -56,7 +53,7 @@ def test_usds(fd):
 
 
 @pytest.mark.parametrize("fd", [core_nextxy, core_d8, core_ldd])
-def test_identical(fd):
+def test_identical(fd, test_data):
     """test if all core_xx.py return identical results"""
     for parsed, flwdir in test_data:
         idxs_ds0, idxs_pit0, _, _, mv = parsed

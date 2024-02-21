@@ -5,7 +5,7 @@ FlwdirRaster
 
 .. autosummary::
    :toctree: ../_generated
-   
+
    FlwdirRaster
 
 
@@ -60,7 +60,7 @@ Raster & geospatial attributes and methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The FlwdirRaster object contains :py:attr:`FlwdirRaster.shape`, :py:attr:`FlwdirRaster.transform`
-and :py:attr:`FlwdirRaster.latlon` attributes describing its geospatial location. The first 
+and :py:attr:`FlwdirRaster.latlon` attributes describing its geospatial location. The first
 attribute is required at initializiation, while the others can be set later.
 
 .. autosummary::
@@ -94,7 +94,7 @@ Streams and flow paths
 
 .. autosummary::
    :toctree: ../_generated
-   
+
    FlwdirRaster.basins
    FlwdirRaster.subbasins_streamorder
    FlwdirRaster.subbasins_pfafstetter
@@ -108,7 +108,7 @@ Up- and downstream values
 
 .. autosummary::
    :toctree: ../_generated
-   
+
    FlwdirRaster.downstream
    FlwdirRaster.upstream_sum
 
@@ -148,7 +148,7 @@ Elevation
 
 .. autosummary::
    :toctree: ../_generated
-   
+
    FlwdirRaster.dem_adjust
    FlwdirRaster.dem_dig_d4
    FlwdirRaster.hand

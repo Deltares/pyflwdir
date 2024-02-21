@@ -23,7 +23,8 @@ Documentation = "https://deltares.github.io/pyflwdir"
 
 [project.optional-dependencies]
 test = [
-    "black",
+    "black[jupyter]",
+    "pre-commit",
 	"pytest>=2.7.3",
 	"pytest-cov",
 ]
@@ -33,6 +34,16 @@ doc = [
     "sphinx",
     "sphinx_design",
 ]
+examples = [
+    "cartopy>=0.20",
+    "descartes",
+    "geopandas>0.8",
+    "jupyter",
+    "matplotlib",
+    "rasterio",
+]
+
+full = ["pyflwdir[test, doc, examples]"]
 
 [tool.black]
 line-length = 88
@@ -44,3 +55,10 @@ exclude = ["docs", "notebooks", "envs", "tests", "binder", ".github"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.make_env]
+channels = ["conda-forge"]
+deps_not_in_conda = [
+  "sphinx_design",
+  "black[jupyter]",
+]

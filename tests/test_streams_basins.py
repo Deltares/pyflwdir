@@ -6,16 +6,14 @@ import numpy as np
 
 from pyflwdir import streams, basins, core, gis_utils, regions
 
-# import matplotlib.pyplot as plt
-# parsed, flwdir = test_data[0]
 
-# test data
-from test_core import test_data
-
-
-@pytest.mark.parametrize("parsed, flwdir", test_data)
-def test_accuflux(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
+@pytest.mark.parametrize(
+    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data1", "flwdir1")]
+)
+def test_accuflux(test_data, flwdir, request):
+    flwdir = request.getfixturevalue(flwdir)
+    test_data = request.getfixturevalue(test_data)
+    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     n, ncol = seq.size, flwdir.shape[1]
     # cell count
     nodata = -9999
@@ -34,10 +32,14 @@ def test_accuflux(parsed, flwdir):
     assert np.all(upa1 == acc1)
 
 
-@pytest.mark.parametrize("parsed, flwdir", test_data)
-def test_basins(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, _, _ = [p.copy() for p in parsed]
-    n, ncol = seq.size, flwdir.shape[1]
+@pytest.mark.parametrize(
+    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data1", "flwdir1")]
+)
+def test_basins(test_data, flwdir, request):
+    flwdir = request.getfixturevalue(flwdir)
+    test_data = request.getfixturevalue(test_data)
+    idxs_ds, idxs_pit, seq, _, _ = [p.copy() for p in test_data]
+    _, ncol = seq.size, flwdir.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
     # test basins
     ids = np.arange(1, idxs_pit.size + 1, dtype=int)
@@ -68,10 +70,14 @@ def test_basins(parsed, flwdir):
         regions.region_dissolve(bas, labels=0)
 
 
-@pytest.mark.parametrize("parsed, flwdir", test_data)
-def test_subbasins(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
-    n, ncol = seq.size, flwdir.shape[1]
+@pytest.mark.parametrize(
+    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data1", "flwdir1")]
+)
+def test_subbasins(test_data, flwdir, request):
+    flwdir = request.getfixturevalue(flwdir)
+    test_data = request.getfixturevalue(test_data)
+    idxs_ds, idxs_pit, seq, _, mv = [p.copy() for p in test_data]
+    _, ncol = seq.size, flwdir.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
     idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
     ## pfafstetter for largest basin
@@ -105,9 +111,10 @@ def test_subbasins(parsed, flwdir):
     assert np.all(areas[np.isin(lbs, lbs0)] > 5)
 
 
-@pytest.mark.parametrize("parsed, flwdir", test_data)
-def test_subbasins_strord(parsed, flwdir):
-    idxs_ds, _, seq, _, _ = [p.copy() for p in parsed]
+@pytest.mark.parametrize("test_data", ["test_data0", "test_data1"])
+def test_subbasins_strord(test_data, request):
+    test_data = request.getfixturevalue(test_data)
+    idxs_ds, _, seq, _, _ = [p.copy() for p in test_data]
     ## streamorder basins
     strord = streams.strahler_order(idxs_ds, seq)
     maxsto = strord.max()
@@ -121,10 +128,14 @@ def test_subbasins_strord(parsed, flwdir):
     assert np.all(subbas[idxs_out1][~pits] != subbas[idxs_ds[idxs_out1]][~pits])
 
 
-@pytest.mark.parametrize("parsed, flwdir", test_data)
-def test_streams(parsed, flwdir):
-    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in parsed]
-    n, ncol = seq.size, flwdir.shape[1]
+@pytest.mark.parametrize(
+    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data1", "flwdir1")]
+)
+def test_streams(test_data, flwdir, request):
+    flwdir = request.getfixturevalue(flwdir)
+    test_data = request.getfixturevalue(test_data)
+    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
+    _, ncol = seq.size, flwdir.shape[1]
     idxs_ds[rank == -1] = mv
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
     # strahler stream order
@@ -153,8 +164,8 @@ def test_streams(parsed, flwdir):
     assert np.all(ranks1[rank >= 0] == rank[rank >= 0])
 
 
-def test_smooth_rivlen():
-    (idxs_ds, idxs_pit, seq, rank, mv), flwdir0 = test_data[0]
+def test_smooth_rivlen(test_data0, flwdir0):
+    idxs_ds, _, seq, _, mv = test_data0
     ncol = flwdir0.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
     idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)

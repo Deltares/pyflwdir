@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Description of D8 flow direction type and methods to convert to/from general 
+"""Description of D8 flow direction type and methods to convert to/from general
 nextidx."""
 
 from numba import njit, vectorize
