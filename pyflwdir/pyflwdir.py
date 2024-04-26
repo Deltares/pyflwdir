@@ -979,7 +979,7 @@ class FlwdirRaster(Flwdir):
             xs=self._check_data(xs, "xs", optional=True),
             ys=self._check_data(ys, "ys", optional=True),
             transform=self.transform,
-            shape = self.shape,
+            shape=self.shape,
             **kwargs,
         )
         return feats

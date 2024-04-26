@@ -511,7 +511,9 @@ def features(flowpaths, xs=None, ys=None, transform=None, shape=None, **kwargs):
     """
     if xs is None or ys is None:
         if transform is None or shape is None:
-            raise ValueError("transform and shape should be provided if xs and ys are None")
+            raise ValueError(
+                "transform and shape should be provided if xs and ys are None"
+            )
         _size = shape[0] * shape[1]
     else:
         _size = xs.size
