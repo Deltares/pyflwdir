@@ -49,7 +49,8 @@ def test_flwdirraster_errors(flwdir0, flwdir0_idxs):
 
 
 @pytest.mark.parametrize(
-    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data1", "flwdir1")]
+    "test_data, flwdir",
+    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
 )
 def test_flwdirraster_attrs(test_data, flwdir, request):
     d8 = request.getfixturevalue(flwdir)

@@ -108,13 +108,13 @@ First, clone pyflwdir's ``git`` repo and navigate into the repository:
     $ git clone git@github.com:Deltares/pyflwdir.git
     $ cd pyflwdir
 
-Then, make and activate a new pyflwdir conda environment based on the environment.yml
+Then, make and activate a new pyflwdir conda environment based on the `environment.yml`
 file contained in the repository:
 
 .. code-block:: console
 
-    $ conda env create -f envs/pyflwdir-dev.yml
-    $ conda activate pyflwdir-dev
+    $ conda env create -f environment.yml
+    $ conda activate pyflwdir
 
 Finally, build and install PyFlwDir:
 
