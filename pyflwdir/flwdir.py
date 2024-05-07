@@ -81,10 +81,12 @@ class Flwdir(object):
         self.idxs_outlet = idxs_outlet
         self._seq = idxs_seq
         self._nnodes = nnodes
-        # either -1 for int or 4294967295 for uint32
+        # either -1 for int, 4294967295 for uint32, or 18446744073709551615 for uint64
         self._mv = core._mv
         if idxs_ds.dtype == np.uint32:
             self._mv = np.uint32(self._mv)
+        if idxs_ds.dtype == np.uint64:
+            self._mv = np.uint64(self._mv)
 
         # set placeholders only used if cache if True
         self.cache = cache
