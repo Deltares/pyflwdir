@@ -229,6 +229,9 @@ def _adjust_elevation(elevtn):
 def slope(elevtn, nodata=-9999.0, latlon=False, transform=gis_utils.IDENTITY):
     """Returns the local gradient
 
+    The slope is calculated on the basis of the dem in a 3 x 3 cell window, using 2nd order partial derivatives.
+    The slope [m/m] is given as the increase in height per distance in horizontal direction.    
+    
     Parameters
     ----------
     elevnt : 1D array of float
@@ -243,7 +246,7 @@ def slope(elevtn, nodata=-9999.0, latlon=False, transform=gis_utils.IDENTITY):
     Returns
     -------
     1D array of float
-        slope
+        slope [m/m]
     """
     xres, yres, north = transform[0], transform[4], transform[5]
     slope = np.zeros(elevtn.shape, dtype=np.float32)
