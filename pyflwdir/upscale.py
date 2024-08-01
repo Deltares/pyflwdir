@@ -22,16 +22,16 @@ __all__ = []
 @njit
 def subidx_2_idx(subidx, subncol, cellsize, ncol):
     """Returns the lowres index <idx> of highres cell index <subidx>."""
-    r = (subidx // subncol) // cellsize
-    c = (subidx % subncol) // cellsize
+    r = int(subidx // subncol) // cellsize
+    c = int(subidx % subncol) // cellsize
     return r * ncol + c
 
 
 @njit
 def in_d8(idx0, idx_ds, ncol):
     """Returns True if inside 3x3 (current and 8 neighboring) cells."""
-    cond1 = abs(idx_ds % ncol - idx0 % ncol) <= 1  # west - east
-    cond2 = abs(idx_ds // ncol - idx0 // ncol) <= 1  # south - north
+    cond1 = abs(int(idx_ds % ncol) - int(idx0 % ncol)) <= 1  # west - east
+    cond2 = abs(int(idx_ds // ncol) - int(idx0 // ncol)) <= 1  # south - north
     return cond1 and cond2
 
 
@@ -1068,8 +1068,8 @@ def ihu_minimize_error(
         check_pit = pit_out_of_cell > 0 and subidx_ds == subidx
         if check_pit:
             idx1 = subidx_2_idx(subidx_ds, subncol, cellsize, ncol)
-            dr = (idx1 % ncol) - (idx0 % ncol)
-            dc = (idx1 // ncol) - (idx0 // ncol)
+            dr = int(idx1 % ncol) - int(idx0 % ncol)
+            dc = int(idx1 // ncol) - int(idx0 // ncol)
             check_pit = abs(dr) <= pit_out_of_cell and abs(dc) <= pit_out_of_cell
         # not outlet cells and at pit -> reset outlet to pit
         if check_pit and (subidx_ds == subidx0 or len(idxs) == 0):
@@ -1359,7 +1359,7 @@ def upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
                 # next iter
                 subidx = subidx1
         else:
-            connect_map[idx0] = np.uint8(-1)
+            connect_map[idx0] = np.uint8(255)  # -1
     return connect_map, np.array(idxs_fix_lst, dtype=idxs_ds.dtype)
 
 

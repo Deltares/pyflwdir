@@ -89,11 +89,11 @@ def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
         map with unique IDs for stream_order>=min_sto subbasins
     """
     if min_sto < 0:
-        min_sto = strord.max() + min_sto
+        min_sto = int(strord.max()) + min_sto
     subbas = np.full(idxs_ds.shape, 0, dtype=np.int32)
     idxs = []
     for idx0 in seq[::-1]:  # up- to downstream
-        if (mask is not None and mask[idx0] == False) or strord[idx0] < min_sto:
+        if (mask is not None and mask[idx0] is False) or strord[idx0] < min_sto:
             continue
         idx_ds = idxs_ds[idx0]
         if strord[idx0] != strord[idx_ds] or idx_ds == idx0:

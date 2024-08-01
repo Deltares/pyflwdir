@@ -302,7 +302,7 @@ def stream_distance(
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
         # sum distances; skip if at pit or mask is True
-        if idx0 == idx_ds or (mask is not None and mask[idx0] == True):
+        if idx0 == idx_ds or (mask is not None and mask[idx0] is True):
             continue
         if real_length:
             d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)

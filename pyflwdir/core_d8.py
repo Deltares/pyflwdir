@@ -2,8 +2,10 @@
 """Description of D8 flow direction type and methods to convert to/from general
 nextidx."""
 
-from numba import njit, vectorize
+from typing import Tuple
 import numpy as np
+from numba import njit
+
 from . import core
 
 __all__ = []
@@ -50,8 +52,8 @@ def from_array(flwdir, _mv=_mv, dtype=np.intp):
         if flwdir_flat[idx0] == _mv:
             continue
         dr, dc = drdc(flwdir_flat[idx0])
-        r_ds = int(idx0 // ncol + dr)
-        c_ds = int(idx0 % ncol + dc)
+        r_ds = int(idx0 // ncol) + int(dr)
+        c_ds = int(idx0 % ncol) + int(dc)
         pit = dr == 0 and dc == 0
         outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
         idx_ds = c_ds + r_ds * ncol
@@ -82,7 +84,7 @@ def _downstream_idx(idx0, flwdir_flat, shape, mv=core._mv):
 
 # general
 @njit
-def to_array(idxs_ds, shape, mv=core._mv):
+def to_array(idxs_ds: np.ndarray[np.uint64], shape: Tuple[int, int], mv=core._mv):
     """convert downstream linear indices to dense D8 raster"""
     ncol = shape[1]
     flwdir = np.full(idxs_ds.size, _mv, dtype=np.uint8)
@@ -90,17 +92,17 @@ def to_array(idxs_ds, shape, mv=core._mv):
         idx_ds = idxs_ds[idx0]
         if idx_ds == mv:
             continue
-        dr = (idx_ds // ncol) - (idx0 // ncol)
-        dc = (idx_ds % ncol) - (idx0 % ncol)
+        dr: np.int32 = np.int32(idx_ds // ncol) - np.int32(idx0 // ncol)
+        dc: np.int32 = np.int32(idx_ds % ncol) - np.int32(idx0 % ncol)
         if dr >= -1 and dr <= 1 and dc >= -1 and dc <= 1:
-            dd = _ds[dr + 1, dc + 1]
+            dd: np.uint8 = _ds[dr + 1, dc + 1]
         else:
-            raise ValueError("Invalid data downstream index outside 8 neighbours.")
+            raise ValueError("Invalid data downstream index outside 8 neighbors.")
         flwdir[idx0] = dd
     return flwdir.reshape(shape)
 
 
-def isvalid(flwdir, _all=_all):
+def isvalid(flwdir: np.uint8, _all: np.ndarray[np.uint8] = _all) -> bool:
     """True if 2D D8 raster is valid"""
     return (
         isinstance(flwdir, np.ndarray)

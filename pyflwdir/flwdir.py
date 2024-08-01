@@ -22,20 +22,44 @@ __all__ = ["Flwdir", "from_dataframe"]
 logger = logging.getLogger(__name__)
 
 
-@njit
-def get_lin_indices(idxs, idxs_ds):
-    idxs_ds0 = np.arange(idxs.size, dtype=idxs.dtype)
-    for j, idx_ds in enumerate(idxs_ds):
-        for i, idx in enumerate(idxs):
-            if idx == idx_ds:
-                idxs_ds0[j] = i
-    return idxs_ds0
+# @njit(cache=True)
+def get_loc_idx(idxs: np.ndarray, idxs_ds: np.ndarray) -> np.ndarray:
+    """Get location indices of downstream cells for all downstream cells"""
+    max_val = idxs.max()
+    idx_map = np.empty(max_val + 1, dtype=np.int_)
+    idx_map.fill(-1)  # Fill with -1 to indicate missing values
+    idx_map[idxs] = np.arange(idxs.size)
+    return idx_map[idxs_ds]
 
 
-def from_dataframe(df, ds_col="idx_ds"):
+def from_dataframe(df: "pandas.DataFrame", ds_col="idx_ds") -> "Flwdir":
+    """Create a Flwdir object from a dataframe with flow direction data.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        dataframe with flow directions
+    ds_col : str, optional
+        name of column with downstream indices, by default "idx_ds"
+
+    Returns
+    -------
+    Flwdir
+        flow direction object
+    """
+
     idxs_ds = df[ds_col].values
     idxs = df.index.values
-    return Flwdir(idxs_ds=get_lin_indices(idxs=idxs, idxs_ds=idxs_ds))
+    return Flwdir(idxs_ds=get_loc_idx(idxs=idxs, idxs_ds=idxs_ds))
+
+
+# def _get_idxs_ds_upstream(idxs: np.ndarray, idxs_up: np.ndarray) -> np.ndarray:
+#     idxs_ds0 = np.arange(idxs.size, dtype=idxs.dtype)
+#     for j, idx_up in enumerate(idxs_up):
+#         for i, idx in enumerate(idxs):
+#             if idx == idx_up:
+#                 idxs_up0[j] = i
+#     return idxs_ds0
 
 
 class Flwdir(object):
@@ -95,6 +119,8 @@ class Flwdir(object):
         # check validity
         if self.idxs_pit.size == 0:
             raise ValueError("Invalid FlwdirRaster: no pits found")
+
+    ### REPRESENTATION ###
 
     def __str__(self):
         return pprint.pformat(self._dict)
