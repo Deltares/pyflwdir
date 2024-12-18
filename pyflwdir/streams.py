@@ -248,6 +248,7 @@ def strahler_order(idxs_ds, seq, mask=None):
         stream order
     """
     strord = np.full(idxs_ds.size, 0, dtype=np.uint8)
+    strmax = np.full(idxs_ds.size, 0, dtype=np.uint8)
     for idx0 in seq[::-1]:  # up- to downstream
         if mask is not None and not mask[idx0]:  # invalid
             continue
@@ -257,10 +258,14 @@ def strahler_order(idxs_ds, seq, mask=None):
         if idx_ds == idx0:
             continue
         sto, sto_ds = strord[idx0], strord[idx_ds]
+        sto_up = strmax[idx_ds]  # max order of other upstream tributaries
         if sto_ds < sto:
             strord[idx_ds] = sto
-        elif sto == sto_ds:
+        # increment order if same order joins
+        elif sto == sto_ds and sto_up == sto:
             strord[idx_ds] += 1
+        if sto_up < sto:
+            strmax[idx_ds] = sto
     return strord
 
 
@@ -302,7 +307,7 @@ def stream_distance(
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
         # sum distances; skip if at pit or mask is True
-        if idx0 == idx_ds or (mask is not None and mask[idx0] is True):
+        if idx0 == idx_ds or (mask is not None and mask[idx0]):
             continue
         if real_length:
             d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)

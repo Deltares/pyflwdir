@@ -29,3 +29,22 @@ A complete environment can be installed from the environment.yml file using:
 .. code-block:: console
 
     $ conda env create -f environment.yml
+
+
+Developer installation using pixi
+---------------------------------
+
+To install the package in development mode, use the following command:
+
+.. code-block:: console
+
+    $ pixi install
+    $ pixi run install-pre-commit
+
+This will install the package in development mode and install the required dependencies.
+
+To run the tests, use the following command:
+
+.. code-block:: console
+
+    $ pixi run test

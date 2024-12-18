@@ -49,7 +49,9 @@ def nextxy0(flwdir0, flwdir0_idxs):
 @pytest.fixture(scope="session")
 def flw0(flwdir0, flwdir0_idxs):
     idxs_ds0, idxs_pit0 = flwdir0_idxs
-    return FlwdirRaster(idxs_ds0.copy(), flwdir0.shape, "d8", idxs_pit=idxs_pit0.copy())
+    return FlwdirRaster(
+        idxs_ds0.copy(), flwdir0.shape, "d8", idxs_pit=idxs_pit0.copy(), cache=False
+    )
 
 
 @pytest.fixture(scope="session")
