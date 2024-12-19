@@ -97,7 +97,7 @@ test-py312 = { features = ["py312", "test"], solve-group = "py312" }
 install-pre-commit = "pre-commit install"
 
 # linting
-lint = { cmd = "pre-commit run --all", depends_on = ["install-pre-commit"] }
+lint = { cmd = "pre-commit run --all-files", depends_on = ["install-pre-commit"] }
 
 # docs
 docs-dummy = {cmd = ["sphinx-build", "./docs", "./docs/_build", "-b", "dummy", "-W"], env = {PYDEVD_DISABLE_FILE_VALIDATION = "1"}}
@@ -108,7 +108,9 @@ docs-html-clean = { depends_on = ["docs-clean", "docs-html"] }
 
 # tests
 test = { cmd = ["pytest", "tests", "-v", "--cov-report=term-missing"] }
-test-no-jit = { cmd = "python -m pytest --verbose --cov=pyflwdir --cov-report xml", env = {NUMBA_DISABLE_JIT = "1"} }
+test-cov-xml = { cmd = "python -m pytest --verbose --cov=pyflwdir --cov-report xml", env = {NUMBA_DISABLE_JIT = "1"} }
+test-cov = { cmd = "python -m pytest --verbose --cov=pyflwdir --cov-report term-missing", env = {NUMBA_DISABLE_JIT = "1"} }
+
 
 # version
 version = { cmd = ["python", "-c", "from pyflwdir import __version__ as v; print('dev' if 'dev' in v else 'v'+v)"] }

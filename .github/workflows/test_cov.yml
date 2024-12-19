@@ -41,8 +41,7 @@ jobs:
 
       # run test
       - name: Test
-        run: pixi run -e test-py312 test
-
+        run: pixi run -e test-py312 test-cov-xml
 
       # upload coverage
       - uses: codecov/codecov-action@v3
