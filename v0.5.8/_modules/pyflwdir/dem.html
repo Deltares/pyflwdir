@@ -604,6 +604,9 @@
 <span class="k">def</span> <span class="nf">slope</span><span class="p">(</span><span class="n">elevtn</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the local gradient</span>
 
+<span class="sd">    The slope is calculated on the basis of the dem in a 3 x 3 cell window, using 2nd order partial derivatives.</span>
+<span class="sd">    The slope [m/m] is given as the increase in height per distance in horizontal direction.    </span>
+<span class="sd">    </span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    elevnt : 1D array of float</span>
@@ -618,7 +621,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    1D array of float</span>
-<span class="sd">        slope</span>
+<span class="sd">        slope [m/m]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="n">north</span> <span class="o">=</span> <span class="n">transform</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">transform</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">transform</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
     <span class="n">slope</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">elevtn</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
