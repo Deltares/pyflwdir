@@ -1,19 +1,18 @@
 name: pyflwdir
 
 channels:
-  - conda-forge
+- conda-forge
 
-# note that these are the developer dependencies,
-# if you only want the user dependencies, see
-# install_requires in setup.py
 dependencies:
-  # required
-  - python>=3.9
-  - pyflwdir
-  # optional for notebooks
-  - cartopy>=0.20
-  - descartes
-  - geopandas>=0.8
-  - jupyter
-  - matplotlib
-  - rasterio
+- affine
+- cartopy>=0.20
+- descartes
+- geopandas>0.8
+- jupyter
+- matplotlib
+- numba>=0.54,<1.0
+- numpy
+- pandoc
+- python~=3.12.0
+- rasterio
+- scipy

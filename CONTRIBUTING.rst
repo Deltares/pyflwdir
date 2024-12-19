@@ -108,19 +108,15 @@ First, clone pyflwdir's ``git`` repo and navigate into the repository:
     $ git clone git@github.com:Deltares/pyflwdir.git
     $ cd pyflwdir
 
-Then, make and activate a new pyflwdir conda environment based on the `environment.yml`
-file contained in the repository:
+Install pixi from `pixi.sh <pixi.sh>`__ to manage the development environment.
+To install the package in development mode, use the following command:
 
 .. code-block:: console
 
-    $ conda env create -f environment.yml
-    $ conda activate pyflwdir
+    $ pixi install
+    $ pixi run install-pre-commit
 
-Finally, build and install PyFlwDir:
-
-.. code-block:: console
-
-    $ pip install -e .
+This will install the package in development mode and install the required dependencies.
 
 Running the tests
 ^^^^^^^^^^^^^^^^^
@@ -128,50 +124,40 @@ Running the tests
 PyFlwDir's tests live in the tests folder and generally match the main package layout.
 Test should be run from the tests folder.
 
-Note that to get a coverage report we need to disable numba jit. This can be done
-by setting the environment variable ``NUMBA_DISABLE_JIT=1``, see
-`numba docs <https://numba.pydata.org/numba-doc/dev/reference/envvars.html#envvar-NUMBA_DISABLE_JIT>`_
-
-To run the entire suite and the code coverage report.
+To run the tests, use the following command:
 
 .. code-block:: console
 
-    $ python -m pytest --verbose --cov=pyflwdir --cov-report term-missing
+    $ pixi run test
+
+To run the tests with coverage, numba needs to be disabled.
+This is done by setting the environment variable NUMBA_DISABLE_JIT to 1.
+These arguments are combined in the following command:
 
 .. code-block:: console
 
-    $ python -m pytest --verbose --cov=pyflwdir --cov-report term-missing
+    $ pixi run test-cov
 
 A single test file:
 
 .. code-block:: console
 
-    $ python -m pytest --verbose test_pyflwdir.py
+    $ pixi run python -m pytest --verbose test_pyflwdir.py
 
 A single test:
 
 .. code-block:: console
 
-    $ python -m pytest --verbose test_pyflwdir.py::test_save
+    $ pixi run python -m pytest --verbose test_pyflwdir.py::test_save
 
 Running code format checks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The code formatting will be checked based on the `black clode style
-<https://black.readthedocs.io/en/stable/the_black_code_style.html>`__ during ci.
-Make sure the check below returns *All done!* before commiting your edits.
-
-To check the formatting of your code:
-
-.. code-block:: console
-
-    $ black --check .
 
 To automatically reformat your code:
 
 .. code-block:: console
 
-    $ black .
+    $ pixi run lint
 
 Creating a release
 ^^^^^^^^^^^^^^^^^^
@@ -188,7 +174,8 @@ Creating a release
 
 .. code-block:: console
 
-    $ python setup.py sdist bdist_wheel
+    $ flit build
+    $ python -m twine check dist/*
 
 4. Then use twine to upload our wheels to pypi. It will prompt you for your username and password.
 

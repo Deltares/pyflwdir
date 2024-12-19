@@ -17,20 +17,24 @@ _pv = np.uint8(5)
 _all = np.array([7, 8, 9, 4, 5, 6, 1, 2, 3, 255], dtype=np.uint8)
 
 
+from numba import njit
+import numpy as np
+
+
 @njit("Tuple((int8, int8))(uint8)")
 def drdc(dd):
     """convert ldd value to delta row/col"""
     dr, dc = np.int8(0), np.int8(0)
     if dd >= np.uint8(4):  # W / PIT / E / NW / N / NE
-        if dd >= np.uint(7):  # NW / N / NE
+        if dd >= np.uint8(7):  # NW / N / NE
             dr = np.int8(-1)
-            dc = np.int8(dd - 8)
+            dc = np.int8(dd) - np.int8(8)
         else:  # W / PIT / E
             dr = np.int8(0)
-            dc = np.int8(dd - 5)
+            dc = np.int8(dd) - np.int8(5)
     else:  # SW / S / SE
         dr = np.int8(1)
-        dc = np.int8(dd - 2)
+        dc = np.int8(dd) - np.int8(2)
     return dr, dc
 
 
@@ -87,12 +91,12 @@ def to_array(idxs_ds, shape, mv=core._mv):
         idx_ds = idxs_ds[idx0]
         if idx_ds == mv:
             continue
-        dr = (idx_ds // ncol) - (idx0 // ncol)
-        dc = (idx_ds % ncol) - (idx0 % ncol)
+        dr: np.int32 = np.int32(idx_ds // ncol) - np.int32(idx0 // ncol)
+        dc: np.int32 = np.int32(idx_ds % ncol) - np.int32(idx0 % ncol)
         if dr >= -1 and dr <= 1 and dc >= -1 and dc <= 1:
             dd = _ds[dr + 1, dc + 1]
         else:
-            raise ValueError("Invalid data downstream index outside 8 neighbours.")
+            raise ValueError("Invalid data downstream index outside 8 neighbors.")
         flwdir[idx0] = dd
     return flwdir.reshape(shape)
 

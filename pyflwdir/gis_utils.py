@@ -99,7 +99,7 @@ def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY
             for dc in range(-1, 2):
                 if dr == 0 and dc == 0:
                     continue
-                r1, c1 = r + dr, c + dc
+                r1, c1 = int(r) + dr, int(c) + dc
                 outside = r1 < 0 or r1 >= nrow or c1 < 0 or c1 >= ncol
                 if outside or (msk is not None and ~msk[r1, c1]):
                     continue
@@ -472,10 +472,10 @@ def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
     """
     xres, yres, north = transform[0], transform[4], transform[5]
     # compute delta row, col
-    r0 = idx0 // ncol
-    r1 = idx1 // ncol
+    r0 = int(idx0 // ncol)
+    r1 = int(idx1 // ncol)
     dr = abs(r1 - r0)
-    dc = abs((idx1 % ncol) - (idx0 % ncol))
+    dc = abs(int(idx1 % ncol) - int(idx0 % ncol))
     if latlon:  # calculate cell size in metres
         lat = north + (r0 + r1) / 2.0 * yres
         dy = 0.0 if dr == 0 else degree_metres_y(lat) * yres
