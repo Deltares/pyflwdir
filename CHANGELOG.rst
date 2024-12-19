@@ -12,6 +12,7 @@ in development
 * Fixed support for interger type DEMs in `from_dem` and `dem.fill_depressions` methods
 * Add support for py 3.12
 * Add support for pixi
+* Add support for large rasters in the flwdir object (Contributed by @robgpita)
 
 0.5.8  (06-Oct-2023)
 ********************
