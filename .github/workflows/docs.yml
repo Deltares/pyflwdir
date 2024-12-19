@@ -29,34 +29,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Mambaforge
-        uses: conda-incubator/setup-miniconda@v2
+      - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-            python-version: '3.11'
-            miniforge-variant: Mambaforge
-            miniforge-version: latest
-            use-mamba: true
-
-      - name: Setup env
-        run: |
-          python make_env.py full -p 3.11 -n pyflwdir -o environment-doc.yml
-          mamba env create -f environment-doc.yml
-          mamba run -n pyflwdir pip install -e .
+          pixi-version: "v0.39.2"
+          environments: default
+          locked: false
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
       # if we're not publishing we don't have to write them, so we might as well
       # save ourself a bunch of IO time
       - name: Build dummy docs
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          mamba run -n pyflwdir sphinx-build ./docs ./docs/_build -b dummy -W
+          pixi run docs-dummy
 
       - name: Build html docs
         if: ${{ github.event_name != 'pull_request' }}
         run: |
-          mamba run -n pyflwdir sphinx-build -M html ./docs ./docs/_build -W
-          echo "DOC_VERSION=$(mamba run -n pyflwdir python -c 'from pyflwdir import __version__ as v; print("dev" if "dev" in v else "v"+v)')" >> $GITHUB_ENV
+          pixi run docs-html
+          echo "DOC_VERSION=$(pixi run version)" >> $GITHUB_ENV
 
       - name: Upload to GitHub Pages
         if: ${{ github.event_name != 'pull_request'}}

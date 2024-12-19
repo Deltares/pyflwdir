@@ -100,9 +100,6 @@ venv.bak/
 .spyderproject
 .spyproject
 
-# VScode
-.vscode
-
 # PyCharm
 .idea
 
@@ -128,4 +125,7 @@ _pyflwdir
 scripts
 
 pyflwdir*.yml
-pixi.lock
+
+# pixi environments
+.pixi
+*.egg-info

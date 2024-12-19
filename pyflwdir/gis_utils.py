@@ -99,7 +99,7 @@ def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY
             for dc in range(-1, 2):
                 if dr == 0 and dc == 0:
                     continue
-                r1, c1 = r + dr, c + dc
+                r1, c1 = int(r) + dr, int(c) + dc
                 outside = r1 < 0 or r1 >= nrow or c1 < 0 or c1 >= ncol
                 if outside or (msk is not None and ~msk[r1, c1]):
                     continue
@@ -472,10 +472,10 @@ def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
     """
     xres, yres, north = transform[0], transform[4], transform[5]
     # compute delta row, col
-    r0 = idx0 // ncol
-    r1 = idx1 // ncol
+    r0 = int(idx0 // ncol)
+    r1 = int(idx1 // ncol)
     dr = abs(r1 - r0)
-    dc = abs((idx1 % ncol) - (idx0 % ncol))
+    dc = abs(int(idx1 % ncol) - int(idx0 % ncol))
     if latlon:  # calculate cell size in metres
         lat = north + (r0 + r1) / 2.0 * yres
         dy = 0.0 if dr == 0 else degree_metres_y(lat) * yres
@@ -487,7 +487,7 @@ def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
 
 
 ## VECTORIZE
-def features(flowpaths, xs, ys, **kwargs):
+def features(flowpaths, xs=None, ys=None, transform=None, shape=None, **kwargs):
     """Returns a LineString feature for each stream
 
     Parameters
@@ -496,8 +496,10 @@ def features(flowpaths, xs, ys, **kwargs):
         linear indices of flowpaths
     xs, ys : 1D-array of float
         x, y coordinates
-    idxs_ds: list of intp
-        linear index of first cell on next downstream flow path
+    transform : Affine
+        Coefficients mapping pixel coordinates to coordinate reference system.
+    shape : tuple of int
+        The height, width  of the raster.
     kwargs : extra sample maps key-word arguments
         optional maps to sample from
         e.g.: strord=flw.stream_order()
@@ -507,8 +509,17 @@ def features(flowpaths, xs, ys, **kwargs):
     feats : list of dict
         Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
     """
+    if xs is None or ys is None:
+        if transform is None or shape is None:
+            raise ValueError(
+                "transform and shape should be provided if xs and ys are None"
+            )
+        _size = shape[0] * shape[1]
+    else:
+        _size = xs.size
+
     for key in kwargs:
-        if not isinstance(kwargs[key], np.ndarray) or kwargs[key].size != xs.size:
+        if not isinstance(kwargs[key], np.ndarray) or kwargs[key].size != _size:
             raise ValueError(
                 f'Kwargs map "{key}" should be ndarrays of same size as coordinates'
             )
@@ -520,12 +531,17 @@ def features(flowpaths, xs, ys, **kwargs):
         idx0 = idxs[0]
         pit = idxs[-1] == idxs[-2]
         props = {key: kwargs[key].flat[idx0] for key in kwargs}
+        if xs is None or ys is None:
+            xi, yi = idxs_to_coords(idxs, transform, shape)
+            coordinates = list(zip(xi, yi))
+        else:
+            coordinates = [(xs[i], ys[i]) for i in idxs]
         feats.append(
             {
                 "type": "Feature",
                 "geometry": {
                     "type": "LineString",
-                    "coordinates": [(xs[i], ys[i]) for i in idxs],
+                    "coordinates": coordinates,
                 },
                 "properties": {"idx": idx0, "idx_ds": idxs[-1], "pit": pit, **props},
             }

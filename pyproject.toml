@@ -11,7 +11,7 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 dependencies = [
     "affine",
-    "numba>=0.54",
+    "numba>=0.54,<1.0",
     "numpy",
     "scipy",
 ]
@@ -41,6 +41,7 @@ examples = [
     "jupyter",
     "matplotlib",
     "rasterio",
+    "pandoc",
 ]
 
 full = ["pyflwdir[test, doc, examples]"]
@@ -62,3 +63,54 @@ deps_not_in_conda = [
   "sphinx_design",
   "black[jupyter]",
 ]
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
+
+[tool.pixi.feature.py310.dependencies]
+python = "3.10.*"
+
+[tool.pixi.feature.py39.dependencies]
+python = "3.9.*"
+
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+
+[tool.pixi.feature.doc.dependencies]
+pandoc = "*"
+
+[tool.pixi.pypi-dependencies]
+pyflwdir = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { features = ["py311", "full", "test", "doc", "examples"], solve-group = "default" }
+test-py39 = { features = ["py39", "test"], solve-group = "py39" }
+test-py310 = { features = ["py310", "test"], solve-group = "py310" }
+test-py311 = { features = ["test"], solve-group = "default" }
+test-py312 = { features = ["py312", "test"], solve-group = "py312" }
+
+[tool.pixi.tasks]
+install-pre-commit = "pre-commit install"
+
+# linting
+lint = { cmd = "pre-commit run --all-files", depends_on = ["install-pre-commit"] }
+
+# docs
+docs-dummy = {cmd = ["sphinx-build", "./docs", "./docs/_build", "-b", "dummy", "-W"], env = {PYDEVD_DISABLE_FILE_VALIDATION = "1"}}
+docs-skip-examples = {cmd = ["sphinx-build", "./docs", "./docs/_build", "-b", "html", "-W"], env = {SKIP_DOC_EXAMPLES = "1", PYDEVD_DISABLE_FILE_VALIDATION = "1"}}
+docs-html = {cmd = ["sphinx-build", "-M", "html", "./docs", "./docs/_build", "-W"]}
+docs-clean = {cmd = ["rm", "-rf", "./docs/_build", "./docs/_generated"] }
+docs-html-clean = { depends_on = ["docs-clean", "docs-html"] }
+
+# tests
+test = { cmd = ["pytest", "tests", "-v", "--cov-report=term-missing"] }
+test-cov-xml = { cmd = "python -m pytest --verbose --cov=pyflwdir --cov-report xml", env = {NUMBA_DISABLE_JIT = "1"} }
+test-cov = { cmd = "python -m pytest --verbose --cov=pyflwdir --cov-report term-missing", env = {NUMBA_DISABLE_JIT = "1"} }
+
+
+# version
+version = { cmd = ["python", "-c", "from pyflwdir import __version__ as v; print('dev' if 'dev' in v else 'v'+v)"] }

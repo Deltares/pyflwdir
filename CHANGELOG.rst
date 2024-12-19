@@ -5,7 +5,14 @@ Change Log
 in development
 **************
 
+0.6.0  (19-12-2024)
+********************
+* Fixed numpy 2.0 compatibility issues
+* Fixed bug in strahler stream order method when more than two streams meet.
 * Fixed support for interger type DEMs in `from_dem` and `dem.fill_depressions` methods
+* Add support for py 3.12
+* Add support for pixi
+* Add support for large rasters in the flwdir object (Contributed by @robgpita)
 
 0.5.8  (06-Oct-2023)
 ********************

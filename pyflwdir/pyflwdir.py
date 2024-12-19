@@ -974,13 +974,12 @@ class FlwdirRaster(Flwdir):
             Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features
         """
         # get geoms and return features
-        if xs is None or ys is None:
-            idxs0 = np.arange(self.size, dtype=np.intp)
-            xs, ys = gis.idxs_to_coords(idxs0, self.transform, self.shape)
         feats = gis.features(
             flowpaths=flowpaths,
-            xs=self._check_data(xs, "xs"),
-            ys=self._check_data(ys, "ys"),
+            xs=self._check_data(xs, "xs", optional=True),
+            ys=self._check_data(ys, "ys", optional=True),
+            transform=self.transform,
+            shape=self.shape,
             **kwargs,
         )
         return feats

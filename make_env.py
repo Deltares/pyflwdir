@@ -43,12 +43,12 @@ def _parse_profile(profile_str: str, opt_deps: dict, project_name: str) -> List[
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("profile", default="dev,test", nargs="?")
+parser.add_argument("profile", default="examples", nargs="?")
 parser.add_argument("--output", "-o", default="environment.yml")
 parser.add_argument("--channels", "-c", default=None)
 parser.add_argument("--name", "-n", default=None)
 parser.add_argument(
-    "--py-version", "-p", default="3.11", choices=["3.9", "3.10", "3.11"]
+    "--py-version", "-p", default="3.12", choices=["3.9", "3.10", "3.11", "3.12"]
 )
 parser.add_argument("-r", "--release", action="store_true")
 args = parser.parse_args()

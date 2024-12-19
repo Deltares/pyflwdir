@@ -465,7 +465,7 @@ def segment_slope(
                 idx1 == mv
                 or idx1 == idx
                 or outlets[idx1]
-                or (mask is not None and mask[idx1] == False)
+                or (mask is not None and mask[idx1] is False)
             ):
                 break
             idxs.append(idx1)
@@ -535,7 +535,7 @@ def fixed_length_slope(
         x1 = distnc[idx0] + length / 2
         while distnc[idx0] > x0:
             idx_ds = idxs_ds[idx0]
-            if idx_ds == idx0 or (mask is not None and mask[idx0] == False):
+            if idx_ds == idx0 or (mask is not None and mask[idx0] is False):
                 break
             idx0 = idx_ds
         # move upstream and collect x & z
@@ -543,7 +543,7 @@ def fixed_length_slope(
         zs = [elevtn[idx0]]
         while distnc[idx0] < x1:
             idx_us = idxs_us_main[idx0]
-            if idx_us == mv or (mask is not None and mask[idx_us] == False):
+            if idx_us == mv or (mask is not None and mask[idx_us] is False):
                 break
             xs.append(distnc[idx_us])
             zs.append(elevtn[idx_us])

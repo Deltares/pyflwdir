@@ -277,8 +277,8 @@ def _d8_idx(idx0, shape):
     """Returns linear indices of eight neighboring cells"""
     nrow, ncol = shape
     # assume c-style row-major
-    r = idx0 // ncol
-    c = idx0 % ncol
+    r = int(idx0 // ncol)
+    c = int(idx0 % ncol)
     idxs_lst = list()
     for dr in range(-1, 2):
         for dc in range(-1, 2):

@@ -49,7 +49,9 @@ def nextxy0(flwdir0, flwdir0_idxs):
 @pytest.fixture(scope="session")
 def flw0(flwdir0, flwdir0_idxs):
     idxs_ds0, idxs_pit0 = flwdir0_idxs
-    return FlwdirRaster(idxs_ds0.copy(), flwdir0.shape, "d8", idxs_pit=idxs_pit0.copy())
+    return FlwdirRaster(
+        idxs_ds0.copy(), flwdir0.shape, "d8", idxs_pit=idxs_pit0.copy(), cache=False
+    )
 
 
 @pytest.fixture(scope="session")
@@ -80,8 +82,35 @@ def test_data1(flwdir1_idxs, flwdir1_rank):
 
 
 @pytest.fixture(scope="session")
-def test_data(test_data0, flwdir0, test_data1, flwdir1):
-    return [(test_data0, flwdir0), (test_data1, flwdir1)]
+def flwdir2():
+    np.random.seed(2345)
+    return from_dem(np.random.rand(15, 10)).to_array("d8")
+
+
+@pytest.fixture(scope="session")
+def flwdir2_idxs(flwdir2):
+    idxs_ds2, idxs_pit2, _ = core_d8.from_array(flwdir2, dtype=np.uint64)
+    return idxs_ds2, idxs_pit2
+
+
+@pytest.fixture(scope="session")
+def flwdir2_rank(flwdir2_idxs):
+    idxs_ds2, _ = flwdir2_idxs
+    rank2, n2 = core.rank(idxs_ds2, mv=np.uint64(core._mv))
+    seq2 = np.argsort(rank2)[-n2:]
+    return rank2, n2, seq2
+
+
+@pytest.fixture(scope="session")
+def test_data2(flwdir2_idxs, flwdir2_rank):
+    rank2, _, seq2 = flwdir2_rank
+    idxs_ds2, idxs_pit2 = flwdir2_idxs
+    return idxs_ds2, idxs_pit2, seq2, rank2, np.uint64(core._mv)
+
+
+@pytest.fixture(scope="session")
+def test_data(test_data0, flwdir0, test_data1, flwdir1, test_data2, flwdir2):
+    return [(test_data0, flwdir0), (test_data1, flwdir1), (test_data2, flwdir2)]
 
 
 @pytest.fixture(scope="session")

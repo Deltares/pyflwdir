@@ -8,7 +8,8 @@ from pyflwdir import streams, basins, core, gis_utils, regions
 
 
 @pytest.mark.parametrize(
-    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data1", "flwdir1")]
+    "test_data, flwdir",
+    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
 )
 def test_accuflux(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
@@ -33,7 +34,8 @@ def test_accuflux(test_data, flwdir, request):
 
 
 @pytest.mark.parametrize(
-    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data1", "flwdir1")]
+    "test_data, flwdir",
+    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
 )
 def test_basins(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
@@ -71,7 +73,8 @@ def test_basins(test_data, flwdir, request):
 
 
 @pytest.mark.parametrize(
-    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data1", "flwdir1")]
+    "test_data, flwdir",
+    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
 )
 def test_subbasins(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
@@ -129,7 +132,8 @@ def test_subbasins_strord(test_data, request):
 
 
 @pytest.mark.parametrize(
-    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data1", "flwdir1")]
+    "test_data, flwdir",
+    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
 )
 def test_streams(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
