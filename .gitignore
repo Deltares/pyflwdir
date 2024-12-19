@@ -125,7 +125,6 @@ _pyflwdir
 scripts
 
 pyflwdir*.yml
-pixi.lock
 
 # pixi environments
 .pixi
