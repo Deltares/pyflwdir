@@ -866,7 +866,7 @@
 
 
 <span class="c1">## VECTORIZE</span>
-<span class="k">def</span> <span class="nf">features</span><span class="p">(</span><span class="n">flowpaths</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">features</span><span class="p">(</span><span class="n">flowpaths</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a LineString feature for each stream</span>
 
 <span class="sd">    Parameters</span>
@@ -875,8 +875,10 @@
 <span class="sd">        linear indices of flowpaths</span>
 <span class="sd">    xs, ys : 1D-array of float</span>
 <span class="sd">        x, y coordinates</span>
-<span class="sd">    idxs_ds: list of intp</span>
-<span class="sd">        linear index of first cell on next downstream flow path</span>
+<span class="sd">    transform : Affine</span>
+<span class="sd">        Coefficients mapping pixel coordinates to coordinate reference system.</span>
+<span class="sd">    shape : tuple of int</span>
+<span class="sd">        The height, width  of the raster.</span>
 <span class="sd">    kwargs : extra sample maps key-word arguments</span>
 <span class="sd">        optional maps to sample from</span>
 <span class="sd">        e.g.: strord=flw.stream_order()</span>
@@ -886,8 +888,17 @@
 <span class="sd">    feats : list of dict</span>
 <span class="sd">        Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">xs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">ys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;transform and shape should be provided if xs and ys are None&quot;</span>
+            <span class="p">)</span>
+        <span class="n">_size</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_size</span> <span class="o">=</span> <span class="n">xs</span><span class="o">.</span><span class="n">size</span>
+
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">xs</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">_size</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s1">&#39;Kwargs map &quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">&quot; should be ndarrays of same size as coordinates&#39;</span>
             <span class="p">)</span>
@@ -899,12 +910,17 @@
         <span class="n">idx0</span> <span class="o">=</span> <span class="n">idxs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">pit</span> <span class="o">=</span> <span class="n">idxs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">idxs</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
         <span class="n">props</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">idx0</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">xs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">ys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">xi</span><span class="p">,</span> <span class="n">yi</span> <span class="o">=</span> <span class="n">idxs_to_coords</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+            <span class="n">coordinates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">yi</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[(</span><span class="n">xs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ys</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">]</span>
         <span class="n">feats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="p">{</span>
                 <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Feature&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;LineString&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <span class="p">[(</span><span class="n">xs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ys</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">],</span>
+                    <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <span class="n">coordinates</span><span class="p">,</span>
                 <span class="p">},</span>
                 <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;idx&quot;</span><span class="p">:</span> <span class="n">idx0</span><span class="p">,</span> <span class="s2">&quot;idx_ds&quot;</span><span class="p">:</span> <span class="n">idxs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;pit&quot;</span><span class="p">:</span> <span class="n">pit</span><span class="p">,</span> <span class="o">**</span><span class="n">props</span><span class="p">},</span>
             <span class="p">}</span>
