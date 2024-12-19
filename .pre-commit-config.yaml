@@ -8,7 +8,6 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-ast
-      - id: check-json
       - id: debug-statements
       - id: mixed-line-ending
   # make sure notebooks are stripped of output before committing

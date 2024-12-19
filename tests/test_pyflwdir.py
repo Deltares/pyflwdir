@@ -8,6 +8,7 @@ from affine import Affine
 
 import pyflwdir
 from pyflwdir import core
+from pyflwdir.pyflwdir import FlwdirRaster
 
 
 @pytest.mark.parametrize("flwdir, ftype", [("flwdir0", "d8"), ("nextxy0", "nextxy")])
@@ -254,7 +255,7 @@ def test_streams(flw0, flwdir0_rank):
     # check agains Flwdir
     # FIXME this fails, but only locally ??!#
     findex_ds = np.array([f["properties"]["idx_ds"] for f in feats])
-    flw1 = pyflwdir.Flwdir(pyflwdir.flwdir.get_lin_indices(findex, findex_ds))
+    flw1 = pyflwdir.Flwdir(pyflwdir.flwdir.get_loc_idx(findex, findex_ds))
     assert np.all(fstrord == flw1.stream_order().ravel())
     # vectorize
     feats = flw0.vectorize()
@@ -305,7 +306,7 @@ def test_upscale(flw0, nextxy0):
         flw0.upscale(5, uparea=np.ones((2, 1)))
 
 
-def test_ucat(flw0):
+def test_ucat(flw0: FlwdirRaster):
     elevtn = flw0.rank
     hand = flw0.hand(elevtn=elevtn, drain=elevtn == 0)
     depths = np.linspace(0.5, 1, 2)

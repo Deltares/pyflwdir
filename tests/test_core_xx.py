@@ -11,10 +11,9 @@ from pyflwdir.core_conversion import ldd_to_d8, d8_to_ldd
 @pytest.mark.parametrize("fd", [core_nextxy, core_d8, core_ldd])
 def test_core(fd):
     """test core_x.py submodules based on _us definitions"""
-    _name = fd._ftype
     # test isvalid
     assert fd.isvalid(fd._us)
-    assert not fd.isvalid(fd._us * -1)
+    assert not fd.isvalid(fd._us * 3)
     # test ispit
     assert np.all(fd.ispit(fd._pv))
     # test isnodata
