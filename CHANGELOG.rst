@@ -5,7 +5,7 @@ Change Log
 in development
 **************
 
-0.6.0  (19-12-2024)
+0.5.9  (19-12-2024)
 ********************
 * Fixed numpy 2.0 compatibility issues
 * Fixed bug in strahler stream order method when more than two streams meet.
