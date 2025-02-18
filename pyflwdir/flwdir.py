@@ -27,7 +27,7 @@ def get_loc_idx(idxs: np.ndarray, idxs_ds: np.ndarray) -> np.ndarray:
     """Get linear indices of downstream cells."""
     idx_map = {idx: i for i, idx in enumerate(idxs)}
     # return i if idx_ds not in idx_map, i.e. idx is a pit
-    idxs_ds0 = np.full_like(idxs, dtype=idxs.dtype, fill_value=-1)
+    idxs_ds0 = np.empty_like(idxs, dtype=idxs.dtype)
     for i, idx_ds in enumerate(idxs_ds):
         idxs_ds0[i] = idx_map.get(idx_ds, i)
     return idxs_ds0
