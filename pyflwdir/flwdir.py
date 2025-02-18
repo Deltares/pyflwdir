@@ -22,14 +22,15 @@ __all__ = ["Flwdir", "from_dataframe"]
 logger = logging.getLogger(__name__)
 
 
-# @njit(cache=True)
+@njit(cache=True)
 def get_loc_idx(idxs: np.ndarray, idxs_ds: np.ndarray) -> np.ndarray:
-    """Get location indices of downstream cells for all downstream cells"""
-    max_val = idxs.max()
-    idx_map = np.empty(max_val + 1, dtype=np.int_)
-    idx_map.fill(-1)  # Fill with -1 to indicate missing values
-    idx_map[idxs] = np.arange(idxs.size)
-    return idx_map[idxs_ds]
+    """Get linear indices of downstream cells."""
+    idx_map = {idx: i for i, idx in enumerate(idxs)}
+    # return i if idx_ds not in idx_map, i.e. idx is a pit
+    idxs_ds0 = np.empty_like(idxs, dtype=idxs.dtype)
+    for i, idx_ds in enumerate(idxs_ds):
+        idxs_ds0[i] = idx_map.get(idx_ds, i)
+    return idxs_ds0
 
 
 def from_dataframe(df: "pandas.DataFrame", ds_col="idx_ds") -> "Flwdir":
