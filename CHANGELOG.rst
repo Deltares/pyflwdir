@@ -5,6 +5,11 @@ Change Log
 in development
 **************
 
+0.5.10  (18-02-2025)
+********************
+* Add support for py 3.13
+* bugfix in `from_dataframe` method when downstream index is not present in the dataframe
+
 0.5.9  (19-12-2024)
 ********************
 * Fixed numpy 2.0 compatibility issues
