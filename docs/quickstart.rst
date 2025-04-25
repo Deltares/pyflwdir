@@ -43,7 +43,7 @@ Vectorize the stream network and save to a geojson file:
 
     import geopandas as gpd
     feat = flw.streams()
-    gdf = gpd.GeoDataFrame.from_features(feats, crs=crs)
+    gdf = gpd.GeoDataFrame.from_features(feat, crs=crs)
     gdf.to_file('streams.geojson', driver='GeoJSON')
 
 
