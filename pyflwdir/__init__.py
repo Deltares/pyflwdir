@@ -7,6 +7,7 @@ __version__ = "0.5.10"
 from . import gis_utils, regions
 
 # public functions
+from .core_conversion import d8_to_ldd, ldd_to_d8
 from .core_nextxy import read_nextxy
 from .dem import fill_depressions, slope
 from .flwdir import Flwdir, from_dataframe
@@ -23,4 +24,6 @@ __all__ = [
     "regions",
     "slope",
     "fill_depressions",
+    "d8_to_ldd",
+    "ldd_to_d8",
 ]
