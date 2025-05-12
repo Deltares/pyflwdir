@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyflwdir.FlwdirRaster.order_cells &#8212; PyFlwDir  documentation</title>
+    <title>pyflwdir.ldd_to_d8 &#8212; PyFlwDir  documentation</title>
   
   
   
@@ -43,11 +43,11 @@
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_generated/pyflwdir.FlwdirRaster.order_cells';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_generated/pyflwdir.ldd_to_d8';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyflwdir.FlwdirRaster.main_upstream" href="pyflwdir.FlwdirRaster.main_upstream.html" />
-    <link rel="prev" title="pyflwdir.FlwdirRaster.n_upstream" href="pyflwdir.FlwdirRaster.n_upstream.html" />
+    <link rel="next" title="Change Log" href="../changelog.html" />
+    <link rel="prev" title="pyflwdir.d8_to_ldd" href="pyflwdir.d8_to_ldd.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.5.10" />
@@ -323,7 +323,7 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active has-children"><a class="reference internal" href="../api/flwdirraster.html">FlwdirRaster</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/flwdirraster.html">FlwdirRaster</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.html">pyflwdir.FlwdirRaster</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.from_array.html">pyflwdir.from_array</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.from_dem.html">pyflwdir.from_dem</a></li>
@@ -341,7 +341,7 @@
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.area.html">pyflwdir.FlwdirRaster.area</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.distnc.html">pyflwdir.FlwdirRaster.distnc</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.n_upstream.html">pyflwdir.FlwdirRaster.n_upstream</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">pyflwdir.FlwdirRaster.order_cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.order_cells.html">pyflwdir.FlwdirRaster.order_cells</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.main_upstream.html">pyflwdir.FlwdirRaster.main_upstream</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.add_pits.html">pyflwdir.FlwdirRaster.add_pits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.repair_loops.html">pyflwdir.FlwdirRaster.repair_loops</a></li>
@@ -406,9 +406,9 @@
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.regions.region_dissolve.html">pyflwdir.regions.region_dissolve</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../api/conversion.html">Conversion Methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../api/conversion.html">Conversion Methods</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.d8_to_ldd.html">pyflwdir.d8_to_ldd</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pyflwdir.ldd_to_d8.html">pyflwdir.ldd_to_d8</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">pyflwdir.ldd_to_d8</a></li>
 </ul>
 </details></li>
 </ul>
@@ -455,9 +455,9 @@
     <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">Reference</a></li>
     
     
-    <li class="breadcrumb-item"><a href="../api/flwdirraster.html" class="nav-link">FlwdirRaster</a></li>
+    <li class="breadcrumb-item"><a href="../api/conversion.html" class="nav-link">Conversion Methods</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyflwdir.FlwdirRaster.order_cells</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyflwdir.ldd_to_d8</span></li>
   </ul>
 </nav>
 </div>
@@ -474,19 +474,12 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="pyflwdir-flwdirraster-order-cells">
-<h1>pyflwdir.FlwdirRaster.order_cells<a class="headerlink" href="#pyflwdir-flwdirraster-order-cells" title="Link to this heading">#</a></h1>
-<dl class="py method">
-<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.order_cells">
-<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">order_cells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sort'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyflwdir.FlwdirRaster.order_cells" title="Link to this definition">#</a></dt>
-<dd><p>Order cells from down- to upstream.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>method</strong> (<em>{'sort'</em><em>, </em><em>'walk'}</em><em>, </em><em>optional</em>) – Method to order nodes, based on a “sorting” algorithm where nodes are
-sorted based on their rank (might be slow for large arrays) or “walking”
-algorithm where nodes are traced from down- to upstream (uses more memory)</p>
-</dd>
-</dl>
+  <section id="pyflwdir-ldd-to-d8">
+<h1>pyflwdir.ldd_to_d8<a class="headerlink" href="#pyflwdir-ldd-to-d8" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyflwdir.ldd_to_d8">
+<span class="sig-prename descclassname"><span class="pre">pyflwdir.</span></span><span class="sig-name descname"><span class="pre">ldd_to_d8</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flwdir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyflwdir/core_conversion.html#ldd_to_d8"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.ldd_to_d8" title="Link to this definition">#</a></dt>
+<dd><p>Return d8 based on ldd array.</p>
 </dd></dl>
 
 </section>
@@ -502,20 +495,20 @@ algorithm where nodes are traced from down- to upstream (uses more memory)</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="pyflwdir.FlwdirRaster.n_upstream.html"
+       href="pyflwdir.d8_to_ldd.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyflwdir.FlwdirRaster.n_upstream</p>
+        <p class="prev-next-title">pyflwdir.d8_to_ldd</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyflwdir.FlwdirRaster.main_upstream.html"
+       href="../changelog.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyflwdir.FlwdirRaster.main_upstream</p>
+        <p class="prev-next-title">Change Log</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -538,7 +531,7 @@ algorithm where nodes are traced from down- to upstream (uses more memory)</p>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.order_cells"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.order_cells()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.ldd_to_d8"><code class="docutils literal notranslate"><span class="pre">ldd_to_d8()</span></code></a></li>
 </ul>
   </nav></div>
 
@@ -546,7 +539,7 @@ algorithm where nodes are traced from down- to upstream (uses more memory)</p>
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/_generated/pyflwdir.FlwdirRaster.order_cells.rst">
+    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/_generated/pyflwdir.ldd_to_d8.rst">
       <i class="fa-solid fa-pencil"></i>
       
       
@@ -562,7 +555,7 @@ algorithm where nodes are traced from down- to upstream (uses more memory)</p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../_sources/_generated/pyflwdir.FlwdirRaster.order_cells.rst.txt"
+      <li><a href="../_sources/_generated/pyflwdir.ldd_to_d8.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>

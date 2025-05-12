@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Elevation raster methods &#8212; PyFlwDir  documentation</title>
+    <title>Conversion Methods &#8212; PyFlwDir  documentation</title>
   
   
   
@@ -43,11 +43,11 @@
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'api/elevation';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/conversion';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyflwdir.dem.fill_depressions" href="../_generated/pyflwdir.dem.fill_depressions.html" />
-    <link rel="prev" title="pyflwdir.FlwdirRaster.floodplains" href="../_generated/pyflwdir.FlwdirRaster.floodplains.html" />
+    <link rel="next" title="pyflwdir.d8_to_ldd" href="../_generated/pyflwdir.d8_to_ldd.html" />
+    <link rel="prev" title="pyflwdir.regions.region_dissolve" href="../_generated/pyflwdir.regions.region_dissolve.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.5.10" />
@@ -387,7 +387,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.floodplains.html">pyflwdir.FlwdirRaster.floodplains</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Elevation raster methods</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="elevation.html">Elevation raster methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.dem.fill_depressions.html">pyflwdir.dem.fill_depressions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.dem.slope.html">pyflwdir.dem.slope</a></li>
 </ul>
@@ -406,7 +406,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.regions.region_dissolve.html">pyflwdir.regions.region_dissolve</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="conversion.html">Conversion Methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Conversion Methods</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.d8_to_ldd.html">pyflwdir.d8_to_ldd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.ldd_to_d8.html">pyflwdir.ldd_to_d8</a></li>
 </ul>
@@ -454,7 +454,7 @@
     
     <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">Reference</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Elevation raster methods</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Conversion Methods</span></li>
   </ul>
 </nav>
 </div>
@@ -471,15 +471,16 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="elevation-raster-methods">
-<h1>Elevation raster methods<a class="headerlink" href="#elevation-raster-methods" title="Link to this heading">#</a></h1>
+  <section id="conversion-methods">
+<h1>Conversion Methods<a class="headerlink" href="#conversion-methods" title="Link to this heading">#</a></h1>
+<p>The following methods allow for conversion between different flow direction conventions:</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.dem.fill_depressions.html#pyflwdir.dem.fill_depressions" title="pyflwdir.dem.fill_depressions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dem.fill_depressions</span></code></a>(elevtn[, outlets, ...])</p></td>
-<td><p>Fill local depressions in elevation data and derived local D8 flow directions.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.d8_to_ldd.html#pyflwdir.d8_to_ldd" title="pyflwdir.d8_to_ldd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">d8_to_ldd</span></code></a>(flwdir)</p></td>
+<td><p>Return ldd based on d8 array.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.dem.slope.html#pyflwdir.dem.slope" title="pyflwdir.dem.slope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dem.slope</span></code></a>(elevtn[, nodata, latlon, transform])</p></td>
-<td><p>Returns the local gradient</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.ldd_to_d8.html#pyflwdir.ldd_to_d8" title="pyflwdir.ldd_to_d8"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ldd_to_d8</span></code></a>(flwdir)</p></td>
+<td><p>Return d8 based on ldd array.</p></td>
 </tr>
 </tbody>
 </table>
@@ -497,20 +498,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../_generated/pyflwdir.FlwdirRaster.floodplains.html"
+       href="../_generated/pyflwdir.regions.region_dissolve.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyflwdir.FlwdirRaster.floodplains</p>
+        <p class="prev-next-title">pyflwdir.regions.region_dissolve</p>
       </div>
     </a>
     <a class="right-next"
-       href="../_generated/pyflwdir.dem.fill_depressions.html"
+       href="../_generated/pyflwdir.d8_to_ldd.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyflwdir.dem.fill_depressions</p>
+        <p class="prev-next-title">pyflwdir.d8_to_ldd</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -529,7 +530,7 @@
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/api/elevation.rst">
+    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/api/conversion.rst">
       <i class="fa-solid fa-pencil"></i>
       
       
@@ -545,7 +546,7 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../_sources/api/elevation.rst.txt"
+      <li><a href="../_sources/api/conversion.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>
