@@ -1486,9 +1486,9 @@ class FlwdirRaster(Flwdir):
         )
         return hand.reshape(self.shape)
 
-    def floodplains(self, elevtn, uparea=None, upa_min=1000, b=0.3):
+    def floodplains(self, elevtn, uparea=None, upa_min=1000, a=1, b=0.3):
         """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is
-        scaled with upstream area (A) following h ~ A**b.
+        scaled with upstream area (A) following h ~ a * A**b.
 
         Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth's
             floodplains Sci. Data 6 180309
@@ -1509,15 +1509,16 @@ class FlwdirRaster(Flwdir):
         1D array of int8
             floodplain
         """
-        fldpln = dem.floodplains(
+        fldpln, drainh, drainz = dem.floodplains(
             idxs_ds=self.idxs_ds,
             seq=self.idxs_seq,
             elevtn=self._check_data(elevtn, "elevtn"),
             uparea=self._check_data(uparea, "uparea", unit="km2"),
             upa_min=upa_min,
+            a=a,
             b=b,
         )
-        return fldpln.reshape(self.shape)
+        return fldpln.reshape(self.shape), drainh.reshape(self.shape), drainz.reshape(self.shape)
 
     ### SHORTCUTS ###
 

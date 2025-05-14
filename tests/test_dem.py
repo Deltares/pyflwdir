@@ -133,11 +133,11 @@ def test_hand_fldpln(test_data0, flwdir0):
     # max h = 1
     uparea = np.where(drain, 1, 0)
     upa_min = 1
-    fldpln = dem.floodplains(idxs_ds, seq, elevtn, uparea, upa_min=upa_min, b=0)
+    fldpln, _ , _ = dem.floodplains(idxs_ds, seq, elevtn, uparea, upa_min=upa_min, a=1, b=0)
     assert np.all(fldpln[elevtn > 1] == 0)
     assert np.all(fldpln[elevtn <= 1] != 0)
     # max h = uparea
-    fldpln = dem.floodplains(idxs_ds, seq, elevtn, uparea, upa_min=upa_min, b=1)
+    fldpln, _, _ = dem.floodplains(idxs_ds, seq, elevtn, uparea, upa_min=upa_min, a=1, b=1)
     hmax = uparea[drain].max()
     hmin = uparea[drain].min()
     assert np.all(fldpln[elevtn > hmax] == 0)
@@ -148,5 +148,5 @@ def test_hand_fldpln(test_data0, flwdir0):
     hand = dem.height_above_nearest_drain(idxs_ds, seq, drain, elevtn)
     assert np.all(hand[rank > 0] == 1)
     # fldpln == 1 for all cells
-    fldpln = dem.floodplains(idxs_ds, seq, elevtn, uparea, upa_min=upa_min, b=1)
+    fldpln, _, _ = dem.floodplains(idxs_ds, seq, elevtn, uparea, upa_min=upa_min, a=1, b=1)
     assert np.all(fldpln[rank >= 0] == 1)

@@ -330,9 +330,9 @@ def height_above_nearest_drain(idxs_ds, seq, drain, elevtn):
     return hand
 
 
-def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
+def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, a=1, b=0.3):
     """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is
-    scaled with upstream area following h ~ A**b.
+    scaled with upstream area following h ~ a * A**b.
 
     Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s
         floodplains Sci. Data 6 180309
@@ -349,6 +349,8 @@ def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
         flattened upstream area raster [km2]
     upa_min : float, optional
         minimum upstream area threshold for streams.
+    a : float
+        scale parameter
     b : float
         scale parameter
 
@@ -363,7 +365,7 @@ def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
     fldpln[seq] = 0
     for idx0 in seq:  # down- to upstream
         if uparea[idx0] >= upa_min:
-            drainh[idx0] = uparea[idx0] ** b
+            drainh[idx0] = a * uparea[idx0] ** b
             drainz[idx0] = elevtn[idx0]
             fldpln[idx0] = 1
         else:
@@ -376,7 +378,7 @@ def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
                     fldpln[idx0] = 1
                     drainz[idx0] = z0
                     drainh[idx0] = h0
-    return fldpln
+    return fldpln, drainh, drainz
 
 
 @njit

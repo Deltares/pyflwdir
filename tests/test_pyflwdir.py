@@ -367,7 +367,7 @@ def test_dem(flw0):
     with pytest.raises(ValueError, match="size does not match"):
         flw0.hand(np.ones((2, 1)), elevtn_new)
     # floodplain
-    fldpln = flw0.floodplains(elevtn_new, uparea=drain, upa_min=1, b=1)
+    fldpln, _, _ = flw0.floodplains(elevtn_new, uparea=drain, upa_min=1, a=2, b=1)
     assert np.all(fldpln.flat[flw0.mask] == 1)
     with pytest.raises(ValueError, match="size does not match"):
         flw0.floodplains(np.ones((2, 1)))
