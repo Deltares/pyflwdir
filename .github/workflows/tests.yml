@@ -7,13 +7,14 @@ on:
       - tests/*
       - pyflwdir/*
       - pyproject.toml
+      - pixi.lock
   pull_request:
     branches: [main]
     paths:
       - tests/*
       - pyflwdir/*
       - pyproject.toml
-
+      - pixi.lock
 
 jobs:
   build:
