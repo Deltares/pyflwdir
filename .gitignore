@@ -111,6 +111,8 @@ examples/.ipynb_checkpoints
 examples/tmp*
 examples/*.png
 examples/*.tif
+examples/*.gpkg
+examples/*.xml
 
 # Sphinx documentation
 docs/_build/
