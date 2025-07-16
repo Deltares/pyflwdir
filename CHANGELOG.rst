@@ -5,6 +5,11 @@ Change Log
 in development
 **************
 
+0.5.11 (unreleased)
+********************
+* add conversion methods to api refs (#65)
+* add section to upscaling example to save output to file (#73)
+
 0.5.10  (18-02-2025)
 ********************
 * Add support for py 3.13
