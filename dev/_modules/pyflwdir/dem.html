@@ -29,7 +29,7 @@
   <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css?v=aa503ec8" />
   
   <!-- So that users can add custom icons -->
@@ -372,12 +372,12 @@
 <span class="sd">&quot;&quot;&quot;Methods to derive topo/hydrographical paramters from elevation data, in some cases</span>
 <span class="sd"> in combination with flow direction data.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span>
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">heapq</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">njit</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">heapq</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">gis_utils</span><span class="p">,</span> <span class="n">core</span><span class="p">,</span> <span class="n">core_d8</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">gis_utils</span><span class="p">,</span> <span class="n">core</span><span class="p">,</span> <span class="n">core_d8</span>
 
 <span class="n">_mv</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">_mv</span>
 
@@ -387,7 +387,7 @@
 <div class="viewcode-block" id="fill_depressions">
 <a class="viewcode-back" href="../../_generated/pyflwdir.dem.fill_depressions.html#pyflwdir.dem.fill_depressions">[docs]</a>
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">fill_depressions</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fill_depressions</span><span class="p">(</span>
     <span class="n">elevtn</span><span class="p">,</span>
     <span class="n">outlets</span><span class="o">=</span><span class="s2">&quot;edge&quot;</span><span class="p">,</span>
     <span class="n">idxs_pit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -517,7 +517,7 @@
 
 
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">adjust_elevation</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">mv</span><span class="o">=</span><span class="n">_mv</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">adjust_elevation</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">mv</span><span class="o">=</span><span class="n">_mv</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a flow direction map, remove pits in the elevation map.</span>
 <span class="sd">    Algorithm based on Yamazaki et al. (2012)</span>
 
@@ -541,7 +541,7 @@
 
 
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">_adjust_elevation</span><span class="p">(</span><span class="n">elevtn</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_adjust_elevation</span><span class="p">(</span><span class="n">elevtn</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;fix elevation on single streamline based on minimum modification</span>
 <span class="sd">    elevtn oderdered from up- to downstream</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -601,7 +601,7 @@
 <div class="viewcode-block" id="slope">
 <a class="viewcode-back" href="../../_generated/pyflwdir.dem.slope.html#pyflwdir.dem.slope">[docs]</a>
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">slope</span><span class="p">(</span><span class="n">elevtn</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">slope</span><span class="p">(</span><span class="n">elevtn</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the local gradient</span>
 
 <span class="sd">    The slope is calculated on the basis of the dem in a 3 x 3 cell window, using 2nd order partial derivatives.</span>
@@ -672,7 +672,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">height_above_nearest_drain</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">drain</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">height_above_nearest_drain</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">drain</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the height above the nearest drain (HAND), i.e.: the relative vertical</span>
 <span class="sd">    distance (drop) to the nearest dowstream river based on drainage‐normalized</span>
 <span class="sd">    topography and flowpaths.</span>
@@ -706,7 +706,7 @@
     <span class="k">return</span> <span class="n">hand</span>
 
 
-<span class="k">def</span> <span class="nf">floodplains</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">uparea</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mf">1000.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">floodplains</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">,</span> <span class="n">uparea</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mf">1000.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns floodplain boundaries based on a maximum treshold (h) of HAND which is</span>
 <span class="sd">    scaled with upstream area following h ~ A**b.</span>
 
@@ -756,7 +756,7 @@
 
 
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">_local_d4</span><span class="p">(</span><span class="n">idx0</span><span class="p">,</span> <span class="n">idx_ds</span><span class="p">,</span> <span class="n">ncol</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_local_d4</span><span class="p">(</span><span class="n">idx0</span><span class="p">,</span> <span class="n">idx_ds</span><span class="p">,</span> <span class="n">ncol</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return indices of d4 neighbors in diagonal d8 direction, e.g.: indices of N, W neigbors if flowdir is NW.&quot;&quot;&quot;</span>
     <span class="n">idxs_d4</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">idx0</span> <span class="o">-</span> <span class="n">ncol</span><span class="p">,</span>
@@ -779,7 +779,7 @@
 
 
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">dig_4connectivity</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dig_4connectivity</span><span class="p">(</span>
     <span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">elv_flat</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mi">9999</span><span class="p">,</span> <span class="n">dz_min</span><span class="o">=</span><span class="mf">1e-3</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Make sure that for every diagonal D8 downstream flow direction</span>

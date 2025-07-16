@@ -30,7 +30,7 @@
   <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../_static/theme-deltares.css?v=aa503ec8" />
   
@@ -407,19 +407,20 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># import pyflwdir, some dependencies and convenience methods</span>
-<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">rasterio</span>
-<span class="kn">import</span> <span class="nn">pyflwdir</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">rasterio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyflwdir</span>
 
 <span class="c1"># local convenience methods (see utils.py script in notebooks folder)</span>
-<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">quickplot</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">cm</span>  <span class="c1"># data specific quick plot method</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">quickplot</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">cm</span>  <span class="c1"># data specific quick plot method</span>
 
 <span class="c1"># read and parse flow direciton data</span>
 <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;rhine_d8.tif&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
     <span class="n">flwdir</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">crs</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">crs</span>
     <span class="n">extent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">bounds</span><span class="p">)[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]]</span>
+    <span class="n">prof</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">profile</span>
     <span class="n">flw</span> <span class="o">=</span> <span class="n">pyflwdir</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span>
         <span class="n">flwdir</span><span class="p">,</span>
         <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;d8&quot;</span><span class="p">,</span>
@@ -483,7 +484,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the contibuting unit area to each upscaled cell &amp; accumulate</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the contributing unit area to each upscaled cell &amp; accumulate</span>
 <span class="n">subareas</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">ucat_area</span><span class="p">(</span><span class="n">idxs_out</span><span class="o">=</span><span class="n">idxs_out</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;km2&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 <span class="n">uparea1</span> <span class="o">=</span> <span class="n">flw1</span><span class="o">.</span><span class="n">accuflux</span><span class="p">(</span><span class="n">subareas</span><span class="p">)</span>
 </pre></div>
@@ -531,6 +532,34 @@ upscaling error in 1.32% of cells
 </div>
 <div class="output_area docutils container">
 <img alt="../_images/_examples_upscaling_10_0.png" src="../_images/_examples_upscaling_10_0.png" />
+</div>
+</div>
+</section>
+<section id="save-upscaled-flow-directions-to-file">
+<h2>save upscaled flow directions to file<a class="headerlink" href="#save-upscaled-flow-directions-to-file" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># update the profile and write the upscaled flow direction to a new raster file</span>
+<span class="n">prof</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+    <span class="n">width</span><span class="o">=</span><span class="n">flw1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="n">height</span><span class="o">=</span><span class="n">flw1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">transform</span><span class="o">=</span><span class="n">flw1</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
+    <span class="n">nodata</span><span class="o">=</span><span class="mi">247</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rhine_d8_upscale</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">.tif&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">prof</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
+    <span class="n">src</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">flw1</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="s2">&quot;d8&quot;</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># save upscaled network to a vector file</span>
+<span class="n">gdf_stream1</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rhine_d8_upscale</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">.gpkg&quot;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">&quot;GPKG&quot;</span><span class="p">)</span>
+</pre></div>
 </div>
 </div>
 </section>
@@ -584,6 +613,7 @@ upscaling error in 1.32% of cells
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Flow direction upscaling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#save-upscaled-flow-directions-to-file">save upscaled flow directions to file</a></li>
 </ul>
   </nav></div>
 

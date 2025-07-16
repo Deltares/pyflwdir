@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>GIS raster utility methods &#8212; PyFlwDir  documentation</title>
+    <title>Conversion Methods &#8212; PyFlwDir  documentation</title>
   
   
   
@@ -43,11 +43,11 @@
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'api/gis_utils';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/conversion';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyflwdir.gis_utils.spread2d" href="../_generated/pyflwdir.gis_utils.spread2d.html" />
-    <link rel="prev" title="pyflwdir.dem.slope" href="../_generated/pyflwdir.dem.slope.html" />
+    <link rel="next" title="pyflwdir.d8_to_ldd" href="../_generated/pyflwdir.d8_to_ldd.html" />
+    <link rel="prev" title="pyflwdir.regions.region_dissolve" href="../_generated/pyflwdir.regions.region_dissolve.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.5.10." />
@@ -392,7 +392,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.dem.slope.html">pyflwdir.dem.slope</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">GIS raster utility methods</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="gis_utils.html">GIS raster utility methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.gis_utils.spread2d.html">pyflwdir.gis_utils.spread2d</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.gis_utils.get_edge.html">pyflwdir.gis_utils.get_edge</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.gis_utils.reggrid_area.html">pyflwdir.gis_utils.reggrid_area</a></li>
@@ -406,7 +406,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.regions.region_dissolve.html">pyflwdir.regions.region_dissolve</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="conversion.html">Conversion Methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Conversion Methods</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.d8_to_ldd.html">pyflwdir.d8_to_ldd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.ldd_to_d8.html">pyflwdir.ldd_to_d8</a></li>
 </ul>
@@ -454,7 +454,7 @@
     
     <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">Reference</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">GIS raster utility methods</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Conversion Methods</span></li>
   </ul>
 </nav>
 </div>
@@ -471,18 +471,16 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="gis-raster-utility-methods">
-<h1>GIS raster utility methods<a class="headerlink" href="#gis-raster-utility-methods" title="Link to this heading">#</a></h1>
+  <section id="conversion-methods">
+<h1>Conversion Methods<a class="headerlink" href="#conversion-methods" title="Link to this heading">#</a></h1>
+<p>The following methods allow for conversion between different flow direction conventions:</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.gis_utils.spread2d.html#pyflwdir.gis_utils.spread2d" title="pyflwdir.gis_utils.spread2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gis_utils.spread2d</span></code></a>(obs[, msk, nodata, frc, ...])</p></td>
-<td><p>Returns filled array with nearest observations, origin cells and friction distance to origin.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.d8_to_ldd.html#pyflwdir.d8_to_ldd" title="pyflwdir.d8_to_ldd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">d8_to_ldd</span></code></a>(flwdir)</p></td>
+<td><p>Return ldd based on d8 array.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.gis_utils.get_edge.html#pyflwdir.gis_utils.get_edge" title="pyflwdir.gis_utils.get_edge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gis_utils.get_edge</span></code></a>(a[, structure])</p></td>
-<td><p>Get edge of valid cells.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.gis_utils.reggrid_area.html#pyflwdir.gis_utils.reggrid_area" title="pyflwdir.gis_utils.reggrid_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gis_utils.reggrid_area</span></code></a>(lats, lons)</p></td>
-<td><p>returns a the cell area for a regular grid with cell centres lats &amp; lons [m2].</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.ldd_to_d8.html#pyflwdir.ldd_to_d8" title="pyflwdir.ldd_to_d8"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ldd_to_d8</span></code></a>(flwdir)</p></td>
+<td><p>Return d8 based on ldd array.</p></td>
 </tr>
 </tbody>
 </table>
@@ -500,20 +498,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../_generated/pyflwdir.dem.slope.html"
+       href="../_generated/pyflwdir.regions.region_dissolve.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyflwdir.dem.slope</p>
+        <p class="prev-next-title">pyflwdir.regions.region_dissolve</p>
       </div>
     </a>
     <a class="right-next"
-       href="../_generated/pyflwdir.gis_utils.spread2d.html"
+       href="../_generated/pyflwdir.d8_to_ldd.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyflwdir.gis_utils.spread2d</p>
+        <p class="prev-next-title">pyflwdir.d8_to_ldd</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -532,7 +530,7 @@
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/api/gis_utils.rst">
+    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/api/conversion.rst">
       <i class="fa-solid fa-pencil"></i>
       
       
@@ -548,7 +546,7 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../_sources/api/gis_utils.rst.txt"
+      <li><a href="../_sources/api/conversion.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyflwdir.FlwdirRaster.upscale_error &#8212; PyFlwDir  documentation</title>
+    <title>pyflwdir.d8_to_ldd &#8212; PyFlwDir  documentation</title>
   
   
   
@@ -43,11 +43,11 @@
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_generated/pyflwdir.FlwdirRaster.upscale_error';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_generated/pyflwdir.d8_to_ldd';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyflwdir.FlwdirRaster.subgrid_rivlen" href="pyflwdir.FlwdirRaster.subgrid_rivlen.html" />
-    <link rel="prev" title="pyflwdir.FlwdirRaster.upscale" href="pyflwdir.FlwdirRaster.upscale.html" />
+    <link rel="next" title="pyflwdir.ldd_to_d8" href="pyflwdir.ldd_to_d8.html" />
+    <link rel="prev" title="Conversion Methods" href="../api/conversion.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.5.10." />
@@ -323,7 +323,7 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active has-children"><a class="reference internal" href="../api/flwdirraster.html">FlwdirRaster</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/flwdirraster.html">FlwdirRaster</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.html">pyflwdir.FlwdirRaster</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.from_array.html">pyflwdir.from_array</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.from_dem.html">pyflwdir.from_dem</a></li>
@@ -374,7 +374,7 @@
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.smooth_rivlen.html">pyflwdir.FlwdirRaster.smooth_rivlen</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.fillnodata.html">pyflwdir.FlwdirRaster.fillnodata</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.upscale.html">pyflwdir.FlwdirRaster.upscale</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">pyflwdir.FlwdirRaster.upscale_error</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.upscale_error.html">pyflwdir.FlwdirRaster.upscale_error</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subgrid_rivlen.html">pyflwdir.FlwdirRaster.subgrid_rivlen</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subgrid_rivslp.html">pyflwdir.FlwdirRaster.subgrid_rivslp</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subgrid_rivavg.html">pyflwdir.FlwdirRaster.subgrid_rivavg</a></li>
@@ -406,8 +406,8 @@
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.regions.region_dissolve.html">pyflwdir.regions.region_dissolve</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../api/conversion.html">Conversion Methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="pyflwdir.d8_to_ldd.html">pyflwdir.d8_to_ldd</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../api/conversion.html">Conversion Methods</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">pyflwdir.d8_to_ldd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.ldd_to_d8.html">pyflwdir.ldd_to_d8</a></li>
 </ul>
 </details></li>
@@ -455,9 +455,9 @@
     <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">Reference</a></li>
     
     
-    <li class="breadcrumb-item"><a href="../api/flwdirraster.html" class="nav-link">FlwdirRaster</a></li>
+    <li class="breadcrumb-item"><a href="../api/conversion.html" class="nav-link">Conversion Methods</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyflwdir.FlwdirRaster.upscale_error</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyflwdir.d8_to_ldd</span></li>
   </ul>
 </nav>
 </div>
@@ -474,30 +474,12 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="pyflwdir-flwdirraster-upscale-error">
-<h1>pyflwdir.FlwdirRaster.upscale_error<a class="headerlink" href="#pyflwdir-flwdirraster-upscale-error" title="Link to this heading">#</a></h1>
-<dl class="py method">
-<dt class="sig sig-object py" id="pyflwdir.FlwdirRaster.upscale_error">
-<span class="sig-prename descclassname"><span class="pre">FlwdirRaster.</span></span><span class="sig-name descname"><span class="pre">upscale_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idxs_out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyflwdir/pyflwdir.html#FlwdirRaster.upscale_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.FlwdirRaster.upscale_error" title="Link to this definition">#</a></dt>
-<dd><p>Returns an array with ones (True) where the upscaled flow directions are
-valid and zeros (False) where erroneous.</p>
-<p>The flow direction from cell 1 to cell 2 is valid if the first outlet pixel
-downstream of cell 1 is located in cell 2</p>
-<p>Cells with missing flow direction data have a value -1.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>other</strong> (<a class="reference internal" href="pyflwdir.FlwdirRaster.html#pyflwdir.FlwdirRaster" title="pyflwdir.FlwdirRaster"><em>FlwdirRaster</em></a>) – upscaled Flow Direction Raster</p></li>
-<li><p><strong>idxs_out</strong> (<em>2D array</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – linear indices of grid outlets</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>flwerr</strong> – valid subgrid connection</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>2D array of int8 with other.shape</p>
-</dd>
-</dl>
+  <section id="pyflwdir-d8-to-ldd">
+<h1>pyflwdir.d8_to_ldd<a class="headerlink" href="#pyflwdir-d8-to-ldd" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyflwdir.d8_to_ldd">
+<span class="sig-prename descclassname"><span class="pre">pyflwdir.</span></span><span class="sig-name descname"><span class="pre">d8_to_ldd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flwdir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyflwdir/core_conversion.html#d8_to_ldd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyflwdir.d8_to_ldd" title="Link to this definition">#</a></dt>
+<dd><p>Return ldd based on d8 array.</p>
 </dd></dl>
 
 </section>
@@ -513,20 +495,20 @@ downstream of cell 1 is located in cell 2</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="pyflwdir.FlwdirRaster.upscale.html"
+       href="../api/conversion.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyflwdir.FlwdirRaster.upscale</p>
+        <p class="prev-next-title">Conversion Methods</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyflwdir.FlwdirRaster.subgrid_rivlen.html"
+       href="pyflwdir.ldd_to_d8.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyflwdir.FlwdirRaster.subgrid_rivlen</p>
+        <p class="prev-next-title">pyflwdir.ldd_to_d8</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -549,7 +531,7 @@ downstream of cell 1 is located in cell 2</p>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.FlwdirRaster.upscale_error"><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upscale_error()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyflwdir.d8_to_ldd"><code class="docutils literal notranslate"><span class="pre">d8_to_ldd()</span></code></a></li>
 </ul>
   </nav></div>
 
@@ -557,7 +539,7 @@ downstream of cell 1 is located in cell 2</p>
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/_generated/pyflwdir.FlwdirRaster.upscale_error.rst">
+    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/_generated/pyflwdir.d8_to_ldd.rst">
       <i class="fa-solid fa-pencil"></i>
       
       
@@ -573,7 +555,7 @@ downstream of cell 1 is located in cell 2</p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../_sources/_generated/pyflwdir.FlwdirRaster.upscale_error.rst.txt"
+      <li><a href="../_sources/_generated/pyflwdir.d8_to_ldd.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>

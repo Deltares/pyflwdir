@@ -30,7 +30,7 @@
   <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../_static/theme-deltares.css?v=aa503ec8" />
   
@@ -403,13 +403,13 @@
 <h1>Flow direction data<a class="headerlink" href="#Flow-direction-data" title="Link to this heading">#</a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code> object is at the core of the pyflwdir package. It contains gridded flow direction data, parsed to an actionable common format which describes the linear index of the next dowsntream cell.</p>
 <p>Currently we support two local flow direction (D8) data types according to the arcgis <strong>D8</strong> and pcraster <strong>LDD</strong> conventions (see figure), and one global flow direction type according to the CaMa-Flood <strong>NEXTXY</strong> convention. Local flow direction data types describe the next downstream cell based on a relative direction from a cell towards one of its neighboring cells, while global flow direction types describe the next downstream cell based on its row and column indices.</p>
-<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="b3d99c10d5004e88b01dd6ea3bf4a539" class="no-scaled-link" src="https://raw.githubusercontent.com/Deltares/pyflwdir/main/docs/_static/ftypes.png" style="width: 500px;" /></p>
+<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="c5582f25137e410ebe0ae15773e7a0b6" class="no-scaled-link" src="https://raw.githubusercontent.com/Deltares/pyflwdir/main/docs/_static/ftypes.png" style="width: 500px;" /></p>
 <p>We read the flow direction raster data, including meta-data, using <a class="reference external" href="https://rasterio.readthedocs.io/en/latest/">rasterio</a></p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">rasterio</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">rasterio</span>
 
 <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;rhine_d8.tif&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
     <span class="n">flwdir</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -427,7 +427,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyflwdir</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pyflwdir</span>
 
 <span class="n">flw</span> <span class="o">=</span> <span class="n">pyflwdir</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span>
     <span class="n">flwdir</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;d8&quot;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="n">latlon</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span>
@@ -450,7 +450,7 @@
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 {&#39;ftype&#39;: &#39;d8&#39;,
- &#39;idxs_ds&#39;: array([-1, -1, -1, ..., -1, -1, -1], dtype=int32),
+ &#39;idxs_ds&#39;: array([-1, -1, -1, ..., -1, -1, -1], shape=(679954,), dtype=int32),
  &#39;idxs_pit&#39;: array([20994], dtype=int32),
  &#39;idxs_seq&#39;: None,
  &#39;latlon&#39;: True,
@@ -467,7 +467,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
 
 <span class="n">feats</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">streams</span><span class="p">(</span><span class="n">min_sto</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_features</span><span class="p">(</span><span class="n">feats</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs</span><span class="p">)</span>
@@ -555,10 +555,10 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="c1"># local convenience methods (see utils.py script in notebooks folder)</span>
-<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">quickplot</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">cm</span>  <span class="c1"># data specific quick plot method</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">quickplot</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">cm</span>  <span class="c1"># data specific quick plot method</span>
 
 <span class="c1"># key-word arguments passed to GeoDataFrame.plot method</span>
 <span class="n">gdf_plot_kwds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>

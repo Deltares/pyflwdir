@@ -29,7 +29,7 @@
   <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css?v=aa503ec8" />
   
   <!-- So that users can add custom icons -->
@@ -374,18 +374,18 @@
 <span class="sd">https://docs.scipy.org/doc/scipy/reference/ndimage.html#measurements</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">ndimage</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndimage</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">njit</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">gis_utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">gis_utils</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;region_bounds&quot;</span><span class="p">,</span> <span class="s2">&quot;region_slices&quot;</span><span class="p">,</span> <span class="s2">&quot;region_sum&quot;</span><span class="p">,</span> <span class="s2">&quot;region_area&quot;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="region_sum">
 <a class="viewcode-back" href="../../_generated/pyflwdir.regions.region_sum.html#pyflwdir.regions.region_sum">[docs]</a>
-<span class="k">def</span> <span class="nf">region_sum</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">regions</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">region_sum</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">regions</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the sum of values in `data` for each unique label in `regions`.</span>
 
 <span class="sd">    Parameters</span>
@@ -407,7 +407,7 @@
 
 <div class="viewcode-block" id="region_area">
 <a class="viewcode-back" href="../../_generated/pyflwdir.regions.region_area.html#pyflwdir.regions.region_area">[docs]</a>
-<span class="k">def</span> <span class="nf">region_area</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">region_area</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the area [m2] for each unique label in `regions`.</span>
 
 <span class="sd">    Parameters</span>
@@ -432,7 +432,7 @@
 
 <div class="viewcode-block" id="region_slices">
 <a class="viewcode-back" href="../../_generated/pyflwdir.regions.region_slices.html#pyflwdir.regions.region_slices">[docs]</a>
-<span class="k">def</span> <span class="nf">region_slices</span><span class="p">(</span><span class="n">regions</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">region_slices</span><span class="p">(</span><span class="n">regions</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns slices for each unique label in `regions`.</span>
 
 <span class="sd">    NOTE: a region must be a connected area with the same ID,</span>
@@ -463,7 +463,7 @@
 
 <div class="viewcode-block" id="region_bounds">
 <a class="viewcode-back" href="../../_generated/pyflwdir.regions.region_bounds.html#pyflwdir.regions.region_bounds">[docs]</a>
-<span class="k">def</span> <span class="nf">region_bounds</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">region_bounds</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">gis_utils</span><span class="o">.</span><span class="n">IDENTITY</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the bounding box each unique label in `regions`.</span>
 
 <span class="sd">    NOTE: a region must be a connected area with the same ID,</span>
@@ -508,7 +508,7 @@
 
 
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">region_outlets</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">region_outlets</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">idxs_ds</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the linear index of the outlet cell in `regions`.</span>
 
 <span class="sd">    NOTE: a region must be a connected area with the same ID,</span>
@@ -547,7 +547,7 @@
 
 <div class="viewcode-block" id="region_dissolve">
 <a class="viewcode-back" href="../../_generated/pyflwdir.regions.region_dissolve.html#pyflwdir.regions.region_dissolve">[docs]</a>
-<span class="k">def</span> <span class="nf">region_dissolve</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">region_dissolve</span><span class="p">(</span>
     <span class="n">regions</span><span class="p">,</span>
     <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">idxs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
