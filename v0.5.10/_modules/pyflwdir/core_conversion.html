@@ -29,7 +29,7 @@
   <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css?v=aa503ec8" />
   
   <!-- So that users can add custom icons -->
@@ -371,16 +371,16 @@
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="sd">&quot;&quot;&quot;Methods to convert between different flwdir types&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">core_d8</span><span class="p">,</span> <span class="n">core_ldd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">njit</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">core_d8</span><span class="p">,</span> <span class="n">core_ldd</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;d8_to_ldd&quot;</span><span class="p">,</span> <span class="s2">&quot;ldd_to_d8&quot;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="d8_to_ldd">
 <a class="viewcode-back" href="../../_generated/pyflwdir.d8_to_ldd.html#pyflwdir.d8_to_ldd">[docs]</a>
-<span class="k">def</span> <span class="nf">d8_to_ldd</span><span class="p">(</span><span class="n">flwdir</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">d8_to_ldd</span><span class="p">(</span><span class="n">flwdir</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return ldd based on d8 array.&quot;&quot;&quot;</span>
     <span class="c1"># create conversion dict</span>
     <span class="n">remap</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">core_d8</span><span class="o">.</span><span class="n">_ds</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">core_ldd</span><span class="o">.</span><span class="n">_ds</span><span class="o">.</span><span class="n">flatten</span><span class="p">())}</span>
@@ -393,7 +393,7 @@
 
 <div class="viewcode-block" id="ldd_to_d8">
 <a class="viewcode-back" href="../../_generated/pyflwdir.ldd_to_d8.html#pyflwdir.ldd_to_d8">[docs]</a>
-<span class="k">def</span> <span class="nf">ldd_to_d8</span><span class="p">(</span><span class="n">flwdir</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ldd_to_d8</span><span class="p">(</span><span class="n">flwdir</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return d8 based on ldd array.&quot;&quot;&quot;</span>
     <span class="c1"># create conversion dict</span>
     <span class="n">remap</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">core_ldd</span><span class="o">.</span><span class="n">_ds</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">core_d8</span><span class="o">.</span><span class="n">_ds</span><span class="o">.</span><span class="n">flatten</span><span class="p">())}</span>

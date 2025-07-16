@@ -29,7 +29,7 @@
   <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css?v=aa503ec8" />
   
   <!-- So that users can add custom icons -->
@@ -371,11 +371,11 @@
 <span></span><span class="c1"># -- coding: utf-8 --</span>
 <span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">affine</span> <span class="kn">import</span> <span class="n">Affine</span>
-<span class="kn">import</span> <span class="nn">heapq</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">njit</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">affine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Affine</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">heapq</span>
 
 <span class="n">_R</span> <span class="o">=</span> <span class="mf">6371e3</span>  <span class="c1"># Radius of earth in m. Use 3956e3 for miles</span>
 <span class="n">AREA_FACTORS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;m2&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;ha&quot;</span><span class="p">:</span> <span class="mf">1e4</span><span class="p">,</span> <span class="s2">&quot;km2&quot;</span><span class="p">:</span> <span class="mf">1e6</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
@@ -401,7 +401,7 @@
 <div class="viewcode-block" id="spread2d">
 <a class="viewcode-back" href="../../_generated/pyflwdir.gis_utils.spread2d.html#pyflwdir.gis_utils.spread2d">[docs]</a>
 <span class="nd">@njit</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">spread2d</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">msk</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">frc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">IDENTITY</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">spread2d</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">msk</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">frc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">IDENTITY</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns filled array with nearest observations, origin cells and friction distance to origin.</span>
 <span class="sd">    The friction distance is measured through valid cells in the mask and has a uniform value of 1. by default.</span>
 <span class="sd">    The diagonal distance is taken as the hypot of the vertical and horizontal distances.</span>
@@ -490,7 +490,7 @@
 <div class="viewcode-block" id="get_edge">
 <a class="viewcode-back" href="../../_generated/pyflwdir.gis_utils.get_edge.html#pyflwdir.gis_utils.get_edge">[docs]</a>
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">get_edge</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_edge</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get edge of valid cells.</span>
 
 <span class="sd">    Parameters</span>
@@ -526,7 +526,7 @@
 <span class="c1"># avoid gdal dependency</span>
 
 
-<span class="k">def</span> <span class="nf">transform_from_origin</span><span class="p">(</span><span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">transform_from_origin</span><span class="p">(</span><span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return an Affine transformation given upper left and pixel sizes.</span>
 <span class="sd">    Return an Affine transformation for a georeferenced raster given</span>
 <span class="sd">    the coordinates of its upper left corner `west`, `north` and pixel</span>
@@ -535,7 +535,7 @@
     <span class="k">return</span> <span class="n">Affine</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">)</span> <span class="o">*</span> <span class="n">Affine</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">xsize</span><span class="p">,</span> <span class="o">-</span><span class="n">ysize</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">transform_from_bounds</span><span class="p">(</span><span class="n">west</span><span class="p">,</span> <span class="n">south</span><span class="p">,</span> <span class="n">east</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">transform_from_bounds</span><span class="p">(</span><span class="n">west</span><span class="p">,</span> <span class="n">south</span><span class="p">,</span> <span class="n">east</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return an Affine transformation given bounds, width and height.</span>
 <span class="sd">    Return an Affine transformation for a georeferenced raster given</span>
 <span class="sd">    its bounds `west`, `south`, `east`, `north` and its `width` and</span>
@@ -546,7 +546,7 @@
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">array_bounds</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">transform</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">array_bounds</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">transform</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the bounds of an array given height, width, and a transform.</span>
 <span class="sd">    Return the `west, south, east, north` bounds of an array given</span>
 <span class="sd">    its height, width, and an affine transform.</span>
@@ -556,7 +556,7 @@
     <span class="k">return</span> <span class="n">w</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">n</span>
 
 
-<span class="k">def</span> <span class="nf">xy</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">xy</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the x and y coordinates of pixels at `rows` and `cols`.</span>
 <span class="sd">    The pixel&#39;s center is returned by default, but a corner can be returned</span>
 <span class="sd">    by setting `offset` to one of `ul, ur, ll, lr`.</span>
@@ -599,7 +599,7 @@
     <span class="k">return</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span>
 
 
-<span class="k">def</span> <span class="nf">rowcol</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rowcol</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the rows and cols of the pixels containing (x, y) given a</span>
 <span class="sd">    coordinate reference system.</span>
@@ -637,7 +637,7 @@
     <span class="k">return</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span>
 
 
-<span class="k">def</span> <span class="nf">idxs_to_coords</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">idxs_to_coords</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns coordinates of idxs raster indices based affine.</span>
 
 <span class="sd">    Parameters</span>
@@ -674,7 +674,7 @@
     <span class="k">return</span> <span class="n">xy</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">coords_to_idxs</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">coords_to_idxs</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns linear indices of coordinates.</span>
 
 <span class="sd">    Parameters</span>
@@ -715,7 +715,7 @@
 
 
 <span class="c1"># TODO: rename to transform_to_coords &amp; correct upstream use in pyflwdir and hydromt</span>
-<span class="k">def</span> <span class="nf">affine_to_coords</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">affine_to_coords</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returs a raster axis with pixel center coordinates based on the affine.</span>
 
 <span class="sd">    Parameters</span>
@@ -736,7 +736,7 @@
 
 
 <span class="c1">## DISTANCES // AREAS</span>
-<span class="k">def</span> <span class="nf">reggrid_dx</span><span class="p">(</span><span class="n">lats</span><span class="p">,</span> <span class="n">lons</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reggrid_dx</span><span class="p">(</span><span class="n">lats</span><span class="p">,</span> <span class="n">lons</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;returns a the cell widths (dx) for a regular grid with cell centers</span>
 <span class="sd">    lats &amp; lons [m].&quot;&quot;&quot;</span>
     <span class="n">xres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">lons</span><span class="p">)))</span>
@@ -744,7 +744,7 @@
     <span class="k">return</span> <span class="n">dx</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">lats</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">lons</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">lats</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">reggrid_dy</span><span class="p">(</span><span class="n">lats</span><span class="p">,</span> <span class="n">lons</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reggrid_dy</span><span class="p">(</span><span class="n">lats</span><span class="p">,</span> <span class="n">lons</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;returns a the cell heights (dy) for a regular grid with cell centers</span>
 <span class="sd">    lats &amp; lons [m].&quot;&quot;&quot;</span>
     <span class="n">yres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">lats</span><span class="p">)))</span>
@@ -754,7 +754,7 @@
 
 <div class="viewcode-block" id="reggrid_area">
 <a class="viewcode-back" href="../../_generated/pyflwdir.gis_utils.reggrid_area.html#pyflwdir.gis_utils.reggrid_area">[docs]</a>
-<span class="k">def</span> <span class="nf">reggrid_area</span><span class="p">(</span><span class="n">lats</span><span class="p">,</span> <span class="n">lons</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reggrid_area</span><span class="p">(</span><span class="n">lats</span><span class="p">,</span> <span class="n">lons</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;returns a the cell area for a regular grid with cell centres</span>
 <span class="sd">    lats &amp; lons [m2].&quot;&quot;&quot;</span>
     <span class="n">xres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">lons</span><span class="p">)))</span>
@@ -764,7 +764,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">area_grid</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;m2&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">area_grid</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;m2&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a regular grid with cell areas&quot;&quot;&quot;</span>
     <span class="n">unit</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">unit</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">AREA_FACTORS</span><span class="p">:</span>
@@ -782,7 +782,7 @@
 
 
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">cellarea</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span> <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cellarea</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span> <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;returns the area of cell with a given resolution (resx,resy) at a given</span>
 <span class="sd">    cell center latitude [m2].&quot;&quot;&quot;</span>
     <span class="n">l1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">yres</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
@@ -792,7 +792,7 @@
 
 
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">degree_metres_y</span><span class="p">(</span><span class="n">lat</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">degree_metres_y</span><span class="p">(</span><span class="n">lat</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;returns the verical length of a degree in metres at</span>
 <span class="sd">    a given latitude.&quot;&quot;&quot;</span>
     <span class="n">m1</span> <span class="o">=</span> <span class="mf">111132.92</span>  <span class="c1"># latitude calculation term 1</span>
@@ -811,7 +811,7 @@
 
 
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">degree_metres_x</span><span class="p">(</span><span class="n">lat</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">degree_metres_x</span><span class="p">(</span><span class="n">lat</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;returns the horizontal length of a degree in metres at</span>
 <span class="sd">    a given latitude.&quot;&quot;&quot;</span>
     <span class="n">p1</span> <span class="o">=</span> <span class="mf">111412.84</span>  <span class="c1"># longitude calculation term 1</span>
@@ -828,7 +828,7 @@
 
 
 <span class="nd">@njit</span>
-<span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="n">idx0</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">ncol</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">IDENTITY</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">distance</span><span class="p">(</span><span class="n">idx0</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">ncol</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">IDENTITY</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the the length between linear indices idx0 and idx1 on a regular raster</span>
 <span class="sd">    defined by the affine transform.</span>
 
@@ -866,7 +866,7 @@
 
 
 <span class="c1">## VECTORIZE</span>
-<span class="k">def</span> <span class="nf">features</span><span class="p">(</span><span class="n">flowpaths</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">features</span><span class="p">(</span><span class="n">flowpaths</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a LineString feature for each stream</span>
 
 <span class="sd">    Parameters</span>
