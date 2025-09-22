@@ -485,7 +485,7 @@ def snap(
 def inflow_idxs(idxs_ds, seq, region):
     """returns linear indices of most upstream cells within region"""
     idxs = []
-    mask = np.array([bool(1) for _ in range(idxs_ds.size)])  # all True
+    mask = np.ones(idxs_ds.size, dtype=np.bool_)
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
         if idx0 != idx_ds:
@@ -502,7 +502,7 @@ def inflow_idxs(idxs_ds, seq, region):
 def outflow_idxs(idxs_ds, seq, region):
     """returns linear indices of most downstream cells within region"""
     idxs = []
-    mask = np.array([bool(1) for _ in range(idxs_ds.size)])  # all True
+    mask = np.ones(idxs_ds.size, dtype=np.bool_)
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
         # at mask and region and (pit or out)

@@ -177,7 +177,7 @@ def segment_length(
         channel section length [m]
     """
     # temp binary array with outlets
-    outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
+    outlets = np.zeros(idxs_nxt.size, dtype=np.bool_)
     for idx0 in idxs_out:
         if idx0 != mv:
             outlets[idx0] = bool(1)
@@ -240,7 +240,7 @@ def segment_average(
         segment mean value [m]
     """
     # temp binary array with outlets
-    outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
+    outlets = np.zeros(idxs_nxt.size, dtype=np.bool_)
     for idx0 in idxs_out:
         if idx0 != mv:
             outlets[idx0] = bool(1)
@@ -305,7 +305,7 @@ def segment_median(
         segment median value [m]
     """
     # temp binary array with outlets
-    outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
+    outlets = np.zeros(idxs_nxt.size, dtype=np.bool_)
     for idx0 in idxs_out:
         if idx0 != mv:
             outlets[idx0] = bool(1)
@@ -373,7 +373,7 @@ def segment_indices(
         linear indices of streams
     """
     # temp binary array with outlets
-    outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
+    outlets = np.zeros(idxs_nxt.size, dtype=np.bool_)
     for idx0 in idxs_out:
         if idx0 != mv:
             outlets[idx0] = bool(1)
@@ -446,7 +446,7 @@ def segment_slope(
         channel section slope [m]
     """
     # temp binary array with outlets
-    outlets = np.array([bool(0) for _ in range(idxs_nxt.size)])
+    outlets = np.zeros(idxs_nxt.size, dtype=np.bool_)
     for idx0 in idxs_out:
         if idx0 != mv:
             outlets[idx0] = bool(1)

@@ -154,7 +154,7 @@ def streams(idxs_ds, seq, mask=None, max_len=0, mv=core._mv):
     nup = core.upstream_count(idxs_ds=idxs_ds, mask=mask, mv=mv)
     # get list of indices arrays of segments
     streams = []
-    done = np.array([bool(0) for _ in range(idxs_ds.size)])  # all False
+    done = np.zeros(idxs_ds.size, dtype=np.bool_)
     for idx0 in seq[::-1]:  # up- to downstream
         if done[idx0] or (mask is not None and ~mask[idx0]):
             continue

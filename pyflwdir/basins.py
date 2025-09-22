@@ -52,7 +52,7 @@ def interbasin_mask(idxs_ds, seq, region, stream=None):
             if mask[idx0]:
                 mask[idxs_ds[idx0]] = True
     else:
-        mask = np.array([bool(1) for _ in range(region.size)])  # all True
+        mask = np.ones(region.size, dtype=np.bool_)
     # keep only the most downstream contiguous area within region
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
