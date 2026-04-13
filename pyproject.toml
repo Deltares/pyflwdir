@@ -37,7 +37,7 @@ doc = [
 examples = [
     "cartopy>=0.20",
     "descartes",
-    "geopandas>0.8",
+    "geopandas>=1.0.1",
     "jupyter",
     "matplotlib",
     "rasterio",
