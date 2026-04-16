@@ -14,7 +14,7 @@ _mv = np.intp(-1)
 # flwdir properties
 
 
-@njit
+@njit(cache=True)
 def rank(idxs_ds, mv=_mv):
     """Returns the rank, i.e. the distance counted in number of cells from the outlet."""
     ranks = np.full(idxs_ds.size, -9999, dtype=np.int32)
@@ -47,7 +47,7 @@ def rank(idxs_ds, mv=_mv):
     return ranks, n
 
 
-@njit
+@njit(cache=True)
 def upstream_count(idxs_ds, mv=_mv, mask=None):
     """Returns array with number of upstream cells per cell."""
     n_up = np.full(idxs_ds.size, -9, dtype=np.int8)
@@ -64,7 +64,7 @@ def upstream_count(idxs_ds, mv=_mv, mask=None):
 # returns 2D array (n, d) with indices
 
 
-@njit
+@njit(cache=True)
 def upstream_matrix(idxs_ds, mv=_mv):
     """Returns a 2D array with upstream cell indices for each cell.
     The shape of the array is (idxs_ds.size, max number of upstream cells per cell).
@@ -84,7 +84,7 @@ def upstream_matrix(idxs_ds, mv=_mv):
     return idxs_us
 
 
-@njit
+@njit(cache=True)
 def idxs_seq(idxs_ds, idxs_pit, mv=_mv):
     """Returns indices ordered from down- to upstream.
 
@@ -117,7 +117,7 @@ def idxs_seq(idxs_ds, idxs_pit, mv=_mv):
     return idxs_seq[:i]
 
 
-@njit
+@njit(cache=True)
 def fillnodata_upstream(idxs_ds, seq, data, nodata):
     """Retuns a a copy of <data> where upstream cell with <nodata> values are filled
     based on the first downstream valid cell value.
@@ -146,7 +146,7 @@ def fillnodata_upstream(idxs_ds, seq, data, nodata):
     return data_out
 
 
-@njit
+@njit(cache=True)
 def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
     """Retuns a a copy of <data> where downstream cells with <nodata> values are filled
     based on the first upstream valid cell value.
@@ -188,7 +188,7 @@ def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
     return data_out
 
 
-@njit
+@njit(cache=True)
 def main_upstream(idxs_ds, uparea, upa_min=0.0, mv=_mv):
     """Returns the index of the upstream cell with the largest uparea,
     -1 if no upstream cells (i.e. at headwater).
@@ -222,7 +222,7 @@ def main_upstream(idxs_ds, uparea, upa_min=0.0, mv=_mv):
 # returns 1D array (size < n) with indices of specific locations
 
 
-@njit
+@njit(cache=True)
 def pit_indices(idxs_ds):
     """Returns pit indices, i.e. cells with no downstream cell"""
     idx_lst = []
@@ -232,7 +232,7 @@ def pit_indices(idxs_ds):
     return np.array(idx_lst, dtype=idxs_ds.dtype)
 
 
-@njit
+@njit(cache=True)
 def loop_indices(idxs_ds, mv=_mv):
     """Returns indices loop cells, i.e. cells which do not have a pit at its most"""
     idxs = []
@@ -243,21 +243,21 @@ def loop_indices(idxs_ds, mv=_mv):
     return np.array(idxs, dtype=idxs_ds.dtype)
 
 
-@njit
+@njit(cache=True)
 def headwater_indices(idxs_ds, mask=None, mv=_mv):
     """Returns indices of headwater cells, i.e. cells with no upstream neighbors"""
     nup = upstream_count(idxs_ds, mask=mask, mv=mv)
     return np.where(nup == 0)[0].astype(idxs_ds.dtype)
 
 
-@njit
+@njit(cache=True)
 def confluence_indices(idxs_ds, mask=None, mv=_mv):
     """Returns indices of confluence cells, i.e. cells with two or more upstream neighbors"""
     nup = upstream_count(idxs_ds, mask=mask, mv=mv)
     return np.where(nup > 1)[0].astype(idxs_ds.dtype)
 
 
-@njit
+@njit(cache=True)
 def flwdir_tuples(idxs_ds, mask=None, mv=_mv):
     """Returns list of up- and downstream linear index couples."""
     idxs = []
@@ -272,7 +272,7 @@ def flwdir_tuples(idxs_ds, mask=None, mv=_mv):
 # local functions
 
 
-@njit
+@njit(cache=True)
 def _d8_idx(idx0, shape):
     """Returns linear indices of eight neighboring cells"""
     nrow, ncol = shape
@@ -291,7 +291,7 @@ def _d8_idx(idx0, shape):
     return np.array(idxs_lst)
 
 
-@njit
+@njit(cache=True)
 def _upstream_d8_idx(idx0, idxs_ds, shape):
     """Returns a numpy array with linear indices of upstream neighbors.
     NOTE: This method only works for D8 type of flow direciton data. If upstream
@@ -305,7 +305,7 @@ def _upstream_d8_idx(idx0, idxs_ds, shape):
 
 
 # TODO use pre-set distance or length raster
-@njit
+@njit(cache=True)
 def _trace(
     idx0,
     idxs_nxt,
@@ -366,7 +366,7 @@ def _trace(
     return np.array(idxs, dtype=idxs_nxt.dtype), dist
 
 
-@njit
+@njit(cache=True)
 def _window(idx0, n, idxs_ds, idxs_us_main, strord=None, mv=_mv):
     """Returns the indices of between the nth upstream to nth downstream cell from
     the current cell. Upstream cells are with based on the  _main_upstream method.
@@ -397,7 +397,7 @@ def _window(idx0, n, idxs_ds, idxs_us_main, strord=None, mv=_mv):
     return idxs
 
 
-@njit
+@njit(cache=True)
 def path(
     idxs0,
     idxs_nxt,
@@ -437,7 +437,7 @@ def path(
     return paths, dists
 
 
-@njit
+@njit(cache=True)
 def snap(
     idxs0,
     idxs_nxt,
@@ -481,7 +481,7 @@ def snap(
 
 
 # NOTE: not unit tested
-@njit
+@njit(cache=True)
 def inflow_idxs(idxs_ds, seq, region):
     """returns linear indices of most upstream cells within region"""
     idxs = []
@@ -498,7 +498,7 @@ def inflow_idxs(idxs_ds, seq, region):
 
 
 # NOTE: not unit tested
-@njit
+@njit(cache=True)
 def outflow_idxs(idxs_ds, seq, region):
     """returns linear indices of most downstream cells within region"""
     idxs = []

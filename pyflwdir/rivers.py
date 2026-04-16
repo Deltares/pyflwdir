@@ -7,7 +7,7 @@ import logging
 logger = logging.Logger(__name__)
 
 
-@njit
+@njit(cache=True)
 def classify_estuary(
     idxs_ds: np.ndarray,
     seq: np.ndarray,

@@ -125,7 +125,7 @@ def region_bounds(regions, transform=gis_utils.IDENTITY):
     return lbs, bboxs, total_bbox
 
 
-@njit
+@njit(cache=True)
 def region_outlets(regions, idxs_ds, seq):
     """Returns the linear index of the outlet cell in `regions`.
 

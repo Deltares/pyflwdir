@@ -12,7 +12,7 @@ __all__ = []
 
 
 # general methods
-@njit
+@njit(cache=True)
 def accuflux(idxs_ds, seq, data, nodata):
     """Returns maps of accumulate upstream <data>
 
@@ -41,7 +41,7 @@ def accuflux(idxs_ds, seq, data, nodata):
     return accu
 
 
-@njit
+@njit(cache=True)
 def accuflux_ds(idxs_ds, seq, data, nodata):
     """Returns maps of accumulate downstream <data>
 
@@ -70,7 +70,7 @@ def accuflux_ds(idxs_ds, seq, data, nodata):
     return accu
 
 
-@njit()
+@njit(cache=True)
 def upstream_area(
     idxs_ds,
     seq,
@@ -129,7 +129,7 @@ def upstream_area(
     return uparea
 
 
-@njit
+@njit(cache=True)
 def streams(idxs_ds, seq, mask=None, max_len=0, mv=core._mv):
     """Returns list of linear indices per stream of equal stream order.
 
@@ -188,7 +188,7 @@ def streams(idxs_ds, seq, mask=None, max_len=0, mv=core._mv):
     return streams
 
 
-@njit
+@njit(cache=True)
 def stream_order(idxs_ds, seq, idxs_us_main, mask=None, mv=core._mv):
     """Returns the classic or Hack's "bottum up" stream order.
 
@@ -225,7 +225,7 @@ def stream_order(idxs_ds, seq, idxs_us_main, mask=None, mv=core._mv):
     return strord
 
 
-@njit
+@njit(cache=True)
 def strahler_order(idxs_ds, seq, mask=None):
     """Returns the strahler "top down" stream order.
 
@@ -315,7 +315,7 @@ def stream_distance(
     return dist
 
 
-@njit
+@njit(cache=True)
 def smooth_rivlen(
     idxs_ds,
     idxs_us_main,

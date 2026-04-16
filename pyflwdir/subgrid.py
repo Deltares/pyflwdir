@@ -48,7 +48,7 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="eam_plus", mv=_mv):
     return idxs_out, shape_out
 
 
-@njit
+@njit(cache=True)
 def ucat_area(
     idxs_out,
     idxs_ds,
@@ -93,7 +93,7 @@ def ucat_area(
     return ucatch_map, ucatch_are
 
 
-@njit
+@njit(cache=True)
 def ucat_volume(
     idxs_out,
     idxs_ds,
@@ -142,7 +142,7 @@ def ucat_volume(
     return ucatch_map, fldpln_vol
 
 
-@njit
+@njit(cache=True)
 def segment_length(
     idxs_out,
     idxs_nxt,
@@ -205,7 +205,7 @@ def segment_length(
     return rivlen
 
 
-@njit
+@njit(cache=True)
 def segment_average(
     idxs_out,
     idxs_nxt,
@@ -273,7 +273,7 @@ def segment_average(
 
 
 ## NOTE: not unit tested
-@njit
+@njit(cache=True)
 def segment_median(
     idxs_out,
     idxs_nxt,
@@ -338,7 +338,7 @@ def segment_median(
 
 
 ## NOTE: not unit tested
-@njit
+@njit(cache=True)
 def segment_indices(
     idxs_out,
     idxs_nxt,
@@ -411,7 +411,7 @@ def segment_indices(
 
 
 ## NOTE: not unit tested
-@njit
+@njit(cache=True)
 def segment_slope(
     idxs_out,
     idxs_nxt,
@@ -485,7 +485,7 @@ def segment_slope(
     return rivslp
 
 
-@njit
+@njit(cache=True)
 def fixed_length_slope(
     idxs_out,
     idxs_ds,
