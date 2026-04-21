@@ -164,7 +164,7 @@ def from_array(
 
     # use smallest possible dtype to represent indices
     n = data.size
-    dtype = np.int32 if n < 2147483647 else (np.uint32 if n < 4294967294 else np.uint64)
+    dtype = np.uint32 if n < 4294967294 else np.uint64
     idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
     idxs_outlet = idxs_pit[np.isin(data.flat[idxs_pit], fd._pv)]
 

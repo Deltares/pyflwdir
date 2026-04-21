@@ -19,7 +19,10 @@ def rank(idxs_ds, mv=_mv):
     """Returns the rank, i.e. the distance counted in number of cells from the outlet."""
     ranks = np.full(idxs_ds.size, -9999, dtype=np.int32)
     n = 0
-    idxs_lst = []
+    idxs_lst = List()
+    # initialize with correct dtype
+    idxs_lst.append(idxs_ds[0])
+    idxs_lst.pop(-1)
     for idx0 in range(idxs_ds.size):
         idx_ds = idxs_ds[idx0]
         if idx_ds == mv or ranks[idx0] != -9999:
@@ -260,7 +263,7 @@ def confluence_indices(idxs_ds, mask=None, mv=_mv):
 @njit(cache=True)
 def flwdir_tuples(idxs_ds, mask=None, mv=_mv):
     """Returns list of up- and downstream linear index couples."""
-    idxs = []
+    idxs = List()
     for idx0 in range(idxs_ds.size):
         idx_ds = idxs_ds[idx0]
         if idx_ds == mv or (mask is not None and mask[idx0] != 1):
@@ -279,7 +282,7 @@ def _d8_idx(idx0, shape):
     # assume c-style row-major
     r = int(idx0 // ncol)
     c = int(idx0 % ncol)
-    idxs_lst = list()
+    idxs_lst = List()
     for dr in range(-1, 2):
         for dc in range(-1, 2):
             if dr == 0 and dc == 0:  # skip pit -> return empty array
@@ -297,7 +300,7 @@ def _upstream_d8_idx(idx0, idxs_ds, shape):
     NOTE: This method only works for D8 type of flow direciton data. If upstream
     neighbours our outside the dirict 8 neighbors the returned array  will be
     incomplete."""
-    idxs_lst = list()
+    idxs_lst = List()
     for idx in _d8_idx(idx0, shape):
         if idxs_ds[idx] == idx0:
             idxs_lst.append(idx)

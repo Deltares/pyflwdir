@@ -2,6 +2,7 @@
 """Methods for upscaling high res flow direction data to lower resolutions."""
 
 from numba import njit
+from numba.typed import List
 import numpy as np
 
 from . import core
@@ -465,7 +466,10 @@ def ihu_nextidx(
     nrow, ncol = shape
     # allocate output
     idxs_ds = np.full(nrow * ncol, mv, dtype=subidxs_ds.dtype)
-    idxs_fix = list()
+    idxs_fix = List()
+    # initialize with correct dtype
+    idxs_fix.append(subidxs_ds[0])
+    idxs_fix.pop(-1)
     # loop over outlet cell indices
     for idx0 in range(subidxs_out.size):
         subidx = subidxs_out[idx0]
@@ -881,7 +885,10 @@ def ihu_relocate_outlets(
 def outlet_pix(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
     """Returns subgrid cells at the edge of a lowres cells with the next downstream
     subgrid cell outside of that lowres cell."""
-    subidxs = []
+    subidxs = List()
+    # initialize with correct dtype
+    idxs_lst.append(idxs_ds[0])
+    idxs_lst.pop(-1)
     subnrow = int(subidxs_ds.size / subncol)
     args = (subncol, cellsize, ncol)
     c_ul = (idx % ncol) * cellsize
