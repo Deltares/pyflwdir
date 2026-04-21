@@ -38,7 +38,7 @@ def to_array(idxs_ds, shape, mv=core._mv):
     return np.stack([nextx, nexty])
 
 
-@njit
+@njit(cache=True)
 def _from_array(nextx, nexty, _mv=_mv, dtype=np.intp):
     size = nextx.size
     nrow, ncol = nextx.shape[0], nextx.shape[-1]
@@ -68,7 +68,7 @@ def _from_array(nextx, nexty, _mv=_mv, dtype=np.intp):
     return idxs_ds, np.array(pits_lst, dtype=dtype), n
 
 
-@njit
+@njit(cache=True)
 def _to_array(idxs_ds, shape, mv=core._mv):
     """convert 1D index to 3D NEXTXY raster"""
     ncol = shape[1]
@@ -107,13 +107,13 @@ def isvalid(flwdir):
     )
 
 
-@njit
+@njit(cache=True)
 def ispit(dd, _pv=_pv):
     """True if NEXTXY pit"""
     return np.logical_or(dd == _pv[0], dd == _pv[1])
 
 
-@njit
+@njit(cache=True)
 def isnodata(dd):
     """True if NEXTXY nodata"""
     return dd == _mv

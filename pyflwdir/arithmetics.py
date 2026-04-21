@@ -13,7 +13,7 @@ __all__ = []
 
 # NOTE np.average (with) weights is not yet supoorted by numpy
 # all functions are faster than numpy.
-@njit
+@njit(cache=True)
 def _average(data, weights, nodata):
     """Weighted arithmetic mean"""
     v = 0.0
@@ -29,7 +29,7 @@ def _average(data, weights, nodata):
     return v / w if w != 0 else nodata
 
 
-@njit
+@njit(cache=True)
 def _mean(data, nodata):
     """Arithmetic mean"""
     v = 0.0
@@ -43,7 +43,7 @@ def _mean(data, nodata):
     return v / w if w != 0 else nodata
 
 
-@njit
+@njit(cache=True)
 def lstsq(x: np.ndarray, y: np.ndarray):
     """Simple ordinary Least Squares regression."""
     n = x.size
@@ -64,7 +64,7 @@ def lstsq(x: np.ndarray, y: np.ndarray):
     return slope, intercept
 
 
-@njit
+@njit(cache=True)
 def moving_average(
     data, weights, n, idxs_ds, idxs_us_main, strord=None, nodata=-9999.0, mv=_mv
 ):
@@ -103,7 +103,7 @@ def moving_average(
     return data_out
 
 
-@njit
+@njit(cache=True)
 def moving_median(data, n, idxs_ds, idxs_us_main, strord=None, nodata=-9999.0, mv=_mv):
     """Take the moving median over the flow direction network.
 
@@ -143,7 +143,7 @@ def moving_median(data, n, idxs_ds, idxs_us_main, strord=None, nodata=-9999.0, m
     return data_out
 
 
-@njit
+@njit(cache=True)
 def upstream_sum(idxs_ds, data, nodata=-9999.0, mv=_mv):
     """Returns sum of first upstream values
 

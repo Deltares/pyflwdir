@@ -28,7 +28,7 @@ __all__ = [
 ]
 
 
-@njit()
+@njit(cache=True)
 def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY):
     """Returns filled array with nearest observations, origin cells and friction distance to origin.
     The friction distance is measured through valid cells in the mask and has a uniform value of 1. by default.
@@ -114,7 +114,7 @@ def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY
     return out, src, dst
 
 
-@njit
+@njit(cache=True)
 def get_edge(a, structure=np.ones((3, 3), dtype=bool)):
     """Get edge of valid cells.
 
@@ -402,7 +402,7 @@ def area_grid(transform, shape, latlon=False, unit="m2"):
     return area
 
 
-@njit
+@njit(cache=True)
 def cellarea(lat, xres, yres):
     """returns the area of cell with a given resolution (resx,resy) at a given
     cell center latitude [m2]."""
@@ -412,7 +412,7 @@ def cellarea(lat, xres, yres):
     return _R**2 * dx * (np.sin(l2) - np.sin(l1))
 
 
-@njit
+@njit(cache=True)
 def degree_metres_y(lat):
     """ "returns the verical length of a degree in metres at
     a given latitude."""
@@ -431,7 +431,7 @@ def degree_metres_y(lat):
     return latlen
 
 
-@njit
+@njit(cache=True)
 def degree_metres_x(lat):
     """ "returns the horizontal length of a degree in metres at
     a given latitude."""
@@ -448,7 +448,7 @@ def degree_metres_x(lat):
     return longlen
 
 
-@njit
+@njit(cache=True)
 def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
     """Return the the length between linear indices idx0 and idx1 on a regular raster
     defined by the affine transform.

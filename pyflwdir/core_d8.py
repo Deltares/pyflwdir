@@ -19,7 +19,7 @@ _pv = np.array([0, 255], dtype=np.uint8)
 _all = np.array([32, 64, 128, 16, 0, 1, 8, 4, 2, 247, 255], dtype=np.uint8)
 
 
-@njit("Tuple((int8, int8))(uint8)")
+@njit("Tuple((int8, int8))(uint8)", cache=True)
 def drdc(dd):
     """convert d8 value to delta row/col"""
     dr, dc = np.int8(0), np.int8(0)
@@ -39,7 +39,7 @@ def drdc(dd):
     return dr, dc
 
 
-@njit
+@njit(cache=True)
 def from_array(flwdir, _mv=_mv, dtype=np.intp):
     """convert 2D D8 data to 1D next downstream indices"""
     nrow, ncol = flwdir.shape
@@ -67,7 +67,7 @@ def from_array(flwdir, _mv=_mv, dtype=np.intp):
     return idxs_ds, np.array(pits_lst, dtype=dtype), n
 
 
-@njit
+@njit(cache=True)
 def _downstream_idx(idx0, flwdir_flat, shape, mv=core._mv):
     """Returns linear index of the donwstream neighbor; idx0 if at pit"""
     nrow, ncol = shape
@@ -83,7 +83,7 @@ def _downstream_idx(idx0, flwdir_flat, shape, mv=core._mv):
 
 
 # general
-@njit
+@njit(cache=True)
 def to_array(idxs_ds: np.ndarray[np.uint64], shape: Tuple[int, int], mv=core._mv):
     """convert downstream linear indices to dense D8 raster"""
     ncol = shape[1]
@@ -112,7 +112,7 @@ def isvalid(flwdir: np.uint8, _all: np.ndarray[np.uint8] = _all) -> bool:
     )
 
 
-@njit
+@njit(cache=True)
 def check_values(flwdir, _all):
     check = True
     for dd in flwdir.ravel():
@@ -122,19 +122,19 @@ def check_values(flwdir, _all):
     return check
 
 
-@njit
+@njit(cache=True)
 def ispit(dd, _pv=_pv):
     """True if D8 pit"""
     return np.any(dd == _pv)
 
 
-@njit
+@njit(cache=True)
 def isnodata(dd, _mv=_mv):
     """True if D8 nodata"""
     return dd == _mv
 
 
-@njit
+@njit(cache=True)
 def _upstream_idx(idx0, flwdir_flat, shape, _us=_us, dtype=np.intp):
     """Returns a numpy array (int64) with linear indices of upstream neighbors"""
     nrow, ncol = shape

@@ -10,6 +10,7 @@ in development
 * add conversion methods to api refs (#65)
 * add section to upscaling example to save output to file (#73)
 * use numpy array to create boolean rather than list comprehension, fixing an issue for Mac (#76)
+* Add Numba caching to improve startup performance (#78)
 
 0.5.10  (18-02-2025)
 ********************

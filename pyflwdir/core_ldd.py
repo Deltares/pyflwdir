@@ -21,7 +21,7 @@ from numba import njit
 import numpy as np
 
 
-@njit("Tuple((int8, int8))(uint8)")
+@njit("Tuple((int8, int8))(uint8)", cache=True)
 def drdc(dd):
     """convert ldd value to delta row/col"""
     dr, dc = np.int8(0), np.int8(0)
@@ -38,7 +38,7 @@ def drdc(dd):
     return dr, dc
 
 
-@njit
+@njit(cache=True)
 def from_array(flwdir, _mv=_mv, dtype=np.intp):
     """convert 2D LDD data to 1D next downstream indices"""
     nrow, ncol = flwdir.shape
@@ -66,7 +66,7 @@ def from_array(flwdir, _mv=_mv, dtype=np.intp):
     return idxs_ds, np.array(pits_lst, dtype=dtype), n
 
 
-@njit
+@njit(cache=True)
 def _downstream_idx(idx0, flwdir_flat, shape, mv=core._mv):
     """Returns linear index of the donwstream neighbor; idx0 if at pit"""
     nrow, ncol = shape
@@ -82,7 +82,7 @@ def _downstream_idx(idx0, flwdir_flat, shape, mv=core._mv):
 
 
 # general
-@njit
+@njit(cache=True)
 def to_array(idxs_ds, shape, mv=core._mv):
     """convert downstream linear indices to dense D8 raster"""
     ncol = shape[1]
@@ -106,19 +106,19 @@ def isvalid(flwdir, _all=_all):
     return core_d8.isvalid(flwdir, _all)
 
 
-@njit
+@njit(cache=True)
 def ispit(dd, _pv=_pv):
     """True if LDD pit"""
     return dd == _pv
 
 
-@njit
+@njit(cache=True)
 def isnodata(dd, _mv=_mv):
     """True if LDD nodata"""
     return core_d8.isnodata(dd, _mv)
 
 
-@njit
+@njit(cache=True)
 def _upstream_idx(idx0, flwdir_flat, shape, _us=_us, dtype=np.intp):
     """Returns a numpy array (int64) with linear indices of upstream neighbors"""
     return core_d8._upstream_idx(idx0, flwdir_flat, shape, _us, dtype=dtype)

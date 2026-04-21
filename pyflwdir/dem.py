@@ -14,7 +14,7 @@ _mv = core._mv
 __all__ = ["slope", "fill_depressions"]
 
 
-@njit
+@njit(cache=True)
 def fill_depressions(
     elevtn,
     outlets="edge",
@@ -143,7 +143,7 @@ def fill_depressions(
     return elevtn + delv, d8
 
 
-@njit
+@njit(cache=True)
 def adjust_elevation(idxs_ds, seq, elevtn, mv=_mv):
     """Given a flow direction map, remove pits in the elevation map.
     Algorithm based on Yamazaki et al. (2012)
@@ -167,7 +167,7 @@ def adjust_elevation(idxs_ds, seq, elevtn, mv=_mv):
     return elevtn_out
 
 
-@njit
+@njit(cache=True)
 def _adjust_elevation(elevtn):
     """fix elevation on single streamline based on minimum modification
     elevtn oderdered from up- to downstream
@@ -225,7 +225,7 @@ def _adjust_elevation(elevtn):
     return elevtn
 
 
-@njit
+@njit(cache=True)
 def slope(elevtn, nodata=-9999.0, latlon=False, transform=gis_utils.IDENTITY):
     """Returns the local gradient
 
@@ -379,7 +379,7 @@ def floodplains(idxs_ds, seq, elevtn, uparea, upa_min=1000.0, b=0.3):
     return fldpln
 
 
-@njit
+@njit(cache=True)
 def _local_d4(idx0, idx_ds, ncol):
     """Return indices of d4 neighbors in diagonal d8 direction, e.g.: indices of N, W neigbors if flowdir is NW."""
     idxs_d4 = [
@@ -402,7 +402,7 @@ def _local_d4(idx0, idx_ds, ncol):
         return np.asarray(idxs_d4[1:])
 
 
-@njit
+@njit(cache=True)
 def dig_4connectivity(
     idxs_ds, seq, elv_flat, shape, mask=None, nodata=-9999, dz_min=1e-3
 ):

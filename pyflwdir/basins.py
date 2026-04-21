@@ -21,7 +21,7 @@ def basins(idxs_ds, idxs_pit, seq, ids=None):
 # NOTE not unit tested
 # TODO: change this method to derive the interbasin for a single outflow as currently
 # its results are ambiguous?!
-@njit
+@njit(cache=True)
 def interbasin_mask(idxs_ds, seq, region, stream=None):
     """Returns most downstream contiguous area within region, i.e.: if a stream flows
     in and out of the region, only the most downstream contiguous area within region
@@ -64,7 +64,7 @@ def interbasin_mask(idxs_ds, seq, region, stream=None):
     return np.logical_and(mask, region)
 
 
-@njit
+@njit(cache=True)
 def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
     """Returns a subbasin map with unique IDs starting from one.
     Subbasins are defined based on a minimum stream order.
@@ -103,7 +103,7 @@ def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
     return core.fillnodata_upstream(idxs_ds, seq, subbas, 0), idxs1
 
 
-@njit
+@njit(cache=True)
 def _tributaries(idxs_ds, seq, strord):
     idxs_trib = []
     for idx0 in seq:  # down- to upstream
@@ -113,7 +113,7 @@ def _tributaries(idxs_ds, seq, strord):
     return np.array(idxs_trib, idxs_ds.dtype)
 
 
-@njit
+@njit(cache=True)
 def subbasins_pfafstetter(
     idxs_pit, idxs_ds, seq, idxs_us_main, uparea, mask=None, depth=1, mv=_mv
 ):
@@ -191,7 +191,7 @@ def subbasins_pfafstetter(
     return pfafbas, idxs1
 
 
-@njit
+@njit(cache=True)
 def subbasins_area(idxs_ds, seq, idxs_us_main, uparea, area_min):
     """Returns map with basin IDs, with a minimal area of `area_min`.
     Moving upstream from the basin outlets a new subbasin starts at tributaries

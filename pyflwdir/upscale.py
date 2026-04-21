@@ -19,7 +19,7 @@ __all__ = []
 
 
 #### GENERIC CONVENIENCE FUNCTIONS ####
-@njit
+@njit(cache=True)
 def subidx_2_idx(subidx, subncol, cellsize, ncol):
     """Returns the lowres index <idx> of highres cell index <subidx>."""
     r = int(subidx // subncol) // cellsize
@@ -27,7 +27,7 @@ def subidx_2_idx(subidx, subncol, cellsize, ncol):
     return r * ncol + c
 
 
-@njit
+@njit(cache=True)
 def in_d8(idx0, idx_ds, ncol):
     """Returns True if inside 3x3 (current and 8 neighboring) cells."""
     cond1 = abs(int(idx_ds % ncol) - int(idx0 % ncol)) <= 1  # west - east
@@ -38,7 +38,7 @@ def in_d8(idx0, idx_ds, ncol):
 #### DOUBLE MAXIMUM METHOD ####
 
 
-@njit
+@njit(cache=True)
 def cell_edge(subidx, subncol, cellsize):
     """Returns True if highres cell <subidx> is on edge of lowres cell"""
     ri = (subidx // subncol) % cellsize
@@ -46,7 +46,7 @@ def cell_edge(subidx, subncol, cellsize):
     return ri == 0 or ci == 0 or ri + 1 == cellsize or ci + 1 == cellsize
 
 
-@njit
+@njit(cache=True)
 def map_celledge(subidxs_ds, subshape, cellsize, mv=_mv):
     """Returns a map with ones on highres cells of lowres cell edges"""
     subncol = subshape[1]
@@ -63,7 +63,7 @@ def map_celledge(subidxs_ds, subshape, cellsize, mv=_mv):
     return edges
 
 
-@njit
+@njit(cache=True)
 def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
     """Returns exit highres cell indices of lowres cells according to the
     double maximum method (DMM).
@@ -111,7 +111,7 @@ def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
     return subidxs_rep
 
 
-@njit
+@njit(cache=True)
 def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     """Returns next downstream lowres index by tracing a representative cell
     to where it leaves a buffered area around the lowres cell according to the
@@ -211,7 +211,7 @@ def dmm(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
 #### EFFECTIVE AREA METHOD ####
 
 
-@njit
+@njit(cache=True)
 def effective_area(subidx, subncol, cellsize, r_ratio=0.5):
     """Returns True if highress cell <subidx> is inside the effective area."""
     R = cellsize * r_ratio
@@ -223,7 +223,7 @@ def effective_area(subidx, subncol, cellsize, r_ratio=0.5):
     return ea
 
 
-@njit
+@njit(cache=True)
 def map_effare(subidxs_ds, subshape, cellsize, r_ratio=0.5, mv=_mv):
     """Returns a map with ones on highres cells of lowres effective area."""
     subncol = subshape[1]
@@ -240,7 +240,7 @@ def map_effare(subidxs_ds, subshape, cellsize, r_ratio=0.5, mv=_mv):
     return effare
 
 
-@njit
+@njit(cache=True)
 def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, r_ratio=0.5, mv=_mv):
     """Returns representative highres cell indices of lowres cells
     according to the effective area method.
@@ -287,7 +287,7 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, r_ratio=0.5, m
     return subidxs_rep
 
 
-@njit
+@njit(cache=True)
 def eam_nextidx(
     subidxs_rep, subidxs_ds, subshape, shape, cellsize, r_ratio=0.5, mv=_mv
 ):
@@ -377,7 +377,7 @@ def eam(subidxs_ds, subuparea, subshape, cellsize, r_ratio=0.5, mv=_mv):
 
 
 #### CONNECTING OUTLETS SCALING METHOD ####
-@njit
+@njit(cache=True)
 def ihu_outlets(
     subidxs_rep,
     subidxs_ds,
@@ -434,7 +434,7 @@ def ihu_outlets(
     return subidxs_out
 
 
-@njit
+@njit(cache=True)
 def ihu_nextidx(
     subidxs_out, subidxs_ds, subshape, shape, cellsize, r_ratio=0.5, mv=_mv
 ):
@@ -496,7 +496,7 @@ def ihu_nextidx(
     return idxs_ds, np.array(idxs_fix, dtype=subidxs_ds.dtype)
 
 
-@njit
+@njit(cache=True)
 def next_outlet(
     subidx,
     subidxs_ds,
@@ -519,7 +519,7 @@ def next_outlet(
     return subidx1, idx1, outlet
 
 
-@njit
+@njit(cache=True)
 def ihu_relocate_outlets(
     idxs_fix,
     idxs_ds,
@@ -877,7 +877,7 @@ def ihu_relocate_outlets(
     return idxs_ds, subidxs_out, np.array(idxs_fix_out, dtype=idxs_ds.dtype)
 
 
-@njit
+@njit(cache=True)
 def outlet_pix(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
     """Returns subgrid cells at the edge of a lowres cells with the next downstream
     subgrid cell outside of that lowres cell."""
@@ -905,7 +905,7 @@ def outlet_pix(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
     return subidxs
 
 
-@njit
+@njit(cache=True)
 def new_outlet(
     idx0,
     subidx0,
@@ -968,7 +968,7 @@ def new_outlet(
     return streams, idxs_ds, subidxs_out, idx_ds != mv
 
 
-@njit
+@njit(cache=True)
 def ihu_optimize_rivlen(
     idxs_short,
     valid,
@@ -1019,7 +1019,7 @@ def ihu_optimize_rivlen(
     return idxs_ds, subidxs_out
 
 
-@njit
+@njit(cache=True)
 def ihu_minimize_error(
     idxs_fix,
     valid,
@@ -1309,7 +1309,7 @@ def eam_plus(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
     return ihu(subidxs_ds, subuparea, subshape, cellsize, niter=0, mv=mv)
 
 
-@njit
+@njit(cache=True)
 def upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
     """Returns an array with ones (zeros) if subgrid outlet/representative cells are
     valid (erroneous) in D8, cells with missing values are set to -1.
@@ -1363,7 +1363,7 @@ def upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
     return connect_map, np.array(idxs_fix_lst, dtype=idxs_ds.dtype)
 
 
-@njit
+@njit(cache=True)
 def upscale_check(subidxs_out, idxs_ds, subidxs_ds, minlen=0, mv=_mv):
     # array with outlets (>=0) and streams (-1); nodata value is -9
     assert subidxs_out.size <= 2147483648
