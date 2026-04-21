@@ -5,7 +5,7 @@ Change Log
 in development
 **************
 
-0.5.11 (unreleased)
+0.5.11 (21-04-2026)
 ********************
 * add conversion methods to api refs (#65)
 * add section to upscaling example to save output to file (#73)
