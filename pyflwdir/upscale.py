@@ -887,8 +887,8 @@ def outlet_pix(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
     subgrid cell outside of that lowres cell."""
     subidxs = List()
     # initialize with correct dtype
-    idxs_lst.append(idxs_ds[0])
-    idxs_lst.pop(-1)
+    subidxs.append(subidxs_ds[0])
+    subidxs.pop(-1)
     subnrow = int(subidxs_ds.size / subncol)
     args = (subncol, cellsize, ncol)
     c_ul = (idx % ncol) * cellsize
