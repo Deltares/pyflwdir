@@ -136,7 +136,7 @@ class Flwdir(object):
     @property
     def _dict(self):
         return {
-            "nnodes": self.nnodes,
+            "nnodes": self._nnodes,
             "idxs_ds": self.idxs_ds,
             "idxs_seq": self._seq,
             "idxs_pit": self._pit,
