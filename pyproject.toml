@@ -56,6 +56,7 @@ exclude = ["docs", "notebooks", "envs", "tests", "binder", ".github"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = ["error"]
 
 [tool.make_env]
 channels = ["conda-forge"]

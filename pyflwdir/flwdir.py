@@ -460,7 +460,7 @@ class Flwdir(object):
             n=n,
             idxs_ds=self.idxs_ds,
             idxs_us_main=self.idxs_us_main,
-            strord=self._check_data(strord, "strord", optional=~restrict_strord),
+            strord=self._check_data(strord, "strord", optional=not restrict_strord),
             nodata=nodata,
             mv=self._mv,
         )
@@ -494,7 +494,7 @@ class Flwdir(object):
             n=n,
             idxs_ds=self.idxs_ds,
             idxs_us_main=self.idxs_us_main,
-            strord=self._check_data(strord, "strord", optional=~restrict_strord),
+            strord=self._check_data(strord, "strord", optional=not restrict_strord),
             nodata=nodata,
             mv=self._mv,
         )

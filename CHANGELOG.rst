@@ -4,6 +4,7 @@ Change Log
 
 in development
 **************
+* fix bool negation in moving window stream-order restriction (#88)
 
 0.5.11 (21-04-2026)
 ********************
