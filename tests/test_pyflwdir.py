@@ -168,6 +168,15 @@ def test_moving_average(flw0, flwdir0_rank):
     data = np.random.random(flw0.shape)
     data_smooth = flw0.moving_average(data, n=1, weights=np.ones(flw0.shape))
     assert np.all(data_smooth == flw0.moving_average(data, n=1))
+    strord = flw0.stream_order()
+    assert np.allclose(
+        flw0.moving_average(data, n=1, restrict_strord=True),
+        flw0.moving_average(data, n=1, restrict_strord=True, strord=strord),
+    )
+    assert np.allclose(
+        flw0.moving_median(data, n=1, restrict_strord=True),
+        flw0.moving_median(data, n=1, restrict_strord=True, strord=strord),
+    )
     idxs = flw0.path(idxs_seq[-1], max_length=2)[0][0]
     assert np.isclose(np.mean(data.flat[idxs]), data_smooth.flat[idxs[1]])
     with pytest.raises(ValueError, match="size does not match"):
