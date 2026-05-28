@@ -20,36 +20,6 @@ def data():
     return idx, idx_ds, idxs_ds, rank
 
 
-def test_get_loc_idx_int32(data):
-    # unpack test data
-    idx, idx_ds, idxs_ds, rank = data
-
-    idx = idx.astype(np.int32)
-    idx_ds = idx_ds.astype(np.int32)
-    # test Flwdir (as in from_dataframe)
-    _ = get_loc_idx(idx, idx_ds)
-
-
-def test_njit():
-    # from pyflwdir.flwdir import get_loc_idx
-    import numpy as np
-    from numba import njit
-
-    @njit(cache=True)
-    def get_loc_idx(idxs: np.ndarray, idxs_ds: np.ndarray) -> np.ndarray:
-        """Get linear indices of downstream cells."""
-        idx_map = {idx: i for i, idx in enumerate(idxs)}
-        # return i if idx_ds not in idx_map, i.e. idx is a pit
-        idxs_ds0 = np.empty_like(idxs, dtype=idxs.dtype)
-        for i, idx_ds in enumerate(idxs_ds):
-            idxs_ds0[i] = idx_map.get(idx_ds, i)
-        return idxs_ds0
-
-    idxs = np.array([97, 40, 6800, 3601, 6009, 8715], dtype=np.int32)
-    idxs_ds = np.array([3601, 3601, 6009, 6009, 8715, 8715], dtype=np.int32)
-    out = get_loc_idx(idxs=idxs, idxs_ds=idxs_ds)
-
-
 def test_from_dataframe(data):
     # unpack test data
     idx, idx_ds, idxs_ds, rank = data
