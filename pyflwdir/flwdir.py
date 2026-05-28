@@ -29,11 +29,10 @@ def get_loc_idx(idxs: np.ndarray, idxs_ds: np.ndarray) -> np.ndarray:
     # return i if idx_ds not in idx_map, i.e. idx is a pit
     idxs_ds0 = np.empty_like(idxs, dtype=idxs.dtype)
     for i, idx_ds in enumerate(idxs_ds):
-        idxs_ds0[i] = idx_map.get(idx_ds, i)
-        # if idx_ds in idx_map:
-        #     idxs_ds0[i] = idx_map[idx_ds]
-        # else:
-        #     idxs_ds0[i] = i
+        if idx_ds in idx_map:
+            idxs_ds0[i] = idx_map[idx_ds]
+        else:
+            idxs_ds0[i] = i
     return idxs_ds0
 
 
