@@ -6,9 +6,8 @@ on:
       - published
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
-
 
 jobs:
   build-artifacts:
@@ -21,7 +20,7 @@ jobs:
       - uses: actions/setup-python@v4
         name: Install Python
         with:
-          python-version: 3.9
+          python-version: 3.12
 
       - name: Install dependencies
         run: |
@@ -64,7 +63,7 @@ jobs:
       - uses: actions/setup-python@v4
         name: Install Python
         with:
-          python-version: 3.9
+          python-version: 3.12
 
       - name: Verify the built dist/wheel is valid
         run: |

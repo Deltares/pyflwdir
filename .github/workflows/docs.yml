@@ -31,9 +31,9 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v4
 
-      - uses: prefix-dev/setup-pixi@v0.8.2
+      - uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.41.1
+          pixi-version: v0.64.0
           environments: default
           locked: false
           cache: true
@@ -58,7 +58,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/_build/html
-          exclude_assets: '.buildinfo,_sources/*,_examples/*.ipynb'
+          exclude_assets: ".buildinfo,_sources/*,_examples/*.ipynb"
           destination_dir: ./${{ env.DOC_VERSION }}
           keep_files: false
           full_commit_message: Deploy ${{ env.DOC_VERSION }} to GitHub Pages

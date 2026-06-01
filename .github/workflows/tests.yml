@@ -25,19 +25,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ['39', '310','311', '312', '313']
+        python-version: ["312", "313", "314"]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
       group: ${{ github.workflow }}-${{ matrix.python-version }}-${{ github.ref }}
       cancel-in-progress: true
     steps:
-
       - uses: actions/checkout@v4
 
-      - uses: prefix-dev/setup-pixi@v0.8.2
+      - uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.41.1
+          pixi-version: v0.64.0
           environments: test-py${{ matrix.python-version }}
           locked: false
           cache: true
