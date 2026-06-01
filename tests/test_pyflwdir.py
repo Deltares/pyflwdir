@@ -8,7 +8,7 @@ from affine import Affine
 
 import pyflwdir
 from pyflwdir import core
-from pyflwdir.pyflwdir import FlwdirRaster
+from pyflwdir.pyflwdir import FlwdirRaster, _get_idxs_dtype
 
 
 @pytest.mark.parametrize("flwdir, ftype", [("flwdir0", "d8"), ("nextxy0", "nextxy")])
@@ -33,6 +33,18 @@ def test_from_array_errors(flw0, flwdir0):
         pyflwdir.from_array(flwdir0, ftype="ldd", check_ftype=True)
     with pytest.raises(ValueError, match="shape does not match"):
         pyflwdir.from_array(flwdir0, mask=np.ones((1, 1)))
+
+
+def test_get_idxs_dtype():
+    # the smallest possible dtype is used to represent the indices
+    assert _get_idxs_dtype(100) == np.int32
+    assert _get_idxs_dtype(2147483647) == np.uint32
+    # rasters with more than ~4.29e9 cells must use a signed dtype: a uint64
+    # index dtype is promoted to float64 in numba and breaks indexing (#79)
+    for n in (4294967294, 10_000_000_000):
+        dtype = _get_idxs_dtype(n)
+        assert np.issubdtype(dtype, np.signedinteger)
+        assert np.iinfo(dtype).max >= n
 
 
 def test_flwdirraster_errors(flwdir0, flwdir0_idxs):

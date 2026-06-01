@@ -102,6 +102,31 @@ def from_dem(
     )
 
 
+def _get_idxs_dtype(n):
+    """Return the smallest integer dtype that can represent ``n`` indices.
+
+    A signed ``int64`` (rather than ``uint64``) is used for the largest
+    rasters: mixing unsigned 64-bit indices with the signed missing value
+    (``core._mv``) or signed integers promotes them to ``float64`` in numba,
+    which then fails to index the arrays (see #79). ``int64`` still covers up
+    to ``2**63 - 1`` cells, far beyond any realistic raster size.
+
+    Parameters
+    ----------
+    n : int
+        Number of indices (i.e. raster cells) to represent.
+
+    Returns
+    -------
+    dtype : numpy data type
+    """
+    if n < 2147483647:  # 2**31 - 1
+        return np.int32
+    elif n < 4294967294:  # 2**32 - 2
+        return np.uint32
+    return np.int64
+
+
 def from_array(
     data,
     ftype="infer",
@@ -163,8 +188,7 @@ def from_array(
         data = np.where(mask != 0, data, fd._mv)
 
     # use smallest possible dtype to represent indices
-    n = data.size
-    dtype = np.int32 if n < 2147483647 else (np.uint32 if n < 4294967294 else np.uint64)
+    dtype = _get_idxs_dtype(data.size)
     idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
     idxs_outlet = idxs_pit[np.isin(data.flat[idxs_pit], fd._pv)]
 
