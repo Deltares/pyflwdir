@@ -66,6 +66,9 @@ pandoc = "*"
 [tool.pixi.pypi-dependencies]
 pyflwdir = { path = ".", editable = true }
 
+[tool.pixi.pypi-options]
+no-build = ["pyproj", "rasterio"]
+
 [tool.pixi.environments]
 default = { features = [
     "py312",
@@ -127,12 +130,12 @@ version = { cmd = [
     "from pyflwdir import __version__ as v; print('dev' if 'dev' in v else 'v'+v)",
 ] }
 
-[tool.pixi.target.osx-arm64.dependencies]
-cartopy = ">=0.25.0,<0.26"
-descartes = ">=1.1.0,<2"
-geopandas = ">=1.1.3,<2"
-jupyter = ">=1.1.1,<2"
-matplotlib = ">=3.10.9,<4"
-rasterio = ">=1.4.4,<2"
-pandoc = ">=3.9.0.2,<4"
-numba = ">=0.65.1,<0.66"
+# [tool.pixi.target.osx-arm64.dependencies]
+# cartopy = ">=0.25.0,<0.26"
+# descartes = ">=1.1.0,<2"
+# geopandas = ">=1.1.3,<2"
+# jupyter = ">=1.1.1,<2"
+# matplotlib = ">=3.10.9,<4"
+# rasterio = ">=1.4.4,<2"
+# pandoc = ">=3.9.0.2,<4"
+# numba = ">=0.65.1,<0.66"
