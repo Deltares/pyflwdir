@@ -80,6 +80,7 @@ default = { features = [
     "doc",
     "examples",
 ], solve-group = "default" }
+test-py311 = { features = ["py311", "test"], solve-group = "py311" }
 test-py312 = { features = ["py312", "test"], solve-group = "py312" }
 test-py313 = { features = ["py313", "test"], solve-group = "py313" }
 test-py314 = { features = ["py314", "test"], solve-group = "py314" }
