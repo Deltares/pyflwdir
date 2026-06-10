@@ -10,7 +10,7 @@ license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 dependencies = ["affine", "numba>=0.54,<1.0", "numpy", "scipy"]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 
 [project.urls]
 Home = "https://github.com/Deltares/pyflwdir"
@@ -33,7 +33,7 @@ full = ["pyflwdir[test, doc, examples]"]
 
 [tool.black]
 line-length = 88
-target-version = ['py312']
+target-version = ['py311']
 
 [tool.flit.sdist]
 include = ["pyflwdir"]
@@ -50,6 +50,9 @@ deps_not_in_conda = ["sphinx_design", "black[jupyter]"]
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["linux-64", "win-64", "osx-arm64"]
+
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
 
 [tool.pixi.feature.py312.dependencies]
 python = "3.12.*"
@@ -77,6 +80,7 @@ default = { features = [
     "doc",
     "examples",
 ], solve-group = "default" }
+test-py311 = { features = ["py311", "test"], solve-group = "py311" }
 test-py312 = { features = ["py312", "test"], solve-group = "py312" }
 test-py313 = { features = ["py313", "test"], solve-group = "py313" }
 test-py314 = { features = ["py314", "test"], solve-group = "py314" }
@@ -129,13 +133,3 @@ version = { cmd = [
     "-c",
     "from pyflwdir import __version__ as v; print('dev' if 'dev' in v else 'v'+v)",
 ] }
-
-# [tool.pixi.target.osx-arm64.dependencies]
-# cartopy = ">=0.25.0,<0.26"
-# descartes = ">=1.1.0,<2"
-# geopandas = ">=1.1.3,<2"
-# jupyter = ">=1.1.1,<2"
-# matplotlib = ">=3.10.9,<4"
-# rasterio = ">=1.4.4,<2"
-# pandoc = ">=3.9.0.2,<4"
-# numba = ">=0.65.1,<0.66"
