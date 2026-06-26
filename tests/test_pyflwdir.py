@@ -2,6 +2,8 @@
 """Tests for the pyflwdir module, specifically the wrapping of the methods which
 themselves are testes elsewhere"""
 
+import importlib
+
 import numpy as np
 import pytest
 from affine import Affine
@@ -9,6 +11,8 @@ from affine import Affine
 import pyflwdir
 from pyflwdir import core
 from pyflwdir.pyflwdir import FlwdirRaster, _get_idxs_dtype
+
+pyflwdir_module = importlib.import_module("pyflwdir.pyflwdir")
 
 
 @pytest.mark.parametrize("flwdir, ftype", [("flwdir0", "d8"), ("nextxy0", "nextxy")])
@@ -45,6 +49,20 @@ def test_get_idxs_dtype():
         dtype = _get_idxs_dtype(n)
         assert np.issubdtype(dtype, np.signedinteger)
         assert np.iinfo(dtype).max >= n
+
+
+def test_from_array_nextxy_gets_dtype_from_cell_count(monkeypatch, nextxy0):
+    calls = []
+
+    def get_idxs_dtype(n):
+        calls.append(n)
+        return np.int32
+
+    monkeypatch.setattr(pyflwdir_module, "_get_idxs_dtype", get_idxs_dtype)
+
+    pyflwdir.from_array(nextxy0, ftype="nextxy")
+
+    assert calls == [nextxy0.shape[1] * nextxy0.shape[2]]
 
 
 def test_flwdirraster_errors(flwdir0, flwdir0_idxs):

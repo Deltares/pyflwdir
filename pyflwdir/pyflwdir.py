@@ -188,7 +188,7 @@ def from_array(
         data = np.where(mask != 0, data, fd._mv)
 
     # use smallest possible dtype to represent indices
-    dtype = _get_idxs_dtype(data.size)
+    dtype = _get_idxs_dtype(shape[0] * shape[1])
     idxs_ds, idxs_pit, _ = fd.from_array(data, dtype=dtype)
     idxs_outlet = idxs_pit[np.isin(data.flat[idxs_pit], fd._pv)]
 
