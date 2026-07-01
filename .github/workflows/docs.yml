@@ -19,6 +19,9 @@ on:
       - examples/*
       - pyproject.toml
 
+  permissions:
+    contents: write
+
 jobs:
   # Build docs on Linux
   test-docs:
