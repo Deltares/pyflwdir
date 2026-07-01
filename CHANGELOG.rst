@@ -2,8 +2,11 @@
 Change Log
 ###########
 
-in development
-**************
+unreleased
+**********
+
+0.5.12 (01-07-2026)
+*******************
 * fix bool negation in moving window stream-order restriction (#88)
 * use a signed ``int64`` (instead of ``uint64``) index dtype for very large rasters so upscaling no longer fails with a numba typing error (#79)
 
