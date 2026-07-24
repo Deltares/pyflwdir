@@ -13,11 +13,11 @@ jobs:
   build-artifacts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         name: Install Python
         with:
           python-version: 3.12
@@ -50,7 +50,7 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: releases
@@ -60,7 +60,7 @@ jobs:
           ls -ltrh
           ls -ltrh dist
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         name: Install Python
         with:
           python-version: 3.12
@@ -81,7 +81,7 @@ jobs:
           name: releases
           path: dist
       - name: Publish package to TestPyPI
-        uses: pypa/gh-action-pypi-publish@v1.14.0
+        uses: pypa/gh-action-pypi-publish@v1.14.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TEST_TOKEN }}
@@ -99,7 +99,7 @@ jobs:
           name: releases
           path: dist
       - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.14.0
+        uses: pypa/gh-action-pypi-publish@v1.14.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
