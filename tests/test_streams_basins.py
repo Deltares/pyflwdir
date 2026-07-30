@@ -60,7 +60,7 @@ def test_basins(test_data, flwdir, request):
     lbs0 = lbs[np.argmin(areas)]
     bas1 = regions.region_dissolve(bas, labels=lbs0)
     assert np.all(~np.isin(bas1, lbs0))
-    # test dissovle with linear index
+    # test dissolve with linear index
     idxs = idxs_pit[np.argsort(upa[idxs_pit])][:2]
     lbs0 = bas.flat[idxs]
     bas1 = regions.region_dissolve(bas, idxs=idxs)

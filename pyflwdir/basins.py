@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Methods to delineate (sub)basins."""
 
+from __future__ import annotations
+from typing import Optional
+
 from numba import njit
 import numpy as np
 
@@ -23,7 +26,7 @@ def basins(idxs_ds, idxs_pit, seq, ids=None):
 def subbasins(
     idxs_ds: np.ndarray,
     seq: np.ndarray,
-    riv_mask: np.ndarray | None = None,
+    riv_mask: Optional[np.ndarray] = None,
     mv: int = _mv,
 ):
     """Returns a subbasin map with unique IDs starting from one.
@@ -50,7 +53,7 @@ def subbasins(
     subbas = np.full(idxs_ds.shape, 0, dtype=np.int32)
     idxs = []
     for idx0 in seq[::-1]:  # up- to downstream
-        if riv_mask is not None and riv_mask[idx0] is False:
+        if riv_mask is not None and not riv_mask[idx0]:
             continue
         idx_ds = idxs_ds[idx0]
         if n_upstream[idx_ds] > 1 or idx_ds == idx0:
@@ -107,9 +110,7 @@ def interbasin_mask(idxs_ds, seq, region, stream=None):
 
 
 @njit(cache=True)
-def subbasins_streamorder(
-    idxs_ds, seq, strord, mask=None, min_sto=-2, split_at_confluences=False
-):
+def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
     """Returns a subbasin map with unique IDs starting from one.
     Subbasins are defined based on a minimum stream order.
 
@@ -126,8 +127,6 @@ def subbasins_streamorder(
     min_sto : int, optional
         minimum stream order of subbasins, by default the stream order is set to
         two under the global maxmium stream order.
-    split_at_confluences : bool, optional
-        if True, subbasins are split at confluences, by default False
 
     Returns
     -------
