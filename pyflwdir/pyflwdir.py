@@ -598,9 +598,35 @@ class FlwdirRaster(Flwdir):
         basids = basins.basins(self.idxs_ds, idxs, self.idxs_seq, ids)
         return basids.reshape(self.shape)
 
+    def subbasins(self, riv_mask):
+        """Returns a subbasin map with unique IDs starting from one.
+
+        Parameters
+        ----------
+        riv_mask : 2D array of bool
+            mask of river cells. For example, a stream mask can be derived from a
+            minimum upstream area or a minimum stream order threshold.
+
+        Returns
+        -------
+        subbas : 2D-array of int32
+            map with unique IDs for subbasins
+        idxs_out: 1D array of int
+            linear indices of subbasin outlet cells
+        """
+        subbas, idxs_out = basins.subbasins(
+            idxs_ds=self.idxs_ds,
+            seq=self.idxs_seq,
+            riv_mask=self._check_data(riv_mask, "riv_mask", optional=False),
+            mv=self._mv,
+        )
+        return subbas.reshape(self.shape), idxs_out
+
     def subbasins_streamorder(self, strord=None, mask=None, min_sto=-2):
         """Returns a subbasin map with unique IDs and its outlet linear indices.
-        Subbasins are defined based on a minimum stream order.
+
+        Subbasins are defined based on confluences where a lower order stream
+        segment enters a higher order segment.
 
         Parameters
         ----------

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Methods to delineate (sub)basins."""
+
 from numba import njit
 import numpy as np
 
@@ -16,6 +17,47 @@ def basins(idxs_ds, idxs_pit, seq, ids=None):
     basins = np.zeros(idxs_ds.size, dtype=ids.dtype)
     basins[idxs_pit] = ids
     return core.fillnodata_upstream(idxs_ds, seq, basins, 0)
+
+
+@njit(cache=True)
+def subbasins(
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    riv_mask: np.ndarray | None = None,
+    mv: int = _mv,
+):
+    """Returns a subbasin map with unique IDs starting from one.
+    Subbasins are defined based on a minimum stream order.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    riv_mask : 1D array of bool, optional
+        mask of river cells
+    mv : int, optional
+        value of the "missing value" cell index, by default -1
+
+
+    Returns
+    -------
+    basins : 1D-arrays of int32
+        map with unique IDs for stream_order>=min_sto subbasins
+    """
+    n_upstream = core.upstream_count(idxs_ds, mv, mask=riv_mask)
+    subbas = np.full(idxs_ds.shape, 0, dtype=np.int32)
+    idxs = []
+    for idx0 in seq[::-1]:  # up- to downstream
+        if riv_mask is not None and riv_mask[idx0] is False:
+            continue
+        idx_ds = idxs_ds[idx0]
+        if n_upstream[idx_ds] > 1 or idx_ds == idx0:
+            idxs.append(idx0)
+            subbas[idx0] = len(idxs)
+    idxs1 = np.array(idxs, dtype=idxs_ds.dtype)
+    return core.fillnodata_upstream(idxs_ds, seq, subbas, 0), idxs1
 
 
 # NOTE not unit tested
@@ -65,7 +107,9 @@ def interbasin_mask(idxs_ds, seq, region, stream=None):
 
 
 @njit(cache=True)
-def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
+def subbasins_streamorder(
+    idxs_ds, seq, strord, mask=None, min_sto=-2, split_at_confluences=False
+):
     """Returns a subbasin map with unique IDs starting from one.
     Subbasins are defined based on a minimum stream order.
 
@@ -82,6 +126,8 @@ def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
     min_sto : int, optional
         minimum stream order of subbasins, by default the stream order is set to
         two under the global maxmium stream order.
+    split_at_confluences : bool, optional
+        if True, subbasins are split at confluences, by default False
 
     Returns
     -------
