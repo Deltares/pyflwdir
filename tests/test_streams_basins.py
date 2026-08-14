@@ -60,7 +60,7 @@ def test_basins(test_data, flwdir, request):
     lbs0 = lbs[np.argmin(areas)]
     bas1 = regions.region_dissolve(bas, labels=lbs0)
     assert np.all(~np.isin(bas1, lbs0))
-    # test dissovle with linear index
+    # test dissolve with linear index
     idxs = idxs_pit[np.argsort(upa[idxs_pit])][:2]
     lbs0 = bas.flat[idxs]
     bas1 = regions.region_dissolve(bas, idxs=idxs)
@@ -77,6 +77,31 @@ def test_basins(test_data, flwdir, request):
     [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
 )
 def test_subbasins(test_data, flwdir, request):
+    flwdir = request.getfixturevalue(flwdir)
+    test_data = request.getfixturevalue(test_data)
+    idxs_ds, _, seq, _, mv = [p.copy() for p in test_data]
+    strord = streams.strahler_order(idxs_ds, seq)
+    riv_mask = strord >= (strord.max() - 2)
+    subbas, idxs_out = basins.subbasins(idxs_ds, seq, riv_mask=riv_mask, mv=mv)
+    assert np.all(subbas[idxs_out] == np.arange(1, idxs_out.size + 1, dtype=np.int32))
+    assert np.all(riv_mask[idxs_out])
+    pits = idxs_ds[idxs_out] == idxs_out
+    assert np.all(subbas[idxs_out][~pits] != subbas[idxs_ds[idxs_out]][~pits])
+    lbs, idxs_region_out = regions.region_outlets(
+        subbas.reshape(flwdir.shape), idxs_ds, seq
+    )
+    assert np.all(lbs == subbas[idxs_region_out])
+    # check if all idxs_region_out are upstream of a river cell confluence or pit
+    idxs_ds_out = idxs_ds[idxs_region_out]
+    n_upstream = core.upstream_count(idxs_ds, mv, mask=riv_mask)
+    assert np.all((n_upstream[idxs_ds_out] > 1) | (idxs_ds_out == idxs_region_out))
+
+
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+)
+def test_subbasins_pfafstetter(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
     test_data = request.getfixturevalue(test_data)
     idxs_ds, idxs_pit, seq, _, mv = [p.copy() for p in test_data]
@@ -101,7 +126,20 @@ def test_subbasins(test_data, flwdir, request):
     pfaf_path = pfaf2[core.path(idx0, idxs_us_main, mv=mv)[0][0]]
     assert np.all(pfaf_path % 2 == 1)  # only interbasin (=odd values)
     assert np.all(np.diff(pfaf_path) >= 0)  # increasing values upstream
-    ## area subbasins
+
+
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+)
+def test_subbasins_area(test_data, flwdir, request):
+    flwdir = request.getfixturevalue(flwdir)
+    test_data = request.getfixturevalue(test_data)
+    idxs_ds, _, seq, _, mv = [p.copy() for p in test_data]
+    _, ncol = seq.size, flwdir.shape[1]
+    upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
+    idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
+    # area subbasins
     subbas, idxs_out1 = basins.subbasins_area(
         idxs_ds, seq, idxs_us_main, upa, area_min=5
     )

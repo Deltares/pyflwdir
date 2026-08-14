@@ -5,6 +5,10 @@ Change Log
 unreleased
 **********
 
+0.5.13 (unreleased)
+*******************
+* add FlwdirRaster.subbasins method to create subbasins at all river confluences
+
 0.5.12 (01-07-2026)
 *******************
 * fix bool negation in moving window stream-order restriction (#88)

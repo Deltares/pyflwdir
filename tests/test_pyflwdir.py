@@ -254,6 +254,17 @@ def test_subbasins(flw0):
     assert np.all(subbas[bas0 != 0] > 0)
     subbas = flw0.subbasins_area(10)[0]
     assert np.all(subbas[bas0 != 0] > 0)
+    # river confluence subbasins with a 2D mask
+    strord = flw0.stream_order()
+    riv_mask = strord >= (strord.max() - 2)
+    subbas, idxs_out = flw0.subbasins(riv_mask)
+    assert subbas.shape == flw0.shape
+    assert subbas.dtype == np.int32
+    assert idxs_out.ndim == 1 and idxs_out.size > 0
+    assert np.all(
+        subbas.flat[idxs_out] == np.arange(1, idxs_out.size + 1, dtype=np.int32)
+    )
+    assert np.all(subbas[riv_mask] > 0)
 
 
 def test_uparea(flw0):
