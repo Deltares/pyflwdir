@@ -487,7 +487,14 @@ def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
 
 
 ## VECTORIZE
-def features(flowpaths, xs=None, ys=None, transform=None, shape=None, **kwargs):
+def features(
+    flowpaths: list[np.ndarray],
+    xs: np.ndarray | None = None,
+    ys: np.ndarray | None = None,
+    transform=None,
+    shape=None,
+    **kwargs,
+) -> list[dict]:
     """Returns a LineString feature for each stream
 
     Parameters
@@ -518,12 +525,12 @@ def features(flowpaths, xs=None, ys=None, transform=None, shape=None, **kwargs):
     else:
         _size = xs.size
 
-    for key in kwargs:
-        if not isinstance(kwargs[key], np.ndarray) or kwargs[key].size != _size:
+    for key, value in kwargs.items():
+        if not isinstance(value, np.ndarray) or value.size != _size:
             raise ValueError(
                 f'Kwargs map "{key}" should be ndarrays of same size as coordinates'
             )
-    feats = list()
+    feats = []
     for j, idxs in enumerate(flowpaths):
         n = len(idxs)
         if n < 2:

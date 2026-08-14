@@ -1,19 +1,23 @@
-# -*- coding: utf-8 -*-
-""""""
+"""Main module for flow direction parsing and analysis."""
+
+import logging
+import pickle
+import pprint
+from typing import TYPE_CHECKING
 
 import numpy as np
-import pprint
-import pickle
-import logging
 from numba import njit
 
 from . import (
     arithmetics,
     core,
     dem,
-    streams,
     rivers,
+    streams,
 )
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 # export
 __all__ = ["Flwdir", "from_dataframe"]
@@ -29,14 +33,11 @@ def get_loc_idx(idxs: np.ndarray, idxs_ds: np.ndarray) -> np.ndarray:
     # return i if idx_ds not in idx_map, i.e. idx is a pit
     idxs_ds0 = np.empty_like(idxs, dtype=idxs.dtype)
     for i, idx_ds in enumerate(idxs_ds):
-        if idx_ds in idx_map:
-            idxs_ds0[i] = idx_map[idx_ds]
-        else:
-            idxs_ds0[i] = i
+        idxs_ds0[i] = idx_map.get(idx_ds, i)
     return idxs_ds0
 
 
-def from_dataframe(df: "pandas.DataFrame", ds_col="idx_ds") -> "Flwdir":
+def from_dataframe(df: "pd.DataFrame", ds_col="idx_ds") -> "Flwdir":
     """Create a Flwdir object from a dataframe with flow direction data.
 
     Parameters
@@ -57,16 +58,7 @@ def from_dataframe(df: "pandas.DataFrame", ds_col="idx_ds") -> "Flwdir":
     return Flwdir(idxs_ds=get_loc_idx(idxs=idxs, idxs_ds=idxs_ds))
 
 
-# def _get_idxs_ds_upstream(idxs: np.ndarray, idxs_up: np.ndarray) -> np.ndarray:
-#     idxs_ds0 = np.arange(idxs.size, dtype=idxs.dtype)
-#     for j, idx_up in enumerate(idxs_up):
-#         for i, idx in enumerate(idxs):
-#             if idx == idx_up:
-#                 idxs_up0[j] = i
-#     return idxs_ds0
-
-
-class Flwdir(object):
+class Flwdir:
     """Flow direction parsed to general actionable format."""
 
     def __init__(
@@ -118,7 +110,7 @@ class Flwdir(object):
 
         # set placeholders only used if cache if True
         self.cache = cache
-        self._cached = dict()
+        self._cached = {}
         if area is not None:
             self._cached.upate(area=area)
 
@@ -779,7 +771,14 @@ class Flwdir(object):
 
     ### SHORTCUTS ###
 
-    def _check_data(self, data, name, optional=False, flatten=True, **kwargs):
+    def _check_data(
+        self,
+        data: np.ndarray | None,
+        name: str,
+        optional: bool = False,
+        flatten: bool = True,
+        **kwargs,
+    ) -> np.ndarray | None:
         """check data shape and size; by default return flattened array"""
         if data is None and optional:
             return
@@ -802,7 +801,9 @@ class Flwdir(object):
                 raise ValueError(f'"{name}" shape does not match.')
             return data
 
-    def _check_idxs_xy(self, idxs, streams=None):
+    def _check_idxs_xy(
+        self, idxs: np.ndarray | None = None, streams: np.ndarray | None = None
+    ) -> np.ndarray:
         idxs = np.atleast_1d(idxs).ravel()
         # snap to streams
         streams = self._check_data(streams, "streams", optional=True)
