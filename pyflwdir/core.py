@@ -1,21 +1,23 @@
-# -*- coding: utf-8 -*-
 """Core flow direction functionality. All functions work based on the an array of
 next downstream indices (idxs_ds) and mostly return indices."""
 
+from typing import Literal
+
+import numpy as np
+from affine import Affine
 from numba import njit
 from numba.typed import List
-import numpy as np
 
 from . import gis_utils
 
 __all__ = []
-_mv = np.intp(-1)
+_mv = np.intp(-1)  # missing value for idxs_ds
 
 # flwdir properties
 
 
 @njit(cache=True)
-def rank(idxs_ds, mv=_mv):
+def rank(idxs_ds: np.ndarray, mv: int = _mv) -> tuple[np.ndarray, int]:
     """Returns the rank, i.e. the distance counted in number of cells from the outlet."""
     ranks = np.full(idxs_ds.size, -9999, dtype=np.int32)
     n = 0
@@ -48,7 +50,9 @@ def rank(idxs_ds, mv=_mv):
 
 
 @njit(cache=True)
-def upstream_count(idxs_ds, mv=_mv, mask=None):
+def upstream_count(
+    idxs_ds: np.ndarray, mv: int = _mv, mask: np.ndarray | None = None
+) -> np.ndarray:
     """Returns array with number of upstream cells per cell."""
     n_up = np.full(idxs_ds.size, -9, dtype=np.int8)
     for idx0 in range(idxs_ds.size):
@@ -65,7 +69,7 @@ def upstream_count(idxs_ds, mv=_mv, mask=None):
 
 
 @njit(cache=True)
-def upstream_matrix(idxs_ds, mv=_mv):
+def upstream_matrix(idxs_ds: np.ndarray, mv: int = _mv) -> np.ndarray:
     """Returns a 2D array with upstream cell indices for each cell.
     The shape of the array is (idxs_ds.size, max number of upstream cells per cell).
     """
@@ -85,7 +89,7 @@ def upstream_matrix(idxs_ds, mv=_mv):
 
 
 @njit(cache=True)
-def idxs_seq(idxs_ds, idxs_pit, mv=_mv):
+def idxs_seq(idxs_ds: np.ndarray, idxs_pit: np.ndarray, mv: int = _mv) -> np.ndarray:
     """Returns indices ordered from down- to upstream.
 
     Parameters
@@ -118,7 +122,9 @@ def idxs_seq(idxs_ds, idxs_pit, mv=_mv):
 
 
 @njit(cache=True)
-def fillnodata_upstream(idxs_ds, seq, data, nodata):
+def fillnodata_upstream(
+    idxs_ds: np.ndarray, seq: np.ndarray, data: np.ndarray, nodata: float
+) -> np.ndarray:
     """Retuns a a copy of <data> where upstream cell with <nodata> values are filled
     based on the first downstream valid cell value.
 
@@ -147,7 +153,13 @@ def fillnodata_upstream(idxs_ds, seq, data, nodata):
 
 
 @njit(cache=True)
-def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
+def fillnodata_downstream(
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    data: np.ndarray,
+    nodata: float,
+    how: Literal["min", "max", "sum"] = "max",
+) -> np.ndarray:
     """Retuns a a copy of <data> where downstream cells with <nodata> values are filled
     based on the first upstream valid cell value.
 
@@ -170,8 +182,8 @@ def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
         infilled data
     """
     data_out = data.copy()
-    # TODO simplify max/min/sum
-    assert how in ["min", "max", "sum"]
+    if how not in ["min", "max", "sum"]:
+        raise ValueError("Invalid how argument, must be 'min', 'max' or 'sum'.")
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
         if idx_ds == idx0:  # pit
@@ -189,7 +201,9 @@ def fillnodata_downstream(idxs_ds, seq, data, nodata, how="max"):
 
 
 @njit(cache=True)
-def main_upstream(idxs_ds, uparea, upa_min=0.0, mv=_mv):
+def main_upstream(
+    idxs_ds: np.ndarray, uparea: np.ndarray, upa_min: float = 0.0, mv: int = _mv
+) -> np.ndarray:
     """Returns the index of the upstream cell with the largest uparea,
     -1 if no upstream cells (i.e. at headwater).
 
@@ -223,7 +237,7 @@ def main_upstream(idxs_ds, uparea, upa_min=0.0, mv=_mv):
 
 
 @njit(cache=True)
-def pit_indices(idxs_ds):
+def pit_indices(idxs_ds: np.ndarray) -> np.ndarray:
     """Returns pit indices, i.e. cells with no downstream cell"""
     idx_lst = []
     for idx0 in range(idxs_ds.size):
@@ -233,7 +247,7 @@ def pit_indices(idxs_ds):
 
 
 @njit(cache=True)
-def loop_indices(idxs_ds, mv=_mv):
+def loop_indices(idxs_ds: np.ndarray, mv: int = _mv) -> np.ndarray:
     """Returns indices loop cells, i.e. cells which do not have a pit at its most"""
     idxs = []
     ranks = rank(idxs_ds, mv)[0]
@@ -244,21 +258,27 @@ def loop_indices(idxs_ds, mv=_mv):
 
 
 @njit(cache=True)
-def headwater_indices(idxs_ds, mask=None, mv=_mv):
+def headwater_indices(
+    idxs_ds: np.ndarray, mask: np.ndarray | None = None, mv: int = _mv
+) -> np.ndarray:
     """Returns indices of headwater cells, i.e. cells with no upstream neighbors"""
     nup = upstream_count(idxs_ds, mask=mask, mv=mv)
     return np.where(nup == 0)[0].astype(idxs_ds.dtype)
 
 
 @njit(cache=True)
-def confluence_indices(idxs_ds, mask=None, mv=_mv):
+def confluence_indices(
+    idxs_ds: np.ndarray, mask: np.ndarray | None = None, mv: int = _mv
+) -> np.ndarray:
     """Returns indices of confluence cells, i.e. cells with two or more upstream neighbors"""
     nup = upstream_count(idxs_ds, mask=mask, mv=mv)
     return np.where(nup > 1)[0].astype(idxs_ds.dtype)
 
 
 @njit(cache=True)
-def flwdir_tuples(idxs_ds, mask=None, mv=_mv):
+def flwdir_tuples(
+    idxs_ds: np.ndarray, mask: np.ndarray | None = None, mv: int = _mv
+) -> list:
     """Returns list of up- and downstream linear index couples."""
     idxs = []
     for idx0 in range(idxs_ds.size):
@@ -273,13 +293,13 @@ def flwdir_tuples(idxs_ds, mask=None, mv=_mv):
 
 
 @njit(cache=True)
-def _d8_idx(idx0, shape):
+def _d8_idx(idx0: int, shape: tuple[int, int]) -> np.ndarray:
     """Returns linear indices of eight neighboring cells"""
     nrow, ncol = shape
     # assume c-style row-major
     r = int(idx0 // ncol)
     c = int(idx0 % ncol)
-    idxs_lst = list()
+    idxs_lst = []
     for dr in range(-1, 2):
         for dc in range(-1, 2):
             if dr == 0 and dc == 0:  # skip pit -> return empty array
@@ -292,12 +312,14 @@ def _d8_idx(idx0, shape):
 
 
 @njit(cache=True)
-def _upstream_d8_idx(idx0, idxs_ds, shape):
+def _upstream_d8_idx(
+    idx0: int, idxs_ds: np.ndarray, shape: tuple[int, int]
+) -> np.ndarray:
     """Returns a numpy array with linear indices of upstream neighbors.
     NOTE: This method only works for D8 type of flow direciton data. If upstream
     neighbours our outside the dirict 8 neighbors the returned array  will be
     incomplete."""
-    idxs_lst = list()
+    idxs_lst = []
     for idx in _d8_idx(idx0, shape):
         if idxs_ds[idx] == idx0:
             idxs_lst.append(idx)
@@ -307,16 +329,16 @@ def _upstream_d8_idx(idx0, idxs_ds, shape):
 # TODO use pre-set distance or length raster
 @njit(cache=True)
 def _trace(
-    idx0,
-    idxs_nxt,
-    ncol=None,
-    mask=None,
-    max_length=None,
-    real_length=False,
-    latlon=False,
+    idx0: int,
+    idxs_nxt: np.ndarray,
+    ncol: int | None = None,
+    mask: np.ndarray | None = None,
+    max_length: float | None = None,
+    real_length: bool = False,
+    latlon: bool = False,
     transform=gis_utils.IDENTITY,
-    mv=_mv,
-):
+    mv: int = _mv,
+) -> tuple[np.ndarray, float]:
     """Returns indices of downstream cells, including the start cell, until:
     - a pit (downstream) / no upstream cell is found (upstream)
     - a True cell is found in mask OR
@@ -367,7 +389,14 @@ def _trace(
 
 
 @njit(cache=True)
-def _window(idx0, n, idxs_ds, idxs_us_main, strord=None, mv=_mv):
+def _window(
+    idx0: int,
+    n: int,
+    idxs_ds: np.ndarray,
+    idxs_us_main: np.ndarray,
+    strord: np.ndarray | None = None,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns the indices of between the nth upstream to nth downstream cell from
     the current cell. Upstream cells are with based on the  _main_upstream method.
     If strord is given, only include cells of same stream order when moving downstream.
@@ -399,16 +428,16 @@ def _window(idx0, n, idxs_ds, idxs_us_main, strord=None, mv=_mv):
 
 @njit(cache=True)
 def path(
-    idxs0,
-    idxs_nxt,
-    ncol=None,
-    mask=None,
-    max_length=None,
-    real_length=False,
-    latlon=False,
+    idxs0: np.ndarray,
+    idxs_nxt: np.ndarray,
+    ncol: int | None = None,
+    mask: np.ndarray | None = None,
+    max_length: float | None = None,
+    real_length: bool = False,
+    latlon: bool = False,
     transform=gis_utils.IDENTITY,
-    mv=_mv,
-):
+    mv: int = _mv,
+) -> tuple[list, np.ndarray]:
     """See _trace method, except this function works for a 1D-array linear indices.
 
     Returns
@@ -439,16 +468,16 @@ def path(
 
 @njit(cache=True)
 def snap(
-    idxs0,
-    idxs_nxt,
-    ncol=None,
-    mask=None,
-    max_length=None,
-    real_length=False,
-    latlon=False,
-    transform=gis_utils.IDENTITY,
-    mv=_mv,
-):
+    idxs0: np.ndarray,
+    idxs_nxt: np.ndarray,
+    ncol: int | None = None,
+    mask: np.ndarray | None = None,
+    max_length: float | None = None,
+    real_length: bool = False,
+    latlon: bool = False,
+    transform: Affine = gis_utils.IDENTITY,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns indices the most down-/upstream cell where mask is True or is pit.
 
     See _trace method for parameters, except this function works based on a
@@ -482,7 +511,7 @@ def snap(
 
 # NOTE: not unit tested
 @njit(cache=True)
-def inflow_idxs(idxs_ds, seq, region):
+def inflow_idxs(idxs_ds: np.ndarray, seq: np.ndarray, region: np.ndarray) -> np.ndarray:
     """returns linear indices of most upstream cells within region"""
     idxs = []
     mask = np.ones(idxs_ds.size, dtype=np.bool_)
@@ -499,7 +528,9 @@ def inflow_idxs(idxs_ds, seq, region):
 
 # NOTE: not unit tested
 @njit(cache=True)
-def outflow_idxs(idxs_ds, seq, region):
+def outflow_idxs(
+    idxs_ds: np.ndarray, seq: np.ndarray, region: np.ndarray
+) -> np.ndarray:
     """returns linear indices of most downstream cells within region"""
     idxs = []
     mask = np.ones(idxs_ds.size, dtype=np.bool_)

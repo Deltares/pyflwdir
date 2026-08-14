@@ -51,23 +51,32 @@ def classify_estuary(
 
 
 def rivdph_gvf(
-    idxs_ds,
-    seq,
-    zs,
-    rivdph,
-    qbankfull,
-    rivdst,
-    rivwth,
-    manning,
-    min_rivslp=1e-5,
-    min_rivdph=1,
-    eps=1e-1,
-    n_iter=2,
-    logger=logger,
-):
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    zs: np.ndarray,
+    rivdph: np.ndarray,
+    qbankfull: np.ndarray,
+    rivdst: np.ndarray,
+    rivwth: np.ndarray,
+    manning: np.ndarray,
+    min_rivslp: float = 1e-5,
+    min_rivdph: float = 1,
+    eps: float = 1e-1,
+    n_iter: int = 2,
+    logger: logging.Logger = logger,
+) -> np.ndarray:
     # gradually varying flow solver for directed flw graph
     # NOTE: experimental!!
-    def _gvf(x, h, n, q, s0, w, g=9.81, eps=eps):
+    def _gvf(
+        x: float,
+        h: float,
+        n: float,
+        q: float,
+        s0: float,
+        w: float,
+        g: float = 9.81,
+        eps: float = eps,
+    ) -> float:
         h = max(h, eps)
         sf = lambda h: n**2 * (q / (w * h)) ** 2 * ((w * h) / (2 * h + w)) ** (-4 / 3)
         fr = lambda h: q / (w * np.sqrt(g * h))

@@ -1,16 +1,24 @@
-# -*- coding: utf-8 -*-
 """Methods to derive unit catchments from high resolution flow direction data."""
 
-from numba import njit
-import numpy as np
+from typing import Literal
 
-from . import core, upscale, arithmetics
+import numpy as np
+from numba import njit
+
+from . import arithmetics, core, upscale
 
 _mv = core._mv
 __all__ = []
 
 
-def outlets(idxs_ds, uparea, cellsize, shape, method="eam_plus", mv=_mv):
+def outlets(
+    idxs_ds: np.ndarray,
+    uparea: np.ndarray,
+    cellsize: int,
+    shape: tuple[int, int],
+    method: Literal["eam_plus", "dmm"] = "eam_plus",
+    mv: int = _mv,
+) -> tuple[np.ndarray, tuple[int, int]]:
     """Returns linear indices of unit catchment outlet cells.
 
     For more information about the methods see upscale script.
@@ -50,12 +58,12 @@ def outlets(idxs_ds, uparea, cellsize, shape, method="eam_plus", mv=_mv):
 
 @njit(cache=True)
 def ucat_area(
-    idxs_out,
-    idxs_ds,
-    seq,
-    area,
-    mv=_mv,
-):
+    idxs_out: np.ndarray,
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    area: np.ndarray,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns the segment catchment map and contributing area.
 
     Parameters
@@ -95,14 +103,14 @@ def ucat_area(
 
 @njit(cache=True)
 def ucat_volume(
-    idxs_out,
-    idxs_ds,
-    seq,
-    hand,
-    area,
-    depths=np.arange(0.5, 3.0, 0.5, dtype=np.float32),
-    mv=_mv,
-):
+    idxs_out: np.ndarray,
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    hand: np.ndarray,
+    area: np.ndarray,
+    depths: np.ndarray | None = None,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns the floodplain volume as function of the depth.
 
     Parameters
@@ -123,6 +131,8 @@ def ucat_volume(
     1D array of float of size idxs_out
         unit catchment floodplain profile
     """
+    if depths is None:
+        depths = np.arange(0.5, 3.0, 0.5, dtype=np.float32)
     # initialize outputs
     ucatch_map = np.full(idxs_ds.size, 0, dtype=idxs_ds.dtype)
     fldpln_vol = np.full((depths.size, idxs_out.size), -9999, dtype=depths.dtype)
@@ -144,13 +154,13 @@ def ucat_volume(
 
 @njit(cache=True)
 def segment_length(
-    idxs_out,
-    idxs_nxt,
-    distnc,
-    mask=None,
-    nodata=-9999.0,
-    mv=_mv,
-):
+    idxs_out: np.ndarray,
+    idxs_nxt: np.ndarray,
+    distnc: np.ndarray,
+    mask: np.ndarray | None = None,
+    nodata: float = -9999.0,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns the channel length which is defined by the path starting at the outlet
     pixel of each cell moving up- or downstream until it reaches the next upstream outlet
     pixel. If moving upstream and a pixel has multiple upstream neighbors, the pixel with
@@ -207,14 +217,14 @@ def segment_length(
 
 @njit(cache=True)
 def segment_average(
-    idxs_out,
-    idxs_nxt,
-    data,
-    weights,
-    mask=None,
-    nodata=-9999.0,
-    mv=_mv,
-):
+    idxs_out: np.ndarray,
+    idxs_nxt: np.ndarray,
+    data: np.ndarray,
+    weights: np.ndarray,
+    mask: np.ndarray | None = None,
+    nodata: float = -9999.0,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns the mean value over a river segment. The segment is defined by the flow path starting
     at the outlet pixel of each cell moving up- or downstream until it reaches the next
     upstream outlet pixel.
@@ -275,13 +285,13 @@ def segment_average(
 ## NOTE: not unit tested
 @njit(cache=True)
 def segment_median(
-    idxs_out,
-    idxs_nxt,
-    data,
-    mask=None,
-    nodata=-9999.0,
-    mv=_mv,
-):
+    idxs_out: np.ndarray,
+    idxs_nxt: np.ndarray,
+    data: np.ndarray,
+    mask: np.ndarray | None = None,
+    nodata: float = -9999.0,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns the median value along a river segment. The segment is defined by the flow path starting
     at the segment outlet pixel of each cell moving up- or downstream until it reaches the next
     segment outlet pixel.
@@ -340,12 +350,12 @@ def segment_median(
 ## NOTE: not unit tested
 @njit(cache=True)
 def segment_indices(
-    idxs_out,
-    idxs_nxt,
-    mask=None,
-    max_len=0,
-    mv=_mv,
-):
+    idxs_out: np.ndarray,
+    idxs_nxt: np.ndarray,
+    mask: np.ndarray | None = None,
+    max_len: int = 0,
+    mv: int = _mv,
+) -> list[np.ndarray]:
     """Returns the linear indices of river segments. The segment is defined by the flow path starting
     at the segment outlet pixel of each cell moving up- or downstream until it reaches the next
     segment outlet pixel.
@@ -413,15 +423,15 @@ def segment_indices(
 ## NOTE: not unit tested
 @njit(cache=True)
 def segment_slope(
-    idxs_out,
-    idxs_nxt,
-    elevtn,
-    distnc,
-    mask=None,
-    nodata=-9999.0,
-    lstsq=True,
-    mv=_mv,
-):
+    idxs_out: np.ndarray,
+    idxs_nxt: np.ndarray,
+    elevtn: np.ndarray,
+    distnc: np.ndarray,
+    mask: np.ndarray | None = None,
+    nodata: float = -9999.0,
+    lstsq: bool = True,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns the slope of the river segment segment slope. The segment is defined by the flow path starting
     at the segment outlet pixel of each cell moving up- or downstream until it reaches the next
     segment outlet pixel. The slope is calculated based on a linear fit if `lstsq` equals True,
@@ -487,16 +497,16 @@ def segment_slope(
 
 @njit(cache=True)
 def fixed_length_slope(
-    idxs_out,
-    idxs_ds,
-    idxs_us_main,
-    elevtn,
-    distnc,
-    length=1e3,
-    mask=None,
-    lstsq=True,
-    mv=_mv,
-):
+    idxs_out: np.ndarray,
+    idxs_ds: np.ndarray,
+    idxs_us_main: np.ndarray,
+    elevtn: np.ndarray,
+    distnc: np.ndarray,
+    length: float = 1e3,
+    mask: np.ndarray | None = None,
+    lstsq: bool = True,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns the channel slope at the outlet pixel. The slope is based on the elevation values
     within half length distance around from the segment outlet pixel based on least squared error fit.
     The slope is calculated based on a linear fit if `lstsq` equals True, else it based on the average slope.

@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-"""Description of LDD flow direction type and methods to convert to/from general
-nextidx."""
+"""Implementation of LDD flow direction type and methods."""
 
-from numba import njit, vectorize
 import numpy as np
+from numba import njit
+
 from . import core, core_d8
 
 __all__ = []
@@ -17,12 +16,8 @@ _pv = np.uint8(5)
 _all = np.array([7, 8, 9, 4, 5, 6, 1, 2, 3, 255], dtype=np.uint8)
 
 
-from numba import njit
-import numpy as np
-
-
 @njit("Tuple((int8, int8))(uint8)", cache=True)
-def drdc(dd):
+def drdc(dd: int) -> tuple[int, int]:
     """convert ldd value to delta row/col"""
     dr, dc = np.int8(0), np.int8(0)
     if dd >= np.uint8(4):  # W / PIT / E / NW / N / NE
@@ -39,7 +34,9 @@ def drdc(dd):
 
 
 @njit(cache=True)
-def from_array(flwdir, _mv=_mv, dtype=np.intp):
+def from_array(
+    flwdir: np.ndarray, _mv: int = _mv, dtype: np.dtype = np.intp
+) -> tuple[np.ndarray, np.ndarray, int]:
     """convert 2D LDD data to 1D next downstream indices"""
     nrow, ncol = flwdir.shape
     flwdir_flat = flwdir.ravel()
@@ -67,7 +64,9 @@ def from_array(flwdir, _mv=_mv, dtype=np.intp):
 
 
 @njit(cache=True)
-def _downstream_idx(idx0, flwdir_flat, shape, mv=core._mv):
+def _downstream_idx(
+    idx0: int, flwdir_flat: np.ndarray, shape: tuple[int, int], mv: int = core._mv
+) -> int:
     """Returns linear index of the donwstream neighbor; idx0 if at pit"""
     nrow, ncol = shape
     r0 = idx0 // ncol
@@ -83,7 +82,9 @@ def _downstream_idx(idx0, flwdir_flat, shape, mv=core._mv):
 
 # general
 @njit(cache=True)
-def to_array(idxs_ds, shape, mv=core._mv):
+def to_array(
+    idxs_ds: np.ndarray, shape: tuple[int, int], mv: int = core._mv
+) -> np.ndarray:
     """convert downstream linear indices to dense D8 raster"""
     ncol = shape[1]
     flwdir = np.full(idxs_ds.size, _mv, dtype=np.uint8)
@@ -101,24 +102,30 @@ def to_array(idxs_ds, shape, mv=core._mv):
     return flwdir.reshape(shape)
 
 
-def isvalid(flwdir, _all=_all):
+def isvalid(flwdir: np.ndarray, _all: np.ndarray = _all) -> bool:
     """True if 2D LDD raster is valid"""
     return core_d8.isvalid(flwdir, _all)
 
 
 @njit(cache=True)
-def ispit(dd, _pv=_pv):
+def ispit(dd: int, _pv: int = _pv) -> bool:
     """True if LDD pit"""
     return dd == _pv
 
 
 @njit(cache=True)
-def isnodata(dd, _mv=_mv):
+def isnodata(dd: int, _mv: int = _mv) -> bool:
     """True if LDD nodata"""
     return core_d8.isnodata(dd, _mv)
 
 
 @njit(cache=True)
-def _upstream_idx(idx0, flwdir_flat, shape, _us=_us, dtype=np.intp):
+def _upstream_idx(
+    idx0: int,
+    flwdir_flat: np.ndarray,
+    shape: tuple[int, int],
+    _us: np.ndarray = _us,
+    dtype: np.dtype = np.intp,
+) -> np.ndarray:
     """Returns a numpy array (int64) with linear indices of upstream neighbors"""
     return core_d8._upstream_idx(idx0, flwdir_flat, shape, _us, dtype=dtype)

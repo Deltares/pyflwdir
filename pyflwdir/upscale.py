@@ -20,7 +20,7 @@ __all__ = []
 
 #### GENERIC CONVENIENCE FUNCTIONS ####
 @njit(cache=True)
-def subidx_2_idx(subidx, subncol, cellsize, ncol):
+def subidx_2_idx(subidx: int, subncol: int, cellsize: int, ncol: int) -> int:
     """Returns the lowres index <idx> of highres cell index <subidx>."""
     r = int(subidx // subncol) // cellsize
     c = int(subidx % subncol) // cellsize
@@ -28,7 +28,7 @@ def subidx_2_idx(subidx, subncol, cellsize, ncol):
 
 
 @njit(cache=True)
-def in_d8(idx0, idx_ds, ncol):
+def in_d8(idx0: int, idx_ds: int, ncol: int) -> bool:
     """Returns True if inside 3x3 (current and 8 neighboring) cells."""
     cond1 = abs(int(idx_ds % ncol) - int(idx0 % ncol)) <= 1  # west - east
     cond2 = abs(int(idx_ds // ncol) - int(idx0 // ncol)) <= 1  # south - north
@@ -39,7 +39,7 @@ def in_d8(idx0, idx_ds, ncol):
 
 
 @njit(cache=True)
-def cell_edge(subidx, subncol, cellsize):
+def cell_edge(subidx: int, subncol: int, cellsize: int) -> bool:
     """Returns True if highres cell <subidx> is on edge of lowres cell"""
     ri = (subidx // subncol) % cellsize
     ci = (subidx % subncol) % cellsize
@@ -47,7 +47,9 @@ def cell_edge(subidx, subncol, cellsize):
 
 
 @njit(cache=True)
-def map_celledge(subidxs_ds, subshape, cellsize, mv=_mv):
+def map_celledge(
+    subidxs_ds: np.ndarray, subshape: tuple[int, int], cellsize: int, mv: int = _mv
+) -> np.ndarray:
     """Returns a map with ones on highres cells of lowres cell edges"""
     subncol = subshape[1]
     # allocate output array
@@ -64,7 +66,14 @@ def map_celledge(subidxs_ds, subshape, cellsize, mv=_mv):
 
 
 @njit(cache=True)
-def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
+def dmm_exitcell(
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    shape: tuple[int, int],
+    cellsize: int,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns exit highres cell indices of lowres cells according to the
     double maximum method (DMM).
 
@@ -112,7 +121,14 @@ def dmm_exitcell(subidxs_ds, subuparea, subshape, shape, cellsize, mv=_mv):
 
 
 @njit(cache=True)
-def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
+def dmm_nextidx(
+    subidxs_rep: np.ndarray,
+    subidxs_ds: np.ndarray,
+    subshape: tuple[int, int],
+    shape: tuple[int, int],
+    cellsize: int,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns next downstream lowres index by tracing a representative cell
     to where it leaves a buffered area around the lowres cell according to the
     double maximum method (DMM).
@@ -169,7 +185,13 @@ def dmm_nextidx(subidxs_rep, subidxs_ds, subshape, shape, cellsize, mv=_mv):
     return idxs_ds
 
 
-def dmm(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
+def dmm(
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    cellsize: int,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray, tuple[int, int]]:
     """Returns the upscaled next downstream index based on the
     double maximum method (DMM) [1].
 
@@ -212,7 +234,9 @@ def dmm(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
 
 
 @njit(cache=True)
-def effective_area(subidx, subncol, cellsize, r_ratio=0.5):
+def effective_area(
+    subidx: int, subncol: int, cellsize: int, r_ratio: float = 0.5
+) -> bool:
     """Returns True if highress cell <subidx> is inside the effective area."""
     R = cellsize * r_ratio
     offset = cellsize / 2.0 - 0.5  # lowres center
@@ -224,7 +248,13 @@ def effective_area(subidx, subncol, cellsize, r_ratio=0.5):
 
 
 @njit(cache=True)
-def map_effare(subidxs_ds, subshape, cellsize, r_ratio=0.5, mv=_mv):
+def map_effare(
+    subidxs_ds: np.ndarray,
+    subshape: tuple[int, int],
+    cellsize: int,
+    r_ratio: float = 0.5,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns a map with ones on highres cells of lowres effective area."""
     subncol = subshape[1]
     # allocate output
@@ -241,7 +271,15 @@ def map_effare(subidxs_ds, subshape, cellsize, r_ratio=0.5, mv=_mv):
 
 
 @njit(cache=True)
-def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, r_ratio=0.5, mv=_mv):
+def eam_repcell(
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    shape: tuple[int, int],
+    cellsize: int,
+    r_ratio: float = 0.5,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns representative highres cell indices of lowres cells
     according to the effective area method.
 
@@ -289,8 +327,14 @@ def eam_repcell(subidxs_ds, subuparea, subshape, shape, cellsize, r_ratio=0.5, m
 
 @njit(cache=True)
 def eam_nextidx(
-    subidxs_rep, subidxs_ds, subshape, shape, cellsize, r_ratio=0.5, mv=_mv
-):
+    subidxs_rep: np.ndarray,
+    subidxs_ds: np.ndarray,
+    subshape: tuple[int, int],
+    shape: tuple[int, int],
+    cellsize: int,
+    r_ratio: float = 0.5,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns next downstream lowres index by tracing a representative cell to
     the next downstream effective area according to the effective area method.
 
@@ -335,7 +379,14 @@ def eam_nextidx(
     return idxs_ds
 
 
-def eam(subidxs_ds, subuparea, subshape, cellsize, r_ratio=0.5, mv=_mv):
+def eam(
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    cellsize: int,
+    r_ratio: float = 0.5,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray, tuple[int, int]]:
     """Returns the upscaled next downstream index based on the
     effective area method (EAM) [1].
 
@@ -379,14 +430,14 @@ def eam(subidxs_ds, subuparea, subshape, cellsize, r_ratio=0.5, mv=_mv):
 #### CONNECTING OUTLETS SCALING METHOD ####
 @njit(cache=True)
 def ihu_outlets(
-    subidxs_rep,
-    subidxs_ds,
-    subuparea,
-    subshape,
-    shape,
-    cellsize,
-    mv=_mv,
-):
+    subidxs_rep: np.ndarray,
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    shape: tuple[int, int],
+    cellsize: int,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns highres outlet cell indices of lowres cells which are located
     at the edge of the lowres cell downstream of the representative cell
     according to the iterative hydrography upscaling method (IHU).
@@ -436,8 +487,14 @@ def ihu_outlets(
 
 @njit(cache=True)
 def ihu_nextidx(
-    subidxs_out, subidxs_ds, subshape, shape, cellsize, r_ratio=0.5, mv=_mv
-):
+    subidxs_out: np.ndarray,
+    subidxs_ds: np.ndarray,
+    subshape: tuple[int, int],
+    shape: tuple[int, int],
+    cellsize: int,
+    r_ratio: float = 0.5,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns next downstream lowres index according to the iterative hydrography
     upscaling method (IHU). Every outlet highres cell is traced to the next downstream
     highres outlet cell. If this lays outside d8, we fallback to the next
@@ -498,13 +555,13 @@ def ihu_nextidx(
 
 @njit(cache=True)
 def next_outlet(
-    subidx,
-    subidxs_ds,
-    subidxs_out,
-    subncol,
-    cellsize,
-    ncol,
-):
+    subidx: int,
+    subidxs_ds: np.ndarray,
+    subidxs_out: np.ndarray,
+    subncol: int,
+    cellsize: int,
+    ncol: int,
+) -> tuple[int, int, bool]:
     """Returns lowres and highres indices of next outlet"""
     while True:
         # next downstream highres cell index
@@ -521,16 +578,16 @@ def next_outlet(
 
 @njit(cache=True)
 def ihu_relocate_outlets(
-    idxs_fix,
-    idxs_ds,
-    subidxs_out,
-    subidxs_ds,
-    subuparea,
-    subshape,
-    shape,
-    cellsize,
-    mv=_mv,
-):
+    idxs_fix: np.ndarray | None,
+    idxs_ds: np.ndarray,
+    subidxs_out: np.ndarray,
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    shape: tuple[int, int],
+    cellsize: int,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Relocate subgrid outlet cells in order to connect the
     subgrid outlets of disconnected cells.
 
@@ -878,7 +935,14 @@ def ihu_relocate_outlets(
 
 
 @njit(cache=True)
-def outlet_pix(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
+def outlet_pix(
+    idx: int,
+    subidxs_ds: np.ndarray,
+    ncol: int,
+    subncol: int,
+    cellsize: int,
+    all: bool = False,
+) -> list[int]:
     """Returns subgrid cells at the edge of a lowres cells with the next downstream
     subgrid cell outside of that lowres cell."""
     subidxs = []
@@ -907,21 +971,21 @@ def outlet_pix(idx, subidxs_ds, ncol, subncol, cellsize, all=False):
 
 @njit(cache=True)
 def new_outlet(
-    idx0,
-    subidx0,
-    streams,
-    idxs_ds,
-    subidxs_out,
-    subidxs_ds,
-    subuparea,
-    ncol,
-    subncol,
-    cellsize,
-    minlen=0,
-    minupa=0,
-    mv=_mv,
-    subidx1=None,
-):
+    idx0: int,
+    subidx0: int,
+    streams: np.ndarray,
+    idxs_ds: np.ndarray,
+    subidxs_out: np.ndarray,
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    ncol: int,
+    subncol: int,
+    cellsize: int,
+    minlen: float = 0,
+    minupa: float = 0,
+    mv: int = _mv,
+    subidx1: int | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, bool]:
     """Returns an alternative outlet subgrid cell which is connected to neighboring
     outlet cell in d8, not located on any existing stream, with a minimum downstream
     length of <minlen> and upstream area of <minupa>. This method can be
@@ -970,20 +1034,20 @@ def new_outlet(
 
 @njit(cache=True)
 def ihu_optimize_rivlen(
-    idxs_short,
-    valid,
-    streams,
-    idxs_ds,
-    subidxs_out,
-    subidxs_ds,
-    subuparea,
-    subshape,
-    shape,
-    cellsize,
-    minlen=0,
-    minupa=0,
-    mv=_mv,
-):
+    idxs_short: np.ndarray,
+    valid: np.ndarray,
+    streams: np.ndarray,
+    idxs_ds: np.ndarray,
+    subidxs_out: np.ndarray,
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    shape: tuple[int, int],
+    cellsize: int,
+    minlen: float = 0,
+    minupa: float = 0,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray]:
     """Reduces the number of cells with smaller than <minlen> downstream
     subgrid length by finding an alternative outlet for that cell or the next downstream
     cell."""
@@ -1021,21 +1085,21 @@ def ihu_optimize_rivlen(
 
 @njit(cache=True)
 def ihu_minimize_error(
-    idxs_fix,
-    valid,
-    streams,
-    idxs_ds,
-    subidxs_out,
-    subidxs_ds,
-    subuparea,
-    subshape,
-    shape,
-    cellsize,
-    minlen=0,
-    minupa=0,
-    pit_out_of_cell=2,
-    mv=_mv,
-):
+    idxs_fix: np.ndarray,
+    valid: np.ndarray,
+    streams: np.ndarray,
+    idxs_ds: np.ndarray,
+    subidxs_out: np.ndarray,
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    shape: tuple[int, int],
+    cellsize: int,
+    minlen: float = 0,
+    minupa: float = 0,
+    pit_out_of_cell: int = 2,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray]:
     """Reduces the number of cells with an upstream area error by finding the neighbor
     with the shortest distance to a cell where both streams have merged."""
     _, subncol = subshape
@@ -1153,19 +1217,19 @@ def ihu_minimize_error(
 
 
 def ihu(
-    subidxs_ds,
-    subuparea,
-    subshape,
-    cellsize,
-    minlen_ratio=0.25,
-    minupa_ratio=0.25,
-    r_ratio=0.5,
-    niter=5,
-    opt_rivlen=True,
-    min_error=True,
-    pit_out_of_cell=2,
-    mv=_mv,
-):
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    cellsize: int,
+    minlen_ratio: float = 0.25,
+    minupa_ratio: float = 0.25,
+    r_ratio: float = 0.5,
+    niter: int = 5,
+    opt_rivlen: bool = True,
+    min_error: bool = True,
+    pit_out_of_cell: int = 2,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray, tuple[int, int]]:
     """Returns the upscaled next downstream index based on the
     iterative hydrography upscaling (IHU).
 
@@ -1305,12 +1369,20 @@ def ihu(
     return idxs_ds, subidxs_out, shape
 
 
-def eam_plus(subidxs_ds, subuparea, subshape, cellsize, mv=_mv):
+def eam_plus(
+    subidxs_ds: np.ndarray,
+    subuparea: np.ndarray,
+    subshape: tuple[int, int],
+    cellsize: int,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray, tuple[int, int]]:
     return ihu(subidxs_ds, subuparea, subshape, cellsize, niter=0, mv=mv)
 
 
 @njit(cache=True)
-def upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
+def upscale_error(
+    subidxs_out: np.ndarray, idxs_ds: np.ndarray, subidxs_ds: np.ndarray, mv: int = _mv
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns an array with ones (zeros) if subgrid outlet/representative cells are
     valid (erroneous) in D8, cells with missing values are set to -1.
 
@@ -1364,7 +1436,13 @@ def upscale_error(subidxs_out, idxs_ds, subidxs_ds, mv=_mv):
 
 
 @njit(cache=True)
-def upscale_check(subidxs_out, idxs_ds, subidxs_ds, minlen=0, mv=_mv):
+def upscale_check(
+    subidxs_out: np.ndarray,
+    idxs_ds: np.ndarray,
+    subidxs_ds: np.ndarray,
+    minlen: float = 0,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # array with outlets (>=0) and streams (-1); nodata value is -9
     assert subidxs_out.size <= 2147483648
     streams = np.full(subidxs_ds.size, -9, dtype=np.int32)

@@ -1,19 +1,24 @@
-# -- coding: utf-8 --
 """Methods to for regions, i.e. connected areas with same unique ID.
 Building on scipy.ndimage measurement methods, see
 https://docs.scipy.org/doc/scipy/reference/ndimage.html#measurements
 """
 
-from scipy import ndimage
 import numpy as np
+from affine import Affine
 from numba import njit
+from scipy import ndimage
 
 from . import gis_utils
 
-__all__ = ["region_bounds", "region_slices", "region_sum", "region_area"]
+__all__ = [
+    "region_area",
+    "region_bounds",
+    "region_slices",
+    "region_sum",
+]
 
 
-def region_sum(data, regions):
+def region_sum(data: np.ndarray, regions: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Returns the sum of values in `data` for each unique label in `regions`.
 
     Parameters
@@ -32,7 +37,11 @@ def region_sum(data, regions):
     return lbs, ndimage.sum(data, regions, index=lbs)
 
 
-def region_area(regions, transform=gis_utils.IDENTITY, latlon=False):
+def region_area(
+    regions: np.ndarray,
+    transform: Affine = gis_utils.IDENTITY,
+    latlon: bool = False,
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns the area [m2] for each unique label in `regions`.
 
     Parameters
@@ -54,7 +63,7 @@ def region_area(regions, transform=gis_utils.IDENTITY, latlon=False):
     return region_sum(area, regions)
 
 
-def region_slices(regions):
+def region_slices(regions: np.ndarray) -> tuple[np.ndarray, list[tuple[slice, ...]]]:
     """Returns slices for each unique label in `regions`.
 
     NOTE: a region must be a connected area with the same ID,
@@ -82,7 +91,10 @@ def region_slices(regions):
     return lbs, slices
 
 
-def region_bounds(regions, transform=gis_utils.IDENTITY):
+def region_bounds(
+    regions: np.ndarray,
+    transform: Affine = gis_utils.IDENTITY,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns the bounding box each unique label in `regions`.
 
     NOTE: a region must be a connected area with the same ID,
@@ -126,7 +138,11 @@ def region_bounds(regions, transform=gis_utils.IDENTITY):
 
 
 @njit(cache=True)
-def region_outlets(regions, idxs_ds, seq):
+def region_outlets(
+    regions: np.ndarray,
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns the linear index of the outlet cell in `regions`.
 
     NOTE: a region must be a connected area with the same ID,
@@ -164,13 +180,13 @@ def region_outlets(regions, idxs_ds, seq):
 
 
 def region_dissolve(
-    regions,
-    labels=None,
-    idxs=None,
-    transform=gis_utils.IDENTITY,
-    latlon=False,
+    regions: np.ndarray,
+    labels: np.ndarray | None = None,
+    idxs: np.ndarray | None = None,
+    transform: Affine = gis_utils.IDENTITY,
+    latlon: bool = False,
     **kwargs,
-):
+) -> np.ndarray:
     """Dissolve regions into its nearest neighboring regions.
 
     Regions to be dissolved are provided by either their `labels` or one location

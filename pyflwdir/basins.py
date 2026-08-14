@@ -11,7 +11,12 @@ _mv = core._mv
 all = []
 
 
-def basins(idxs_ds, idxs_pit, seq, ids=None):
+def basins(
+    idxs_ds: np.ndarray,
+    idxs_pit: np.ndarray,
+    seq: np.ndarray,
+    ids: np.ndarray | None = None,
+) -> np.ndarray:
     """Return basin map"""
     if ids is None:
         ids = np.arange(1, idxs_pit.size + 1, dtype=np.uint32)
@@ -26,7 +31,7 @@ def subbasins(
     seq: np.ndarray,
     riv_mask: np.ndarray | None = None,
     mv: int = _mv,
-):
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns a subbasin map with unique IDs starting from one.
     Subbasins are defined based on a river network mask.
 
@@ -70,7 +75,7 @@ def interbasin_mask(
     seq: np.ndarray,
     region: np.ndarray,
     stream: np.ndarray | None = None,
-):
+) -> np.ndarray:
     """Returns most downstream contiguous area within region, i.e.: if a stream flows
     in and out of the region, only the most downstream contiguous area within region
     will be True in output mask. If a stream mask is provided the area is reduced to
@@ -119,7 +124,7 @@ def subbasins_streamorder(
     strord: np.ndarray,
     mask: np.ndarray | None = None,
     min_sto: int = -2,
-):
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns a subbasin map with unique IDs starting from one.
     Subbasins are defined based on a minimum stream order.
 
@@ -162,7 +167,7 @@ def _tributaries(
     idxs_ds: np.ndarray,
     seq: np.ndarray,
     strord: np.ndarray,
-):
+) -> np.ndarray:
     idxs_trib = []
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
@@ -181,7 +186,7 @@ def subbasins_pfafstetter(
     mask: np.ndarray | None = None,
     depth: int = 1,
     mv: int = _mv,
-):
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns a subbasin map with unique IDs starting from one.
     Subbasins are defined based on the Pfafstetter coding system.
 
@@ -291,7 +296,7 @@ def subbasins_area(
     idxs_us_main: np.ndarray,
     uparea: np.ndarray,
     area_min: float,
-):
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns map with basin IDs, with a minimal area of `area_min`.
     Moving upstream from the basin outlets a new subbasin starts at tributaries
     with a contributing area larger than `area_min` and new interbasins when its area

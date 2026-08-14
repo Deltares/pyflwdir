@@ -1,11 +1,12 @@
-# -- coding: utf-8 --
-""""""
+"""Utilities for geospatial data and raster grids."""
 
-from numba import njit
-import numpy as np
-import math
-from affine import Affine
 import heapq
+import math
+from typing import Literal
+
+import numpy as np
+from affine import Affine
+from numba import njit
 
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
 AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
@@ -13,23 +14,30 @@ AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
 IDENTITY = Affine(1.0, 0.0, 0.0, 0.0, -1.0, 0.0)
 
 __all__ = [
-    "transform_from_origin",
-    "transform_from_bounds",
-    "array_bounds",
-    "xy",
-    "rowcol",
-    "idxs_to_coords",
     "affine_to_coords",
-    "reggrid_area",
-    "reggrid_dy",
-    "reggrid_dx",
+    "array_bounds",
     "get_edge",
+    "idxs_to_coords",
+    "reggrid_area",
+    "reggrid_dx",
+    "reggrid_dy",
+    "rowcol",
     "spread2d",
+    "transform_from_bounds",
+    "transform_from_origin",
+    "xy",
 ]
 
 
 @njit(cache=True)
-def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY):
+def spread2d(
+    obs: np.ndarray,
+    msk: np.ndarray | None = None,
+    nodata: float = 0,
+    frc: np.ndarray | None = None,
+    latlon: bool = False,
+    transform: Affine = IDENTITY,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns filled array with nearest observations, origin cells and friction distance to origin.
     The friction distance is measured through valid cells in the mask and has a uniform value of 1. by default.
     The diagonal distance is taken as the hypot of the vertical and horizontal distances.
@@ -37,7 +45,7 @@ def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY
 
     Parameters
     ----------
-    osb: 2D array
+    obs: 2D array
         Initial array with observations.
     msk: 2D array of bool, optional
         Mask of valid cells to consider for filling.
@@ -101,7 +109,7 @@ def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY
                     continue
                 r1, c1 = int(r) + dr, int(c) + dc
                 outside = r1 < 0 or r1 >= nrow or c1 < 0 or c1 >= ncol
-                if outside or (msk is not None and ~msk[r1, c1]):
+                if outside or (msk is not None and not msk[r1, c1]):
                     continue
                 d = d0 + np.hypot(dr * dy, dc * dx) * f0
                 if src[r1, c1] == -1 or d < dst[r1, c1]:
@@ -115,28 +123,31 @@ def spread2d(obs, msk=None, nodata=0, frc=None, latlon=False, transform=IDENTITY
 
 
 @njit(cache=True)
-def get_edge(a, structure=np.ones((3, 3), dtype=bool)):
+def get_edge(a: np.ndarray, structure: np.ndarray | None = None) -> np.ndarray:
     """Get edge of valid cells.
 
     Parameters
     ----------
     a: 2D array of bool
         Boolean array valid cells.
-    structure: 2D array with shape (3,3) of bool
+    structure: 2D array with shape (3,3) of bool, optional
         Structuring element used to define which cells are neighbors.
+        If None, a 3x3 square is used. The center cell is ignored.
 
     Returns
     -------
     edge: 2D array of bool
         Boolean array edge cells.
     """
+    if structure is None:
+        structure = np.ones((3, 3), dtype=bool)
     assert structure.shape == (3, 3)
     s = np.where(structure.ravel())[0]
     edge = a.copy()
     nrow, ncol = a.shape
-    for r in range(0, nrow):
-        for c in range(0, ncol):
-            if ~a[r, c] or r == 0 or r == nrow - 1 or c == 0 or c == ncol - 1:
+    for r in range(nrow):
+        for c in range(ncol):
+            if not a[r, c] or r == 0 or r == nrow - 1 or c == 0 or c == ncol - 1:
                 continue
             a0 = a[slice(r - 1, r + 2), slice(c - 1, c + 2)].ravel()
             if np.all(a0[s]):
@@ -150,7 +161,9 @@ def get_edge(a, structure=np.ones((3, 3), dtype=bool)):
 # avoid gdal dependency
 
 
-def transform_from_origin(west, north, xsize, ysize):
+def transform_from_origin(
+    west: float, north: float, xsize: float, ysize: float
+) -> Affine:
     """Return an Affine transformation given upper left and pixel sizes.
     Return an Affine transformation for a georeferenced raster given
     the coordinates of its upper left corner `west`, `north` and pixel
@@ -159,7 +172,14 @@ def transform_from_origin(west, north, xsize, ysize):
     return Affine.translation(west, north) * Affine.scale(xsize, -ysize)
 
 
-def transform_from_bounds(west, south, east, north, width, height):
+def transform_from_bounds(
+    west: float,
+    south: float,
+    east: float,
+    north: float,
+    width: int,
+    height: int,
+) -> Affine:
     """Return an Affine transformation given bounds, width and height.
     Return an Affine transformation for a georeferenced raster given
     its bounds `west`, `south`, `east`, `north` and its `width` and
@@ -170,7 +190,9 @@ def transform_from_bounds(west, south, east, north, width, height):
     )
 
 
-def array_bounds(height, width, transform):
+def array_bounds(
+    height: int, width: int, transform: Affine
+) -> tuple[float, float, float, float]:
     """Return the bounds of an array given height, width, and a transform.
     Return the `west, south, east, north` bounds of an array given
     its height, width, and an affine transform.
@@ -180,7 +202,12 @@ def array_bounds(height, width, transform):
     return w, s, e, n
 
 
-def xy(transform, rows, cols, offset="center"):
+def xy(
+    transform: Affine,
+    rows: np.ndarray | int,
+    cols: np.ndarray | int,
+    offset: Literal["center", "ul", "ur", "ll", "lr"] = "center",
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns the x and y coordinates of pixels at `rows` and `cols`.
     The pixel's center is returned by default, but a corner can be returned
     by setting `offset` to one of `ul, ur, ll, lr`.
@@ -223,7 +250,13 @@ def xy(transform, rows, cols, offset="center"):
     return xs, ys
 
 
-def rowcol(transform, xs, ys, op=np.floor, precision=None):
+def rowcol(
+    transform: Affine,
+    xs: np.ndarray | float,
+    ys: np.ndarray | float,
+    op=np.floor,
+    precision: int | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the rows and cols of the pixels containing (x, y) given a
     coordinate reference system.
@@ -261,7 +294,12 @@ def rowcol(transform, xs, ys, op=np.floor, precision=None):
     return rows, cols
 
 
-def idxs_to_coords(idxs, transform, shape, offset="center"):
+def idxs_to_coords(
+    idxs: np.ndarray,
+    transform: Affine,
+    shape: tuple[int, int],
+    offset: Literal["center", "ul", "ur", "ll", "lr"] = "center",
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns coordinates of idxs raster indices based affine.
 
     Parameters
@@ -298,7 +336,14 @@ def idxs_to_coords(idxs, transform, shape, offset="center"):
     return xy(transform, rows, cols, offset=offset)
 
 
-def coords_to_idxs(xs, ys, transform, shape, op=np.floor, precision=None):
+def coords_to_idxs(
+    xs: np.ndarray | float,
+    ys: np.ndarray | float,
+    transform: Affine,
+    shape: tuple[int, int],
+    op=np.floor,
+    precision: int | None = None,
+) -> np.ndarray:
     """Returns linear indices of coordinates.
 
     Parameters
@@ -339,7 +384,9 @@ def coords_to_idxs(xs, ys, transform, shape, op=np.floor, precision=None):
 
 
 # TODO: rename to transform_to_coords & correct upstream use in pyflwdir and hydromt
-def affine_to_coords(affine, shape):
+def affine_to_coords(
+    affine: Affine, shape: tuple[int, int]
+) -> tuple[np.ndarray, np.ndarray]:
     """Returs a raster axis with pixel center coordinates based on the affine.
 
     Parameters
@@ -360,7 +407,7 @@ def affine_to_coords(affine, shape):
 
 
 ## DISTANCES // AREAS
-def reggrid_dx(lats, lons):
+def reggrid_dx(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
     """returns a the cell widths (dx) for a regular grid with cell centers
     lats & lons [m]."""
     xres = np.abs(np.mean(np.diff(lons)))
@@ -368,7 +415,7 @@ def reggrid_dx(lats, lons):
     return dx[:, None] * np.ones((lats.size, lons.size), dtype=lats.dtype)
 
 
-def reggrid_dy(lats, lons):
+def reggrid_dy(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
     """returns a the cell heights (dy) for a regular grid with cell centers
     lats & lons [m]."""
     yres = np.abs(np.mean(np.diff(lats)))
@@ -376,7 +423,7 @@ def reggrid_dy(lats, lons):
     return dy[:, None] * np.ones((lats.size, lons.size), dtype=lats.dtype)
 
 
-def reggrid_area(lats, lons):
+def reggrid_area(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
     """returns a the cell area for a regular grid with cell centres
     lats & lons [m2]."""
     xres = np.abs(np.mean(np.diff(lons)))
@@ -385,7 +432,12 @@ def reggrid_area(lats, lons):
     return cellarea(lats, xres, yres)[:, None] * area
 
 
-def area_grid(transform, shape, latlon=False, unit="m2"):
+def area_grid(
+    transform: Affine,
+    shape: tuple[int, int],
+    latlon: bool = False,
+    unit: str = "m2",
+) -> np.ndarray:
     """Returns a regular grid with cell areas"""
     unit = str(unit).lower()
     if unit not in AREA_FACTORS:
@@ -403,7 +455,7 @@ def area_grid(transform, shape, latlon=False, unit="m2"):
 
 
 @njit(cache=True)
-def cellarea(lat, xres, yres):
+def cellarea(lat: np.ndarray | float, xres: float, yres: float) -> np.ndarray | float:
     """returns the area of cell with a given resolution (resx,resy) at a given
     cell center latitude [m2]."""
     l1 = np.radians(lat - np.abs(yres) / 2.0)
@@ -413,7 +465,7 @@ def cellarea(lat, xres, yres):
 
 
 @njit(cache=True)
-def degree_metres_y(lat):
+def degree_metres_y(lat: np.ndarray | float) -> np.ndarray | float:
     """ "returns the verical length of a degree in metres at
     a given latitude."""
     m1 = 111132.92  # latitude calculation term 1
@@ -432,7 +484,7 @@ def degree_metres_y(lat):
 
 
 @njit(cache=True)
-def degree_metres_x(lat):
+def degree_metres_x(lat: np.ndarray | float) -> np.ndarray | float:
     """ "returns the horizontal length of a degree in metres at
     a given latitude."""
     p1 = 111412.84  # longitude calculation term 1
@@ -449,7 +501,13 @@ def degree_metres_x(lat):
 
 
 @njit(cache=True)
-def distance(idx0, idx1, ncol, latlon=False, transform=IDENTITY):
+def distance(
+    idx0: int,
+    idx1: int,
+    ncol: int,
+    latlon: bool = False,
+    transform: Affine = IDENTITY,
+) -> float:
     """Return the the length between linear indices idx0 and idx1 on a regular raster
     defined by the affine transform.
 
@@ -491,8 +549,8 @@ def features(
     flowpaths: list[np.ndarray],
     xs: np.ndarray | None = None,
     ys: np.ndarray | None = None,
-    transform=None,
-    shape=None,
+    transform: Affine | None = None,
+    shape: tuple[int, int] | None = None,
     **kwargs,
 ) -> list[dict]:
     """Returns a LineString feature for each stream

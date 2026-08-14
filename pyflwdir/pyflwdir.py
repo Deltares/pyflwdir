@@ -134,7 +134,7 @@ def from_array(
     data: np.ndarray,
     ftype: Literal["d8", "ldd", "nextxy", "infer"] = "infer",
     check_ftype: bool = True,
-    mask: np.ndarray = None,
+    mask: np.ndarray | None = None,
     transform: Affine = gis.IDENTITY,
     latlon: bool = False,
     **kwargs,
@@ -216,9 +216,9 @@ class FlwdirRaster(Flwdir):
         idxs_ds: np.ndarray,
         shape: tuple,
         ftype: Literal["d8", "ldd", "nextxy"],
-        idxs_pit: np.ndarray = None,
-        idxs_outlet: np.ndarray = None,
-        idxs_seq: np.ndarray = None,
+        idxs_pit: np.ndarray | None = None,
+        idxs_outlet: np.ndarray | None = None,
+        idxs_seq: np.ndarray | None = None,
         nnodes: int | None = None,
         transform: Affine = gis.IDENTITY,
         latlon: bool = False,
@@ -276,7 +276,7 @@ class FlwdirRaster(Flwdir):
         self.set_transform(transform, latlon)
 
     @property
-    def _dict(self):
+    def _dict(self) -> dict:
         return {
             "ftype": self.ftype,
             "shape": self.shape,
@@ -303,9 +303,9 @@ class FlwdirRaster(Flwdir):
 
     def add_pits(
         self,
-        idxs: np.ndarray = None,
+        idxs: np.ndarray | None = None,
         xy: tuple[np.ndarray, np.ndarray] | None = None,
-        streams: np.ndarray = None,
+        streams: np.ndarray | None = None,
     ) -> None:
         """Add pits the flow direction raster.
         If `streams` is given, the pits are snapped to the first downstream True cell.
@@ -417,18 +417,18 @@ class FlwdirRaster(Flwdir):
         return gis.idxs_to_coords(idxs, self.transform, self.shape, **kwargs)
 
     @property
-    def bounds(self):
+    def bounds(self) -> np.ndarray:
         """Returns the raster bounding box [xmin, ymin, xmax, ymax]."""
         return np.array(gis.array_bounds(*self.shape, self.transform), dtype=np.float64)
 
     @property
-    def extent(self):
+    def extent(self) -> np.ndarray:
         """Returns the raster extent in cartopy format [xmin, xmax, ymin, ymax]."""
         xmin, ymin, xmax, ymax = self.bounds
         return np.array([xmin, xmax, ymin, ymax], dtype=np.float64)
 
     @property
-    def distnc(self):
+    def distnc(self) -> np.ndarray:
         """Distance to outlet [m]"""
         if "distnc" in self._cached:
             distnc = self._cached["distnc"]
@@ -1665,7 +1665,10 @@ class FlwdirRaster(Flwdir):
         return super()._check_data(data, name, optional, flatten=flatten)
 
     def _check_idxs_xy(
-        self, idxs: np.ndarray | None = None, xy: tuple | None = None, streams=None
+        self,
+        idxs: np.ndarray | None = None,
+        xy: tuple | None = None,
+        streams: np.ndarray | None = None,
     ) -> np.ndarray:
         if (xy is not None and idxs is not None) or (xy is None and idxs is None):
             raise ValueError("Either idxs or xy should be provided.")

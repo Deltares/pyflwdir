@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-""""""
+"""Arithmetic operations for flow direction networks compiled with numba."""
 
-from numba import njit
 import numpy as np
+from numba import njit
 
 # import flow direction definition
 from . import core
@@ -14,7 +13,7 @@ __all__ = []
 # NOTE np.average (with) weights is not yet supoorted by numpy
 # all functions are faster than numpy.
 @njit(cache=True)
-def _average(data, weights, nodata):
+def _average(data: np.ndarray, weights: np.ndarray, nodata: float) -> float:
     """Weighted arithmetic mean"""
     v = 0.0
     w = 0.0
@@ -30,7 +29,7 @@ def _average(data, weights, nodata):
 
 
 @njit(cache=True)
-def _mean(data, nodata):
+def _mean(data: np.ndarray, nodata: float) -> float:
     """Arithmetic mean"""
     v = 0.0
     w = 0.0
@@ -44,7 +43,7 @@ def _mean(data, nodata):
 
 
 @njit(cache=True)
-def lstsq(x: np.ndarray, y: np.ndarray):
+def lstsq(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
     """Simple ordinary Least Squares regression."""
     n = x.size
     x_sum = 0.0
@@ -66,8 +65,15 @@ def lstsq(x: np.ndarray, y: np.ndarray):
 
 @njit(cache=True)
 def moving_average(
-    data, weights, n, idxs_ds, idxs_us_main, strord=None, nodata=-9999.0, mv=_mv
-):
+    data: np.ndarray,
+    weights: np.ndarray | None,
+    n: int,
+    idxs_ds: np.ndarray,
+    idxs_us_main: np.ndarray,
+    strord: np.ndarray | None = None,
+    nodata: float = -9999.0,
+    mv: int = _mv,
+) -> np.ndarray:
     """Take the moving weighted average over the flow direction network.
 
     Parameters
@@ -104,15 +110,21 @@ def moving_average(
 
 
 @njit(cache=True)
-def moving_median(data, n, idxs_ds, idxs_us_main, strord=None, nodata=-9999.0, mv=_mv):
+def moving_median(
+    data: np.ndarray,
+    n: int,
+    idxs_ds: np.ndarray,
+    idxs_us_main: np.ndarray,
+    strord: np.ndarray | None = None,
+    nodata: float = -9999.0,
+    mv: int = _mv,
+) -> np.ndarray:
     """Take the moving median over the flow direction network.
 
     Parameters
     ----------
     data : 1D (sparse) array
         values
-    weights : 1D (sparse) array
-        weights
     n : int
         number of up/downstream neighbors to include
     idxs_ds, idxs_us_main : array of int
@@ -144,7 +156,12 @@ def moving_median(data, n, idxs_ds, idxs_us_main, strord=None, nodata=-9999.0, m
 
 
 @njit(cache=True)
-def upstream_sum(idxs_ds, data, nodata=-9999.0, mv=_mv):
+def upstream_sum(
+    idxs_ds: np.ndarray,
+    data: np.ndarray,
+    nodata: float = -9999.0,
+    mv: int = _mv,
+) -> np.ndarray:
     """Returns sum of first upstream values
 
     Parameters
