@@ -1,5 +1,5 @@
 """Methods to derive topo/hydrographical paramters from elevation data, in some cases
- in combination with flow direction data."""
+in combination with flow direction data."""
 
 import heapq
 import math
@@ -234,7 +234,7 @@ def slope(
     elevtn: np.ndarray,
     nodata: float = -9999.0,
     latlon: bool = False,
-    transform: Affine = gis_utils.IDENTITY,
+    transform: np.ndarray = gis_utils._IDENTITY,
 ) -> np.ndarray:
     """Returns the local gradient
 
@@ -249,9 +249,9 @@ def slope(
         nodata value, by default -9999.0
     latlon : bool, optional
         True if WGS84 coordinates, by default False
-    transform : affine transform
-        Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
-
+    transform : np.ndarray, optional
+        2D array with 6 elements representing the affine transformation for raster,
+        by default identify transform (1, 0, 0, 0, -1, 0)
     Returns
     -------
     1D array of float
@@ -263,8 +263,8 @@ def slope(
 
     elev = np.zeros((3, 3), dtype=elevtn.dtype)
 
-    for r in range(0, nrow):
-        for c in range(0, ncol):
+    for r in range(nrow):
+        for c in range(ncol):
             if elevtn[r, c] != nodata:
                 # start with matrix based on central value (inside loop)
                 elev[:, :] = elevtn[r, c]
@@ -351,7 +351,7 @@ def floodplains(
     """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is
     scaled with upstream area following h ~ A**b.
 
-    Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth’s
+    Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth's
         floodplains Sci. Data 6 180309
 
     Parameters

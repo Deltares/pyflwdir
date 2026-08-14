@@ -14,3 +14,16 @@ jobs:
         with:
           python-version: 3.12
       - uses: pre-commit/action@v3.0.1
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: prefix-dev/setup-pixi@v0.9.6
+        with:
+          pixi-version: v0.64.0
+          environments: test-py312
+          locked: false
+          cache: true
+      - name: Type check
+        run: pixi run -e test-py312 typecheck

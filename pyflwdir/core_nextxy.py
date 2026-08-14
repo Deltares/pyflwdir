@@ -7,6 +7,7 @@ Note that X (column) and Y (row) coordinates are one-based.
 from pathlib import Path
 
 import numpy as np
+from affine import Affine
 from numba import njit
 
 from . import core, gis_utils
@@ -15,7 +16,7 @@ __all__ = ["read_nextxy"]
 
 # NEXTXY type
 _ftype = "nextxy"
-_mv = np.int32(-9999)
+_mv: int = np.int32(-9999)  # type: ignore[assignment]
 # -10 is inland termination, -9 river outlet at ocean
 _pv = np.array([-9, -10], dtype=np.int32)
 # NOTE: data below for consistency with LDD / D8 types and testing
@@ -24,7 +25,7 @@ _us[:, 1, 1] = _pv[0]
 
 
 def from_array(
-    flwdir: np.ndarray | tuple, dtype: np.dtype = np.intp
+    flwdir: np.ndarray | tuple, dtype: type = np.intp
 ) -> tuple[np.ndarray, np.ndarray, int]:
     if not (
         (isinstance(flwdir, tuple) and len(flwdir) == 2)
@@ -49,15 +50,15 @@ def _from_array(
     nextx: np.ndarray,
     nexty: np.ndarray,
     _mv: int = _mv,
-    dtype: np.dtype = np.intp,
+    dtype: type = np.intp,
 ) -> tuple[np.ndarray, np.ndarray, int]:
     size = nextx.size
     nrow, ncol = nextx.shape[0], nextx.shape[-1]
     nextx_flat = nextx.ravel()
     nexty_flat = nexty.ravel()
     # allocate output arrays
-    pits_lst = []
-    idxs_ds = np.full(nextx.size, core._mv, dtype=dtype)
+    pits_lst: list = []
+    idxs_ds: np.ndarray = np.full(nextx.size, core._mv, dtype=dtype)
     n = 0
     for idx0 in range(nextx.size):
         if nextx_flat[idx0] == _mv:
@@ -111,7 +112,7 @@ def isvalid(flwdir: np.ndarray | tuple) -> bool:
         return False
     nextx, nexty = flwdir  # should work for [2,:,:] and ([:,:], [:,:])
     mask = np.logical_or(isnodata(nextx), ispit(nextx))
-    return (
+    return bool(
         nexty.dtype == "int32"
         and nextx.dtype == "int32"
         and np.all(nexty.shape == nextx.shape)
@@ -132,7 +133,9 @@ def isnodata(dd: np.ndarray | int) -> np.ndarray | bool:
     return dd == _mv
 
 
-def read_nextxy(fn: str | Path, nrow: int, ncol: int, bbox: list) -> np.ndarray:
+def read_nextxy(
+    fn: str | Path, nrow: int, ncol: int, bbox: list
+) -> tuple[np.ndarray, Affine]:
     """Read nextxy data from binary file.
 
     Parameters
@@ -153,5 +156,6 @@ def read_nextxy(fn: str | Path, nrow: int, ncol: int, bbox: list) -> np.ndarray:
     """
     data = np.fromfile(fn, "i4").reshape(2, nrow, ncol)
     assert len(bbox) == 4, "Bounding box should contain 4 coordinates."
-    transform = gis_utils.transform_from_bounds(*bbox, ncol, nrow)
+    west, south, east, north = bbox
+    transform = gis_utils.transform_from_bounds(west, south, east, north, ncol, nrow)
     return data, transform

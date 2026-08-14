@@ -8,7 +8,7 @@ from numba import njit
 from . import core, streams
 
 _mv = core._mv
-all = []
+__all__: list = []
 
 
 def basins(

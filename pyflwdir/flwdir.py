@@ -3,7 +3,7 @@
 import logging
 import pickle
 import pprint
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import numpy as np
 from numba import njit
@@ -93,7 +93,8 @@ class Flwdir:
         self.size = idxs_ds.size
         if self.size <= 1:
             raise ValueError(f"Invalid FlwdirRaster: size {self.size}")
-        self.shape = self.size
+        # size for a 1D Flwdir; (nrow, ncol) for a FlwdirRaster
+        self.shape: Any = self.size
 
         # data
         self._idxs_ds = idxs_ds
@@ -102,7 +103,7 @@ class Flwdir:
         self._seq = idxs_seq
         self._nnodes = nnodes
         # either -1 for int, 4294967295 for uint32, or 18446744073709551615 for uint64
-        self._mv = core._mv
+        self._mv: Any = core._mv
         if idxs_ds.dtype == np.uint32:
             self._mv = np.uint32(self._mv)
         if idxs_ds.dtype == np.uint64:
@@ -110,9 +111,9 @@ class Flwdir:
 
         # set placeholders only used if cache if True
         self.cache = cache
-        self._cached = {}
+        self._cached: dict = {}
         if area is not None:
-            self._cached.upate(area=area)
+            self._cached.update(area=area)
 
         # check validity
         if self.idxs_pit.size == 0:
@@ -157,7 +158,7 @@ class Flwdir:
         """Linear indices of valid cells ordered from down- to upstream."""
         if self._seq is None:
             self.order_cells(method="sort")
-        return self._seq
+        return cast(np.ndarray, self._seq)
 
     @property
     def idxs_pit(self) -> np.ndarray:
@@ -334,7 +335,6 @@ class Flwdir:
         1D-array of float
             distance along path between start and end cell
         """
-        direction = str(direction).lower()
         if direction not in ["up", "down"]:
             msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
             raise ValueError(msg)
@@ -378,7 +378,6 @@ class Flwdir:
         2D array
             filled data
         """
-        direction = str(direction).lower()
         dflat = self._check_data(data, "data")
         if direction == "up":
             dout = core.fillnodata_upstream(self.idxs_ds, self.idxs_seq, dflat, nodata)
@@ -776,6 +775,8 @@ class Flwdir:
         zs = self._check_data(zs, "zs", optional=_opt)
         # get (initial) river slope from zs & rivdst
         if rivslp is None:
+            if zs is None or rivdst is None:
+                raise ValueError('"zs" and "rivdst" are required if "rivslp" is None.')
             dz = zs - self.downstream(zs)
             dx = rivdst - self.downstream(rivdst)
             rivslp = np.where(dx >= 1, dz / np.maximum(1, dx), -9999)
@@ -787,6 +788,8 @@ class Flwdir:
         rivdph[self.idxs_ds == self._mv] = -9999.0
         # update river depth based on contraint gradually varying flow solver
         if method == "gvf":
+            if zs is None or rivdst is None:
+                raise ValueError('"zs" and "rivdst" are required for the gvf method.')
             rivdph = rivers.rivdph_gvf(
                 self.idxs_ds,
                 self.idxs_seq,
@@ -804,17 +807,32 @@ class Flwdir:
 
     ### SHORTCUTS ###
 
+    @overload
     def _check_data(
         self,
-        data: np.ndarray | None,
+        data: np.ndarray | float | None,
         name: str,
-        optional: bool = False,
-        flatten: bool = True,
+        optional: Literal[False] = ...,
+        flatten: bool = ...,
+        **kwargs,
+    ) -> np.ndarray:
+        ...
+
+    @overload
+    def _check_data(
+        self,
+        data: np.ndarray | float | None,
+        name: str,
+        optional: bool,
+        flatten: bool = ...,
         **kwargs,
     ) -> np.ndarray | None:
+        ...
+
+    def _check_data(self, data, name, optional=False, flatten=True, **kwargs):
         """check data shape and size; by default return flattened array"""
         if data is None and optional:
-            return
+            return None
         if data is None:
             if name == "uparea":
                 data = self.upstream_area(**kwargs)
@@ -837,9 +855,13 @@ class Flwdir:
     def _check_idxs_xy(
         self, idxs: np.ndarray | None = None, streams: np.ndarray | None = None
     ) -> np.ndarray:
+        if idxs is None:
+            raise ValueError('"idxs" should be provided.')
         idxs = np.atleast_1d(idxs).ravel()
         # snap to streams
         streams = self._check_data(streams, "streams", optional=True)
         if streams is not None:
-            idxs = self.snap(idxs=idxs, mask=streams)[0]
+            idxs = core.snap(
+                idxs0=idxs, idxs_nxt=self.idxs_ds, mask=streams, mv=self._mv
+            )[0]
         return idxs

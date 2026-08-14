@@ -127,12 +127,12 @@ def region_bounds(
         ix = ix[::-1]
     dx = np.abs(xres) / 2
     dy = np.abs(yres) / 2
-    bboxs = []
+    bboxs_lst = []
     for yslice, xslice in slices:
         xmin, xmax = lons[xslice][ix]
         ymin, ymax = lats[yslice][iy]
-        bboxs.append([xmin - dx, ymin - dy, xmax + dx, ymax + dy])
-    bboxs = np.asarray(bboxs)
+        bboxs_lst.append([xmin - dx, ymin - dy, xmax + dx, ymax + dy])
+    bboxs = np.asarray(bboxs_lst)
     total_bbox = np.hstack([bboxs[:, :2].min(axis=0), bboxs[:, 2:].max(axis=0)])
     return lbs, bboxs, total_bbox
 

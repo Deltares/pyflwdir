@@ -11,7 +11,8 @@ from numba import njit
 _R = 6371e3  # Radius of earth in m. Use 3956e3 for miles
 AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
 # changed to N->S orientation in v0.5 TODO check if used in hydromt?
-IDENTITY = Affine(1.0, 0.0, 0.0, 0.0, -1.0, 0.0)
+_IDENTITY: np.ndarray = np.array([1.0, 0.0, 0.0, 0.0, -1.0, 0.0])
+IDENTITY = Affine(*_IDENTITY)  # Affine transformation for identity
 
 __all__ = [
     "affine_to_coords",
@@ -97,7 +98,7 @@ def spread2d(
 
     obs = obs.ravel()
     while len(q) > 0:
-        d0, r, c = heapq.heappop(q)
+        d0, r, c = heapq.heappop(q)  # type: ignore[assignment]
         if dst[r, c] < d0:
             continue
         f0 = 1.0 if frc is None else frc[r, c]
@@ -443,6 +444,7 @@ def area_grid(
     if unit not in AREA_FACTORS:
         fstr = '", "'.join(AREA_FACTORS.keys())
         raise ValueError(f'Unknown unit: {unit}, select from "{fstr}".')
+    area: np.ndarray
     if unit == "cell":
         area = np.ones(shape, dtype=np.int32)
     elif latlon:
@@ -506,7 +508,7 @@ def distance(
     idx1: int,
     ncol: int,
     latlon: bool = False,
-    transform: Affine = IDENTITY,
+    transform: np.ndarray = _IDENTITY,
 ) -> float:
     """Return the the length between linear indices idx0 and idx1 on a regular raster
     defined by the affine transform.
@@ -597,7 +599,7 @@ def features(
         pit = idxs[-1] == idxs[-2]
         props = {key: kwargs[key].flat[idx0] for key in kwargs}
         if xs is None or ys is None:
-            xi, yi = idxs_to_coords(idxs, transform, shape)
+            xi, yi = idxs_to_coords(idxs, transform, shape)  # type: ignore[arg-type]
             coordinates = list(zip(xi, yi))
         else:
             coordinates = [(xs[i], ys[i]) for i in idxs]

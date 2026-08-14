@@ -735,7 +735,7 @@ def ihu_relocate_outlets(
         idxs_us_conn = idxs_us_conn[seq1]
 
         # STEP 4: connect the dots
-        bottleneck = list()
+        bottleneck: list = []
         nbottlenecks = -1
         while len(bottleneck) > nbottlenecks:
             nextiter = False

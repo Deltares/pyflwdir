@@ -1,13 +1,12 @@
+import os
+
+import cartopy.crs as ccrs
+import geopandas as gpd
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib import cm, colors
-import cartopy.crs as ccrs
-import descartes
 import numpy as np
-import os
 import rasterio
 from rasterio import features
-import geopandas as gpd
 
 np.random.seed(seed=101)
 matplotlib.rcParams["savefig.bbox"] = "tight"

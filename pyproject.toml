@@ -17,7 +17,7 @@ Home = "https://github.com/Deltares/pyflwdir"
 Documentation = "https://deltares.github.io/pyflwdir"
 
 [project.optional-dependencies]
-test = ["black[jupyter]", "pre-commit", "pytest>=2.7.3", "pytest-cov"]
+test = ["black[jupyter]", "mypy", "pre-commit", "pytest>=2.7.3", "pytest-cov"]
 doc = ["nbsphinx", "pydata-sphinx-theme", "sphinx", "sphinx_design"]
 examples = [
     "cartopy>=0.20",
@@ -42,6 +42,21 @@ exclude = ["docs", "notebooks", "envs", "tests", "binder", ".github"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
+
+[tool.mypy]
+files = ["pyflwdir"]
+python_version = "3.11"
+# numba-jitted code is highly dynamic; check signatures, not function bodies
+check_untyped_defs = false
+disallow_untyped_defs = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["affine.*", "numba.*", "pandas.*", "scipy.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
 
 [tool.make_env]
 channels = ["conda-forge"]
@@ -92,6 +107,7 @@ install-pre-commit = "pre-commit install"
 lint = { cmd = "pre-commit run --all-files", depends-on = [
     "install-pre-commit",
 ] }
+typecheck = { cmd = "mypy" }
 
 # docs
 docs-dummy = { cmd = [

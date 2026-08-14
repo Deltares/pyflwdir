@@ -11,13 +11,13 @@ __all__ = []
 _ftype = "ldd"
 _ds = np.array([[7, 8, 9], [4, 5, 6], [1, 2, 3]], dtype=np.uint8)
 _us = np.array([[3, 2, 1], [6, 5, 4], [9, 8, 7]], dtype=np.uint8)
-_mv = np.uint8(255)
-_pv = np.uint8(5)
+_mv: int = np.uint8(255)  # type: ignore[assignment]
+_pv: int = np.uint8(5)  # type: ignore[assignment]
 _all = np.array([7, 8, 9, 4, 5, 6, 1, 2, 3, 255], dtype=np.uint8)
 
 
 @njit("Tuple((int8, int8))(uint8)", cache=True)
-def drdc(dd: int) -> tuple[int, int]:
+def drdc(dd: int) -> tuple[np.int8, np.int8]:
     """convert ldd value to delta row/col"""
     dr, dc = np.int8(0), np.int8(0)
     if dd >= np.uint8(4):  # W / PIT / E / NW / N / NE
@@ -35,14 +35,14 @@ def drdc(dd: int) -> tuple[int, int]:
 
 @njit(cache=True)
 def from_array(
-    flwdir: np.ndarray, _mv: int = _mv, dtype: np.dtype = np.intp
+    flwdir: np.ndarray, _mv: int = _mv, dtype: type = np.intp
 ) -> tuple[np.ndarray, np.ndarray, int]:
     """convert 2D LDD data to 1D next downstream indices"""
     nrow, ncol = flwdir.shape
     flwdir_flat = flwdir.ravel()
     # get downsteam indices
-    pits_lst = []
-    idxs_ds = np.full(flwdir.size, core._mv, dtype=dtype)
+    pits_lst: list = []
+    idxs_ds: np.ndarray = np.full(flwdir.size, core._mv, dtype=dtype)
     n = 0
     for idx0 in range(flwdir.size):
         if flwdir_flat[idx0] == _mv:
@@ -125,7 +125,7 @@ def _upstream_idx(
     flwdir_flat: np.ndarray,
     shape: tuple[int, int],
     _us: np.ndarray = _us,
-    dtype: np.dtype = np.intp,
+    dtype: type = np.intp,
 ) -> np.ndarray:
     """Returns a numpy array (int64) with linear indices of upstream neighbors"""
     return core_d8._upstream_idx(idx0, flwdir_flat, shape, _us, dtype=dtype)

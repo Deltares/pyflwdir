@@ -84,7 +84,7 @@ def upstream_area(
     transform=gis_utils.IDENTITY,
     area_factor: float = 1,
     nodata: float = -9999.0,
-    dtype: np.dtype = np.float64,
+    dtype: type = np.float64,
 ) -> np.ndarray:
     """Returns the accumulated upstream area, invalid cells are assinged a the nodata
     value. The arae is calculated using the transform. If latlon is True, the resolution
@@ -117,7 +117,7 @@ def upstream_area(
         accumulated upstream area
     """
     # intialize uparea with correct dtype
-    uparea = np.full(idxs_ds.size, nodata, dtype=dtype)
+    uparea: np.ndarray = np.full(idxs_ds.size, nodata, dtype=dtype)
     # local area
     xres, yres, north = transform[0], transform[4], transform[5]
     if latlon:

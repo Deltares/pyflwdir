@@ -11,7 +11,7 @@ from numba.typed import List
 from . import gis_utils
 
 __all__ = []
-_mv = np.intp(-1)  # missing value for idxs_ds
+_mv: int = np.intp(-1)  # type: ignore[assignment]  # missing value for idxs_ds
 
 # flwdir properties
 
@@ -336,7 +336,7 @@ def _trace(
     max_length: float | None = None,
     real_length: bool = False,
     latlon: bool = False,
-    transform=gis_utils.IDENTITY,
+    transform: np.ndarray = gis_utils._IDENTITY,
     mv: int = _mv,
 ) -> tuple[np.ndarray, float]:
     """Returns indices of downstream cells, including the start cell, until:
@@ -360,8 +360,9 @@ def _trace(
         unit of length in meters if True, cells if False, by default False
     latlon : bool, optional
         True if WGS84 coordinates, by default False
-    transform : affine transform
-        Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
+    transform : np.ndarray, optional
+        2D array with 6 elements representing the affine transformation for raster,
+        by default identify transform (1, 0, 0, 0, -1, 0)
 
     Returns
     -------
@@ -435,7 +436,7 @@ def path(
     max_length: float | None = None,
     real_length: bool = False,
     latlon: bool = False,
-    transform=gis_utils.IDENTITY,
+    transform: np.ndarray = gis_utils._IDENTITY,
     mv: int = _mv,
 ) -> tuple[list, np.ndarray]:
     """See _trace method, except this function works for a 1D-array linear indices.
@@ -475,7 +476,7 @@ def snap(
     max_length: float | None = None,
     real_length: bool = False,
     latlon: bool = False,
-    transform: Affine = gis_utils.IDENTITY,
+    transform: np.ndarray = gis_utils._IDENTITY,
     mv: int = _mv,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Returns indices the most down-/upstream cell where mask is True or is pit.
