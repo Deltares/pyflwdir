@@ -84,6 +84,7 @@ def test_subbasins(test_data, flwdir, request):
     riv_mask = strord >= (strord.max() - 2)
     subbas, idxs_out = basins.subbasins(idxs_ds, seq, riv_mask=riv_mask, mv=mv)
     assert np.all(subbas[idxs_out] == np.arange(1, idxs_out.size + 1, dtype=np.int32))
+    assert np.all(riv_mask[idxs_out])
     pits = idxs_ds[idxs_out] == idxs_out
     assert np.all(subbas[idxs_out][~pits] != subbas[idxs_ds[idxs_out]][~pits])
     lbs, idxs_region_out = regions.region_outlets(

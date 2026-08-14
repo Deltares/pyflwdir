@@ -617,12 +617,12 @@ def ihu_relocate_outlets(
         if stop and subidx == subidxs_out[idxs_ds[idx00]]:
             # trace ends at first outlet pixels -> already fixed
             continue  # @0A
-        elif stop is False:
+        elif not stop:
             # no succussful trace end -> skip cell
             continue  # @0A
 
         # STEP 2: find tributary cells: i.e. cells directly upstream of trace
-        idxs_us_lst = list()  # tirbutary cells
+        idxs_us_lst = []  # tirbutary cells
         idxs_ds0 = np.unique(np.array(idxs_lst, dtype=idxs_ds.dtype))
         for idx_ds in idxs_ds0:  # @2A trace cells loop
             idxs_us = core._upstream_d8_idx(idx_ds, idxs_ds, shape)

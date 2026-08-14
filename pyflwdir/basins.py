@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 """Methods to delineate (sub)basins."""
 
 from __future__ import annotations
-from typing import Optional
 
-from numba import njit
 import numpy as np
+from numba import njit
 
 from . import core, streams
 
@@ -26,11 +24,11 @@ def basins(idxs_ds, idxs_pit, seq, ids=None):
 def subbasins(
     idxs_ds: np.ndarray,
     seq: np.ndarray,
-    riv_mask: Optional[np.ndarray] = None,
+    riv_mask: np.ndarray | None = None,
     mv: int = _mv,
 ):
     """Returns a subbasin map with unique IDs starting from one.
-    Subbasins are defined based on a minimum stream order.
+    Subbasins are defined based on a river network mask.
 
     Parameters
     ----------
@@ -67,7 +65,12 @@ def subbasins(
 # TODO: change this method to derive the interbasin for a single outflow as currently
 # its results are ambiguous?!
 @njit(cache=True)
-def interbasin_mask(idxs_ds, seq, region, stream=None):
+def interbasin_mask(
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    region: np.ndarray,
+    stream: np.ndarray | None = None,
+):
     """Returns most downstream contiguous area within region, i.e.: if a stream flows
     in and out of the region, only the most downstream contiguous area within region
     will be True in output mask. If a stream mask is provided the area is reduced to
@@ -110,7 +113,13 @@ def interbasin_mask(idxs_ds, seq, region, stream=None):
 
 
 @njit(cache=True)
-def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
+def subbasins_streamorder(
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    strord: np.ndarray,
+    mask: np.ndarray | None = None,
+    min_sto: int = -2,
+):
     """Returns a subbasin map with unique IDs starting from one.
     Subbasins are defined based on a minimum stream order.
 
@@ -138,7 +147,7 @@ def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
     subbas = np.full(idxs_ds.shape, 0, dtype=np.int32)
     idxs = []
     for idx0 in seq[::-1]:  # up- to downstream
-        if (mask is not None and mask[idx0] is False) or strord[idx0] < min_sto:
+        if (mask is not None and not mask[idx0]) or strord[idx0] < min_sto:
             continue
         idx_ds = idxs_ds[idx0]
         if strord[idx0] != strord[idx_ds] or idx_ds == idx0:
@@ -149,7 +158,11 @@ def subbasins_streamorder(idxs_ds, seq, strord, mask=None, min_sto=-2):
 
 
 @njit(cache=True)
-def _tributaries(idxs_ds, seq, strord):
+def _tributaries(
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    strord: np.ndarray,
+):
     idxs_trib = []
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
@@ -160,8 +173,43 @@ def _tributaries(idxs_ds, seq, strord):
 
 @njit(cache=True)
 def subbasins_pfafstetter(
-    idxs_pit, idxs_ds, seq, idxs_us_main, uparea, mask=None, depth=1, mv=_mv
+    idxs_pit: np.ndarray,
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    idxs_us_main: np.ndarray,
+    uparea: np.ndarray,
+    mask: np.ndarray | None = None,
+    depth: int = 1,
+    mv: int = _mv,
 ):
+    """Returns a subbasin map with unique IDs starting from one.
+    Subbasins are defined based on the Pfafstetter coding system.
+
+    Parameters
+    ----------
+    idxs_pit : 1D-array of intp
+        index of pit cells
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    idxs_us_main : 1D-array of intp
+        index of next upstream cell along main stem
+    uparea : 1D-array of float
+        upstream area
+    mask : 1D array of bool, optional
+        consider only True cells
+    depth : int, optional
+        depth of Pfafstetter coding, by default 1
+    mv : int, optional
+        value of the "missing value" cell index, by default -1
+    Returns
+    -------
+    subbas : 1D-array of int
+        subbasin map with unique IDs starting from one
+    idxs1 : 1D array of int
+        linear indices of subbasin outlet cells
+    """
     strord = streams.stream_order(idxs_ds, seq, idxs_us_main, mask=mask, mv=mv)
     strord = np.where(strord <= depth + 1, strord, 0).astype(strord.dtype)
     idxs_trib = _tributaries(idxs_ds, seq, strord)
@@ -169,7 +217,7 @@ def subbasins_pfafstetter(
     pfaf_branch = np.zeros(idxs_ds.size, np.int32)
     idxs = []
     # keep basin label; depth; outlet index
-    labs = [(int(0), int(0)) for _ in range(0)]  # set dtypes
+    labs = [(int(0), int(0)) for _ in range(0)]  # set dtypes  # noqa: RUF046, UP018
     # propagate basin labels upstream its main stem
     pfaf0 = 1
     for d0 in range(1, depth):
@@ -237,11 +285,30 @@ def subbasins_pfafstetter(
 
 
 @njit(cache=True)
-def subbasins_area(idxs_ds, seq, idxs_us_main, uparea, area_min):
+def subbasins_area(
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    idxs_us_main: np.ndarray,
+    uparea: np.ndarray,
+    area_min: float,
+):
     """Returns map with basin IDs, with a minimal area of `area_min`.
     Moving upstream from the basin outlets a new subbasin starts at tributaries
     with a contributing area larger than `area_min` and new interbasins when its area
     exceeds the `area_min`.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    seq : 1D array of int
+        ordered cell indices from down- to upstream
+    idxs_us_main : 1D-array of intp
+        index of next upstream cell along main stem
+    uparea : 1D-array of float
+        upstream area
+    area_min : float
+        minimum area of subbasins
 
     Returns
     -------
