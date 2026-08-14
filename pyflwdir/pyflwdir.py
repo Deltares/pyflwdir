@@ -494,7 +494,7 @@ class FlwdirRaster(Flwdir):
             real_length=unit == "m",
             ncol=self.shape[1],
             latlon=self.latlon,
-            transform=self.transform,
+            transform=np.asarray(self.transform),
             mv=self._mv,
         )
         return paths, dist
@@ -554,7 +554,7 @@ class FlwdirRaster(Flwdir):
             real_length=unit == "m",
             ncol=self.shape[1],
             latlon=self.latlon,
-            transform=self.transform,
+            transform=np.asarray(self.transform),
             mv=self._mv,
         )
         return idxs1, dist
@@ -857,7 +857,7 @@ class FlwdirRaster(Flwdir):
             ncol=self.shape[1],
             mask=self._check_data(mask, "mask", optional=True),
             real_length=unit != "cell",
-            transform=self.transform,
+            transform=np.asarray(self.transform),
             latlon=self.latlon,
         )
         return stream_dist.reshape(self.shape)
