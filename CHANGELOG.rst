@@ -8,6 +8,7 @@ unreleased
 0.5.13 (unreleased)
 *******************
 * add FlwdirRaster.subbasins method to create subbasins at all river confluences
+* implement type checking with mypy (overdue maintenance)
 
 0.5.12 (01-07-2026)
 *******************
