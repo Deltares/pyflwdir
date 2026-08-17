@@ -1501,7 +1501,7 @@ class FlwdirRaster(Flwdir):
         data : 2D array
             values
         weights : 2D array, optional
-            weights used for averaging, by default None.
+            Note: The weights argument is deprecated and will be removed in a future version.
         nodata : float, optional
             Missing data value for cells outside domain, by default -9999.0
         mask : 2D array of bool with self.shape, optional
