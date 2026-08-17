@@ -1519,13 +1519,16 @@ class FlwdirRaster(Flwdir):
             raise ValueError(msg)
         if idxs_out is None:
             idxs_out = np.arange(self.size, dtype=np.intp).reshape(self.shape)
-        if weights is None:
-            weights = np.ones(self.size, dtype=np.float32)
+        # raise deprecation warning if weights are provided
+        if weights is not None:
+            warnings.warn(
+                "The 'weights' argument is deprecated and will be removed in a future version.",
+                DeprecationWarning,
+            )
         rivmed = subgrid.segment_median(
             idxs_out=idxs_out.ravel(),
             idxs_nxt=self.idxs_ds if direction == "down" else self.idxs_us_main,
             data=self._check_data(data, "data"),
-            weights=weights,
             nodata=nodata,
             mask=self._check_data(mask, "mask", optional=True),
             mv=self._mv,
