@@ -230,8 +230,9 @@ def region_dissolve(
     regions0 = regions.copy()
     regions0[np.isin(regions, labels)] = 0
     assert np.any(regions0 != 0)
+    transform_array = np.array(transform)
     out, _, dst = gis_utils.spread2d(
-        regions0, nodata=0, transform=transform, latlon=latlon, **kwargs
+        regions0, nodata=0, transform=transform_array, latlon=latlon, **kwargs
     )
     if idxs is None:  # get idxs based on smallest distance per region
         r, c = zip(*ndimage.minimum_position(dst, regions, labels))

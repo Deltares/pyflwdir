@@ -810,6 +810,17 @@ class Flwdir:
     @overload
     def _check_data(
         self,
+        data: None,
+        name: str,
+        optional: Literal[True] = ...,
+        flatten: bool = ...,
+        **kwargs,
+    ) -> None:
+        ...
+
+    @overload
+    def _check_data(
+        self,
         data: np.ndarray | float | None,
         name: str,
         optional: Literal[False] = ...,
@@ -829,7 +840,14 @@ class Flwdir:
     ) -> np.ndarray | None:
         ...
 
-    def _check_data(self, data, name, optional=False, flatten=True, **kwargs):
+    def _check_data(
+        self,
+        data,
+        name,
+        optional=False,
+        flatten=True,
+        **kwargs,
+    ):
         """check data shape and size; by default return flattened array"""
         if data is None and optional:
             return None

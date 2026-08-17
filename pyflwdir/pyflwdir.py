@@ -1008,7 +1008,9 @@ class FlwdirRaster(Flwdir):
         if mask is not None:
             mask = self._check_data(mask, "mask")
         elif min_sto > 1:
-            strord = self._check_data(kwargs.get("strord"), "strord")
+            strord = self._check_data(
+                cast(np.ndarray | None, kwargs.get("strord")), "strord"
+            )
             mask = strord >= min_sto
             kwargs.update(strord=strord)  # add strord column
 
@@ -1637,6 +1639,28 @@ class FlwdirRaster(Flwdir):
     @overload
     def _check_data(
         self,
+        data: None,
+        name: str,
+        optional: Literal[True] = ...,
+        flatten: bool = ...,
+        **kwargs,
+    ) -> None:
+        ...
+
+    @overload
+    def _check_data(
+        self,
+        data: np.ndarray | float | None,
+        name: str,
+        optional: Literal[False] = ...,
+        flatten: bool = ...,
+        **kwargs,
+    ) -> np.ndarray:
+        ...
+
+    @overload
+    def _check_data(
+        self,
         data: np.ndarray | float | None,
         name: str,
         optional: bool,
@@ -1645,7 +1669,14 @@ class FlwdirRaster(Flwdir):
     ) -> np.ndarray | None:
         ...
 
-    def _check_data(self, data, name, optional=False, flatten=True, **kwargs):
+    def _check_data(
+        self,
+        data,
+        name,
+        optional=False,
+        flatten=True,
+        **kwargs,
+    ):
         """check or calculate upstream area cells; return flattened array"""
         if data is None and optional:
             return None

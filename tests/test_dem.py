@@ -106,10 +106,12 @@ def test_slope():
     elv = np.ones((4, 4))
     nodata = -9999
     assert np.all(dem.slope(elv, nodata) == 0)
-    elv.flat[0] == -9999
-    assert np.all(dem.slope(elv, nodata).flat[1:] == 0)
+    elv.flat[0] = nodata
+    slope = dem.slope(elv, nodata)
+    assert np.all(slope.flat[0] == nodata)
+    assert np.all(slope.flat[1:] == 0)
     elv = np.random.random((4, 4))
-    assert np.all(dem.slope(elv, nodata).flat[1:] >= 0)
+    assert np.all(dem.slope(elv, nodata).flat[:] >= 0)
     elv = np.random.random((1, 1))
     assert np.all(dem.slope(elv, nodata) == 0)
 
@@ -130,6 +132,15 @@ def test_hand_fldpln(test_data0, flwdir0):
     )
     assert fldpln_vol.shape == (*depths.shape, drain_map.max())
     assert np.all(np.diff(fldpln_vol, axis=0) > 0)
+    drain_map_default, fldpln_vol_default = subgrid.ucat_volume(
+        idxs_out, idxs_ds, seq, hand, area
+    )
+    default_depths = np.arange(0.5, 3.0, 0.5, dtype=np.float32)
+    _, fldpln_vol_expected = subgrid.ucat_volume(
+        idxs_out, idxs_ds, seq, hand, area, depths=default_depths
+    )
+    assert fldpln_vol_default.shape == (5, drain_map_default.max())
+    assert np.all(fldpln_vol_default == fldpln_vol_expected)
     # max h = 1
     uparea = np.where(drain, 1, 0)
     upa_min = 1
