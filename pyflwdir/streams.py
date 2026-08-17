@@ -81,7 +81,7 @@ def upstream_area(
     seq: np.ndarray,
     ncol: int,
     latlon: bool = False,
-    transform=gis_utils.IDENTITY,
+    transform: np.ndarray = gis_utils._IDENTITY,
     area_factor: float = 1,
     nodata: float = -9999.0,
     dtype: type = np.float64,
@@ -102,8 +102,8 @@ def upstream_area(
         number of columns in raster
     latlon : bool, optional
         True if WGS84 coordinates, by default False
-    transform : affine transform
-        two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
+    transform : np.ndarray
+        Affine transform coefficients for 2D linear mapping, by default gis_utils._IDENTITY
     area_factor : float, optional
         multiplication factor for unit conversion, by default 1
     nodata : float, optional
@@ -288,6 +288,7 @@ def strahler_order(
     return strord
 
 
+@njit(cache=True)
 def stream_distance(
     idxs_ds: np.ndarray,
     seq: np.ndarray,
@@ -295,7 +296,7 @@ def stream_distance(
     mask: np.ndarray | None = None,
     real_length: bool = True,
     latlon: bool = False,
-    transform=gis_utils.IDENTITY,
+    transform: np.ndarray = gis_utils._IDENTITY,
 ) -> np.ndarray:
     """Returns distance to outlet or next downstream True cell in mask
 
@@ -311,8 +312,8 @@ def stream_distance(
         True if stream cell
     latlon : bool, optional
         True if WGS84 coordinates, by default False
-    transform : affine transform
-        Two dimensional transform for 2D linear mapping, by default gis_utils.IDENTITY
+    transform : np.ndarray
+        Affine transform coefficients for 2D linear mapping, by default gis_utils._IDENTITY
 
     Returns
     -------

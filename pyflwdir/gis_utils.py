@@ -37,7 +37,7 @@ def spread2d(
     nodata: float = 0,
     frc: np.ndarray | None = None,
     latlon: bool = False,
-    transform: Affine = IDENTITY,
+    transform: np.ndarray = _IDENTITY,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns filled array with nearest observations, origin cells and friction distance to origin.
     The friction distance is measured through valid cells in the mask and has a uniform value of 1. by default.
@@ -57,8 +57,8 @@ def spread2d(
     latlon: bool
         True for geographic CRS, False for projected CRS.
         If True, the transform units are assumed to be degrees and converted to metric distances.
-    transform: Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
+    transform: np.ndarray
+        Affine transform coefficients mapping pixel coordinates to coordinate reference system.
 
     Returns
     -------
