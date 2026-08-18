@@ -143,8 +143,8 @@ def get_edge(a: np.ndarray, structure: np.ndarray | None = None) -> np.ndarray:
     if structure is None:
         struct = np.ones((3, 3), dtype=bool)
     elif (
-        structure.shape != (3, 3)
-        or not isinstance(structure, np.ndarray)
+        not isinstance(structure, np.ndarray)
+        or structure.shape != (3, 3)
         or structure.dtype != bool
     ):
         raise ValueError("structure must be a 3x3 boolean array")
