@@ -141,7 +141,7 @@ def get_edge(a: np.ndarray, structure: np.ndarray | None = None) -> np.ndarray:
         Boolean array edge cells.
     """
     if structure is None:
-        struct = np.ones((3, 3), dtype=bool)
+        struct = np.array([bool(1) for s in range(9)]).reshape((3, 3))
     elif (
         not isinstance(structure, np.ndarray)
         or structure.shape != (3, 3)
@@ -149,7 +149,7 @@ def get_edge(a: np.ndarray, structure: np.ndarray | None = None) -> np.ndarray:
     ):
         raise ValueError("structure must be a 3x3 boolean array")
     else:
-        struct = structure
+        struct: np.ndarray = structure
     s = np.where(struct.ravel())[0]
     edge = a.copy()
     nrow, ncol = a.shape
