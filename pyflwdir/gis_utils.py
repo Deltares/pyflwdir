@@ -13,6 +13,7 @@ AREA_FACTORS = {"m2": 1.0, "ha": 1e4, "km2": 1e6, "cell": 1}
 # changed to N->S orientation in v0.5 TODO check if used in hydromt?
 _IDENTITY: np.ndarray = np.array([1.0, 0.0, 0.0, 0.0, -1.0, 0.0])
 IDENTITY = Affine(*_IDENTITY)  # Affine transformation for identity
+_STRUCT = np.ones((3, 3), dtype=bool)  # structuring element for get_edge
 
 __all__ = [
     "affine_to_coords",
@@ -124,7 +125,7 @@ def spread2d(
 
 
 @njit(cache=True)
-def get_edge(a: np.ndarray, structure: np.ndarray | None = None) -> np.ndarray:
+def get_edge(a: np.ndarray, structure: np.ndarray = _STRUCT) -> np.ndarray:
     """Get edge of valid cells.
 
     Parameters
@@ -140,17 +141,7 @@ def get_edge(a: np.ndarray, structure: np.ndarray | None = None) -> np.ndarray:
     edge: 2D array of bool
         Boolean array edge cells.
     """
-    if structure is None:
-        struct = np.array([bool(1) for s in range(9)]).reshape((3, 3))
-    elif (
-        not isinstance(structure, np.ndarray)
-        or structure.shape != (3, 3)
-        or structure.dtype != bool
-    ):
-        raise ValueError("structure must be a 3x3 boolean array")
-    else:
-        struct: np.ndarray = structure
-    s = np.where(struct.ravel())[0]
+    s = np.where(structure.ravel())[0]
     edge = a.copy()
     nrow, ncol = a.shape
     for r in range(nrow):
