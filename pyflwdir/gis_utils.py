@@ -123,7 +123,6 @@ def spread2d(
     return out, src, dst
 
 
-@njit(cache=True)
 def get_edge(a: np.ndarray, structure: np.ndarray | None = None) -> np.ndarray:
     """Get edge of valid cells.
 
@@ -142,10 +141,19 @@ def get_edge(a: np.ndarray, structure: np.ndarray | None = None) -> np.ndarray:
     """
     if structure is None:
         struct = np.ones((3, 3), dtype=np.bool_)
-    elif structure.shape != (3, 3):
+    elif (
+        not isinstance(structure, np.ndarray)
+        or structure.shape != (3, 3)
+        or structure.dtype != bool
+    ):
         raise ValueError("structure must be a 3x3 boolean array")
     else:
         struct = structure
+    return _get_edge(a, struct)
+
+
+@njit(cache=True)
+def _get_edge(a: np.ndarray, struct: np.ndarray) -> np.ndarray:
     s = np.where(struct.ravel())[0]
     edge = a.copy()
     nrow, ncol = a.shape

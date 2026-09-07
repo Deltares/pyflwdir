@@ -239,6 +239,19 @@ def test_edge():
     assert np.all(gis.get_edge(a, structure=d4) == b)
 
 
+@pytest.mark.parametrize(
+    "structure",
+    [
+        [[True] * 3] * 3,
+        np.ones((2, 2), dtype=bool),
+        np.ones((3, 3), dtype=np.uint8),
+    ],
+)
+def test_edge_structure_validation(structure):
+    with pytest.raises(ValueError, match="structure must be a 3x3 boolean array"):
+        gis.get_edge(np.ones((5, 5), dtype=bool), structure=structure)
+
+
 def test_spread():
     a = np.zeros((5, 5))
     a[2, 2] = 1
