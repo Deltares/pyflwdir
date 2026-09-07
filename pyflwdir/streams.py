@@ -288,7 +288,6 @@ def strahler_order(
     return strord
 
 
-@njit(cache=True)
 def stream_distance(
     idxs_ds: np.ndarray,
     seq: np.ndarray,
@@ -320,18 +319,44 @@ def stream_distance(
     1D array of float
         distance to outlet or next downstream True cell
     """
-    mv = -9999.0
-    dist = np.full(idxs_ds.size, mv, dtype=np.float32 if real_length else np.int32)
-    dist[seq] = 0  # initialize valid cells with zero length
-    d = 1
+    if real_length:
+        return _stream_distance_real(idxs_ds, seq, ncol, mask, latlon, transform)
+    return _stream_distance_cell(idxs_ds, seq, mask)
+
+
+@njit(cache=True)
+def _stream_distance_real(
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    ncol: int,
+    mask: np.ndarray | None = None,
+    latlon: bool = False,
+    transform: np.ndarray = gis_utils._IDENTITY,
+) -> np.ndarray:
+    dist = np.full(idxs_ds.size, -9999.0, dtype=np.float32)
+    dist[seq] = 0
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
         # sum distances; skip if at pit or mask is True
         if idx0 == idx_ds or (mask is not None and mask[idx0]):
             continue
-        if real_length:
-            d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
+        d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
         dist[idx0] = dist[idx_ds] + d
+    return dist
+
+
+@njit(cache=True)
+def _stream_distance_cell(
+    idxs_ds: np.ndarray, seq: np.ndarray, mask: np.ndarray | None = None
+) -> np.ndarray:
+    dist = np.full(idxs_ds.size, -9999, dtype=np.int32)
+    dist[seq] = 0
+    for idx0 in seq:  # down- to upstream
+        idx_ds = idxs_ds[idx0]
+        # sum distances; skip if at pit or mask is True
+        if idx0 == idx_ds or (mask is not None and mask[idx0]):
+            continue
+        dist[idx0] = dist[idx_ds] + 1
     return dist
 
 

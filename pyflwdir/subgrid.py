@@ -101,7 +101,6 @@ def ucat_area(
     return ucatch_map, ucatch_are
 
 
-@njit(cache=True)
 def ucat_volume(
     idxs_out: np.ndarray,
     idxs_ds: np.ndarray,
@@ -133,6 +132,19 @@ def ucat_volume(
     """
     if depths is None:
         depths = np.arange(0.5, 3.0, 0.5, dtype=np.float32)
+    return _ucat_volume(idxs_out, idxs_ds, seq, hand, area, depths, mv=mv)
+
+
+@njit(cache=True)
+def _ucat_volume(
+    idxs_out: np.ndarray,
+    idxs_ds: np.ndarray,
+    seq: np.ndarray,
+    hand: np.ndarray,
+    area: np.ndarray,
+    depths: np.ndarray,
+    mv: int = _mv,
+) -> tuple[np.ndarray, np.ndarray]:
     # initialize outputs
     ucatch_map = np.full(idxs_ds.size, 0, dtype=idxs_ds.dtype)
     fldpln_vol = np.full((depths.size, idxs_out.size), -9999, dtype=depths.dtype)

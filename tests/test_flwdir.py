@@ -35,4 +35,31 @@ def test_from_dataframe(data):
     idxs_ds0 = get_loc_idx(idx.astype(np.uint64), idx_ds.astype(np.uint64))
     flwdir = Flwdir(idxs_ds=idxs_ds0)
     assert np.all(flwdir.rank == rank)
-    assert flwdir._mv == 18446744073709551615
+    assert flwdir._mv == -1
+
+
+def test_flwdir_uint64_indices_are_normalized(data):
+    _, _, idxs_ds, rank = data
+    idxs_pit = np.array([0, 11], dtype=np.uint64)
+    idxs_seq = np.argsort(rank).astype(np.uint64)
+
+    flwdir = Flwdir(
+        idxs_ds=idxs_ds.astype(np.uint64),
+        idxs_pit=idxs_pit,
+        idxs_outlet=idxs_pit,
+        idxs_seq=idxs_seq,
+    )
+
+    assert flwdir.idxs_ds.dtype == np.int64
+    assert flwdir.idxs_pit.dtype == np.int64
+    assert flwdir.idxs_outlet.dtype == np.int64
+    assert flwdir.idxs_seq.dtype == np.int64
+    assert flwdir._mv == -1
+    assert np.all(flwdir.rank == rank)
+
+
+def test_flwdir_uint64_indices_larger_than_int64_raise():
+    idxs_ds = np.array([0, np.iinfo(np.int64).max + 1], dtype=np.uint64)
+
+    with pytest.raises(ValueError, match="cannot be represented as int64"):
+        Flwdir(idxs_ds=idxs_ds)
