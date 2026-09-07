@@ -35,4 +35,4 @@ def test_from_dataframe(data):
     idxs_ds0 = get_loc_idx(idx.astype(np.uint64), idx_ds.astype(np.uint64))
     flwdir = Flwdir(idxs_ds=idxs_ds0)
     assert np.all(flwdir.rank == rank)
-    assert flwdir._mv == 18446744073709551615
+    assert flwdir._mv == -1
