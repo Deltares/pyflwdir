@@ -26,6 +26,20 @@ __all__ = ["Flwdir", "from_dataframe"]
 logger = logging.getLogger(__name__)
 
 
+def _ensure_supported_index_dtype(
+    idxs: np.ndarray | None, name: str
+) -> np.ndarray | None:
+    if idxs is not None and idxs.dtype == np.uint64:
+        uint64_mv = np.iinfo(np.uint64).max
+        int64_max = np.iinfo(np.int64).max
+        if np.any((idxs > int64_max) & (idxs != uint64_mv)):
+            raise ValueError(
+                f'"{name}" contains indices which cannot be represented as int64.'
+            )
+        idxs = idxs.astype(np.int64)
+    return idxs
+
+
 @njit(cache=True)
 def get_loc_idx(idxs: np.ndarray, idxs_ds: np.ndarray) -> np.ndarray:
     """Get linear indices of downstream cells."""
@@ -97,17 +111,19 @@ class Flwdir:
         self.shape: Any = self.size
 
         # data
+        idxs_ds = cast(np.ndarray, _ensure_supported_index_dtype(idxs_ds, "idxs_ds"))
+        idxs_pit = _ensure_supported_index_dtype(idxs_pit, "idxs_pit")
+        idxs_outlet = _ensure_supported_index_dtype(idxs_outlet, "idxs_outlet")
+        idxs_seq = _ensure_supported_index_dtype(idxs_seq, "idxs_seq")
         self._idxs_ds = idxs_ds
         self._pit = idxs_pit
         self.idxs_outlet = idxs_outlet
         self._seq = idxs_seq
         self._nnodes = nnodes
-        # either -1 for int, 4294967295 for uint32, or 18446744073709551615 for uint64
+        # either -1 for signed integers or 4294967295 for uint32
         self._mv: Any = core._mv
         if idxs_ds.dtype == np.uint32:
             self._mv = np.uint32(self._mv)
-        if idxs_ds.dtype == np.uint64:
-            self._mv = np.uint64(self._mv)
 
         # set placeholders only used if cache if True
         self.cache = cache
@@ -234,7 +250,7 @@ class Flwdir:
         if method == "sort":
             # slow for large arrays
             rnk, n = core.rank(self.idxs_ds, mv=self._mv)
-            self._seq = np.argsort(rnk)[-n:].astype(self.idxs_ds.dtype)
+            self._seq = np.argsort(rnk)[-n:].astype(np.intp)
         elif method == "walk":
             # faster for large arrays, but also takes lots of memory
             self._seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self._mv)

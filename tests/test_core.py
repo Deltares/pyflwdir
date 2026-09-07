@@ -25,6 +25,7 @@ def test_downstream(test_data, flwdir, request):
     assert np.all(idxs_pit1 == np.sort(idxs_pit))
     # loop indices
     idxs_loop = core.loop_indices(idxs_ds, mv=mv)
+    assert idxs_loop.dtype == np.dtype(np.intp)
     assert seq.size == n - idxs_loop.size
     # local upstream indices
     if np.any(rank >= 2):
@@ -78,9 +79,11 @@ def test_upstream(test_data, flwdir, request):
     assert np.sum(idxs_us != mv) == seq.size - idxs_pit.size
     # ordered
     seq2 = core.idxs_seq(idxs_ds, idxs_pit, mv=mv)
+    assert seq2.dtype == np.dtype(np.intp)
     assert np.all(np.diff(rank.flat[seq2]) >= 0)
     # headwater
     idxs_headwater = core.headwater_indices(idxs_ds, mv=mv)
+    assert idxs_headwater.dtype == np.dtype(np.intp)
     assert np.all(n_up[idxs_headwater] == 0)
     if np.any(n_up > 0):
         # local upstream indices

@@ -91,7 +91,11 @@ def test_flwdirraster_attrs(test_data, flwdir, request):
         flw = pyflwdir.FlwdirRaster(
             idxs_ds.copy(), d8.shape, "d8", idxs_pit=idxs_pit.copy(), cache=cache
         )
-        assert flw._mv == mv
+        if idxs_ds.dtype == np.uint64:
+            assert flw.idxs_ds.dtype == np.int64
+            assert flw._mv == core._mv
+        else:
+            assert flw._mv == mv
         assert flw.size == d8.size
         assert flw.shape == d8.shape
         assert isinstance(flw._dict, dict)
@@ -355,6 +359,23 @@ def test_upscale(flw0, nextxy0):
         pyflwdir.from_array(nextxy0, ftype="nextxy").upscale(10)
     with pytest.raises(ValueError, match="size does not match"):
         flw0.upscale(5, uparea=np.ones((2, 1)))
+
+
+def test_upscale_with_uint64_input_is_normalized(flwdir2, flwdir2_idxs):
+    idxs_ds, idxs_pit = flwdir2_idxs
+    flw = FlwdirRaster(
+        idxs_ds=idxs_ds,
+        idxs_pit=idxs_pit,
+        shape=flwdir2.shape,
+        ftype="d8",
+    )
+
+    assert flw.idxs_ds.dtype == np.int64
+    assert flw._mv == core._mv
+    assert flw.idxs_seq.dtype == np.dtype(np.intp)
+    flw1, idxs_out = flw.upscale(5, method="dmm")
+    assert flw1.ftype == flw.ftype
+    assert idxs_out.shape == flw1.shape
 
 
 def test_ucat(flw0: FlwdirRaster):

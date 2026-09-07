@@ -4,7 +4,6 @@ next downstream indices (idxs_ds) and mostly return indices."""
 from typing import Literal
 
 import numpy as np
-from affine import Affine
 from numba import njit
 from numba.typed import List
 
@@ -104,7 +103,7 @@ def idxs_seq(idxs_ds: np.ndarray, idxs_pit: np.ndarray, mv: int = _mv) -> np.nda
     """
     i, j = 0, 0
     idxs_us = upstream_matrix(idxs_ds, mv=mv)
-    idxs_seq = np.full(idxs_ds.size, mv, idxs_ds.dtype)
+    idxs_seq = np.full(idxs_ds.size, mv, dtype=np.intp)
     for idx in idxs_pit:
         idxs_seq[j] = idx
         j += 1
@@ -254,7 +253,7 @@ def loop_indices(idxs_ds: np.ndarray, mv: int = _mv) -> np.ndarray:
     for idx0 in range(idxs_ds.size):
         if ranks[idx0] == -1:
             idxs.append(idx0)
-    return np.array(idxs, dtype=idxs_ds.dtype)
+    return np.array(idxs, dtype=np.intp)
 
 
 @njit(cache=True)
@@ -263,7 +262,7 @@ def headwater_indices(
 ) -> np.ndarray:
     """Returns indices of headwater cells, i.e. cells with no upstream neighbors"""
     nup = upstream_count(idxs_ds, mask=mask, mv=mv)
-    return np.where(nup == 0)[0].astype(idxs_ds.dtype)
+    return np.where(nup == 0)[0].astype(np.intp)
 
 
 @njit(cache=True)
@@ -272,7 +271,7 @@ def confluence_indices(
 ) -> np.ndarray:
     """Returns indices of confluence cells, i.e. cells with two or more upstream neighbors"""
     nup = upstream_count(idxs_ds, mask=mask, mv=mv)
-    return np.where(nup > 1)[0].astype(idxs_ds.dtype)
+    return np.where(nup > 1)[0].astype(np.intp)
 
 
 @njit(cache=True)

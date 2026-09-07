@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from pyflwdir import core
 from pyflwdir.flwdir import Flwdir, get_loc_idx
 
 
@@ -34,5 +35,18 @@ def test_from_dataframe(data):
     # test with uint64
     idxs_ds0 = get_loc_idx(idx.astype(np.uint64), idx_ds.astype(np.uint64))
     flwdir = Flwdir(idxs_ds=idxs_ds0)
+    assert flwdir.idxs_ds.dtype == np.int64
     assert np.all(flwdir.rank == rank)
-    assert flwdir._mv == 18446744073709551615
+    assert flwdir._mv == core._mv
+
+
+@pytest.mark.parametrize("method", ["sort", "walk"])
+def test_uint64_idxs_seq_uses_native_index_dtype(data, method):
+    _, _, idxs_ds, rank = data
+    flwdir = Flwdir(idxs_ds=idxs_ds.astype(np.uint64))
+
+    flwdir.order_cells(method=method)
+
+    assert flwdir.idxs_ds.dtype == np.int64
+    assert flwdir.idxs_seq.dtype == np.dtype(np.intp)
+    assert np.all(np.diff(rank[flwdir.idxs_seq]) >= 0)
