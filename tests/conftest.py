@@ -3,9 +3,6 @@ import os
 import numpy as np
 import pytest
 
-# uncomment for debugging tests
-os.environ["NUMBA_DISABLE_JIT"] = "1"
-
 from pyflwdir import core, core_d8, core_nextxy  # noqa: E402
 from pyflwdir.pyflwdir import FlwdirRaster, from_dem  # noqa: E402
 

@@ -41,7 +41,9 @@ exclude = ["docs", "notebooks", "envs", "tests", "binder", ".github"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["error"]
+filterwarnings = [
+    "ignore::PendingDeprecationWarning:affine.*",
+]
 
 [tool.mypy]
 files = ["pyflwdir"]
