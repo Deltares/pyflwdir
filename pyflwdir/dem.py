@@ -81,7 +81,7 @@ def fill_depressions(
 
     # initiate queue
     if idxs_pit is None:  # with edge cells
-        queued = gis_utils.get_edge(~done, structure=struct)
+        queued = gis_utils._get_edge(~done, struct)
         if elv_max is not None:
             queued = np.logical_and(queued, elevtn <= elv_max)
             if not np.any(queued):

@@ -26,14 +26,30 @@ __all__ = ["Flwdir", "from_dataframe"]
 logger = logging.getLogger(__name__)
 
 
+def _ensure_supported_index_dtype(
+    idxs: np.ndarray | None, name: str
+) -> np.ndarray | None:
+    if idxs is not None and idxs.dtype == np.uint64:
+        uint64_mv = np.iinfo(np.uint64).max
+        int64_max = np.iinfo(np.int64).max
+        if np.any((idxs > int64_max) & (idxs != uint64_mv)):
+            raise ValueError(
+                f'"{name}" contains indices which cannot be represented as int64.'
+            )
+        idxs = idxs.astype(np.int64)
+    return idxs
+
+
 @njit(cache=True)
 def get_loc_idx(idxs: np.ndarray, idxs_ds: np.ndarray) -> np.ndarray:
     """Get linear indices of downstream cells."""
     idx_map = {idx: i for i, idx in enumerate(idxs)}
     # return i if idx_ds not in idx_map, i.e. idx is a pit
-    idxs_ds0 = np.empty_like(idxs, dtype=idxs.dtype)
+    idxs_ds0 = np.empty(idxs.size, dtype=np.intp)
     for i, idx_ds in enumerate(idxs_ds):
-        idxs_ds0[i] = idx_map.get(idx_ds, i)
+        idxs_ds0[i] = i
+        if idx_ds in idx_map:
+            idxs_ds0[i] = idx_map[idx_ds]
     return idxs_ds0
 
 
@@ -97,17 +113,19 @@ class Flwdir:
         self.shape: Any = self.size
 
         # data
+        idxs_ds = cast(np.ndarray, _ensure_supported_index_dtype(idxs_ds, "idxs_ds"))
+        idxs_pit = _ensure_supported_index_dtype(idxs_pit, "idxs_pit")
+        idxs_outlet = _ensure_supported_index_dtype(idxs_outlet, "idxs_outlet")
+        idxs_seq = _ensure_supported_index_dtype(idxs_seq, "idxs_seq")
         self._idxs_ds = idxs_ds
         self._pit = idxs_pit
         self.idxs_outlet = idxs_outlet
         self._seq = idxs_seq
         self._nnodes = nnodes
-        # either -1 for int, 4294967295 for uint32, or 18446744073709551615 for uint64
+        # either -1 for signed integers or 4294967295 for uint32
         self._mv: Any = core._mv
         if idxs_ds.dtype == np.uint32:
             self._mv = np.uint32(self._mv)
-        if idxs_ds.dtype == np.uint64:
-            self._mv = np.uint64(self._mv)
 
         # set placeholders only used if cache if True
         self.cache = cache

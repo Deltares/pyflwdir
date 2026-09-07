@@ -3,11 +3,8 @@ import os
 import numpy as np
 import pytest
 
-# uncomment for debugging tests
-os.environ["NUMBA_DISABLE_JIT"] = "1"
-
-from pyflwdir import core, core_d8, core_nextxy  # noqa: E402
-from pyflwdir.pyflwdir import FlwdirRaster, from_dem  # noqa: E402
+from pyflwdir import core, core_d8, core_nextxy
+from pyflwdir.pyflwdir import FlwdirRaster, from_dem
 
 
 @pytest.fixture(scope="session")
@@ -89,14 +86,14 @@ def flwdir2():
 
 @pytest.fixture(scope="session")
 def flwdir2_idxs(flwdir2):
-    idxs_ds2, idxs_pit2, _ = core_d8.from_array(flwdir2, dtype=np.uint64)
+    idxs_ds2, idxs_pit2, _ = core_d8.from_array(flwdir2, dtype=np.int64)
     return idxs_ds2, idxs_pit2
 
 
 @pytest.fixture(scope="session")
 def flwdir2_rank(flwdir2_idxs):
     idxs_ds2, _ = flwdir2_idxs
-    rank2, n2 = core.rank(idxs_ds2, mv=np.uint64(core._mv))
+    rank2, n2 = core.rank(idxs_ds2, mv=core._mv)
     seq2 = np.argsort(rank2)[-n2:]
     return rank2, n2, seq2
 
@@ -105,7 +102,7 @@ def flwdir2_rank(flwdir2_idxs):
 def test_data2(flwdir2_idxs, flwdir2_rank):
     rank2, _, seq2 = flwdir2_rank
     idxs_ds2, idxs_pit2 = flwdir2_idxs
-    return idxs_ds2, idxs_pit2, seq2, rank2, np.uint64(core._mv)
+    return idxs_ds2, idxs_pit2, seq2, rank2, core._mv
 
 
 @pytest.fixture(scope="session")
