@@ -173,7 +173,7 @@ def transform_from_origin(
     the coordinates of its upper left corner `west`, `north` and pixel
     sizes `xsize`, `ysize`.
     """
-    return Affine.translation(west, north) * Affine.scale(xsize, -ysize)
+    return Affine(xsize, 0.0, west, 0.0, -ysize, north)
 
 
 def transform_from_bounds(
@@ -189,8 +189,13 @@ def transform_from_bounds(
     its bounds `west`, `south`, `east`, `north` and its `width` and
     `height` in number of pixels.
     """
-    return Affine.translation(west, north) * Affine.scale(
-        (east - west) / width, (south - north) / height
+    return Affine(
+        (east - west) / width,
+        0.0,
+        west,
+        0.0,
+        (south - north) / height,
+        north,
     )
 
 
@@ -202,7 +207,8 @@ def array_bounds(
     its height, width, and an affine transform.
     """
     w, n = transform.xoff, transform.yoff
-    e, s = transform * (width, height)
+    e = transform.a * width + transform.b * height + transform.c
+    s = transform.d * width + transform.e * height + transform.f
     return w, s, e, n
 
 
@@ -250,7 +256,8 @@ def xy(
     else:
         raise ValueError("Invalid offset")
 
-    xs, ys = transform * transform.translation(coff, roff) * (cols, rows)
+    xs = transform.a * (cols + coff) + transform.b * (rows + roff) + transform.c
+    ys = transform.d * (cols + coff) + transform.e * (rows + roff) + transform.f
     return xs, ys
 
 
@@ -293,7 +300,8 @@ def rowcol(
     else:
         eps = 10.0**-precision * (1.0 - 2.0 * op(0.1))
     invtransform = ~transform
-    fcols, frows = invtransform * (xs + eps, ys - eps)
+    fcols = invtransform.a * (xs + eps) + invtransform.b * (ys - eps) + invtransform.c
+    frows = invtransform.d * (xs + eps) + invtransform.e * (ys - eps) + invtransform.f
     cols, rows = op(fcols).astype(int), op(frows).astype(int)
     return rows, cols
 
@@ -405,8 +413,8 @@ def affine_to_coords(
     x, y coordinate arrays : tuple of ndarray of float
     """
     height, width = shape
-    x_coords, _ = affine * (np.arange(width) + 0.5, np.zeros(width) + 0.5)
-    _, y_coords = affine * (np.zeros(height) + 0.5, np.arange(height) + 0.5)
+    x_coords = affine.a * (np.arange(width) + 0.5) + affine.b * 0.5 + affine.c
+    y_coords = affine.d * 0.5 + affine.e * (np.arange(height) + 0.5) + affine.f
     return x_coords, y_coords
 
 

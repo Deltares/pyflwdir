@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for the pyflwdir.gis_utils module."""
 
 import numpy as np
@@ -22,6 +21,75 @@ prof = {
     "transform": Affine(1 / 1200.0, 0.0, -10.5, 0.0, -1 / 1200.0, 55.5),
 }
 
+TRANSFORM_CASES = [
+    pytest.param(
+        (3, 4),
+        Affine(1.0, 0.0, 100.0, 0.0, -2.0, 50.0),
+        (100.0, 44.0, 104.0, 50.0),
+        {
+            "ul": (100.0, 50.0),
+            "ur": (101.0, 50.0),
+            "ll": (100.0, 48.0),
+            "lr": (101.0, 48.0),
+            "center": (100.5, 49.0),
+        },
+        np.array([100.5, 101.5, 102.5, 103.5]),
+        np.array([49.0, 47.0, 45.0]),
+        id="north-up",
+    ),
+    pytest.param(
+        (3, 4),
+        Affine(1.25, 0.0, -3.0, 0.0, 2.5, 4.0),
+        (-3.0, 11.5, 2.0, 4.0),
+        {
+            "ul": (-3.0, 4.0),
+            "ur": (-1.75, 4.0),
+            "ll": (-3.0, 6.5),
+            "lr": (-1.75, 6.5),
+            "center": (-2.375, 5.25),
+        },
+        np.array([-2.375, -1.125, 0.125, 1.375]),
+        np.array([5.25, 7.75, 10.25]),
+        id="south-up",
+    ),
+    pytest.param(
+        (3, 4),
+        Affine(2.0, 0.25, 10.0, 0.5, -3.0, 20.0),
+        (10.0, 13.0, 18.75, 20.0),
+        {
+            "ul": (10.0, 20.0),
+            "ur": (12.0, 20.5),
+            "ll": (10.25, 17.0),
+            "lr": (12.25, 17.5),
+            "center": (11.125, 18.75),
+        },
+        np.array([11.125, 13.125, 15.125, 17.125]),
+        np.array([18.75, 15.75, 12.75]),
+        id="rotated-north-up",
+    ),
+    pytest.param(
+        (3, 4),
+        Affine(1.5, -0.25, -5.0, -0.4, 2.0, 7.0),
+        (-5.0, 11.4, 0.25, 7.0),
+        {
+            "ul": (-5.0, 7.0),
+            "ur": (-3.5, 6.6),
+            "ll": (-5.25, 9.0),
+            "lr": (-3.75, 8.6),
+            "center": (-4.375, 7.8),
+        },
+        np.array([-4.375, -2.875, -1.375, 0.125]),
+        np.array([7.8, 9.8, 11.8]),
+        id="rotated-south-up",
+    ),
+]
+
+
+def _transform_xy(transform, cols, rows):
+    xs = transform.a * cols + transform.b * rows + transform.c
+    ys = transform.d * cols + transform.e * rows + transform.f
+    return xs, ys
+
 
 def test_from_origin():
     w, _, _, n = prof["bounds"]
@@ -35,30 +103,33 @@ def test_from_bounds():
     assert [round(v, 7) for v in tr] == [round(v, 7) for v in prof["transform"]]
 
 
-def test_array_bounds():
-    bounds0 = np.asarray(prof["bounds"])
-    bounds = gis.array_bounds(prof["height"], prof["width"], prof["transform"])
-    assert np.all(bounds0 == np.asarray(bounds).round(7))
+@pytest.mark.parametrize(
+    "shape, transform, expected_bounds, _, __, ___", TRANSFORM_CASES
+)
+def test_array_bounds(shape, transform, expected_bounds, _, __, ___):
+    height, width = shape
+    bounds = gis.array_bounds(height, width, transform)
+    assert np.allclose(bounds, expected_bounds)
 
 
-def test_xy():
-    aff = prof["transform"]
-    ul_x, ul_y = aff * (0, 0)
-    xoff = aff.a
-    yoff = aff.e
-    assert gis.xy(aff, 0, 0, offset="ul") == (ul_x, ul_y)
-    assert gis.xy(aff, 0, 0, offset="ur") == (ul_x + xoff, ul_y)
-    assert gis.xy(aff, 0, 0, offset="ll") == (ul_x, ul_y + yoff)
-    expected = (ul_x + xoff, ul_y + yoff)
-    assert gis.xy(aff, 0, 0, offset="lr") == expected
-    expected = (ul_x + xoff / 2, ul_y + yoff / 2)
-    assert gis.xy(aff, 0, 0, offset="center") == expected
+@pytest.mark.parametrize(
+    "shape, transform, _, expected_offsets, __, ___", TRANSFORM_CASES
+)
+def test_xy(shape, transform, _, expected_offsets, __, ___):
+    for offset, expected in expected_offsets.items():
+        assert gis.xy(transform, 0, 0, offset=offset) == expected
     assert (
-        gis.xy(aff, 0, 0, offset="lr")
-        == gis.xy(aff, 0, 1, offset="ll")
-        == gis.xy(aff, 1, 1, offset="ul")
-        == gis.xy(aff, 1, 0, offset="ur")
+        gis.xy(transform, 0, 0, offset="lr")
+        == gis.xy(transform, 0, 1, offset="ll")
+        == gis.xy(transform, 1, 1, offset="ul")
+        == gis.xy(transform, 1, 0, offset="ur")
     )
+
+    rows, cols = np.indices(shape)
+    xs, ys = gis.xy(transform, rows, cols)
+    expected = _transform_xy(transform, cols + 0.5, rows + 0.5)
+    assert np.allclose(xs, expected[0])
+    assert np.allclose(ys, expected[1])
 
 
 def test_rowcol():
@@ -70,34 +141,45 @@ def test_rowcol():
     assert gis.rowcol(aff, left, bottom) == (-bottom, left)
 
 
-def test_idxs_to_coords():
-    shape = (10, 8)
+@pytest.mark.parametrize("shape, transform, _, __, ___, ____", TRANSFORM_CASES)
+def test_rowcol_transform_cases(shape, transform, _, __, ___, ____):
+    rows, cols = np.indices(shape)
+    xs, ys = _transform_xy(transform, cols + 0.5, rows + 0.5)
+    rows1, cols1 = gis.rowcol(transform, xs, ys)
+    assert np.all(rows1 == rows)
+    assert np.all(cols1 == cols)
+
+
+@pytest.mark.parametrize("shape, transform, _, __, ___, ____", TRANSFORM_CASES)
+def test_idxs_to_coords(shape, transform, _, __, ___, ____):
     idxs = np.arange(shape[0] * shape[1]).reshape(shape)
-    transform = gis.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     xs, ys = gis.idxs_to_coords(idxs, transform, shape)
-    assert np.all(ys == (np.arange(shape[0]) + 0.5)[:, None])
-    assert np.all(xs == np.arange(shape[1]) + 0.5)
+    rows, cols = np.indices(shape)
+    expected = _transform_xy(transform, cols + 0.5, rows + 0.5)
+    assert np.allclose(xs, expected[0])
+    assert np.allclose(ys, expected[1])
     with pytest.raises(IndexError):
         gis.idxs_to_coords(np.array([-1]), transform, shape)
 
 
-def test_coords_to_idxs():
-    shape = (10, 8)
+@pytest.mark.parametrize("shape, transform, _, __, ___, ____", TRANSFORM_CASES)
+def test_coords_to_idxs(shape, transform, _, __, ___, ____):
     idxs0 = np.arange(shape[0] * shape[1])
-    transform = gis.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
-    xs, ys = np.meshgrid(np.arange(shape[1]) + 0.5, np.arange(shape[0]) + 0.5)
+    rows, cols = np.indices(shape)
+    xs, ys = _transform_xy(transform, cols + 0.5, rows + 0.5)
     idxs = gis.coords_to_idxs(xs, ys, transform, shape)
     assert np.all(idxs.ravel() == idxs0)
     with pytest.raises(IndexError):
         gis.coords_to_idxs(ys, xs, transform, shape)
 
 
-def test_affine_to_coords():
-    shape = (10, 8)
-    transform = gis.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+@pytest.mark.parametrize(
+    "shape, transform, _, __, expected_xcoords, expected_ycoords", TRANSFORM_CASES
+)
+def test_affine_to_coords(shape, transform, _, __, expected_xcoords, expected_ycoords):
     xs, ys = gis.affine_to_coords(transform, shape)
-    assert np.all(ys == np.arange(shape[0]) + 0.5)
-    assert np.all(xs == np.arange(shape[1]) + 0.5)
+    assert np.allclose(xs, expected_xcoords)
+    assert np.allclose(ys, expected_ycoords)
 
 
 def test_reggrid_dx():
