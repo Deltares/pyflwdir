@@ -11,6 +11,8 @@ unreleased
 * implement type checking with mypy (overdue maintenance)
 * build the upstream cell index in CSR layout in ``core.idxs_seq``, reducing
   the memory and runtime of ``order_cells(method="walk")`` (#114)
+* make ``method="walk"`` the default of ``order_cells`` and ``idxs_seq`` for
+  ``Flwdir`` and ``FlwdirRaster``, including the ``nextxy`` type (#115)
 
 0.5.12 (01-07-2026)
 *******************
