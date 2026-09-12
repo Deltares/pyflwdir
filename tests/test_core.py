@@ -60,6 +60,42 @@ def test_downstream(test_data, flwdir, request):
         assert np.all(rank3[idxs1] == n_up)
 
 
+@pytest.mark.parametrize("test_data", ["test_data0", "test_data1", "test_data2"])
+def test_upstream_csr(test_data, request):
+    test_data = request.getfixturevalue(test_data)
+    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
+    idxs_ds[rank == -1] = mv
+    n = idxs_ds.size
+    indptr, idxs_us = core.upstream_csr(idxs_ds, mv=mv)
+    # one slice per cell, one entry per upstream cell
+    assert indptr.size == n + 1
+    assert indptr[0] == 0
+    assert indptr[n] == idxs_us.size == seq.size - idxs_pit.size
+    assert np.all(np.diff(indptr.astype(np.int64)) >= 0)
+    # every entry drains into the cell whose slice it sits in
+    for idx0 in range(n):
+        for k in range(indptr[idx0], indptr[idx0 + 1]):
+            assert idxs_ds[idxs_us[k]] == idx0
+    # same upstream cells, in the same order, as the dense upstream matrix
+    idxs_us0 = core.upstream_matrix(idxs_ds, mv=mv)
+    for idx0 in range(n):
+        us0 = idxs_us0[idx0][idxs_us0[idx0] != mv]
+        assert np.array_equal(idxs_us[indptr[idx0] : indptr[idx0 + 1]], us0)
+
+
+def test_upstream_csr_high_fanin():
+    # more than 127 cells draining into one cell: upstream_count returns int8,
+    # which saturates, while the CSR index counts in the index dtype
+    n = 130
+    idxs_ds = np.full(n, n - 1, dtype=np.int32)
+    idxs_ds[n - 1] = n - 1  # pit
+    mv = np.int32(-1)
+    indptr, idxs_us = core.upstream_csr(idxs_ds, mv=mv)
+    assert indptr[n] == idxs_us.size == n - 1
+    seq = core.idxs_seq(idxs_ds, core.pit_indices(idxs_ds), mv)
+    assert seq.size == n
+
+
 @pytest.mark.parametrize(
     "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data0", "flwdir0")]
 )
