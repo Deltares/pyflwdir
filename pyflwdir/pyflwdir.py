@@ -296,7 +296,7 @@ class FlwdirRaster(Flwdir):
     def idxs_seq(self) -> np.ndarray:
         """Linear indices of valid cells ordered from down- to upstream."""
         if self._seq is None:
-            self.order_cells(method="walk" if self.ftype != "nextxy" else "sort")
+            self.order_cells(method="walk")
         return cast(np.ndarray, self._seq)
 
     ### SET/MODIFY PROPERTIES ###

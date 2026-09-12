@@ -89,6 +89,62 @@ def upstream_matrix(idxs_ds: np.ndarray, mv: int = _mv) -> np.ndarray:
 
 
 @njit(cache=True)
+def upstream_csr(idxs_ds: np.ndarray, mv: int = _mv) -> tuple[np.ndarray, np.ndarray]:
+    """Returns the upstream cell indices in compressed sparse row (CSR) layout.
+
+    The upstream cells of cell `i` are `idxs_us[indptr[i]:indptr[i+1]]`, sorted
+    by linear index. This holds one entry per upstream cell, where
+    `upstream_matrix` reserves as many entries for every cell as the largest
+    number of upstream cells found anywhere in the data.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of int
+        linear index of next downstream cell
+    mv : int
+        missing value
+
+    Returns
+    -------
+    indptr : 1D-array of int
+        start of the upstream cells of each cell in idxs_us; size n + 1
+    idxs_us : 1D-array of int
+        linear indices of upstream cells, grouped per downstream cell; size e
+
+    See Also
+    --------
+    upstream_matrix
+
+    Notes
+    -----
+    With n cells and e upstream cells this takes O(n + e) time and n + 1 + e
+    values of memory, against n * d values for `upstream_matrix`, where d is the
+    largest number of upstream cells of any cell. Note that e < n because every
+    cell drains to at most one other cell, while d is set by the single most
+    branched cell in the data.
+    """
+    n = idxs_ds.size
+    # count the upstream cells of each cell; a pit is not upstream of itself
+    indptr = np.zeros(n + 1, dtype=idxs_ds.dtype)
+    for idx0 in range(n):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds != idx0 and idx_ds != mv:
+            indptr[idx_ds] += 1
+    # cumulative sum; indptr[i] is now the END of the slice of cell i
+    for i in range(1, n + 1):
+        indptr[i] += indptr[i - 1]
+    # fill the slices back to front, which sorts each slice by linear index and
+    # leaves indptr[i] at the START of the slice of cell i
+    idxs_us = np.full(indptr[n], mv, dtype=idxs_ds.dtype)
+    for idx0 in range(n - 1, -1, -1):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds != idx0 and idx_ds != mv:
+            indptr[idx_ds] -= 1
+            idxs_us[indptr[idx_ds]] = idx0
+    return indptr, idxs_us
+
+
+@njit(cache=True)
 def idxs_seq(idxs_ds: np.ndarray, idxs_pit: np.ndarray, mv: int = _mv) -> np.ndarray:
     """Returns indices ordered from down- to upstream.
 
@@ -101,24 +157,169 @@ def idxs_seq(idxs_ds: np.ndarray, idxs_pit: np.ndarray, mv: int = _mv) -> np.nda
     -------
     idxs_seq : ndarray of int, optional
         linear indices of valid cells ordered from down- to upstream
+
+    Notes
+    -----
+    Breadth-first traversal from the pits, upstream over the flow network. With
+    n cells and e upstream cells this takes O(n + e) time and memory, as every
+    cell is added to the sequence once and every upstream cell is read once.
     """
     i, j = 0, 0
-    idxs_us = upstream_matrix(idxs_ds, mv=mv)
+    indptr, idxs_us = upstream_csr(idxs_ds, mv=mv)
     idxs_seq = np.full(idxs_ds.size, mv, idxs_ds.dtype)
     for idx in idxs_pit:
         idxs_seq[j] = idx
         j += 1
-    while i < idxs_seq.size:
-        idx0 = idxs_seq[i]
-        if idx0 == mv:
-            break
-        for idx in idxs_us[idx0, :]:
-            if idx == mv:
-                break
-            idxs_seq[j] = idx
+    while i < j:  # i: cell being expanded, j: next free position
+        # a signed index; adding to an unsigned index promotes to float (#79)
+        idx0 = np.intp(idxs_seq[i])
+        for k in range(np.intp(indptr[idx0]), np.intp(indptr[idx0 + 1])):
+            idxs_seq[j] = idxs_us[k]
             j += 1
         i += 1
     return idxs_seq[:i]
+
+
+@njit(cache=True)
+def idxs_seq_dfs(
+    idxs_ds: np.ndarray, idxs_pit: np.ndarray, mv: int = _mv
+) -> np.ndarray:
+    """Returns indices ordered from down- to upstream, one tributary at a time.
+
+    Depth-first traversal from the pits, upstream over the flow network, after
+    Braun and Willett (2013). Every subbasin is a contiguous block of the
+    returned sequence, and the upstream cells of a cell are taken in order of
+    linear index, so most cells sit close to their downstream cell in the
+    sequence, unlike in the breadth-first order of `idxs_seq`, which may improve
+    locality when the sequence is consumed.
+
+    Parameters
+    ----------
+    idxs_ds, idxs_pit : 1D-array of int
+        linear index of next downstream, pit cell
+    mv : int
+        missing value
+
+    Returns
+    -------
+    idxs_seq : 1D-array of int
+        linear indices of valid cells ordered from down- to upstream
+
+    Notes
+    -----
+    With n cells and e upstream cells this takes O(n + e) time and memory. The
+    explicit stack holds at most one entry per cell, so no recursion is needed.
+
+    References
+    ----------
+    Braun, J. and Willett, S.D. (2013). A very efficient O(n), implicit and
+    parallel, method to solve the stream power equation governing fluvial
+    incision and landscape evolution. Geomorphology 180-181, 170-179.
+    """
+    indptr, idxs_us = upstream_csr(idxs_ds, mv=mv)
+    n_valid = np.intp(indptr[idxs_ds.size]) + idxs_pit.size
+    idxs_seq = np.full(n_valid, mv, idxs_ds.dtype)
+    stack = np.full(n_valid, mv, idxs_ds.dtype)
+    j, k = 0, 0
+    for idx in idxs_pit:
+        stack[k] = idx
+        k += 1
+    while k > 0:
+        k -= 1
+        idx0 = stack[k]
+        idxs_seq[j] = idx0
+        j += 1
+        # push the upstream cells in reverse, so the first comes off first
+        i0 = np.intp(idx0)
+        for m in range(np.intp(indptr[i0 + 1]) - 1, np.intp(indptr[i0]) - 1, -1):
+            stack[k] = idxs_us[m]
+            k += 1
+    return idxs_seq[:j]
+
+
+@njit(cache=True)
+def idxs_seq_topo(idxs_ds: np.ndarray, mv: int = _mv) -> np.ndarray:
+    """Returns indices ordered from down- to upstream, without the upstream cells.
+
+    A cell is ready as soon as all of its upstream cells have been added, which
+    only takes a count per cell, not the upstream cells themselves (Kahn, 1962).
+    The traversal runs from the headwaters down; the returned sequence runs from
+    down- to upstream like the others.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of int
+        linear index of next downstream cell
+    mv : int
+        missing value
+
+    Returns
+    -------
+    idxs_seq : 1D-array of int
+        linear indices of valid cells ordered from down- to upstream
+
+    Notes
+    -----
+    With n cells this takes O(n) time and about 3 * n values plus a byte per
+    cell of memory: the counts, the queue, a mask and the returned sequence,
+    against the upstream index of n + 1 + e values that `idxs_seq` and
+    `idxs_seq_dfs` build first. The traversal from the headwaters also reaches
+    cells that never drain to a pit, upstream of a loop or of a nodata cell; the
+    pass back over the queue drops them, so the returned cells are those of
+    `idxs_seq`.
+
+    References
+    ----------
+    Kahn, A.B. (1962). Topological sorting of large networks. Communications of
+    the ACM 5(11), 558-562.
+    """
+    n = idxs_ds.size
+    # count the upstream cells of each cell; a pit is not upstream of itself
+    n_up = np.zeros(n, dtype=idxs_ds.dtype)
+    n_valid = 0
+    for idx0 in range(n):
+        idx_ds = idxs_ds[idx0]
+        if idx_ds != mv:
+            n_valid += 1
+            if idx_ds != idx0:
+                n_up[idx_ds] += 1
+    # the queue: first the cells without upstream cells, then every cell whose
+    # upstream cells have all been added
+    queue = np.full(n_valid, mv, idxs_ds.dtype)
+    j = 0
+    for idx0 in range(n):
+        if idxs_ds[idx0] != mv and n_up[idx0] == 0:
+            queue[j] = idx0
+            j += 1
+    i = 0
+    while i < j:
+        idx1 = np.intp(queue[i])
+        idx_ds = np.intp(idxs_ds[idx1])
+        if idx_ds != idx1:
+            n_up[idx_ds] -= 1
+            # ready, and a valid cell itself: a cell may drain into nodata
+            if n_up[idx_ds] == 0 and idxs_ds[idx_ds] != mv:
+                queue[j] = idx_ds
+                j += 1
+        i += 1
+    # the queue runs from up- to downstream; walk it back to find the cells
+    # that drain to a pit, then write those out from down- to upstream
+    drains = np.zeros(n, dtype=np.bool_)
+    n_drain = 0
+    for m in range(j - 1, -1, -1):
+        idx1 = np.intp(queue[m])
+        idx_ds = np.intp(idxs_ds[idx1])
+        if idx_ds == idx1 or drains[idx_ds]:
+            drains[idx1] = True
+            n_drain += 1
+    idxs_seq = np.full(n_drain, mv, idxs_ds.dtype)
+    k = 0
+    for m in range(j - 1, -1, -1):
+        idx1 = np.intp(queue[m])
+        if drains[idx1]:
+            idxs_seq[k] = idx1
+            k += 1
+    return idxs_seq
 
 
 @njit(cache=True)
