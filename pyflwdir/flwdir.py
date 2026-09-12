@@ -248,7 +248,7 @@ class Flwdir:
             Method to order nodes: the default "walk" traces the nodes from down- to
             upstream, holding the upstream cells of the whole network in memory in
             compressed sparse row layout; "sort" sorts the nodes on their rank,
-            which is slower for large arrays.
+            which can be slower for large arrays.
         """
         if method == "sort":
             # slow for large arrays
