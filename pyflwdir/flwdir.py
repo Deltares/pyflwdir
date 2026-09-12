@@ -239,16 +239,37 @@ class Flwdir:
 
     ### SET/MODIFY PROPERTIES ###
 
-    def order_cells(self, method: Literal["sort", "walk"] = "walk") -> None:
+    def order_cells(
+        self, method: Literal["sort", "walk", "dfs", "topo"] = "walk"
+    ) -> None:
         """Order cells from down- to upstream.
 
         Parameters
         ----------
-        method: {'walk', 'sort'}, optional
-            Method to order nodes: the default "walk" traces the nodes from down- to
-            upstream, holding the upstream cells of the whole network in memory in
-            compressed sparse row layout; "sort" sorts the nodes on their rank,
-            which can be slower for large arrays.
+        method: {'walk', 'dfs', 'topo', 'sort'}, optional
+            Method to order nodes. The default "walk" traces the nodes from down-
+            to upstream breadth-first, holding the upstream cells of the whole
+            network in memory in compressed sparse row layout. "dfs" traces them
+            depth-first with the same index, which keeps each subbasin together
+            in the sequence and may improve locality when the sequence is
+            consumed. "topo" releases a node once all of its upstream nodes have
+            been ordered, which needs a count per node instead of the upstream
+            index.
+            "sort" sorts the nodes on their rank, which can be slower for large
+            arrays.
+
+        Notes
+        -----
+        Every method returns the same cells, those that drain to a pit, in a
+        sequence in which each cell comes after the cell it drains into, which
+        is all the flow network methods need: upstream area, basins, stream
+        order and the like give the same result for each. The relative order of
+        cells that do not drain into one another differs though, so labels
+        given in sequence order (subbasins_streamorder) and the order of the
+        features of streams change with the method, floating point
+        accumulations can differ in the last bits, and dem_adjust and
+        dem_dig_d4, which adjust the elevation one flow path at a time in
+        sequence order, give a different adjustment.
         """
         if method == "sort":
             # slow for large arrays
@@ -256,8 +277,14 @@ class Flwdir:
             self._seq = np.argsort(rnk)[-n:].astype(self.idxs_ds.dtype)
         elif method == "walk":
             self._seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self._mv)
+        elif method == "dfs":
+            self._seq = core.idxs_seq_dfs(self.idxs_ds, self.idxs_pit, self._mv)
+        elif method == "topo":
+            self._seq = core.idxs_seq_topo(self.idxs_ds, self._mv)
         else:
-            raise ValueError(f'Invalid method {method}, select from ["walk", "sort"]')
+            raise ValueError(
+                f'Invalid method {method}, select from ["walk", "dfs", "topo", "sort"]'
+            )
         self._nnodes = self._seq.size
 
     def main_upstream(self, uparea: np.ndarray | None = None) -> np.ndarray:
