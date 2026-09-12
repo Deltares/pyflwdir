@@ -442,3 +442,18 @@ def test_from_array_nextxy_self_pointing_cell_is_pit():
     position = np.full(9, -1)
     position[seq_walk] = np.arange(9)
     assert np.all(position[flw.idxs_ds[seq_walk]] <= position[seq_walk])
+
+
+@pytest.mark.parametrize("method", ["walk", "dfs", "topo", "sort"])
+def test_order_cells_methods(flwdir0, flwdir0_rank, method):
+    flw = pyflwdir.from_array(flwdir0, ftype="d8")
+    flw.order_cells(method=method)
+    seq = flw.idxs_seq
+    rank = flwdir0_rank[0].ravel()
+    # the valid cells, each after the cell it drains into
+    assert np.array_equal(np.sort(seq), np.flatnonzero(rank >= 0))
+    position = np.full(rank.size, -1)
+    position[seq] = np.arange(seq.size)
+    upstream = np.flatnonzero((rank > 0) & (flw.idxs_ds != np.arange(rank.size)))
+    assert np.all(position[flw.idxs_ds[upstream]] < position[upstream])
+    assert flw.ncells == seq.size

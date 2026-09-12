@@ -261,15 +261,15 @@ class Flwdir:
         Notes
         -----
         Every method returns the same cells, those that drain to a pit, in a
-        sequence in which each cell comes after the cell it drains into, which
-        is all the flow network methods need: upstream area, basins, stream
-        order and the like give the same result for each. The relative order of
-        cells that do not drain into one another differs though, so labels
-        given in sequence order (subbasins_streamorder) and the order of the
-        features of streams change with the method, floating point
-        accumulations can differ in the last bits, and dem_adjust and
+        sequence in which each cell other than a pit comes after the cell it
+        drains into, which is what the flow network methods need: upstream
+        area, basins, stream order and the like give the same result for each.
+        The relative order of cells that do not drain into one another differs
+        though, so labels given in sequence order (subbasins_streamorder) and
+        the order of the features of streams change with the method, floating
+        point accumulations can differ in the last bits, and dem_adjust and
         dem_dig_d4, which adjust the elevation one flow path at a time in
-        sequence order, give a different adjustment.
+        sequence order, can give different adjustments.
         """
         if method == "sort":
             # slow for large arrays
