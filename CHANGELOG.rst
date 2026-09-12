@@ -12,7 +12,12 @@ unreleased
 * build the upstream cell index in CSR layout in ``core.idxs_seq``, reducing
   the memory and runtime of ``order_cells(method="walk")`` (#114)
 * make ``method="walk"`` the default of ``order_cells`` and ``idxs_seq`` for
-  ``Flwdir`` and ``FlwdirRaster``, including the ``nextxy`` type (#115)
+  ``Flwdir`` and ``FlwdirRaster``, including the ``nextxy`` type. Both orderings
+  run from down- to upstream; the order among cells of equal rank differs, so
+  floating point accumulations over ``Flwdir`` networks and ``nextxy`` rasters
+  can differ in the last bits from earlier versions (#115)
+* treat a ``nextxy`` cell whose next cell is itself as a pit in
+  ``core_nextxy.from_array``; it was left out of the pit list (#115)
 
 0.5.12 (01-07-2026)
 *******************
