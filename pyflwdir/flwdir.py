@@ -175,7 +175,7 @@ class Flwdir:
     def idxs_seq(self) -> np.ndarray:
         """Linear indices of valid cells ordered from down- to upstream."""
         if self._seq is None:
-            self.order_cells(method="sort")
+            self.order_cells(method="walk")
         return cast(np.ndarray, self._seq)
 
     @property
@@ -239,22 +239,22 @@ class Flwdir:
 
     ### SET/MODIFY PROPERTIES ###
 
-    def order_cells(self, method: Literal["sort", "walk"] = "sort") -> None:
+    def order_cells(self, method: Literal["sort", "walk"] = "walk") -> None:
         """Order cells from down- to upstream.
 
         Parameters
         ----------
-        method: {'sort', 'walk'}, optional
-            Method to order nodes, based on a "sorting" algorithm where nodes are
-            sorted based on their rank (might be slow for large arrays) or "walking"
-            algorithm where nodes are traced from down- to upstream (uses more memory)
+        method: {'walk', 'sort'}, optional
+            Method to order nodes: the default "walk" traces the nodes from down- to
+            upstream, holding the upstream cells of the whole network in memory in
+            compressed sparse row layout; "sort" sorts the nodes on their rank,
+            which can be slower for large arrays.
         """
         if method == "sort":
             # slow for large arrays
             rnk, n = core.rank(self.idxs_ds, mv=self._mv)
             self._seq = np.argsort(rnk)[-n:].astype(self.idxs_ds.dtype)
         elif method == "walk":
-            # faster for large arrays, but also takes lots of memory
             self._seq = core.idxs_seq(self.idxs_ds, self.idxs_pit, self._mv)
         else:
             raise ValueError(f'Invalid method {method}, select from ["walk", "sort"]')

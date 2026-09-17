@@ -421,3 +421,24 @@ def test_dem(flw0):
     assert np.all(fldpln.flat[flw0.mask] == 1)
     with pytest.raises(ValueError, match="size does not match"):
         flw0.floodplains(np.ones((2, 1)))
+
+
+def test_from_array_nextxy_self_pointing_cell_is_pit():
+    # a nextxy cell whose next cell is itself is a pit, and the walk ordering
+    # starts from it like from the coded pits
+    nextx = np.full((3, 3), 2, dtype=np.int32)
+    nexty = np.full((3, 3), 2, dtype=np.int32)
+    nextx[0, 0], nexty[0, 0] = -9, -9  # a coded pit next to it
+    flw = pyflwdir.from_array(np.stack([nextx, nexty]), ftype="nextxy")
+    assert np.sort(flw.idxs_pit).tolist() == [0, 4]
+    seq_default = flw.idxs_seq.copy()  # the lazy default, i.e. the walk
+    flw.order_cells(method="walk")
+    seq_walk = flw.idxs_seq.copy()
+    assert np.array_equal(seq_default, seq_walk)
+    assert seq_walk.size == 9
+    flw.order_cells(method="sort")
+    assert np.array_equal(np.sort(seq_walk), np.sort(flw.idxs_seq))
+    # every cell but the pits comes after its downstream cell
+    position = np.full(9, -1)
+    position[seq_walk] = np.arange(9)
+    assert np.all(position[flw.idxs_ds[seq_walk]] <= position[seq_walk])

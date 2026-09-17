@@ -70,8 +70,8 @@ def _from_array(
         r_ds, c_ds = np.intp(r1 - 1), np.intp(c1 - 1)
         outside = r_ds >= nrow or c_ds >= ncol or r_ds < 0 or c_ds < 0
         idx_ds = c_ds + r_ds * ncol
-        # pit or outside or ds cell is mv
-        if pit or outside or nextx_flat[idx_ds] == _mv:
+        # pit or outside or ds cell is mv or points to itself
+        if pit or outside or idx_ds == idx0 or nextx_flat[idx_ds] == _mv:
             pits_lst.append(idx0)
             idxs_ds[idx0] = idx0
         else:
