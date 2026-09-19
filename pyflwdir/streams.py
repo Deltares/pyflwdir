@@ -323,9 +323,7 @@ def stream_distance(
     """
     if real_length:
         steps = _stream_distance_steps(idxs_ds.size, ncol, latlon, transform)
-        return _stream_distance_real(
-            idxs_ds, seq, ncol, mask, latlon, transform, steps
-        )
+        return _stream_distance_real(idxs_ds, seq, ncol, mask, latlon, transform, steps)
     return _stream_distance_cell(idxs_ds, seq, mask)
 
 
@@ -393,17 +391,19 @@ def _stream_distance_real(
         # neighbor cells: use the step length precomputed per row; for other
         # (non-neighbor) jumps, e.g. nextxy flow directions, fall back to the
         # generic distance function
-        diff = np.intp(idx_ds) - np.intp(idx0)
-        r = idx0 // ncol if latlon else 0
-        if diff == 1 or diff == -1:
+        r0 = np.intp(idx0) // ncol
+        dr = np.intp(idx_ds) // ncol - r0
+        dc = np.intp(idx_ds) % ncol - np.intp(idx0) % ncol
+        r = r0 if latlon else 0
+        if dr == 0 and (dc == 1 or dc == -1):
             d = steps[r, 0]
-        elif diff == ncol:
+        elif dr == 1 and dc == 0:
             d = steps[r, 1]
-        elif diff == ncol + 1 or diff == ncol - 1:
+        elif dr == 1 and (dc == 1 or dc == -1):
             d = steps[r, 2]
-        elif diff == -ncol:
+        elif dr == -1 and dc == 0:
             d = steps[r, 3]
-        elif diff == -ncol + 1 or diff == -ncol - 1:
+        elif dr == -1 and (dc == 1 or dc == -1):
             d = steps[r, 4]
         else:
             d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
