@@ -18,6 +18,10 @@ unreleased
   can differ in the last bits from earlier versions (#115)
 * treat a ``nextxy`` cell whose next cell is itself as a pit in
   ``core_nextxy.from_array``; it was left out of the pit list (#115)
+* precompute the step length to the 8 neighboring cells once per row in
+  ``streams.stream_distance`` instead of evaluating the metre-per-degree
+  factors for every cell, greatly reducing the runtime of
+  ``Flwdir.stream_distance(unit="m")`` for geographic rasters
 
 0.5.12 (01-07-2026)
 *******************
