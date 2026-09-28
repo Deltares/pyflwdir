@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for the pyflwdir.dem module."""
 
 import numpy as np
@@ -7,6 +6,7 @@ import pytest
 from pyflwdir import dem, subgrid
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("dtype", [np.float32, np.int32])
 def test_from_dem(dtype):
     # example from Wang & Lui (2015)
@@ -68,6 +68,7 @@ def test_from_dem(dtype):
     assert np.all(np.isin(np.unique(_d8), [0, 1, 4, 16, 64]))
 
 
+@pytest.mark.unit
 def test_dem_adjust():
     # option 1 dig
     dem0 = np.array([8, 7, 6, 5, 5, 6, 5, 4])
@@ -102,6 +103,7 @@ def test_dem_adjust():
 
 
 # TODO: extend test
+@pytest.mark.unit
 def test_slope():
     elv = np.ones((4, 4))
     nodata = -9999
@@ -116,8 +118,9 @@ def test_slope():
     assert np.all(dem.slope(elv, nodata) == 0)
 
 
-def test_hand_fldpln(test_data0, flwdir0):
-    idxs_ds, _, seq, rank, _ = test_data0
+@pytest.mark.integration
+def test_hand_fldpln(test_data_real, flwdir_real):
+    idxs_ds, _, seq, rank, _ = test_data_real
     elevtn = rank  # dz along flow path is 1
     drain = rank == 0  # only outlets are
     # hand == elevtn
@@ -154,7 +157,7 @@ def test_hand_fldpln(test_data0, flwdir0):
     assert np.all(fldpln[elevtn > hmax] == 0)
     assert np.all(fldpln[elevtn < hmin] != 0)
     # hand == 1 for non-drain cells
-    elevtn = np.ones(flwdir0.size)
+    elevtn = np.ones(flwdir_real.size)
     elevtn[drain] = 0
     hand = dem.height_above_nearest_drain(idxs_ds, seq, drain, elevtn)
     assert np.all(hand[rank > 0] == 1)

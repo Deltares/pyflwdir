@@ -6,18 +6,7 @@ import pytest
 from pyflwdir import basins, core, gis_utils, regions, streams
 
 
-@pytest.mark.parametrize(
-    "test_data, flwdir",
-    [
-        ("test_data0", "flwdir0"),
-        ("test_data1", "flwdir1"),
-        ("test_data2", "flwdir2"),
-        ("test_data3", "flwdir3"),
-    ],
-)
-def test_accuflux(test_data, flwdir, request):
-    flwdir = request.getfixturevalue(flwdir)
-    test_data = request.getfixturevalue(test_data)
+def _accuflux_body(test_data, flwdir):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     n, ncol = seq.size, flwdir.shape[1]
     # cell count
@@ -37,18 +26,25 @@ def test_accuflux(test_data, flwdir, request):
     assert np.all(upa1 == acc1)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [
-        ("test_data0", "flwdir0"),
-        ("test_data1", "flwdir1"),
-        ("test_data2", "flwdir2"),
-        ("test_data3", "flwdir3"),
-    ],
+    [("test_data_uint32", "flwdir_uint32"), ("test_data_int64", "flwdir_int64")],
 )
-def test_basins(test_data, flwdir, request):
-    flwdir = request.getfixturevalue(flwdir)
-    test_data = request.getfixturevalue(test_data)
+def test_accuflux_unit(test_data, flwdir, request):
+    _accuflux_body(request.getfixturevalue(test_data), request.getfixturevalue(flwdir))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_real_int32", "flwdir_real_int32")],
+)
+def test_accuflux_integration(test_data, flwdir, request):
+    _accuflux_body(request.getfixturevalue(test_data), request.getfixturevalue(flwdir))
+
+
+def _basins_body(test_data, flwdir):
     idxs_ds, idxs_pit, seq, _, _ = [p.copy() for p in test_data]
     _, ncol = seq.size, flwdir.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
@@ -81,18 +77,25 @@ def test_basins(test_data, flwdir, request):
         regions.region_dissolve(bas, labels=0)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [
-        ("test_data0", "flwdir0"),
-        ("test_data1", "flwdir1"),
-        ("test_data2", "flwdir2"),
-        ("test_data3", "flwdir3"),
-    ],
+    [("test_data_uint32", "flwdir_uint32"), ("test_data_int64", "flwdir_int64")],
 )
-def test_subbasins(test_data, flwdir, request):
-    flwdir = request.getfixturevalue(flwdir)
-    test_data = request.getfixturevalue(test_data)
+def test_basins_unit(test_data, flwdir, request):
+    _basins_body(request.getfixturevalue(test_data), request.getfixturevalue(flwdir))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_real_int32", "flwdir_real_int32")],
+)
+def test_basins_integration(test_data, flwdir, request):
+    _basins_body(request.getfixturevalue(test_data), request.getfixturevalue(flwdir))
+
+
+def _subbasins_body(test_data, flwdir):
     idxs_ds, _, seq, _, mv = [p.copy() for p in test_data]
     strord = streams.strahler_order(idxs_ds, seq)
     riv_mask = strord >= (strord.max() - 2)
@@ -111,18 +114,25 @@ def test_subbasins(test_data, flwdir, request):
     assert np.all((n_upstream[idxs_ds_out] > 1) | (idxs_ds_out == idxs_region_out))
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [
-        ("test_data0", "flwdir0"),
-        ("test_data1", "flwdir1"),
-        ("test_data2", "flwdir2"),
-        ("test_data3", "flwdir3"),
-    ],
+    [("test_data_uint32", "flwdir_uint32"), ("test_data_int64", "flwdir_int64")],
 )
-def test_subbasins_pfafstetter(test_data, flwdir, request):
-    flwdir = request.getfixturevalue(flwdir)
-    test_data = request.getfixturevalue(test_data)
+def test_subbasins_unit(test_data, flwdir, request):
+    _subbasins_body(request.getfixturevalue(test_data), request.getfixturevalue(flwdir))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_real_int32", "flwdir_real_int32")],
+)
+def test_subbasins_integration(test_data, flwdir, request):
+    _subbasins_body(request.getfixturevalue(test_data), request.getfixturevalue(flwdir))
+
+
+def _subbasins_pfafstetter_body(test_data, flwdir):
     idxs_ds, idxs_pit, seq, _, mv = [p.copy() for p in test_data]
     _, ncol = seq.size, flwdir.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
@@ -147,18 +157,29 @@ def test_subbasins_pfafstetter(test_data, flwdir, request):
     assert np.all(np.diff(pfaf_path) >= 0)  # increasing values upstream
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [
-        ("test_data0", "flwdir0"),
-        ("test_data1", "flwdir1"),
-        ("test_data2", "flwdir2"),
-        ("test_data3", "flwdir3"),
-    ],
+    [("test_data_uint32", "flwdir_uint32"), ("test_data_int64", "flwdir_int64")],
 )
-def test_subbasins_area(test_data, flwdir, request):
-    flwdir = request.getfixturevalue(flwdir)
-    test_data = request.getfixturevalue(test_data)
+def test_subbasins_pfafstetter_unit(test_data, flwdir, request):
+    _subbasins_pfafstetter_body(
+        request.getfixturevalue(test_data), request.getfixturevalue(flwdir)
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_real_int32", "flwdir_real_int32")],
+)
+def test_subbasins_pfafstetter_integration(test_data, flwdir, request):
+    _subbasins_pfafstetter_body(
+        request.getfixturevalue(test_data), request.getfixturevalue(flwdir)
+    )
+
+
+def _subbasins_area_body(test_data, flwdir):
     idxs_ds, _, seq, _, mv = [p.copy() for p in test_data]
     _, ncol = seq.size, flwdir.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
@@ -176,9 +197,29 @@ def test_subbasins_area(test_data, flwdir, request):
     assert np.all(areas[np.isin(lbs, lbs0)] > 5)
 
 
-@pytest.mark.parametrize("test_data", ["test_data0", "test_data1"])
-def test_subbasins_strord(test_data, request):
-    test_data = request.getfixturevalue(test_data)
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_uint32", "flwdir_uint32"), ("test_data_int64", "flwdir_int64")],
+)
+def test_subbasins_area_unit(test_data, flwdir, request):
+    _subbasins_area_body(
+        request.getfixturevalue(test_data), request.getfixturevalue(flwdir)
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_real_int32", "flwdir_real_int32")],
+)
+def test_subbasins_area_integration(test_data, flwdir, request):
+    _subbasins_area_body(
+        request.getfixturevalue(test_data), request.getfixturevalue(flwdir)
+    )
+
+
+def _subbasins_strord_body(test_data):
     idxs_ds, _, seq, _, _ = [p.copy() for p in test_data]
     ## streamorder basins
     strord = streams.strahler_order(idxs_ds, seq)
@@ -193,18 +234,19 @@ def test_subbasins_strord(test_data, request):
     assert np.all(subbas[idxs_out1][~pits] != subbas[idxs_ds[idxs_out1]][~pits])
 
 
-@pytest.mark.parametrize(
-    "test_data, flwdir",
-    [
-        ("test_data0", "flwdir0"),
-        ("test_data1", "flwdir1"),
-        ("test_data2", "flwdir2"),
-        ("test_data3", "flwdir3"),
-    ],
-)
-def test_streams(test_data, flwdir, request):
-    flwdir = request.getfixturevalue(flwdir)
-    test_data = request.getfixturevalue(test_data)
+@pytest.mark.unit
+@pytest.mark.parametrize("test_data", ["test_data_uint32"])
+def test_subbasins_strord_unit(test_data, request):
+    _subbasins_strord_body(request.getfixturevalue(test_data))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", ["test_data_real"])
+def test_subbasins_strord_integration(test_data, request):
+    _subbasins_strord_body(request.getfixturevalue(test_data))
+
+
+def _streams_body(test_data, flwdir):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     _, ncol = seq.size, flwdir.shape[1]
     idxs_ds[rank == -1] = mv
@@ -235,6 +277,24 @@ def test_streams(test_data, flwdir, request):
     assert np.all(ranks1[rank >= 0] == rank[rank >= 0])
 
 
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_uint32", "flwdir_uint32"), ("test_data_int64", "flwdir_int64")],
+)
+def test_streams_unit(test_data, flwdir, request):
+    _streams_body(request.getfixturevalue(test_data), request.getfixturevalue(flwdir))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_real_int32", "flwdir_real_int32")],
+)
+def test_streams_integration(test_data, flwdir, request):
+    _streams_body(request.getfixturevalue(test_data), request.getfixturevalue(flwdir))
+
+
 def _stream_distance_ref(idxs_ds, seq, ncol, latlon, transform):
     """Reference: sum gis_utils.distance along the flow path for every cell."""
     dist = np.full(idxs_ds.size, -9999.0, dtype=np.float32)
@@ -247,21 +307,11 @@ def _stream_distance_ref(idxs_ds, seq, ncol, latlon, transform):
     return dist
 
 
-@pytest.mark.parametrize(
-    "test_data, flwdir",
-    [
-        ("test_data0", "flwdir0"),
-        ("test_data1", "flwdir1"),
-        ("test_data2", "flwdir2"),
-        ("test_data3", "flwdir3"),
-    ],
-)
-@pytest.mark.parametrize("latlon", [True, False])
-def test_stream_distance_real(test_data, flwdir, latlon, request):
+def _stream_distance_real_body(test_data, flwdir, latlon):
     # stream_distance looks up the step length of neighboring cells per row;
     # it must match summing gis_utils.distance along the path, bit for bit
-    ncol = request.getfixturevalue(flwdir).shape[1]
-    idxs_ds, _, seq, rank, mv = request.getfixturevalue(test_data)
+    ncol = flwdir.shape[1]
+    idxs_ds, _, seq, rank, mv = test_data
     idxs_ds = idxs_ds.copy()
     idxs_ds[rank == -1] = mv
     transform = np.array([1 / 120, 0, 5.0, 0, -1 / 120, 52.0])
@@ -279,6 +329,31 @@ def test_stream_distance_real(test_data, flwdir, latlon, request):
         assert np.array_equal(dist, ref)
 
 
+@pytest.mark.unit
+@pytest.mark.parametrize("latlon", [True, False])
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_uint32", "flwdir_uint32"), ("test_data_int64", "flwdir_int64")],
+)
+def test_stream_distance_real_unit(test_data, flwdir, latlon, request):
+    _stream_distance_real_body(
+        request.getfixturevalue(test_data), request.getfixturevalue(flwdir), latlon
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("latlon", [True, False])
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_real_int32", "flwdir_real_int32")],
+)
+def test_stream_distance_real_integration(test_data, flwdir, latlon, request):
+    _stream_distance_real_body(
+        request.getfixturevalue(test_data), request.getfixturevalue(flwdir), latlon
+    )
+
+
+@pytest.mark.unit
 def test_stream_distance_jumps():
     # non-neighbor jumps (e.g. nextxy) take the generic distance function; a
     # jump whose linear index difference equals that of a neighbor must not
@@ -297,9 +372,10 @@ def test_stream_distance_jumps():
     assert dist[10] > dist[9] + 1000  # four columns at 0.01 degree, not one
 
 
-def test_smooth_rivlen(test_data0, flwdir0):
-    idxs_ds, _, seq, _, mv = test_data0
-    ncol = flwdir0.shape[1]
+@pytest.mark.integration
+def test_smooth_rivlen(test_data_real, flwdir_real):
+    idxs_ds, _, seq, _, mv = test_data_real
+    ncol = flwdir_real.shape[1]
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
     idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
     rivlen = np.random.rand(idxs_ds.size)

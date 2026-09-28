@@ -28,10 +28,13 @@ tests = [
 
 
 # configure tests with different upscale methods
+@pytest.mark.integration
 @pytest.mark.parametrize("cellsize, name, nflwerr", tests)
-@pytest.mark.parametrize("idxs", ["flwdir_large_idxs", "flwdir_large_idxs_int64"])
-def test_upscale(cellsize, name, nflwerr, idxs, flwdir_large, request):
-    flwdir = flwdir_large
+@pytest.mark.parametrize(
+    "idxs", ["flwdir_real_large_idxs", "flwdir_real_large_idxs_int64"]
+)
+def test_upscale(cellsize, name, nflwerr, idxs, flwdir_real_large, request):
+    flwdir = flwdir_real_large
     idxs_ds, idxs_pit = request.getfixturevalue(idxs)
     mv = idxs_ds.dtype.type(core._mv)
     # caculate upstream area and basin
@@ -56,9 +59,12 @@ def test_upscale(cellsize, name, nflwerr, idxs, flwdir_large, request):
 
 
 # TODO: extend tests
-@pytest.mark.parametrize("idxs", ["flwdir_large_idxs", "flwdir_large_idxs_int64"])
-def test_map(idxs, flwdir_large, request):
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "idxs", ["flwdir_real_large_idxs", "flwdir_real_large_idxs_int64"]
+)
+def test_map(idxs, flwdir_real_large, request):
     idxs_ds = request.getfixturevalue(idxs)[0]
     mv = idxs_ds.dtype.type(core._mv)
-    upscale.map_celledge(idxs_ds, flwdir_large.shape, 20, mv=mv)
-    upscale.map_effare(idxs_ds, flwdir_large.shape, 20, mv=mv)
+    upscale.map_celledge(idxs_ds, flwdir_real_large.shape, 20, mv=mv)
+    upscale.map_effare(idxs_ds, flwdir_real_large.shape, 20, mv=mv)

@@ -91,18 +91,21 @@ def _transform_xy(transform, cols, rows):
     return xs, ys
 
 
+@pytest.mark.unit
 def test_from_origin():
     w, _, _, n = prof["bounds"]
     tr = gis.transform_from_origin(w, n, prof["res"], prof["res"])
     assert [round(v, 7) for v in tr] == [round(v, 7) for v in prof["transform"]]
 
 
+@pytest.mark.unit
 def test_from_bounds():
     w, s, e, n = prof["bounds"]
     tr = gis.transform_from_bounds(w, s, e, n, prof["width"], prof["height"])
     assert [round(v, 7) for v in tr] == [round(v, 7) for v in prof["transform"]]
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "shape, transform, expected_bounds, _, __, ___", TRANSFORM_CASES
 )
@@ -112,6 +115,7 @@ def test_array_bounds(shape, transform, expected_bounds, _, __, ___):
     assert np.allclose(bounds, expected_bounds)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "shape, transform, _, expected_offsets, __, ___", TRANSFORM_CASES
 )
@@ -132,6 +136,7 @@ def test_xy(shape, transform, _, expected_offsets, __, ___):
     assert np.allclose(ys, expected[1])
 
 
+@pytest.mark.unit
 def test_rowcol():
     aff = gis.IDENTITY  # N->S changed in version 0.5
     left, bottom, right, top = (0, -200, 100, 0)
@@ -141,6 +146,7 @@ def test_rowcol():
     assert gis.rowcol(aff, left, bottom) == (-bottom, left)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("shape, transform, _, __, ___, ____", TRANSFORM_CASES)
 def test_rowcol_transform_cases(shape, transform, _, __, ___, ____):
     rows, cols = np.indices(shape)
@@ -150,6 +156,7 @@ def test_rowcol_transform_cases(shape, transform, _, __, ___, ____):
     assert np.all(cols1 == cols)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("shape, transform, _, __, ___, ____", TRANSFORM_CASES)
 def test_idxs_to_coords(shape, transform, _, __, ___, ____):
     idxs = np.arange(shape[0] * shape[1]).reshape(shape)
@@ -162,6 +169,7 @@ def test_idxs_to_coords(shape, transform, _, __, ___, ____):
         gis.idxs_to_coords(np.array([-1]), transform, shape)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("shape, transform, _, __, ___, ____", TRANSFORM_CASES)
 def test_coords_to_idxs(shape, transform, _, __, ___, ____):
     idxs0 = np.arange(shape[0] * shape[1])
@@ -173,6 +181,7 @@ def test_coords_to_idxs(shape, transform, _, __, ___, ____):
         gis.coords_to_idxs(ys, xs, transform, shape)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "shape, transform, _, __, expected_xcoords, expected_ycoords", TRANSFORM_CASES
 )
@@ -182,6 +191,7 @@ def test_affine_to_coords(shape, transform, _, __, expected_xcoords, expected_yc
     assert np.allclose(ys, expected_ycoords)
 
 
+@pytest.mark.unit
 def test_reggrid_dx():
     # also tests degree_metres_x
     # area of glob in 1 degree cells
@@ -192,6 +202,7 @@ def test_reggrid_dx():
     assert dx.sum().round(3) == 40075004.88
 
 
+@pytest.mark.unit
 def test_reggrid_dy():
     # also tests degree_metres_y
     # area of glob in 1 degree cells
@@ -202,6 +213,7 @@ def test_reggrid_dy():
     assert dy.sum().round(3) == 20003925.600
 
 
+@pytest.mark.unit
 def test_cellarea():
     # area of whole sphere
     assert gis.cellarea(0, 360, 180) == glob_area
@@ -209,6 +221,7 @@ def test_cellarea():
     assert gis.cellarea(0, 1, 1) == 12364154779.389229
 
 
+@pytest.mark.unit
 def test_reggrid_area():
     # area of glob in 1 degree cells
     lats = np.arange(-89.5, 90)
@@ -216,6 +229,7 @@ def test_reggrid_area():
     assert gis.reggrid_area(lats, lons).sum().round() == np.round(glob_area)
 
 
+@pytest.mark.unit
 def test_distance():
     # transform=gis.IDENTITY
     assert gis.distance(0, 1, 3) == 1  # horizontal
@@ -226,6 +240,7 @@ def test_distance():
     assert gis.distance(0, 1, 3, True) != gis.distance(7, 8, 3, True)
 
 
+@pytest.mark.unit
 def test_edge():
     a = np.ones((5, 5), dtype=bool)
     b = a.copy()
@@ -247,11 +262,13 @@ def test_edge():
         np.ones((3, 3), dtype=np.uint8),
     ],
 )
+@pytest.mark.unit
 def test_edge_structure_validation(structure):
     with pytest.raises(ValueError, match="structure must be a 3x3 boolean array"):
         gis.get_edge(np.ones((5, 5), dtype=bool), structure=structure)
 
 
+@pytest.mark.unit
 def test_spread():
     a = np.zeros((5, 5))
     a[2, 2] = 1

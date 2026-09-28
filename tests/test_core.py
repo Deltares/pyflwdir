@@ -1,14 +1,15 @@
-# -*- coding: utf-8 -*-
 """Tests for the pyflwdir.core.py submodule."""
 
-import pytest
 import numpy as np
+import pytest
 
 from pyflwdir import basins, core, streams
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
-    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data0", "flwdir0")]
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_uint32", "flwdir_uint32")],
 )
 def test_downstream(test_data, flwdir, request):
     test_data = request.getfixturevalue(test_data)
@@ -83,6 +84,7 @@ def _assert_ordered(idxs_ds, seq, mv):
             assert pos[idx_ds] < pos[idx0], "cell before its downstream cell"
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("dtype", [np.int32, np.uint32, np.int64, np.uint64])
 def test_idxs_seq_orderings_nodata_target(dtype):
     # cell 1 drains into cell 2, which is itself nodata: none of the orderings
@@ -95,6 +97,7 @@ def test_idxs_seq_orderings_nodata_target(dtype):
         _assert_ordered(idxs_ds, seq, mv)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("dtype", [np.int32, np.uint32, np.int64, np.uint64])
 def test_idxs_seq_orderings_loop_with_feeder(dtype):
     # cells 1 and 2 form a loop and cell 3 drains into it: only the pit is
@@ -106,6 +109,7 @@ def test_idxs_seq_orderings_loop_with_feeder(dtype):
         _assert_ordered(idxs_ds, seq, mv)
 
 
+@pytest.mark.unit
 def test_idxs_seq_orderings_empty():
     mv = np.int32(-1)
     idxs_ds = np.full(4, mv, dtype=np.int32)
@@ -113,6 +117,7 @@ def test_idxs_seq_orderings_empty():
         assert seq.size == 0, name
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("dtype", [np.int32, np.uint32, np.int64, np.uint64])
 def test_rank_dtypes(dtype):
     mv = np.array(-1).astype(dtype)[()]
@@ -137,6 +142,7 @@ def _network(dtype):
     return idxs_ds, uparea, mv
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("dtype", [np.int32, np.uint32, np.int64, np.uint64])
 def test_upstream_dtypes(dtype):
     idxs_ds, uparea, mv = _network(dtype)
@@ -153,6 +159,7 @@ def test_upstream_dtypes(dtype):
     assert np.array_equal(idxs_us_main, np.array([1, 2, mv, mv, mv], dtype=dtype))
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("dtype", [np.int32, np.uint32, np.int64, np.uint64])
 def test_trace_mixed_dtypes(dtype):
     idxs_ds, uparea, mv = _network(dtype)
@@ -169,9 +176,7 @@ def test_trace_mixed_dtypes(dtype):
     assert np.array_equal(wdw, np.array([mv, 2, 1], dtype=dtype))
 
 
-@pytest.mark.parametrize("test_data", ["test_data0", "test_data1", "test_data2"])
-def test_idxs_seq_orderings(test_data, request):
-    test_data = request.getfixturevalue(test_data)
+def _idxs_seq_orderings_body(test_data):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     idxs_ds[rank == -1] = mv
     seqs = {
@@ -185,11 +190,21 @@ def test_idxs_seq_orderings(test_data, request):
         _assert_ordered(idxs_ds, seq1, mv)
 
 
-@pytest.mark.parametrize("test_data", ["test_data0", "test_data1", "test_data2"])
-def test_idxs_seq_dfs_keeps_basins_together(test_data, request):
+@pytest.mark.unit
+@pytest.mark.parametrize("test_data", ["test_data_uint32", "test_data_int64"])
+def test_idxs_seq_orderings_unit(test_data, request):
+    _idxs_seq_orderings_body(request.getfixturevalue(test_data))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", ["test_data_real"])
+def test_idxs_seq_orderings_integration(test_data, request):
+    _idxs_seq_orderings_body(request.getfixturevalue(test_data))
+
+
+def _idxs_seq_dfs_keeps_basins_together_body(test_data):
     # every basin is one contiguous run of the depth-first sequence, starting at
     # its pit; the breadth-first sequence interleaves the basins instead
-    test_data = request.getfixturevalue(test_data)
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     idxs_ds[rank == -1] = mv
     dfs = core.idxs_seq_dfs(idxs_ds, idxs_pit, mv=mv)
@@ -203,9 +218,19 @@ def test_idxs_seq_dfs_keeps_basins_together(test_data, request):
         assert np.flatnonzero(np.diff(ids[walk]) != 0).size > idxs_pit.size - 1
 
 
-@pytest.mark.parametrize("test_data", ["test_data0", "test_data1", "test_data2"])
-def test_upstream_csr(test_data, request):
-    test_data = request.getfixturevalue(test_data)
+@pytest.mark.unit
+@pytest.mark.parametrize("test_data", ["test_data_uint32", "test_data_int64"])
+def test_idxs_seq_dfs_keeps_basins_together_unit(test_data, request):
+    _idxs_seq_dfs_keeps_basins_together_body(request.getfixturevalue(test_data))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", ["test_data_real"])
+def test_idxs_seq_dfs_keeps_basins_together_integration(test_data, request):
+    _idxs_seq_dfs_keeps_basins_together_body(request.getfixturevalue(test_data))
+
+
+def _upstream_csr_body(test_data):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     idxs_ds[rank == -1] = mv
     n = idxs_ds.size
@@ -226,6 +251,19 @@ def test_upstream_csr(test_data, request):
         assert np.array_equal(idxs_us[indptr[idx0] : indptr[idx0 + 1]], us0)
 
 
+@pytest.mark.unit
+@pytest.mark.parametrize("test_data", ["test_data_uint32", "test_data_int64"])
+def test_upstream_csr_unit(test_data, request):
+    _upstream_csr_body(request.getfixturevalue(test_data))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", ["test_data_real"])
+def test_upstream_csr_integration(test_data, request):
+    _upstream_csr_body(request.getfixturevalue(test_data))
+
+
+@pytest.mark.unit
 def test_upstream_csr_high_fanin():
     # more than 127 cells draining into one cell: upstream_count returns int8,
     # which saturates, while the CSR index counts in the index dtype
@@ -239,8 +277,10 @@ def test_upstream_csr_high_fanin():
     assert seq.size == n
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
-    "test_data, flwdir", [("test_data0", "flwdir0"), ("test_data0", "flwdir0")]
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_uint32", "flwdir_uint32")],
 )
 def test_upstream(test_data, flwdir, request):
     test_data = request.getfixturevalue(test_data)
