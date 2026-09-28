@@ -110,6 +110,41 @@ def test_data(test_data0, flwdir0, test_data1, flwdir1, test_data2, flwdir2):
     return [(test_data0, flwdir0), (test_data1, flwdir1), (test_data2, flwdir2)]
 
 
+# same flow directions as flwdir0, with the int32 indices of a small raster
+@pytest.fixture(scope="session")
+def flwdir3(flwdir0):
+    return flwdir0
+
+
+@pytest.fixture(scope="session")
+def flwdir3_idxs(flwdir3):
+    idxs_ds3, idxs_pit3, _ = core_d8.from_array(flwdir3, dtype=np.int32)
+    return idxs_ds3, idxs_pit3
+
+
+@pytest.fixture(scope="session")
+def flwdir3_rank(flwdir3_idxs):
+    idxs_ds3, _ = flwdir3_idxs
+    rank3, n3 = core.rank(idxs_ds3, mv=np.int32(core._mv))
+    seq3 = np.argsort(rank3)[-n3:]
+    return rank3, n3, seq3
+
+
+@pytest.fixture(scope="session")
+def test_data3(flwdir3_idxs, flwdir3_rank):
+    rank3, _, seq3 = flwdir3_rank
+    idxs_ds3, idxs_pit3 = flwdir3_idxs
+    return idxs_ds3, idxs_pit3, seq3, rank3, np.int32(core._mv)
+
+
+@pytest.fixture(scope="session")
+def flw3(flwdir3, flwdir3_idxs):
+    idxs_ds3, idxs_pit3 = flwdir3_idxs
+    return FlwdirRaster(
+        idxs_ds3.copy(), flwdir3.shape, "d8", idxs_pit=idxs_pit3.copy(), cache=False
+    )
+
+
 @pytest.fixture(scope="session")
 def flwdir_large(testdir):
     return np.loadtxt(os.path.join(testdir, "data", "flwdir1.asc"), dtype=np.uint8)
@@ -118,4 +153,10 @@ def flwdir_large(testdir):
 @pytest.fixture(scope="session")
 def flwdir_large_idxs(flwdir_large):
     idxs_ds0, idxs_pit0, _ = core_d8.from_array(flwdir_large, dtype=np.uint32)
+    return idxs_ds0, idxs_pit0
+
+
+@pytest.fixture(scope="session")
+def flwdir_large_idxs_int64(flwdir_large):
+    idxs_ds0, idxs_pit0, _ = core_d8.from_array(flwdir_large, dtype=np.int64)
     return idxs_ds0, idxs_pit0

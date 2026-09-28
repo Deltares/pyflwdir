@@ -1,15 +1,19 @@
-# -*- coding: utf-8 -*-
 """Tests for the streams.py and basins.py submodules."""
 
-import pytest
 import numpy as np
+import pytest
 
-from pyflwdir import streams, basins, core, gis_utils, regions
+from pyflwdir import basins, core, gis_utils, regions, streams
 
 
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+    [
+        ("test_data0", "flwdir0"),
+        ("test_data1", "flwdir1"),
+        ("test_data2", "flwdir2"),
+        ("test_data3", "flwdir3"),
+    ],
 )
 def test_accuflux(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
@@ -35,7 +39,12 @@ def test_accuflux(test_data, flwdir, request):
 
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+    [
+        ("test_data0", "flwdir0"),
+        ("test_data1", "flwdir1"),
+        ("test_data2", "flwdir2"),
+        ("test_data3", "flwdir3"),
+    ],
 )
 def test_basins(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
@@ -74,7 +83,12 @@ def test_basins(test_data, flwdir, request):
 
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+    [
+        ("test_data0", "flwdir0"),
+        ("test_data1", "flwdir1"),
+        ("test_data2", "flwdir2"),
+        ("test_data3", "flwdir3"),
+    ],
 )
 def test_subbasins(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
@@ -99,7 +113,12 @@ def test_subbasins(test_data, flwdir, request):
 
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+    [
+        ("test_data0", "flwdir0"),
+        ("test_data1", "flwdir1"),
+        ("test_data2", "flwdir2"),
+        ("test_data3", "flwdir3"),
+    ],
 )
 def test_subbasins_pfafstetter(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
@@ -130,7 +149,12 @@ def test_subbasins_pfafstetter(test_data, flwdir, request):
 
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+    [
+        ("test_data0", "flwdir0"),
+        ("test_data1", "flwdir1"),
+        ("test_data2", "flwdir2"),
+        ("test_data3", "flwdir3"),
+    ],
 )
 def test_subbasins_area(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
@@ -171,7 +195,12 @@ def test_subbasins_strord(test_data, request):
 
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+    [
+        ("test_data0", "flwdir0"),
+        ("test_data1", "flwdir1"),
+        ("test_data2", "flwdir2"),
+        ("test_data3", "flwdir3"),
+    ],
 )
 def test_streams(test_data, flwdir, request):
     flwdir = request.getfixturevalue(flwdir)
@@ -220,7 +249,12 @@ def _stream_distance_ref(idxs_ds, seq, ncol, latlon, transform):
 
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+    [
+        ("test_data0", "flwdir0"),
+        ("test_data1", "flwdir1"),
+        ("test_data2", "flwdir2"),
+        ("test_data3", "flwdir3"),
+    ],
 )
 @pytest.mark.parametrize("latlon", [True, False])
 def test_stream_distance_real(test_data, flwdir, latlon, request):

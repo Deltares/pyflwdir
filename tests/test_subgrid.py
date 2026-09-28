@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for the unitcatchments.py submodule"""
 
 import numpy as np
@@ -8,9 +7,15 @@ from pyflwdir import core, streams, subgrid
 
 
 @pytest.mark.parametrize("method, cellsize", [("eam_plus", 5), ("", 1), ("dmm", 4)])
-def test_subgridch(method, cellsize, test_data0, flwdir0):
-    idxs_ds, _, seq, rank, mv = [p.copy() for p in test_data0]
-    ncol, shape = flwdir0.shape[1], flwdir0.shape
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data0", "flwdir0"), ("test_data2", "flwdir2"), ("test_data3", "flwdir3")],
+)
+def test_subgridch(method, cellsize, test_data, flwdir, request):
+    flwdir = request.getfixturevalue(flwdir)
+    test_data = request.getfixturevalue(test_data)
+    idxs_ds, _, seq, rank, mv = [p.copy() for p in test_data]
+    ncol, shape = flwdir.shape[1], flwdir.shape
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
     idxs_us_main = core.main_upstream(idxs_ds, upa, mv=mv)
     elv = rank

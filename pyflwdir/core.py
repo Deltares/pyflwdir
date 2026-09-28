@@ -20,11 +20,14 @@ _mv: int = np.intp(-1)  # type: ignore[assignment]  # missing value for idxs_ds
 def rank(idxs_ds: np.ndarray, mv: int = _mv) -> tuple[np.ndarray, int]:
     """Returns the rank, i.e. the distance counted in number of cells from the outlet."""
     ranks = np.full(idxs_ds.size, -9999, dtype=np.int32)
+    # signed indices throughout; mixing them with unsigned ones promotes to float (#79)
+    mv0 = np.intp(mv)
     n = 0
     idxs_lst = []
-    for idx0 in range(idxs_ds.size):
-        idx_ds = idxs_ds[idx0]
-        if idx_ds == mv or ranks[idx0] != -9999:
+    for i in range(idxs_ds.size):
+        idx0 = np.intp(i)
+        idx_ds = np.intp(idxs_ds[idx0])
+        if idx_ds == mv0 or ranks[idx0] != -9999:
             continue
         idxs_lst.append(idx0)
         while True:
@@ -41,7 +44,7 @@ def rank(idxs_ds: np.ndarray, mv: int = _mv) -> tuple[np.ndarray, int]:
             # next iter
             idx0 = idx_ds
             idxs_lst.append(idx0)
-            idx_ds = idxs_ds[idx0]
+            idx_ds = np.intp(idxs_ds[idx0])
         while len(idxs_lst) > 0:
             rnk += 1
             n += 1
@@ -573,20 +576,23 @@ def _trace(
         distance between start and end cell
     """
     idxs = []
-    idxs.append(idx0)
+    # signed indices throughout; mixing them with unsigned ones promotes to float (#79)
+    mv0 = np.intp(mv)
+    idx = np.intp(idx0)
+    idxs.append(idx)
     dist = 0.0
     d = 1.0
-    while mask is None or (mask is not None and mask[idx0] == False):
-        idx1 = idxs_nxt[idx0]
-        if idx1 == idx0 or idx1 == mv:  # pit no more upstream cells
+    while mask is None or (mask is not None and mask[idx] == False):
+        idx1 = np.intp(idxs_nxt[idx])
+        if idx1 == idx or idx1 == mv0:  # pit no more upstream cells
             break
         if real_length and ncol is not None:
-            d = gis_utils.distance(idx0, idx1, ncol, latlon, transform)
+            d = gis_utils.distance(idx, idx1, ncol, latlon, transform)
         if max_length is not None and dist + d > max_length:
             break
         dist += d
-        idx0 = idx1
-        idxs.append(idx0)
+        idx = idx1
+        idxs.append(idx)
     return np.array(idxs, dtype=idxs_nxt.dtype), dist
 
 
@@ -604,27 +610,30 @@ def _window(
     If strord is given, only include cells of same stream order when moving downstream.
     """
     idxs = np.full(n * 2 + 1, mv, idxs_ds.dtype)
-    idxs[n] = idx0
-    strord0 = 0 if strord is None else strord[idx0]
+    # signed indices throughout; mixing them with unsigned ones promotes to float (#79)
+    mv0 = np.intp(mv)
+    idx = np.intp(idx0)
+    idxs[n] = idx
+    strord0 = 0 if strord is None else strord[idx]
     # get n downstream cells
     for i in range(n):
-        idx_ds = idxs_ds[idx0]
+        idx_ds = np.intp(idxs_ds[idx])
         if (
-            idx_ds == idx0
-            or idx_ds == mv
+            idx_ds == idx
+            or idx_ds == mv0
             or (strord is not None and strord[idx_ds] > strord0)
         ):  # pit
             break
-        idx0 = idx_ds
-        idxs[n + i + 1] = idx0
+        idx = idx_ds
+        idxs[n + i + 1] = idx
     # get n upstreams cells
-    idx0 = idxs[n]
+    idx = np.intp(idxs[n])
     for i in range(n):
-        idx_us = idxs_us_main[idx0]
-        if idx_us == mv:  # at headwater / no upstream cells
+        idx_us = np.intp(idxs_us_main[idx])
+        if idx_us == mv0:  # at headwater / no upstream cells
             break
-        idx0 = idx_us
-        idxs[n - i - 1] = idx0
+        idx = idx_us
+        idxs[n - i - 1] = idx
     return idxs
 
 

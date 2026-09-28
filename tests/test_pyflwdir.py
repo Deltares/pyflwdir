@@ -81,7 +81,12 @@ def test_flwdirraster_errors(flwdir0, flwdir0_idxs):
 
 @pytest.mark.parametrize(
     "test_data, flwdir",
-    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+    [
+        ("test_data0", "flwdir0"),
+        ("test_data1", "flwdir1"),
+        ("test_data2", "flwdir2"),
+        ("test_data3", "flwdir3"),
+    ],
 )
 def test_flwdirraster_attrs(test_data, flwdir, request):
     d8 = request.getfixturevalue(flwdir)
@@ -357,7 +362,9 @@ def test_upscale(flw0, nextxy0):
         flw0.upscale(5, uparea=np.ones((2, 1)))
 
 
-def test_ucat(flw0: FlwdirRaster):
+@pytest.mark.parametrize("flw", ["flw0", "flw3"])
+def test_ucat(flw, request):
+    flw0: FlwdirRaster = request.getfixturevalue(flw)
     elevtn = flw0.rank
     hand = flw0.hand(elevtn=elevtn, drain=elevtn == 0)
     depths = np.linspace(0.5, 1, 2)
