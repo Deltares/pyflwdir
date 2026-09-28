@@ -22,6 +22,13 @@ unreleased
   ``streams.stream_distance`` instead of evaluating the metre-per-degree
   factors for every cell, greatly reducing the runtime of
   ``Flwdir.stream_distance(unit="m")`` for geographic rasters
+* add ``order_cells`` methods "dfs", a depth-first traversal from the pits that
+  keeps each subbasin together in the sequence, and "topo", a topological sort
+  that needs a count per cell instead of the upstream index. All methods order the same cells; the relative
+  order of cells that do not drain into one another differs, which can change
+  the labels of ``subbasins_streamorder``, the order of the features of
+  ``streams``, the last bits of floating point accumulations and the
+  adjustments of ``dem_adjust`` and ``dem_dig_d4`` (#114)
 
 0.5.12 (01-07-2026)
 *******************
