@@ -29,7 +29,7 @@ unreleased
   ``streams.stream_distance`` instead of evaluating the metre-per-degree
   factors for every cell, greatly reducing the runtime of
   ``Flwdir.stream_distance(unit="m")`` for geographic rasters
-* fix remaining ``uint64`` typing issues (#116)
+* fix remaining ``uint64`` typing issues (#126)
 
 0.5.12 (01-07-2026)
 *******************

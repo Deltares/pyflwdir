@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
-"""Tests for the pyflwdir.upscael module."""
+"""Tests for the pyflwdir.upscale module."""
 
-import pytest
 import numpy as np
+import pytest
 
 # local
-from pyflwdir import upscale, core, streams, basins
+from pyflwdir import basins, core, streams, upscale
 
 # # large test data
 # from pyflwdir import core_d8
@@ -30,12 +29,13 @@ tests = [
 
 # configure tests with different upscale methods
 @pytest.mark.parametrize("cellsize, name, nflwerr", tests)
-def test_upscale(cellsize, name, nflwerr, flwdir_large, flwdir_large_idxs):
-    mv = np.uint32(core._mv)
+@pytest.mark.parametrize("idxs", ["flwdir_large_idxs", "flwdir_large_idxs_int64"])
+def test_upscale(cellsize, name, nflwerr, idxs, flwdir_large, request):
     flwdir = flwdir_large
-    idxs_ds, idxs_pit = flwdir_large_idxs
+    idxs_ds, idxs_pit = request.getfixturevalue(idxs)
+    mv = idxs_ds.dtype.type(core._mv)
     # caculate upstream area and basin
-    rank, n = core.rank(idxs_ds, mv=np.uint32(mv))
+    rank, n = core.rank(idxs_ds, mv=mv)
     seq = np.argsort(rank)[-n:]
     upa = streams.upstream_area(idxs_ds, seq, flwdir.shape[1], dtype=np.int32)
     ids = np.arange(1, idxs_pit.size + 1, dtype=int)
@@ -56,7 +56,9 @@ def test_upscale(cellsize, name, nflwerr, flwdir_large, flwdir_large_idxs):
 
 
 # TODO: extend tests
-def test_map(flwdir_large, flwdir_large_idxs):
-    mv = np.uint32(core._mv)
-    upscale.map_celledge(flwdir_large_idxs[0], flwdir_large.shape, 20, mv=mv)
-    upscale.map_effare(flwdir_large_idxs[0], flwdir_large.shape, 20, mv=mv)
+@pytest.mark.parametrize("idxs", ["flwdir_large_idxs", "flwdir_large_idxs_int64"])
+def test_map(idxs, flwdir_large, request):
+    idxs_ds = request.getfixturevalue(idxs)[0]
+    mv = idxs_ds.dtype.type(core._mv)
+    upscale.map_celledge(idxs_ds, flwdir_large.shape, 20, mv=mv)
+    upscale.map_effare(idxs_ds, flwdir_large.shape, 20, mv=mv)
