@@ -6,14 +6,7 @@ import pytest
 from pyflwdir import core, streams, subgrid
 
 
-@pytest.mark.parametrize("method, cellsize", [("eam_plus", 5), ("", 1), ("dmm", 4)])
-@pytest.mark.parametrize(
-    "test_data, flwdir",
-    [("test_data0", "flwdir0"), ("test_data2", "flwdir2"), ("test_data3", "flwdir3")],
-)
-def test_subgridch(method, cellsize, test_data, flwdir, request):
-    flwdir = request.getfixturevalue(flwdir)
-    test_data = request.getfixturevalue(test_data)
+def _subgridch_body(method, cellsize, test_data, flwdir):
     idxs_ds, _, seq, rank, mv = [p.copy() for p in test_data]
     ncol, shape = flwdir.shape[1], flwdir.shape
     upa = streams.upstream_area(idxs_ds, seq, ncol, dtype=np.int32)
@@ -59,3 +52,30 @@ def test_subgridch(method, cellsize, test_data, flwdir, request):
         idxs_out, idxs_us_main, distnc=rank.ravel(), mask=upa >= 5, mv=mv
     )
     assert np.all(rivlen2 >= rivlen3)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("method, cellsize", [("eam_plus", 5), ("", 1), ("dmm", 4)])
+@pytest.mark.parametrize("test_data, flwdir", [("test_data_int64", "flwdir_int64")])
+def test_subgridch_unit(method, cellsize, test_data, flwdir, request):
+    _subgridch_body(
+        method,
+        cellsize,
+        request.getfixturevalue(test_data),
+        request.getfixturevalue(flwdir),
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("method, cellsize", [("eam_plus", 5), ("", 1), ("dmm", 4)])
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_real", "flwdir_real"), ("test_data_real_int32", "flwdir_real_int32")],
+)
+def test_subgridch_integration(method, cellsize, test_data, flwdir, request):
+    _subgridch_body(
+        method,
+        cellsize,
+        request.getfixturevalue(test_data),
+        request.getfixturevalue(flwdir),
+    )

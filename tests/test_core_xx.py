@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
 """Tests for the pyflwdir.core_xx.py and core_conversion submodules."""
 
-import pytest
 import numpy as np
+import pytest
 
-from pyflwdir import core_d8, core_nextxy, core_ldd
-from pyflwdir.core_conversion import ldd_to_d8, d8_to_ldd
+from pyflwdir import core_d8, core_ldd, core_nextxy
+from pyflwdir.core_conversion import d8_to_ldd, ldd_to_d8
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("fd", [core_nextxy, core_d8, core_ldd])
 def test_core(fd):
     """test core_x.py submodules based on _us definitions"""
@@ -27,6 +27,7 @@ def test_core(fd):
     assert np.all(fd.to_array(idxs_ds, (3, 3)) == fd._us)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize("fd", [core_d8, core_ldd])
 def test_usds(fd):
     """assert D8 local upstream/ downstream operations"""
@@ -51,17 +52,37 @@ def test_usds(fd):
         assert fd._downstream_idx(idx0, _us_flat, shape) == 4
 
 
-@pytest.mark.parametrize("fd", [core_nextxy, core_d8, core_ldd])
-def test_identical(fd, test_data):
+def _identical_body(fd, test_data, flwdir):
     """test if all core_xx.py return identical results"""
-    for parsed, flwdir in test_data:
-        idxs_ds0, idxs_pit0, _, _, mv = parsed
-        flwdir0 = fd.to_array(idxs_ds0, flwdir.shape, mv=mv)
-        idxs_ds, idxs_pit, _ = fd.from_array(flwdir0, dtype=idxs_ds0.dtype)
-        assert np.all(idxs_ds0 == idxs_ds)
-        assert np.all(idxs_pit0 == idxs_pit)
+    idxs_ds0, idxs_pit0, _, _, mv = test_data
+    flwdir_real = fd.to_array(idxs_ds0, flwdir.shape, mv=mv)
+    idxs_ds, idxs_pit, _ = fd.from_array(flwdir_real, dtype=idxs_ds0.dtype)
+    assert np.all(idxs_ds0 == idxs_ds)
+    assert np.all(idxs_pit0 == idxs_pit)
 
 
+@pytest.mark.unit
+@pytest.mark.parametrize("fd", [core_nextxy, core_d8, core_ldd])
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data_uint32", "flwdir_uint32"), ("test_data_int64", "flwdir_int64")],
+)
+def test_identical_unit(fd, test_data, flwdir, request):
+    _identical_body(
+        fd, request.getfixturevalue(test_data), request.getfixturevalue(flwdir)
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("fd", [core_nextxy, core_d8, core_ldd])
+@pytest.mark.parametrize("test_data, flwdir", [("test_data_real", "flwdir_real")])
+def test_identical_integration(fd, test_data, flwdir, request):
+    _identical_body(
+        fd, request.getfixturevalue(test_data), request.getfixturevalue(flwdir)
+    )
+
+
+@pytest.mark.unit
 def test_ftype_conversion():
     """test conversion between d8 and ldd formats"""
     flwdir = np.random.choice(core_ldd._all, (10, 10))

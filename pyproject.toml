@@ -42,6 +42,10 @@ exclude = ["docs", "notebooks", "envs", "tests", "binder", ".github"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
+markers = [
+    "unit: fast isolated tests with synthetic in-memory data, no I/O",
+    "integration: tests exercising real data files (tests/data/*.asc) and/or multiple modules together",
+]
 
 [tool.mypy]
 files = ["pyflwdir"]
@@ -139,6 +143,8 @@ docs-html-clean = { depends-on = ["docs-clean", "docs-html"] }
 
 # tests
 test = { cmd = ["pytest", "tests", "-v", "--cov-report=term-missing"] }
+test-unit = { cmd = ["pytest", "tests", "-v", "-m", "unit"] }
+test-integration = { cmd = ["pytest", "tests", "-v", "-m", "integration"] }
 test-cov-xml = { cmd = "python -m pytest --verbose --cov=pyflwdir --cov-report xml", env = { NUMBA_DISABLE_JIT = "1" } }
 test-cov = { cmd = "python -m pytest --verbose --cov=pyflwdir --cov-report term-missing", env = { NUMBA_DISABLE_JIT = "1" } }
 

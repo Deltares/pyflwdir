@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 """Tests for the pyflwdir module."""
 
 import numpy as np
+import pytest
 
 from pyflwdir import arithmetics
 
 
+@pytest.mark.unit
 def test_stats():
     nodata = -9999.0
     data = np.random.random(10)

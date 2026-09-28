@@ -20,6 +20,7 @@ def data():
     return idx, idx_ds, idxs_ds, rank
 
 
+@pytest.mark.unit
 def test_from_dataframe(data):
     # unpack test data
     idx, idx_ds, idxs_ds, rank = data
@@ -38,6 +39,7 @@ def test_from_dataframe(data):
     assert flwdir._mv == -1
 
 
+@pytest.mark.unit
 def test_flwdir_uint64_indices_are_normalized(data):
     _, _, idxs_ds, rank = data
     idxs_pit = np.array([0, 11], dtype=np.uint64)
@@ -58,6 +60,7 @@ def test_flwdir_uint64_indices_are_normalized(data):
     assert np.all(flwdir.rank == rank)
 
 
+@pytest.mark.unit
 def test_flwdir_uint64_indices_larger_than_int64_raise():
     idxs_ds = np.array([0, np.iinfo(np.int64).max + 1], dtype=np.uint64)
 
