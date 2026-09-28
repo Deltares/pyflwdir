@@ -291,7 +291,7 @@ class Flwdir:
         idxs_us_main = core.main_upstream(
             idxs_ds=self.idxs_ds, uparea=self._check_data(uparea, "uparea"), mv=self._mv
         )
-        if self.cache:
+        if self.cache and uparea is None:
             self._cached.update(idxs_us_main=idxs_us_main)
         return idxs_us_main
 
@@ -313,10 +313,11 @@ class Flwdir:
         # add pits
         self.idxs_ds[idxs1] = idxs1
         self._pit = np.unique(np.concatenate([self.idxs_pit, idxs1]))
-        # reset order, nnodes and upstream cell indices
+        # Reset traversal state and all values derived from the flow topology.
         self._seq = None
         self._nnodes = None
-        self._idxs_us_main = None
+        for key in ("rank", "strord", "idxs_us_main", "distnc"):
+            self._cached.pop(key, None)
 
     def repair_loops(self) -> None:
         """Repair loops by setting a pit at every cell which does not drain to a pit."""
