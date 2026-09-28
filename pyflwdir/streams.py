@@ -3,6 +3,8 @@
 These methods require the basin indices to be ordered from down- to upstream.
 """
 
+import math
+
 import numpy as np
 from numba import njit
 
@@ -320,8 +322,53 @@ def stream_distance(
         distance to outlet or next downstream True cell
     """
     if real_length:
-        return _stream_distance_real(idxs_ds, seq, ncol, mask, latlon, transform)
+        steps = _stream_distance_steps(idxs_ds.size, ncol, latlon, transform)
+        return _stream_distance_real(idxs_ds, seq, ncol, mask, latlon, transform, steps)
     return _stream_distance_cell(idxs_ds, seq, mask)
+
+
+@njit(cache=True)
+def _stream_distance_steps(
+    size: int,
+    ncol: int,
+    latlon: bool = False,
+    transform: np.ndarray = gis_utils._IDENTITY,
+) -> np.ndarray:
+    """Return the step length in map units to the 8 neighboring cells per row.
+
+    The step length between neighboring cells only depends on the row (through
+    the latitude for geographic coordinates) and on the step direction, so it
+    is precomputed once per row instead of once per cell. The five columns are
+    [horizontal, down, down-diagonal, up, up-diagonal].
+    """
+    nrow = (size + ncol - 1) // ncol
+    xres, yres, north = transform[0], transform[4], transform[5]
+    if latlon:
+        steps = np.empty((nrow, 5), dtype=np.float64)
+        for r in range(nrow):
+            # latitudes as used by gis_utils.distance for each row offset
+            lat_h = north + r * yres
+            lat_d = north + (r + 0.5) * yres
+            lat_u = north + (r - 0.5) * yres
+            dx_h = gis_utils.degree_metres_x(lat_h) * xres
+            dy_d = gis_utils.degree_metres_y(lat_d) * yres
+            dx_d = gis_utils.degree_metres_x(lat_d) * xres
+            dy_u = gis_utils.degree_metres_y(lat_u) * yres
+            dx_u = gis_utils.degree_metres_x(lat_u) * xres
+            steps[r, 0] = abs(dx_h)
+            steps[r, 1] = abs(dy_d)
+            steps[r, 2] = math.hypot(dy_d, dx_d)
+            steps[r, 3] = abs(dy_u)
+            steps[r, 4] = math.hypot(dy_u, dx_u)
+    else:
+        steps = np.empty((1, 5), dtype=np.float64)
+        # same (swapped) xres/yres use as gis_utils.distance to keep results identical
+        steps[0, 0] = abs(yres)
+        steps[0, 1] = abs(xres)
+        steps[0, 2] = math.hypot(xres, yres)
+        steps[0, 3] = abs(xres)
+        steps[0, 4] = math.hypot(xres, yres)
+    return steps
 
 
 @njit(cache=True)
@@ -329,9 +376,10 @@ def _stream_distance_real(
     idxs_ds: np.ndarray,
     seq: np.ndarray,
     ncol: int,
-    mask: np.ndarray | None = None,
-    latlon: bool = False,
-    transform: np.ndarray = gis_utils._IDENTITY,
+    mask: np.ndarray | None,
+    latlon: bool,
+    transform: np.ndarray,
+    steps: np.ndarray,
 ) -> np.ndarray:
     dist = np.full(idxs_ds.size, -9999.0, dtype=np.float32)
     dist[seq] = 0
@@ -340,7 +388,25 @@ def _stream_distance_real(
         # sum distances; skip if at pit or mask is True
         if idx0 == idx_ds or (mask is not None and mask[idx0]):
             continue
-        d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
+        # neighbor cells: use the step length precomputed per row; for other
+        # (non-neighbor) jumps, e.g. nextxy flow directions, fall back to the
+        # generic distance function
+        r0 = np.intp(idx0) // ncol
+        dr = np.intp(idx_ds) // ncol - r0
+        dc = np.intp(idx_ds) % ncol - np.intp(idx0) % ncol
+        r = r0 if latlon else 0
+        if dr == 0 and (dc == 1 or dc == -1):
+            d = steps[r, 0]
+        elif dr == 1 and dc == 0:
+            d = steps[r, 1]
+        elif dr == 1 and (dc == 1 or dc == -1):
+            d = steps[r, 2]
+        elif dr == -1 and dc == 0:
+            d = steps[r, 3]
+        elif dr == -1 and (dc == 1 or dc == -1):
+            d = steps[r, 4]
+        else:
+            d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
         dist[idx0] = dist[idx_ds] + d
     return dist
 

@@ -206,6 +206,63 @@ def test_streams(test_data, flwdir, request):
     assert np.all(ranks1[rank >= 0] == rank[rank >= 0])
 
 
+def _stream_distance_ref(idxs_ds, seq, ncol, latlon, transform):
+    """Reference: sum gis_utils.distance along the flow path for every cell."""
+    dist = np.full(idxs_ds.size, -9999.0, dtype=np.float32)
+    dist[seq] = 0
+    for idx0 in seq:
+        idx_ds = idxs_ds[idx0]
+        if idx0 != idx_ds:
+            d = gis_utils.distance(idx0, idx_ds, ncol, latlon, transform)
+            dist[idx0] = np.float32(np.float64(dist[idx_ds]) + d)
+    return dist
+
+
+@pytest.mark.parametrize(
+    "test_data, flwdir",
+    [("test_data0", "flwdir0"), ("test_data1", "flwdir1"), ("test_data2", "flwdir2")],
+)
+@pytest.mark.parametrize("latlon", [True, False])
+def test_stream_distance_real(test_data, flwdir, latlon, request):
+    # stream_distance looks up the step length of neighboring cells per row;
+    # it must match summing gis_utils.distance along the path, bit for bit
+    ncol = request.getfixturevalue(flwdir).shape[1]
+    idxs_ds, _, seq, rank, mv = request.getfixturevalue(test_data)
+    idxs_ds = idxs_ds.copy()
+    idxs_ds[rank == -1] = mv
+    transform = np.array([1 / 120, 0, 5.0, 0, -1 / 120, 52.0])
+    if not latlon:
+        transform = np.array([30.0, 0, 0.0, 0, -10.0, 1000.0])
+    for dtype in [np.int64, np.int32, np.uint32]:
+        dist = streams.stream_distance(
+            idxs_ds.astype(dtype),
+            seq.astype(dtype),
+            ncol,
+            latlon=latlon,
+            transform=transform,
+        )
+        ref = _stream_distance_ref(idxs_ds, seq, ncol, latlon, transform)
+        assert np.array_equal(dist, ref)
+
+
+def test_stream_distance_jumps():
+    # non-neighbor jumps (e.g. nextxy) take the generic distance function; a
+    # jump whose linear index difference equals that of a neighbor must not
+    # be mistaken for one
+    ncol = 5
+    idxs_ds = np.arange(15, dtype=np.int64)
+    idxs_ds[9] = 5  # (1,4) -> (1,0): same row, four columns
+    idxs_ds[5] = 0  # (1,0) -> (0,0): neighbor above
+    idxs_ds[10] = 9  # (2,0) -> (1,4): index difference -1, not a neighbor
+    idxs_ds[14] = 10  # (2,4) -> (2,0)
+    seq = np.array([0, 5, 9, 10, 14], dtype=np.int64)
+    transform = np.array([0.01, 0, 5.0, 0, -0.01, 50.0])
+    dist = streams.stream_distance(idxs_ds, seq, ncol, latlon=True, transform=transform)
+    ref = _stream_distance_ref(idxs_ds, seq, ncol, True, transform)
+    assert np.array_equal(dist, ref)
+    assert dist[10] > dist[9] + 1000  # four columns at 0.01 degree, not one
+
+
 def test_smooth_rivlen(test_data0, flwdir0):
     idxs_ds, _, seq, _, mv = test_data0
     ncol = flwdir0.shape[1]
