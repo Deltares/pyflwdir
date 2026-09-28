@@ -593,11 +593,11 @@ class Flwdir:
         """
         mask = self._check_data(mask, "mask", optional=True)
         if type.lower() == "strahler":
-            if "strord" in self._cached:
+            if mask is None and "strord" in self._cached:
                 strord = self._cached["strord"]
             else:
                 strord = streams.strahler_order(self.idxs_ds, self.idxs_seq, mask=mask)
-                if self.cache:
+                if self.cache and mask is None:
                     self._cached.update(strord=strord)
         elif type.lower() == "classic":
             strord = streams.stream_order(

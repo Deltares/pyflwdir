@@ -9,7 +9,7 @@ import pytest
 from affine import Affine
 
 import pyflwdir
-from pyflwdir import core
+from pyflwdir import core, streams
 from pyflwdir.pyflwdir import FlwdirRaster, _get_idxs_dtype
 
 pyflwdir_module = importlib.import_module("pyflwdir.pyflwdir")
@@ -379,6 +379,39 @@ def test_streams(flw_real, flwdir_real_rank):
     # river length
     data_smooth1 = flw_real.smooth_rivlen(data, min_rivlen=0)
     assert np.all(data_smooth1 == data)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("raster", [False, True])
+def test_stream_order_mask_cache(flw_real, raster):
+    if raster:
+        flw = FlwdirRaster(
+            flw_real.idxs_ds.copy(),
+            flw_real.shape,
+            "d8",
+            idxs_pit=flw_real.idxs_pit.copy(),
+            cache=True,
+        )
+    else:
+        flw = pyflwdir.Flwdir(
+            flw_real.idxs_ds.copy(),
+            idxs_pit=flw_real.idxs_pit.copy(),
+            cache=True,
+        )
+
+    all_streams = flw.mask.reshape(flw.shape)
+    pit_streams = np.zeros(flw.shape, dtype=bool)
+    pit_streams.flat[flw.idxs_pit] = True
+
+    all_order = flw.stream_order(mask=all_streams)
+    pit_order = flw.stream_order(mask=pit_streams)
+    expected = streams.strahler_order(
+        flw.idxs_ds, flw.idxs_seq, mask=pit_streams.ravel()
+    ).reshape(flw.shape)
+
+    assert not np.array_equal(all_order, pit_order)
+    assert np.array_equal(pit_order, expected)
+    assert np.all(pit_order[~pit_streams] == 0)
 
 
 @pytest.mark.integration
