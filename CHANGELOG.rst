@@ -18,6 +18,13 @@ unreleased
   can differ in the last bits from earlier versions (#115)
 * treat a ``nextxy`` cell whose next cell is itself as a pit in
   ``core_nextxy.from_array``; it was left out of the pit list (#115)
+* add ``order_cells`` methods "dfs", a depth-first traversal from the pits that
+  keeps each subbasin together in the sequence, and "topo", a topological sort
+  that needs a count per cell instead of the upstream index. All methods order the same cells; the relative
+  order of cells that do not drain into one another differs, which can change
+  the labels of ``subbasins_streamorder``, the order of the features of
+  ``streams``, the last bits of floating point accumulations and the
+  adjustments of ``dem_adjust`` and ``dem_dig_d4`` (#114)
 
 0.5.12 (01-07-2026)
 *******************
