@@ -343,6 +343,8 @@ class FlwdirRaster(Flwdir):
                 raise ValueError("Invalid transform.")
         self.transform = transform
         self.latlon = latlon
+        for key in ("area", "distnc", "idxs_us_main"):
+            self._cached.pop(key, None)
 
     ### WRITE / EXPORT ###
 

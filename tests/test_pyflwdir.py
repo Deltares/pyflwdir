@@ -9,7 +9,7 @@ import pytest
 from affine import Affine
 
 import pyflwdir
-from pyflwdir import core
+from pyflwdir import core, streams
 from pyflwdir.pyflwdir import FlwdirRaster, _get_idxs_dtype
 
 pyflwdir_module = importlib.import_module("pyflwdir.pyflwdir")
@@ -379,6 +379,129 @@ def test_streams(flw_real, flwdir_real_rank):
     # river length
     data_smooth1 = flw_real.smooth_rivlen(data, min_rivlen=0)
     assert np.all(data_smooth1 == data)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("raster", [False, True])
+def test_stream_order_mask_cache(flw_real, raster):
+    if raster:
+        flw = FlwdirRaster(
+            flw_real.idxs_ds.copy(),
+            flw_real.shape,
+            "d8",
+            idxs_pit=flw_real.idxs_pit.copy(),
+            cache=True,
+        )
+    else:
+        flw = pyflwdir.Flwdir(
+            flw_real.idxs_ds.copy(),
+            idxs_pit=flw_real.idxs_pit.copy(),
+            cache=True,
+        )
+
+    all_streams = flw.mask.reshape(flw.shape)
+    pit_streams = np.zeros(flw.shape, dtype=bool)
+    pit_streams.flat[flw.idxs_pit] = True
+
+    all_order = flw.stream_order(mask=all_streams)
+    pit_order = flw.stream_order(mask=pit_streams)
+    expected = streams.strahler_order(
+        flw.idxs_ds, flw.idxs_seq, mask=pit_streams.ravel()
+    ).reshape(flw.shape)
+
+    assert not np.array_equal(all_order, pit_order)
+    assert np.array_equal(pit_order, expected)
+    assert np.all(pit_order[~pit_streams] == 0)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("raster", [False, True])
+def test_add_pits_invalidates_cache(raster):
+    idxs_ds = np.array([0, 0, 1, 1, core._mv], dtype=np.int32)
+    idxs_pit = np.array([0], dtype=np.int32)
+    if raster:
+        flw = FlwdirRaster(
+            idxs_ds.copy(), (1, 5), "d8", idxs_pit=idxs_pit.copy(), cache=True
+        )
+    else:
+        flw = pyflwdir.Flwdir(idxs_ds.copy(), idxs_pit=idxs_pit.copy(), cache=True)
+
+    old_rank = flw.rank.copy()
+    old_strord = flw.stream_order().copy()
+    old_idxs_us_main = flw.idxs_us_main.copy()
+    if raster:
+        old_distnc = flw.distnc.copy()
+
+    flw.add_pits(idxs=np.array([2]))
+
+    assert "rank" not in flw._cached
+    assert "strord" not in flw._cached
+    assert "idxs_us_main" not in flw._cached
+    assert np.array_equal(
+        flw.rank, core.rank(flw.idxs_ds, mv=flw._mv)[0].reshape(flw.shape)
+    )
+    assert not np.array_equal(flw.rank, old_rank)
+    assert not np.array_equal(flw.stream_order(), old_strord)
+    assert flw.idxs_us_main[1] == 3
+    assert not np.array_equal(flw.idxs_us_main, old_idxs_us_main)
+    if raster:
+        assert "distnc" not in flw._cached
+        assert not np.array_equal(flw.distnc, old_distnc)
+
+
+@pytest.mark.unit
+def test_repair_loops_invalidates_topology_cache():
+    idxs_ds = np.array([0, 2, 1], dtype=np.int32)
+    flw = pyflwdir.Flwdir(idxs_ds, idxs_pit=np.array([0], dtype=np.int32), cache=True)
+    old_rank = flw.rank.copy()
+    old_strord = flw.stream_order().copy()
+    old_idxs_us_main = flw.idxs_us_main.copy()
+
+    flw.repair_loops()
+
+    assert flw.isvalid
+    assert "strord" not in flw._cached
+    assert "idxs_us_main" not in flw._cached
+    assert np.array_equal(flw.rank, core.rank(flw.idxs_ds, mv=flw._mv)[0])
+    assert not np.array_equal(flw.rank, old_rank)
+    assert not np.array_equal(flw.stream_order(), old_strord)
+    assert not np.array_equal(flw.idxs_us_main, old_idxs_us_main)
+
+
+@pytest.mark.unit
+def test_set_transform_invalidates_geometry_cache():
+    idxs_ds = np.array([0, 0, 1, 1, core._mv], dtype=np.int32)
+    flw = FlwdirRaster(
+        idxs_ds, (1, 5), "d8", idxs_pit=np.array([0], dtype=np.int32), cache=True
+    )
+    old_area = flw.area.copy()
+    old_distnc = flw.distnc.copy()
+    old_idxs_us_main = flw.idxs_us_main.copy()
+
+    flw.set_transform(Affine.scale(2), latlon=False)
+
+    assert "area" not in flw._cached
+    assert "distnc" not in flw._cached
+    assert "idxs_us_main" not in flw._cached
+    mask = flw.mask.reshape(flw.shape)
+    assert np.all(flw.area[mask] == 4)
+    assert not np.array_equal(flw.area, old_area)
+    assert np.all(flw.distnc[mask] == 2 * old_distnc[mask])
+    assert np.array_equal(flw.idxs_us_main, old_idxs_us_main)
+
+
+@pytest.mark.unit
+def test_main_upstream_custom_area_does_not_replace_default_cache():
+    idxs_ds = np.array([0, 0, 1, 1, core._mv], dtype=np.int32)
+    flw = pyflwdir.Flwdir(idxs_ds, idxs_pit=np.array([0], dtype=np.int32), cache=True)
+    default_idxs_us_main = flw.idxs_us_main.copy()
+    custom_uparea = np.array([1, 1, 1, 2, 0], dtype=np.float32)
+
+    custom_idxs_us_main = flw.main_upstream(uparea=custom_uparea)
+
+    assert custom_idxs_us_main[1] == 3
+    assert default_idxs_us_main[1] == 2
+    assert np.array_equal(flw.idxs_us_main, default_idxs_us_main)
 
 
 @pytest.mark.integration
