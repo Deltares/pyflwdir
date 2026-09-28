@@ -8,6 +8,8 @@ import numpy as np
 import rasterio
 from rasterio import features
 
+__all__ = ["quickplot", "vectorize"]
+
 np.random.seed(seed=101)
 matplotlib.rcParams["savefig.bbox"] = "tight"
 matplotlib.rcParams["savefig.dpi"] = 256
@@ -25,8 +27,10 @@ hs = ls.hillshade(np.ma.masked_equal(elevtn, -9999), vert_exag=1e3)
 
 # convenience method for plotting
 def quickplot(
-    gdfs=[], raster=None, hillshade=True, extent=extent, hs=hs, title="", filename=""
+    gdfs=None, raster=None, hillshade=True, extent=extent, hs=hs, title="", filename=""
 ):
+    if gdfs is None:
+        gdfs = []
     fig = plt.figure(figsize=(8, 15))
     ax = fig.add_subplot(projection=ccrs.PlateCarree())
     # plot hillshade background

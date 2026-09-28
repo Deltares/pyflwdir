@@ -138,7 +138,7 @@ docs-html = { cmd = [
     "./docs/_build",
     "-W",
 ] }
-docs-clean = { cmd = ["rm", "-rf", "./docs/_build", "./docs/_generated"] }
+docs-clean = { cmd = ["rm", "-rf", "./docs/_build", "./docs/_generated", "./docs/_examples",] }
 docs-html-clean = { depends-on = ["docs-clean", "docs-html"] }
 
 # tests
