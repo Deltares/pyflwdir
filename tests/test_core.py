@@ -113,6 +113,62 @@ def test_idxs_seq_orderings_empty():
         assert seq.size == 0, name
 
 
+@pytest.mark.parametrize("dtype", [np.int32, np.uint32, np.int64, np.uint64])
+def test_rank_dtypes(dtype):
+    mv = np.array(-1).astype(dtype)[()]
+    # cell 3 is nodata; the others rank by their distance to pit 0
+    idxs_ds = np.array([0, 0, 1, mv], dtype=dtype)
+    ranks, n = core.rank(idxs_ds, mv)
+    assert np.array_equal(ranks, [0, 1, 2, -9999])
+    assert n == 3
+    # cells 1 and 2 form a loop and cell 3 drains into it: all marked -1
+    idxs_ds = np.array([0, 2, 1, 1], dtype=dtype)
+    ranks, n = core.rank(idxs_ds, mv)
+    assert np.array_equal(ranks, [0, -1, -1, -1])
+    assert n == 1
+    assert np.array_equal(core.loop_indices(idxs_ds, mv), [1, 2, 3])
+
+
+def _network(dtype):
+    # 0 is a pit, 1 drains into 0, 2 and 3 into 1 and 4 is nodata
+    mv = np.array(-1).astype(dtype)[()]
+    idxs_ds = np.array([0, 0, 1, 1, mv], dtype=dtype)
+    uparea = np.array([4, 3, 2, 1, 0], dtype=np.float32)
+    return idxs_ds, uparea, mv
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.uint32, np.int64, np.uint64])
+def test_upstream_dtypes(dtype):
+    idxs_ds, uparea, mv = _network(dtype)
+    assert np.array_equal(core.upstream_count(idxs_ds, mv), [1, 2, 0, 0, -9])
+    idxs_us = core.upstream_matrix(idxs_ds, mv)
+    assert idxs_us.dtype == dtype
+    idxs_us0 = [[1, mv], [2, 3], [mv, mv], [mv, mv], [mv, mv]]
+    assert np.array_equal(idxs_us, np.array(idxs_us0, dtype=dtype))
+    indptr, idxs_us1 = core.upstream_csr(idxs_ds, mv)
+    assert indptr.dtype == dtype and idxs_us1.dtype == dtype
+    assert np.array_equal(indptr, [0, 1, 3, 3, 3, 3])
+    assert np.array_equal(idxs_us1, [1, 2, 3])
+    idxs_us_main = core.main_upstream(idxs_ds, uparea, mv=mv)
+    assert np.array_equal(idxs_us_main, np.array([1, 2, mv, mv, mv], dtype=dtype))
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.uint32, np.int64, np.uint64])
+def test_trace_mixed_dtypes(dtype):
+    idxs_ds, uparea, mv = _network(dtype)
+    idxs_us_main = core.main_upstream(idxs_ds, uparea, mv=mv)
+    # start indices of the signed dtype of np.where, not of idxs_ds
+    idxs0 = np.where(uparea == 2)[0]
+    paths, dists = core.path(idxs0, idxs_ds, mv=mv)
+    assert np.array_equal(paths[0], np.array([2, 1, 0], dtype=dtype))
+    assert dists[0] == 2
+    idxs1, dists1 = core.snap(idxs0, idxs_ds, mv=mv)
+    assert np.array_equal(idxs1, [0])
+    assert dists1[0] == 2
+    wdw = core._window(idxs0[0], 1, idxs_ds, idxs_us_main, mv=mv)
+    assert np.array_equal(wdw, np.array([mv, 2, 1], dtype=dtype))
+
+
 @pytest.mark.parametrize("test_data", ["test_data0", "test_data1", "test_data2"])
 def test_idxs_seq_orderings(test_data, request):
     test_data = request.getfixturevalue(test_data)

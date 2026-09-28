@@ -11,6 +11,13 @@ unreleased
 * implement type checking with mypy (overdue maintenance)
 * build the upstream cell index in CSR layout in ``core.idxs_seq``, reducing
   the memory and runtime of ``order_cells(method="walk")`` (#114)
+* add ``order_cells`` methods "dfs", a depth-first traversal from the pits that
+  keeps each subbasin together in the sequence, and "topo", a topological sort
+  that needs a count per cell instead of the upstream index. All methods order the same cells; the relative
+  order of cells that do not drain into one another differs, which can change
+  the labels of ``subbasins_streamorder``, the order of the features of
+  ``streams``, the last bits of floating point accumulations and the
+  adjustments of ``dem_adjust`` and ``dem_dig_d4`` (#114)
 * make ``method="walk"`` the default of ``order_cells`` and ``idxs_seq`` for
   ``Flwdir`` and ``FlwdirRaster``, including the ``nextxy`` type. Both orderings
   run from down- to upstream; the order among cells of equal rank differs, so
@@ -22,13 +29,7 @@ unreleased
   ``streams.stream_distance`` instead of evaluating the metre-per-degree
   factors for every cell, greatly reducing the runtime of
   ``Flwdir.stream_distance(unit="m")`` for geographic rasters
-* add ``order_cells`` methods "dfs", a depth-first traversal from the pits that
-  keeps each subbasin together in the sequence, and "topo", a topological sort
-  that needs a count per cell instead of the upstream index. All methods order the same cells; the relative
-  order of cells that do not drain into one another differs, which can change
-  the labels of ``subbasins_streamorder``, the order of the features of
-  ``streams``, the last bits of floating point accumulations and the
-  adjustments of ``dem_adjust`` and ``dem_dig_d4`` (#114)
+* fix remaining ``uint64`` typing issues (#116)
 
 0.5.12 (01-07-2026)
 *******************
