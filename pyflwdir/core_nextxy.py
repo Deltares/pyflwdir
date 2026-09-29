@@ -141,18 +141,18 @@ def read_nextxy(
     Parameters
     ----------
     fn : str, Path
-        Path to nextxy.bin file
+        Path to the NEXTXY binary file.
     nrow, ncol : int
-        Number or rows and columns in nextxy file.
-    bbox: list of float
-        domain bounding box [xmin, ymin, xmax, ymax]
+        Number of rows and columns in the NEXTXY file.
+    bbox : list of float
+        Domain bounding box `[xmin, ymin, xmax, ymax]`.
 
     Returns
     -------
-    np.ndarray
-        Nextxy data
-    transform: Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
+    data : 3D array of int32
+        NEXTXY data with shape `(2, nrow, ncol)`.
+    transform : Affine
+        Transform mapping pixel coordinates to map coordinates.
     """
     data = np.fromfile(fn, "i4").reshape(2, nrow, ncol)
     assert len(bbox) == 4, "Bounding box should contain 4 coordinates."

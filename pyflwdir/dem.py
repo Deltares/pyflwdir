@@ -1,4 +1,4 @@
-"""Methods to derive topo/hydrographical paramters from elevation data, in some cases
+"""Methods to derive topographic and hydrographic parameters from elevation data, in some cases
 in combination with flow direction data."""
 
 import heapq
@@ -33,39 +33,40 @@ def fill_depressions(
     at the lowest valid edge cell to create one single outlet `outlets='min'`;
     or at user provided outlet cells `idxs_pit`.
 
-    Depressions elsewhere are filled based on its lowest pour point elevation.
-    If the pour point depth is larger than the maximum pour point depth `max_depth` a pit
-    is set at the depression local minimum elevation.
+    Depressions elsewhere are filled to their lowest pour-point elevation. If the pour
+    point depth is greater than or equal to `max_depth`, a pit is set at the depression's
+    local minimum elevation.
 
     Based on: Wang, L., & Liu, H. (2006). https://doi.org/10.1080/13658810500433453
 
     Parameters
     ----------
-    elevtn: 2D array
+    elevtn : 2D array
         elevation raster
-    nodata: float, optional
-        nodata value, by default -9999.0
-    max_depth: float, optional
+    outlets : {'edge', 'min'}, optional
+        Initialize outlets at valid edge cells ('edge', default) or use only the
+        lowest-elevation valid edge cell ('min'). If `idxs_pit` is provided, `outlets`
+        controls whether all supplied outlets or only the lowest-elevation one are used.
+    idxs_pit : 1D array of int, optional
+        Linear indices of user-specified outlet cells. By default, outlets are selected
+        from the valid raster edge.
+    nodata : float, optional
+        No-data value, by default -9999.0.
+    max_depth : float, optional
         Maximum pour point depth. Depressions with a larger pour point
-        depth are set as pit. A negative value (default) equals an infitely
+        depth are set as pits. A negative value (default) represents an infinitely
         large pour point depth causing all depressions to be filled.
-    connectivity: {4, 8}
+    elv_max : float, optional
+        Maximum elevation for outlets, only used with `outlets='edge'`. By default None.
+    connectivity : {4, 8}, optional
         Number of neighboring cells to consider.
-    outlets: {'edge', 'min'}
-        Initial basin outlet(s) at the edge of all cells ('edge'; default)
-        or only the minimum elevation edge cell ('min')
-    elv_max, float, optional
-        Maximum elevation for outlets, only in combination with `outlets='edge'`.
-        By default None.
-    idxs_pit: 1D array of int
-        Linear indices of outlet cells.
 
     Returns
     -------
-    elevtn_out: 2D array
-        Depression filled elevation
-    d8: 2D array of uint8
-        D8 flow directions
+    elevtn_out : 2D array
+        Depression-filled elevation raster.
+    d8 : 2D array of uint8
+        D8 flow directions, with no-data cells encoded as 247.
     """
     nrow, ncol = elevtn.shape
     delv = np.zeros_like(elevtn)
@@ -102,7 +103,7 @@ def fill_depressions(
         heapq.heappush(
             q, (np.float32(elevtn[r, c]), np.uint8(1), np.uint32(r), np.uint32(c))
         )
-    # restrict queue to global edge mimimum (single outlet)
+    # restrict queue to the global edge minimum (single outlet)
     if outlets == "min":
         q = [heapq.heappop(q)]
         queued[:, :] = False
@@ -152,6 +153,22 @@ def adjust_elevation(
     """Given a flow direction map, remove pits in the elevation map.
     Algorithm based on Yamazaki et al. (2012)
 
+    Parameters
+    ----------
+    idxs_ds : 1D array of int
+        Linear indices of the next downstream cell.
+    seq : 1D array of int
+        Valid cell indices ordered from downstream to upstream.
+    elevtn : 1D array of float
+        Flattened elevation raster.
+    mv : int, optional
+        Missing-index value, by default the package default.
+
+    Returns
+    -------
+    1D array of float
+        Adjusted flattened elevation values.
+
     .. ref: Yamazaki, D., Baugh, C. A., Bates, P. D., Kanae, S., Alsdorf, D. E. and
     Oki, T.: Adjustment of a spaceborne DEM for use in floodplain hydrodynamic
     modeling, J. Hydrol., 436-437, 81-91, doi:10.1016/j.jhydrol.2012.02.045,
@@ -160,7 +177,7 @@ def adjust_elevation(
     elevtn_out = elevtn.copy()
     mask = np.zeros(idxs_ds.size, dtype=np.bool_)
     for idx0 in seq[::-1]:  # from up- to downstream starting from longest stream paths
-        if mask[idx0] == False:  # @ head water cell
+        if mask[idx0] == False:  # headwater cell
             # get downstream indices up to earlier fixed stream path
             idxs0 = core._trace(idx0, idxs_ds, mv=mv, mask=mask)[0]
             # fix elevation
@@ -174,7 +191,7 @@ def adjust_elevation(
 @njit(cache=True)
 def _adjust_elevation(elevtn: np.ndarray) -> np.ndarray:
     """fix elevation on single streamline based on minimum modification
-    elevtn oderdered from up- to downstream
+    elevtn ordered from upstream to downstream
     """
     n = elevtn.size
     imax, imin = -1, -1
@@ -236,26 +253,28 @@ def slope(
     latlon: bool = False,
     transform: np.ndarray = gis_utils._IDENTITY,
 ) -> np.ndarray:
-    """Returns the local gradient
+    """Return the local slope magnitude.
 
-    The slope is calculated on the basis of the dem in a 3 x 3 cell window, using 2nd order partial derivatives.
-    The slope [m/m] is given as the increase in height per distance in horizontal direction.
+    The slope is calculated from the DEM in a 3-by-3-cell window using second-order
+    partial derivatives. It is the magnitude of the elevation gradient, in metres per
+    metre.
 
     Parameters
     ----------
-    elevnt : 1D array of float
-        elevation raster
+    elevtn : 2D array of float
+        Elevation raster.
     nodata : float, optional
-        nodata value, by default -9999.0
+        No-data value, by default -9999.0.
     latlon : bool, optional
-        True if WGS84 coordinates, by default False
+        True if coordinates use the WGS84 geographic coordinate system, by default False.
     transform : np.ndarray, optional
         2D array with 6 elements representing the affine transformation for raster,
-        by default identify transform (1, 0, 0, 0, -1, 0)
+        By default, the identity transform `(1, 0, 0, 0, -1, 0)`.
+
     Returns
     -------
-    1D array of float
-        slope [m/m]
+    2D array of float
+        Slope magnitude [m/m].
     """
     xres, yres, north = transform[0], transform[4], transform[5]
     slope = np.zeros(elevtn.shape, dtype=np.float32)
@@ -308,7 +327,7 @@ def height_above_nearest_drain(
     idxs_ds: np.ndarray, seq: np.ndarray, drain: np.ndarray, elevtn: np.ndarray
 ) -> np.ndarray:
     """Returns the height above the nearest drain (HAND), i.e.: the relative vertical
-    distance (drop) to the nearest dowstream river based on drainage‐normalized
+    distance (drop) to the nearest downstream river based on drainage-normalized
     topography and flowpaths.
 
     Nobre A D et al. (2016) HAND contour: a new proxy predictor of inundation extent
@@ -322,8 +341,8 @@ def height_above_nearest_drain(
         ordered cell indices from down- to upstream
     drain : 1D array of bool
         flattened drainage mask
-    elevnt : 1D array of float
-        flattened elevation raster
+    elevtn : 1D array of float
+        Flattened elevation raster.
 
     Returns
     -------
@@ -348,8 +367,12 @@ def floodplains(
     upa_min: float = 1000.0,
     b: float = 0.3,
 ) -> np.ndarray:
-    """Returns floodplain boundaries based on a maximum treshold (h) of HAND which is
-    scaled with upstream area following h ~ A**b.
+    """Identify floodplain cells using an upstream-area-scaled HAND threshold.
+
+    Cells with upstream area at least `upa_min` define the drainage network. For each
+    such cell, the HAND threshold is its upstream area raised to `b`; upstream cells
+    are included when their elevation above the downstream drainage cell does not
+    exceed that threshold.
 
     Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth's
         floodplains Sci. Data 6 180309
@@ -360,19 +383,20 @@ def floodplains(
         index of next downstream cell
     seq : 1D array of int
         ordered cell indices from down- to upstream
-    elevnt : 1D array of float
-        flattened elevation raster [m]
+    elevtn : 1D array of float
+        Flattened elevation raster [m].
     uparea : 1D array of float
         flattened upstream area raster [km2]
     upa_min : float, optional
-        minimum upstream area threshold for streams.
+        Minimum upstream-area threshold for drainage cells [km2], by default 1000.
     b : float
-        scale parameter
+        Exponent in the upstream-area scaling relationship, by default 0.3.
 
     Returns
     -------
     1D array of int8
-        floodplain
+        Floodplain mask: 1 for floodplain cells, 0 for valid non-floodplain cells, and
+        -1 for no-data cells.
     """
     drainh = np.full(uparea.size, -9999.0, dtype=np.float32)
     drainz = np.full(uparea.size, -9999.0, dtype=np.float32)
@@ -398,7 +422,10 @@ def floodplains(
 
 @njit(cache=True)
 def _local_d4(idx0: int, idx_ds: int, ncol: int) -> np.ndarray:
-    """Return indices of d4 neighbors in diagonal d8 direction, e.g.: indices of N, W neigbors if flowdir is NW."""
+    """Return D4 neighbors for a diagonal D8 flow direction.
+
+    For example, a northwest flow direction returns the north and west neighbors.
+    """
     idxs_d4 = [
         idx0 - ncol,
         idx0 - 1,

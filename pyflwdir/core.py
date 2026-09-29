@@ -329,24 +329,25 @@ def idxs_seq_topo(idxs_ds: np.ndarray, mv: int = _mv) -> np.ndarray:
 def fillnodata_upstream(
     idxs_ds: np.ndarray, seq: np.ndarray, data: np.ndarray, nodata: float
 ) -> np.ndarray:
-    """Retuns a a copy of <data> where upstream cell with <nodata> values are filled
-    based on the first downstream valid cell value.
+    """Return a copy of `data` with missing upstream values filled.
+
+    Each missing value is replaced with the first valid value found downstream.
 
     Parameters
     ----------
     idxs_ds : 1D-array of intp
-        index of next downstream cell
+        Linear index of the next downstream cell.
     seq : 1D array of int
-        ordered cell indices from down- to upstream
+        Cell indices ordered from downstream to upstream.
     data : 1D array
-        original data with missing values
+        Input values, including missing values.
     nodata : float, integer
-        nodata value
+        Missing-data value.
 
     Returns
     -------
     data_out: 1D array of data.dtype
-        infilled data
+        Copy of `data` with fillable missing values replaced.
     """
     data_out = data.copy()
     for idx0 in seq:  # down- to upstream
@@ -364,26 +365,28 @@ def fillnodata_downstream(
     nodata: float,
     how: Literal["min", "max", "sum"] = "max",
 ) -> np.ndarray:
-    """Retuns a a copy of <data> where downstream cells with <nodata> values are filled
-    based on the first upstream valid cell value.
+    """Return a copy of `data` with missing downstream values filled.
+
+    Each missing value is filled from valid upstream values. At confluences, `how`
+    determines how the upstream values are combined.
 
     Parameters
     ----------
     idxs_ds : 1D-array of intp
-        index of next downstream cell
+        Linear index of the next downstream cell.
     seq : 1D array of int
-        ordered cell indices from down- to upstream
+        Cell indices ordered from downstream to upstream.
     data : 1D array
-        original data with missing values
+        Input values, including missing values.
     nodata : float, integer
-        nodata value
-    how: {'min', 'max', 'sum'}
-        method to merge values at confluences.
+        Missing-data value.
+    how : {'min', 'max', 'sum'}, optional
+        Method for combining values at confluences, by default 'max'.
 
     Returns
     -------
     data_out: 1D array of data.dtype
-        infilled data
+        Copy of `data` with fillable missing values replaced.
     """
     data_out = data.copy()
     if how not in ["min", "max", "sum"]:

@@ -1,4 +1,4 @@
-"""Methods to for regions, i.e. connected areas with same unique ID.
+"""Methods for regions: connected areas with the same unique ID.
 Building on scipy.ndimage measurement methods, see
 https://docs.scipy.org/doc/scipy/reference/ndimage.html#measurements
 """
@@ -42,17 +42,18 @@ def region_area(
     transform: Affine = gis_utils.IDENTITY,
     latlon: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Returns the area [m2] for each unique label in `regions`.
+    """Return the area [m2] for each unique label in `regions`.
 
     Parameters
     ----------
     regions: 2D array of int
-        raster with unique IDs for each region, must have the same shape as `data`.
+        Raster of positive region IDs.
+    transform : Affine, optional
+        Affine transform from pixel coordinates to the coordinate reference system.
     latlon: bool
         True for geographic CRS, False for projected CRS.
-        If True, the transform units are assumed to be degrees and converted to metric distances.
-    transform: Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
+        If True, transform units are interpreted as degrees and areas are converted to
+        square metres, by default False.
 
     Returns
     -------
@@ -64,15 +65,15 @@ def region_area(
 
 
 def region_slices(regions: np.ndarray) -> tuple[np.ndarray, list[tuple[slice, ...]]]:
-    """Returns slices for each unique label in `regions`.
+    """Return array slices bounding each unique label in `regions`.
 
     NOTE: a region must be a connected area with the same ID,
-    where ID are integer values larger than zero.
+    where IDs are integer values greater than zero.
 
     Parameters
     ----------
     regions: 2D array of int
-        raster with unique IDs for each region, must have the same shape as `data`.
+        Raster of positive region IDs.
 
     Returns
     -------
@@ -95,15 +96,15 @@ def region_bounds(
     regions: np.ndarray,
     transform: Affine = gis_utils.IDENTITY,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Returns the bounding box each unique label in `regions`.
+    """Return the bounding box of each unique label in `regions`.
 
     NOTE: a region must be a connected area with the same ID,
-    where ID are integer values larger than zero.
+    where IDs are integer values greater than zero.
 
     Parameters
     ----------
     regions: 2D array of int
-        raster with unique IDs for each region, must have the same shape as `data`.
+        Raster of positive region IDs.
     transform: Affine
         Coefficients mapping pixel coordinates to coordinate reference system.
 
@@ -143,7 +144,7 @@ def region_outlets(
     idxs_ds: np.ndarray,
     seq: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Returns the linear index of the outlet cell in `regions`.
+    """Return the linear index of the outlet cell in each region.
 
     NOTE: a region must be a connected area with the same ID,
     where ID are integer values larger than zero.
@@ -151,7 +152,7 @@ def region_outlets(
     Parameters
     ----------
     regions: 2D array of int
-        raster with unique IDs for each region, must have the same shape as `data`.
+        Raster of positive region IDs.
     idxs_ds : 1D-array of intp
         index of next downstream cell
     seq : 1D array of int
@@ -187,33 +188,35 @@ def region_dissolve(
     latlon: bool = False,
     **kwargs,
 ) -> np.ndarray:
-    """Dissolve regions into its nearest neighboring regions.
+    """Dissolve selected regions into their nearest neighboring regions.
 
-    Regions to be dissolved are provided by either their `labels` or one location
-    per region expressed with a linear index in `idxs`. These regions are assigned the
-    label of the nearest neighboring region. If a locations `idxs` are provided the
-    proximitity to other regions from that location. This can be  usefull to e.g.
-    dissolve basins based on the distance from its outlet.
+    Select regions by their `labels` or by one linear-index location per region in
+    `idxs`. Each selected region is assigned the ID of its nearest neighboring region.
+    When `idxs` is provided, proximity is measured from those locations, which can be
+    useful for dissolving basins based on the distance from their outlets.
 
     Parameters
     ----------
-    regions: 2D-array of int
-        raster with unique non-zero positive IDs for each region
-    labels: 1D-array of int
-        labels of regions to be dissolved. Must be unique and larger than zero.
-    idxs: 1D-array of int
-        linear index of one location per region to be dissolved
-    latlon: bool
+    regions : 2D array of int
+        Raster of positive region IDs, with zero reserved for background.
+    labels : 1D array of int, optional
+        Unique positive IDs of regions to dissolve. Provide either `labels` or `idxs`.
+    idxs : 1D array of int, optional
+        One linear-index location per region to dissolve. Provide either `idxs` or
+        `labels`.
+    transform : Affine, optional
+        Affine transform from pixel coordinates to the coordinate reference system.
+    latlon : bool, optional
         True for geographic CRS, False for projected CRS.
-        If True, the transform units are assumed to be degrees and converted to metric distances.
-    transform: Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
-
+        If True, transform units are interpreted as degrees and distances are converted
+        to metres, by default False.
+    **kwargs : dict
+        Additional keyword arguments passed to `gis_utils.spread2d`.
 
     Returns
     -------
     basins_out : 2D-array of int
-        raster with basin IDs
+        Raster with the selected regions dissolved into neighboring region IDs.
     """
     if idxs is not None and labels is None:
         labels = regions.flat[idxs]

@@ -18,21 +18,32 @@ def classify_estuary(
     max_elevtn: float = 0,
     min_convergence: float = 1e-2,
 ) -> np.ndarray:
-    """Classifies estuaries based on width convergence.
+    """Classify estuaries based on river-width convergence.
 
     Parameters
     ----------
-    rivdst, rivwth, elevtn : np.ndarray
-        Distance to river outlet [m], river width [m], elevation [m+REF]
+    idxs_ds : 1D array of int
+        Linear index of the next downstream node.
+    seq : 1D array of int
+        Valid node indices ordered from downstream to upstream.
+    idxs_pit : 1D array of int
+        Linear indices of pit nodes.
+    rivdst : 1D array of float
+        Distance-to-outlet values [m].
+    rivwth : 1D array of float
+        River-width values [m].
+    elevtn : 1D array of float
+        Elevation values [m + reference elevation].
     max_elevtn : float, optional
-        Maximum elevation for estuary outlet, by default 0 m+REF
+        Maximum elevation for estuary outlets [m + reference elevation], by default 0.
     min_convergence : float, optional
-        River width convergence threshold, by default 1e-2 m/m
+        Minimum river-width convergence threshold [m/m], by default 1e-2.
 
     Returns
     -------
     np.ndarray of int8
-        Estuary classification: >= 1 where estuary; 2 at upstream end of estaury.
+        Estuary classification: 1 for estuary nodes, 2 at the upstream end of an
+        estuary, and 0 elsewhere.
     """
     estuary = np.zeros(idxs_ds.size, np.int8)
     idxs0 = idxs_pit[elevtn[idxs_pit] <= max_elevtn]
@@ -65,6 +76,46 @@ def rivdph_gvf(
     n_iter: int = 2,
     logger: logging.Logger = logger,
 ) -> np.ndarray:
+    """Estimate river depth with a gradually varied-flow solver.
+
+    This experimental solver integrates the gradually varied-flow equation along the
+    directed river network and iteratively updates water depths.
+
+    Parameters
+    ----------
+    idxs_ds : 1D array of int
+        Linear index of the next downstream node.
+    seq : 1D array of int
+        Valid node indices ordered from downstream to upstream.
+    zs : 1D array of float
+        Water-surface elevation values [m].
+    rivdph : 1D array of float
+        Initial river-depth values [m].
+    qbankfull : 1D array of float
+        Bankfull discharge values [m3/s].
+    rivdst : 1D array of float
+        Distance-to-outlet values [m].
+    rivwth : 1D array of float
+        River-width values [m].
+    manning : 1D array of float
+        Manning roughness values [s/m^(1/3)].
+    min_rivslp : float, optional
+        Minimum slope used by the solver, by default 1e-5.
+    min_rivdph : float, optional
+        Minimum output depth [m], by default 1.
+    eps : float, optional
+        Minimum depth used while evaluating the flow equation, by default 0.1.
+    n_iter : int, optional
+        Number of depth and bed-elevation update passes, by default 2.
+    logger : logging.Logger, optional
+        Logger used to report integration failures.
+
+    Returns
+    -------
+    1D array of float
+        Updated river-depth values [m].
+    """
+
     # gradually varying flow solver for directed flw graph
     # NOTE: experimental!!
     def _gvf(
