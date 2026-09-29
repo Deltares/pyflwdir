@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,47 +26,54 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../_static/theme-deltares.css?v=aa503ec8" />
   
   <!-- So that users can add custom icons -->
-  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/basins';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Stream order" href="streams.html" />
     <link rel="prev" title="Flow directions from elevation data" href="from_dem.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.5.10." />
+  <meta name="docsearch:version" content="0.5.13." />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
-
+  <body data-default-mode="light">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -93,9 +99,9 @@
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -173,7 +179,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -214,7 +220,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -223,7 +229,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -321,14 +327,22 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
         <div class="sidebar-primary-item">
+
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="flwdir.html">Flow direction data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="from_dem.html">Flow directions from elevation data</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Deliniation of (sub)basins</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Deliniation of (sub)basins</a></li>
 <li class="toctree-l1"><a class="reference internal" href="streams.html">Stream order</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracing.html">Tracing flow directions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="elevation_indices.html">Elevation indices</a></li>
@@ -410,19 +424,20 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">rasterio</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pyflwdir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">cm</span>
 
 <span class="c1"># local convenience methods (see utils.py script in notebooks folder)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">vectorize</span>  <span class="c1"># convenience method to vectorize rasters</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">quickplot</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">cm</span>  <span class="c1"># data specific quick plot method</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">quickplot</span><span class="p">,</span> <span class="n">vectorize</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyflwdir</span>
 
 <span class="c1"># read and parse data</span>
-<span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;rhine_d8.tif&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"rhine_d8.tif"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
     <span class="n">flwdir</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">crs</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">crs</span>
     <span class="n">flw</span> <span class="o">=</span> <span class="n">pyflwdir</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span>
         <span class="n">flwdir</span><span class="p">,</span>
-        <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;d8&quot;</span><span class="p">,</span>
+        <span class="n">ftype</span><span class="o">=</span><span class="s2">"d8"</span><span class="p">,</span>
         <span class="n">transform</span><span class="o">=</span><span class="n">src</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
         <span class="n">latlon</span><span class="o">=</span><span class="n">crs</span><span class="o">.</span><span class="n">is_geographic</span><span class="p">,</span>
         <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -432,8 +447,7 @@
 </div>
 <section id="Outlet-based-(sub)basins">
 <h2>Outlet based (sub)basins<a class="headerlink" href="#Outlet-based-(sub)basins" title="Link to this heading">#</a></h2>
-<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.basins.html">basins()</a> method delineates (sub)basins defined by its outlet location. By default the method uses pits from the flow direction raster as outlets to delineate basins, but if outlet locations are profided these are used instead. An additional <code class="docutils literal notranslate"><span class="pre">streams</span></code> argument can be added to make sure the outlet locations are snapped to the nearest downstream stream cell, using the
-[snap()](<a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.snap.html">https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.snap.html</a> method under the hood. Here streams are defined by a minimum Strahler stream order of 4.</p>
+<p>By default, this method uses pits in the flow-direction raster as basin outlets. If outlet locations are provided, it uses those instead. You can also pass a <code class="docutils literal notranslate"><span class="pre">streams</span></code> argument to snap outlet locations to the nearest downstream stream cell. This uses the <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.snap.html">snap()</a> method under the hood. Here, streams are defined using a minimum Strahler stream order of 4.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -444,7 +458,7 @@
 <span class="c1"># delineate subbasins</span>
 <span class="n">subbasins</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">basins</span><span class="p">(</span><span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">streams</span><span class="o">=</span><span class="n">flw</span><span class="o">.</span><span class="n">stream_order</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">)</span>
 <span class="c1"># vectorize subbasins using the vectorize convenience method from utils.py</span>
-<span class="n">gdf_bas</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">subbasins</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;basin&quot;</span><span class="p">)</span>
+<span class="n">gdf_bas</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">subbasins</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"basin"</span><span class="p">)</span>
 <span class="n">gdf_bas</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -496,21 +510,22 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot</span>
-<span class="c1"># key-word arguments passed to GeoDataFrame.plot()</span>
-<span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-    <span class="n">column</span><span class="o">=</span><span class="s2">&quot;basin&quot;</span><span class="p">,</span>
-    <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">Set3</span><span class="p">,</span>
-    <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">categorical</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">legend_kwds</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Basin ID [-]&quot;</span><span class="p">),</span>
-    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-    <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
-    <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
+<span class="c1"># keyword arguments passed to GeoDataFrame.plot()</span>
+
+<span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"column"</span><span class="p">:</span> <span class="s2">"basin"</span><span class="p">,</span>
+    <span class="s2">"cmap"</span><span class="p">:</span> <span class="n">cm</span><span class="o">.</span><span class="n">Set3</span><span class="p">,</span>
+    <span class="s2">"legend"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">"categorical"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">"legend_kwds"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Basin ID [-]"</span><span class="p">},</span>
+    <span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">"edgecolor"</span><span class="p">:</span> <span class="s2">"black"</span><span class="p">,</span>
+    <span class="s2">"linewidth"</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="p">{</span><span class="s2">"color"</span><span class="p">:</span> <span class="s2">"red"</span><span class="p">,</span> <span class="s2">"markersize"</span><span class="p">:</span> <span class="mi">20</span><span class="p">})</span>
 <span class="n">bas</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_bas</span><span class="p">,</span> <span class="n">gpd_plot_kwds</span><span class="p">)</span>
 <span class="c1"># plot using quickplot convenience method from utils.py</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">,</span> <span class="n">points</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Basins from point outlets&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;flw_basins&quot;</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">,</span> <span class="n">points</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Basins from point outlets"</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"flw_basins"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -522,26 +537,31 @@
 </div>
 </div>
 </section>
-<section id="Stream-order-subbasins">
-<h2>Stream order subbasins<a class="headerlink" href="#Stream-order-subbasins" title="Link to this heading">#</a></h2>
-<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_streamorder.html">subbasins_streamorder()</a> method creates subbasins at all confluences where each branch has a minimal stream order set by <code class="docutils literal notranslate"><span class="pre">min_sto</span></code>. An optional mask can be added to select a subset of the outlets (i.e. confluences) which are located inside the mask.</p>
+<section id="River-confluence-subbasins">
+<h2>River confluence subbasins<a class="headerlink" href="#River-confluence-subbasins" title="Link to this heading">#</a></h2>
+<p>The default <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins.html">subbasins()</a> method creates subbasins at all confluences of the river network.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># calculate subbasins with a minimum stream order 7 and its outlets</span>
-<span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_streamorder</span><span class="p">(</span><span class="n">min_sto</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="c1"># transfrom map and point locations to GeoDataFrames</span>
-<span class="n">gdf_subbas</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">subbas</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;basin&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># calculate subbasins for all stream segments with a minimum upstream area of 100 km2</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span><span class="n">unit</span><span class="o">=</span><span class="s2">"km2"</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">100</span>
+<span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins</span><span class="p">(</span><span class="n">riv_mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+<span class="c1"># transform map and point locations to GeoDataFrames</span>
+<span class="n">gdf_subbas</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">subbas</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"basin"</span><span class="p">)</span>
 <span class="n">gdf_out</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">points_from_xy</span><span class="p">(</span><span class="o">*</span><span class="n">flw</span><span class="o">.</span><span class="n">xy</span><span class="p">(</span><span class="n">idxs_out</span><span class="p">),</span> <span class="n">crs</span><span class="o">=</span><span class="mi">4326</span><span class="p">))</span>
 <span class="c1"># plot</span>
-<span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-    <span class="n">column</span><span class="o">=</span><span class="s2">&quot;basin&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">Set3</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span>
-<span class="p">)</span>
+<span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"column"</span><span class="p">:</span> <span class="s2">"basin"</span><span class="p">,</span>
+    <span class="s2">"cmap"</span><span class="p">:</span> <span class="n">cm</span><span class="o">.</span><span class="n">Set3</span><span class="p">,</span>
+    <span class="s2">"edgecolor"</span><span class="p">:</span> <span class="s2">"black"</span><span class="p">,</span>
+    <span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+    <span class="s2">"linewidth"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+<span class="p">}</span>
 <span class="n">bas</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_subbas</span><span class="p">,</span> <span class="n">gpd_plot_kwds</span><span class="p">)</span>
-<span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
-<span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Subbasins based on a minimum stream order&quot;</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">,</span> <span class="n">points</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;flw_subbasins&quot;</span><span class="p">)</span>
+<span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="p">{</span><span class="s2">"color"</span><span class="p">:</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"markersize"</span><span class="p">:</span> <span class="mi">10</span><span class="p">})</span>
+<span class="n">title</span> <span class="o">=</span> <span class="s2">"Subbasins for all stream segments with a minimum upstream area of 100 km2"</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">,</span> <span class="n">points</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"flw_subbasins"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -553,25 +573,62 @@
 </div>
 </div>
 </section>
-<section id="Pfafstetter-subbasins">
-<h2>Pfafstetter subbasins<a class="headerlink" href="#Pfafstetter-subbasins" title="Link to this heading">#</a></h2>
-<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_pfafstetter.html">subbasins_pfafstetter()</a> method creates subbasins with the hierarchical pfafstetter coding system. It is designed such that topological information is embedded in the code, which makes it easy to determine whether a subbasin is downstream of another subbasin. At each level the four largest subbasins have even numbers and five largest interbasins have odd numbers. The <code class="docutils literal notranslate"><span class="pre">depth</span></code> argument
-is used to set the number of subbasin levels, i.e.: <code class="docutils literal notranslate"><span class="pre">depth=1</span></code> nine, and with <code class="docutils literal notranslate"><span class="pre">depth=2</span></code> 81 sub/interbasins are found. The <code class="docutils literal notranslate"><span class="pre">subbasins_pfafstetter</span></code> method requires upstream area of each cell, which is calculated on the fly if not provided with the <code class="docutils literal notranslate"><span class="pre">uparea</span></code> argument.</p>
+<section id="Stream-order-subbasins">
+<h2>Stream order subbasins<a class="headerlink" href="#Stream-order-subbasins" title="Link to this heading">#</a></h2>
+<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_streamorder.html">subbasins_streamorder()</a> method creates subbasins at all confluences where a lower order stream segments enters a higher order segment. An optional mask of valid cells can be added to constrain the selection of outlets to rivers within the mask based on e.g. a minimum upstream area threshold.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the first level nine pfafstetter basins</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># calculate stream-order subbasins for a river network with a minimum upstream area of 100 km2</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span><span class="n">unit</span><span class="o">=</span><span class="s2">"km2"</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">100</span>
+<span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_streamorder</span><span class="p">(</span><span class="n">min_sto</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+<span class="c1"># transform map and point locations to GeoDataFrames</span>
+<span class="n">gdf_subbas</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">subbas</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"basin"</span><span class="p">)</span>
+<span class="n">gdf_out</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">points_from_xy</span><span class="p">(</span><span class="o">*</span><span class="n">flw</span><span class="o">.</span><span class="n">xy</span><span class="p">(</span><span class="n">idxs_out</span><span class="p">),</span> <span class="n">crs</span><span class="o">=</span><span class="mi">4326</span><span class="p">))</span>
+<span class="c1"># plot</span>
+<span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"column"</span><span class="p">:</span> <span class="s2">"basin"</span><span class="p">,</span>
+    <span class="s2">"cmap"</span><span class="p">:</span> <span class="n">cm</span><span class="o">.</span><span class="n">Set3</span><span class="p">,</span>
+    <span class="s2">"edgecolor"</span><span class="p">:</span> <span class="s2">"black"</span><span class="p">,</span>
+    <span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+    <span class="s2">"linewidth"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">bas</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_subbas</span><span class="p">,</span> <span class="n">gpd_plot_kwds</span><span class="p">)</span>
+<span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="p">{</span><span class="s2">"color"</span><span class="p">:</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"markersize"</span><span class="p">:</span> <span class="mi">20</span><span class="p">})</span>
+<span class="n">title</span> <span class="o">=</span> <span class="s2">"Subbasins based on changes in stream order"</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">,</span> <span class="n">points</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"flw_subbasins_streamorder"</span><span class="p">)</span>
+<span class="n">gdf_subbas</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">"flw_subbasins.gpkg"</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">"GPKG"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/_examples_basins_12_0.png" src="../_images/_examples_basins_12_0.png" />
+</div>
+</div>
+</section>
+<section id="Pfafstetter-subbasins">
+<h2>Pfafstetter subbasins<a class="headerlink" href="#Pfafstetter-subbasins" title="Link to this heading">#</a></h2>
+<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_pfafstetter.html">subbasins_pfafstetter()</a> method creates subbasins using the hierarchical Pfafstetter coding system. The codes encode topological information, making it easy to determine whether one subbasin is downstream of another. At each level, the four largest subbasins receive even numbers, and the five largest interbasins receive odd numbers. Set <code class="docutils literal notranslate"><span class="pre">depth</span></code> to choose the number of levels:
+<code class="docutils literal notranslate"><span class="pre">depth=1</span></code> produces 9 subbasin/interbasin units in total, while <code class="docutils literal notranslate"><span class="pre">depth=2</span></code> produces 81. If <code class="docutils literal notranslate"><span class="pre">uparea</span></code> is not provided, the method calculates upstream area for each cell.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the first-level Pfafstetter subbasins</span>
 <span class="n">pfafbas1</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_pfafstetter</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="c1"># vectorize raster to obtain polygons</span>
-<span class="n">gdf_pfaf1</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">pfafbas1</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pfaf&quot;</span><span class="p">)</span>
+<span class="n">gdf_pfaf1</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">pfafbas1</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"pfaf"</span><span class="p">)</span>
 <span class="n">gdf_out</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">points_from_xy</span><span class="p">(</span><span class="o">*</span><span class="n">flw</span><span class="o">.</span><span class="n">xy</span><span class="p">(</span><span class="n">idxs_out</span><span class="p">),</span> <span class="n">crs</span><span class="o">=</span><span class="mi">4326</span><span class="p">))</span>
 <span class="n">gdf_pfaf1</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -628,25 +685,25 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot</span>
-<span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-    <span class="n">column</span><span class="o">=</span><span class="s2">&quot;pfaf&quot;</span><span class="p">,</span>
-    <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">Set3_r</span><span class="p">,</span>
-    <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">categorical</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">legend_kwds</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Pfafstetter </span><span class="se">\n</span><span class="s2">level 1 index [-]&quot;</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
-    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
-    <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
-    <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"column"</span><span class="p">:</span> <span class="s2">"pfaf"</span><span class="p">,</span>
+    <span class="s2">"cmap"</span><span class="p">:</span> <span class="n">cm</span><span class="o">.</span><span class="n">Set3_r</span><span class="p">,</span>
+    <span class="s2">"legend"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">"categorical"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">"legend_kwds"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Pfafstetter </span><span class="se">\n</span><span class="s2">level 1 index [-]"</span><span class="p">,</span> <span class="s2">"ncol"</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+    <span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+    <span class="s2">"edgecolor"</span><span class="p">:</span> <span class="s2">"black"</span><span class="p">,</span>
+    <span class="s2">"linewidth"</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>
+<span class="p">}</span>
 
-<span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
+<span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="p">{</span><span class="s2">"color"</span><span class="p">:</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"markersize"</span><span class="p">:</span> <span class="mi">20</span><span class="p">})</span>
 <span class="n">bas</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_pfaf1</span><span class="p">,</span> <span class="n">gpd_plot_kwds</span><span class="p">)</span>
-<span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Subbasins based on pfafstetter coding (level=1)&quot;</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">,</span> <span class="n">points</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;flw_pfafbas1&quot;</span><span class="p">)</span>
+<span class="n">title</span> <span class="o">=</span> <span class="s2">"Subbasins based on pfafstetter coding (level=1)"</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">,</span> <span class="n">points</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"flw_pfafbas1"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -654,24 +711,24 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/_examples_basins_13_0.png" src="../_images/_examples_basins_13_0.png" />
+<img alt="../_images/_examples_basins_16_0.png" src="../_images/_examples_basins_16_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># lets create a second pfafstetter layer with a minimum subbasin area of 5000 km2</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a second Pfafstetter layer with a minimum subbasin area of 5000 km2</span>
 <span class="n">pfafbas2</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_pfafstetter</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">upa_min</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
-<span class="n">gdf_pfaf2</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">pfafbas2</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pfaf2&quot;</span><span class="p">)</span>
+<span class="n">gdf_pfaf2</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">pfafbas2</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"pfaf2"</span><span class="p">)</span>
 <span class="n">gdf_out</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">points_from_xy</span><span class="p">(</span><span class="o">*</span><span class="n">flw</span><span class="o">.</span><span class="n">xy</span><span class="p">(</span><span class="n">idxs_out</span><span class="p">),</span> <span class="n">crs</span><span class="o">=</span><span class="mi">4326</span><span class="p">))</span>
-<span class="n">gdf_pfaf2</span><span class="p">[</span><span class="s2">&quot;pfaf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf_pfaf2</span><span class="p">[</span><span class="s2">&quot;pfaf2&quot;</span><span class="p">]</span> <span class="o">//</span> <span class="mi">10</span>
+<span class="n">gdf_pfaf2</span><span class="p">[</span><span class="s2">"pfaf"</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf_pfaf2</span><span class="p">[</span><span class="s2">"pfaf2"</span><span class="p">]</span> <span class="o">//</span> <span class="mi">10</span>
 <span class="n">gdf_pfaf2</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -734,47 +791,14 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot</span>
 <span class="n">bas</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_pfaf2</span><span class="p">,</span> <span class="n">gpd_plot_kwds</span><span class="p">)</span>
-<span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
-<span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Subbasins based on pfafstetter coding (level=2)&quot;</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">,</span> <span class="n">points</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;flw_pfafbas2&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/_examples_basins_15_0.png" src="../_images/_examples_basins_15_0.png" />
-</div>
-</div>
-</section>
-<section id="Minimal-area-based-subbasins">
-<h2>Minimal area based subbasins<a class="headerlink" href="#Minimal-area-based-subbasins" title="Link to this heading">#</a></h2>
-<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_area.html">subbasins_area()</a> method creates subbasins with a minimal area of <code class="docutils literal notranslate"><span class="pre">area_min</span></code>. Moving upstream from the basin outlets a new subbasin starts at tributaries with a contributing area larger than <code class="docutils literal notranslate"><span class="pre">area_min</span></code> and new interbasins when its area exceeds the <code class="docutils literal notranslate"><span class="pre">area_min</span></code>.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># calculate subbasins with a minimum stream order 7 and its outlets</span>
-<span class="n">min_area</span> <span class="o">=</span> <span class="mi">2000</span>
-<span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_area</span><span class="p">(</span><span class="n">min_area</span><span class="p">)</span>
-<span class="c1"># transfrom map and point locations to GeoDataFrames</span>
-<span class="n">gdf_subbas</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">subbas</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;basin&quot;</span><span class="p">)</span>
-<span class="c1"># randomize index for visualization</span>
-<span class="n">basids</span> <span class="o">=</span> <span class="n">gdf_subbas</span><span class="p">[</span><span class="s2">&quot;basin&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-<span class="n">gdf_subbas</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">basids</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">basids</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="c1"># plot</span>
-<span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-    <span class="n">column</span><span class="o">=</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">Set3</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span>
-<span class="p">)</span>
-<span class="n">bas</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_subbas</span><span class="p">,</span> <span class="n">gpd_plot_kwds</span><span class="p">)</span>
-<span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Subbasins based on a minimum area of </span><span class="si">{</span><span class="n">min_area</span><span class="si">}</span><span class="s2"> km2&quot;</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;flw_subbasins_area&quot;</span><span class="p">)</span>
+<span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_out</span><span class="p">,</span> <span class="p">{</span><span class="s2">"color"</span><span class="p">:</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"markersize"</span><span class="p">:</span> <span class="mi">20</span><span class="p">})</span>
+<span class="n">title</span> <span class="o">=</span> <span class="s2">"Subbasins based on pfafstetter coding (level=2)"</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">,</span> <span class="n">points</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"flw_pfafbas2"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -783,6 +807,43 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
 </div>
 <div class="output_area docutils container">
 <img alt="../_images/_examples_basins_18_0.png" src="../_images/_examples_basins_18_0.png" />
+</div>
+</div>
+</section>
+<section id="Minimal-area-based-subbasins">
+<h2>Minimal area based subbasins<a class="headerlink" href="#Minimal-area-based-subbasins" title="Link to this heading">#</a></h2>
+<p>The <a class="reference external" href="https://deltares.github.io/pyflwdir/latest/_generated/pyflwdir.FlwdirRaster.subbasins_area.html">subbasins_area()</a> method creates subbasins with a minimum area of <code class="docutils literal notranslate"><span class="pre">area_min</span></code>. Moving upstream from the basin outlets, it starts a new subbasin at each tributary whose contributing area exceeds <code class="docutils literal notranslate"><span class="pre">area_min</span></code>. It starts a new interbasin when that interbasin’s area exceeds the same threshold.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># calculate subbasins with a minimum area of 2000 km2</span>
+<span class="n">min_area</span> <span class="o">=</span> <span class="mi">2000</span>
+<span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_area</span><span class="p">(</span><span class="n">min_area</span><span class="p">)</span>
+<span class="c1"># transform map and point locations to GeoDataFrames</span>
+<span class="n">gdf_subbas</span> <span class="o">=</span> <span class="n">vectorize</span><span class="p">(</span><span class="n">subbas</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"basin"</span><span class="p">)</span>
+<span class="c1"># randomize index for visualization</span>
+<span class="n">basids</span> <span class="o">=</span> <span class="n">gdf_subbas</span><span class="p">[</span><span class="s2">"basin"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">gdf_subbas</span><span class="p">[</span><span class="s2">"color"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">basids</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">basids</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># plot</span>
+<span class="n">gpd_plot_kwds</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"column"</span><span class="p">:</span> <span class="s2">"color"</span><span class="p">,</span>
+    <span class="s2">"cmap"</span><span class="p">:</span> <span class="n">cm</span><span class="o">.</span><span class="n">Set3</span><span class="p">,</span>
+    <span class="s2">"edgecolor"</span><span class="p">:</span> <span class="s2">"black"</span><span class="p">,</span>
+    <span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+    <span class="s2">"linewidth"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">bas</span> <span class="o">=</span> <span class="p">(</span><span class="n">gdf_subbas</span><span class="p">,</span> <span class="n">gpd_plot_kwds</span><span class="p">)</span>
+<span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Subbasins based on a minimum area of </span><span class="si">{</span><span class="n">min_area</span><span class="si">}</span><span class="s2"> km2"</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">quickplot</span><span class="p">([</span><span class="n">bas</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"flw_subbasins_area"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/_examples_basins_21_0.png" src="../_images/_examples_basins_21_0.png" />
 </div>
 </div>
 </section>
@@ -833,9 +894,10 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
     class="page-toc tocsection onthispage">
     <i class="fa-solid fa-list"></i> On this page
   </div>
-  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Outlet-based-(sub)basins">Outlet based (sub)basins</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#River-confluence-subbasins">River confluence subbasins</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Stream-order-subbasins">Stream order subbasins</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Pfafstetter-subbasins">Pfafstetter subbasins</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Minimal-area-based-subbasins">Minimal area based subbasins</a></li>
@@ -859,13 +921,13 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
 </div>
 
   <div class="sidebar-secondary-item">
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/_examples/basins.ipynb.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div></div>
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/_examples/basins.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
 
 </div></div>
               
@@ -880,8 +942,8 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -901,8 +963,7 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
-    <br/>
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
   </p>
 </div>
       
@@ -915,7 +976,7 @@ is used to set the number of subbasin levels, i.e.: <code class="docutils litera
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

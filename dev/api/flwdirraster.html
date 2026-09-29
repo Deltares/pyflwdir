@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,44 +26,51 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/theme-deltares.css?v=aa503ec8" />
   
   <!-- So that users can add custom icons -->
-  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/flwdirraster';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="pyflwdir.FlwdirRaster" href="../_generated/pyflwdir.FlwdirRaster.html" />
     <link rel="prev" title="Reference" href="../reference.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.5.10." />
+  <meta name="docsearch:version" content="0.5.13." />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
-
+  <body data-default-mode="light">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -90,9 +96,9 @@
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -170,7 +176,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -211,7 +217,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -220,7 +226,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -318,12 +324,20 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
         <div class="sidebar-primary-item">
+
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">FlwdirRaster</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 current active has-children"><a aria-current="page" class="current reference internal" href="#">FlwdirRaster</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.html">pyflwdir.FlwdirRaster</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.from_array.html">pyflwdir.from_array</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.from_dem.html">pyflwdir.from_dem</a></li>
@@ -335,6 +349,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.idxs_seq.html">pyflwdir.FlwdirRaster.idxs_seq</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.idxs_pit.html">pyflwdir.FlwdirRaster.idxs_pit</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.ncells.html">pyflwdir.FlwdirRaster.ncells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.nnodes.html">pyflwdir.FlwdirRaster.nnodes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.rank.html">pyflwdir.FlwdirRaster.rank</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.isvalid.html">pyflwdir.FlwdirRaster.isvalid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.mask.html">pyflwdir.FlwdirRaster.mask</a></li>
@@ -360,11 +375,13 @@
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.streams.html">pyflwdir.FlwdirRaster.streams</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.geofeatures.html">pyflwdir.FlwdirRaster.geofeatures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.basins.html">pyflwdir.FlwdirRaster.basins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins.html">pyflwdir.FlwdirRaster.subbasins</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins_streamorder.html">pyflwdir.FlwdirRaster.subbasins_streamorder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins_pfafstetter.html">pyflwdir.FlwdirRaster.subbasins_pfafstetter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins_area.html">pyflwdir.FlwdirRaster.subbasins_area</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.basin_outlets.html">pyflwdir.FlwdirRaster.basin_outlets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.basin_bounds.html">pyflwdir.FlwdirRaster.basin_bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.interbasin_mask.html">pyflwdir.FlwdirRaster.interbasin_mask</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.downstream.html">pyflwdir.FlwdirRaster.downstream</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upstream_sum.html">pyflwdir.FlwdirRaster.upstream_sum</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.accuflux.html">pyflwdir.FlwdirRaster.accuflux</a></li>
@@ -380,6 +397,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subgrid_rivavg.html">pyflwdir.FlwdirRaster.subgrid_rivavg</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subgrid_rivmed.html">pyflwdir.FlwdirRaster.subgrid_rivmed</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.ucat_area.html">pyflwdir.FlwdirRaster.ucat_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.ucat_volume.html">pyflwdir.FlwdirRaster.ucat_volume</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.ucat_outlets.html">pyflwdir.FlwdirRaster.ucat_outlets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.dem_adjust.html">pyflwdir.FlwdirRaster.dem_adjust</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.dem_dig_d4.html">pyflwdir.FlwdirRaster.dem_dig_d4</a></li>
@@ -473,23 +491,23 @@
                   
   <section id="flwdirraster">
 <h1>FlwdirRaster<a class="headerlink" href="#flwdirraster" title="Link to this heading">#</a></h1>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.html#pyflwdir.FlwdirRaster" title="pyflwdir.FlwdirRaster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster</span></code></a>(idxs_ds, shape, ftype[, ...])</p></td>
-<td><p>Flow direction raster array parsed to general actionable format.</p></td>
+<td><p>Flow-direction raster parsed into a common actionable format.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <section id="input-output">
 <h2>Input/Output<a class="headerlink" href="#input-output" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.from_array.html#pyflwdir.from_array" title="pyflwdir.from_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_array</span></code></a>(data[, ftype, check_ftype, mask, ...])</p></td>
-<td><p>Flow direction raster array parsed to actionable format.</p></td>
+<td><p>Parse a flow-direction raster into the actionable <cite>FlwDirRaster</cite> format.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.from_dem.html#pyflwdir.from_dem" title="pyflwdir.from_dem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_dem</span></code></a>(data[, nodata, max_depth, ...])</p></td>
-<td><p>Flow direction raster derived from digital elevation data based on steepest gradient.</p></td>
+<td><p>Derive local D8 flow directions from digital elevation data.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.to_array.html#pyflwdir.FlwdirRaster.to_array" title="pyflwdir.FlwdirRaster.to_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.to_array</span></code></a>([ftype])</p></td>
 <td><p>Return 2D flow direction raster.</p></td>
@@ -498,7 +516,7 @@
 <td><p>Load serialized FlwdirRaster object from file</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.dump.html#pyflwdir.FlwdirRaster.dump" title="pyflwdir.FlwdirRaster.dump"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.dump</span></code></a>(fn)</p></td>
-<td><p>Serialize object to file using pickle library.</p></td>
+<td><p>Serialize the flow-direction graph to a file using pickle.</p></td>
 </tr>
 </tbody>
 </table>
@@ -507,7 +525,7 @@
 <section id="flow-direction-attributes">
 <h2>Flow direction attributes<a class="headerlink" href="#flow-direction-attributes" title="Link to this heading">#</a></h2>
 <p>The following attributes describe the flow direction and are at the core to the object.</p>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.idxs_ds.html#pyflwdir.FlwdirRaster.idxs_ds" title="pyflwdir.FlwdirRaster.idxs_ds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.idxs_ds</span></code></a></p></td>
 <td><p>Linear indices of downstream cell.</p></td>
@@ -522,25 +540,28 @@
 <td><p>Linear indices of pits/outlets.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.ncells.html#pyflwdir.FlwdirRaster.ncells" title="pyflwdir.FlwdirRaster.ncells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.ncells</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Number of valid cells in the flow-direction raster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.rank.html#pyflwdir.FlwdirRaster.rank" title="pyflwdir.FlwdirRaster.rank"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.rank</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.nnodes.html#pyflwdir.FlwdirRaster.nnodes" title="pyflwdir.FlwdirRaster.nnodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.nnodes</span></code></a></p></td>
+<td><p>Number of valid cells.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.rank.html#pyflwdir.FlwdirRaster.rank" title="pyflwdir.FlwdirRaster.rank"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.rank</span></code></a></p></td>
 <td><p>Cell Rank, i.e. distance to the outlet in no.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.isvalid.html#pyflwdir.FlwdirRaster.isvalid" title="pyflwdir.FlwdirRaster.isvalid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.isvalid</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.isvalid.html#pyflwdir.FlwdirRaster.isvalid" title="pyflwdir.FlwdirRaster.isvalid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.isvalid</span></code></a></p></td>
 <td><p>True if the flow direction map is valid.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.mask.html#pyflwdir.FlwdirRaster.mask" title="pyflwdir.FlwdirRaster.mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.mask</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.mask.html#pyflwdir.FlwdirRaster.mask" title="pyflwdir.FlwdirRaster.mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.mask</span></code></a></p></td>
 <td><p>Boolean array of valid cells in flow direction raster.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.area.html#pyflwdir.FlwdirRaster.area" title="pyflwdir.FlwdirRaster.area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.area</span></code></a></p></td>
-<td><p>Cell area [m]</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.area.html#pyflwdir.FlwdirRaster.area" title="pyflwdir.FlwdirRaster.area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.area</span></code></a></p></td>
+<td><p>Cell area [m2].</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.distnc.html#pyflwdir.FlwdirRaster.distnc" title="pyflwdir.FlwdirRaster.distnc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.distnc</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.distnc.html#pyflwdir.FlwdirRaster.distnc" title="pyflwdir.FlwdirRaster.distnc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.distnc</span></code></a></p></td>
 <td><p>Distance to outlet [m]</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.n_upstream.html#pyflwdir.FlwdirRaster.n_upstream" title="pyflwdir.FlwdirRaster.n_upstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.n_upstream</span></code></a></p></td>
-<td><p>Number of upstream connection</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.n_upstream.html#pyflwdir.FlwdirRaster.n_upstream" title="pyflwdir.FlwdirRaster.n_upstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.n_upstream</span></code></a></p></td>
+<td><p>Number of immediate upstream connections for each node.</p></td>
 </tr>
 </tbody>
 </table>
@@ -548,22 +569,22 @@
 </section>
 <section id="flow-direction-methods">
 <h2>Flow direction methods<a class="headerlink" href="#flow-direction-methods" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.order_cells.html#pyflwdir.FlwdirRaster.order_cells" title="pyflwdir.FlwdirRaster.order_cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.order_cells</span></code></a>([method])</p></td>
 <td><p>Order cells from down- to upstream.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.main_upstream.html#pyflwdir.FlwdirRaster.main_upstream" title="pyflwdir.FlwdirRaster.main_upstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.main_upstream</span></code></a>([uparea])</p></td>
-<td><p></p></td>
+<td><p>Return the main upstream node for each node.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.add_pits.html#pyflwdir.FlwdirRaster.add_pits" title="pyflwdir.FlwdirRaster.add_pits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.add_pits</span></code></a>([idxs, xy, streams])</p></td>
-<td><p>Add pits the flow direction raster.</p></td>
+<td><p>Add pits to the flow-direction raster.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.repair_loops.html#pyflwdir.FlwdirRaster.repair_loops" title="pyflwdir.FlwdirRaster.repair_loops"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.repair_loops</span></code></a>()</p></td>
 <td><p>Repair loops by setting a pit at every cell which does not drain to a pit.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.vectorize.html#pyflwdir.FlwdirRaster.vectorize" title="pyflwdir.FlwdirRaster.vectorize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.vectorize</span></code></a>([mask, xs, ys, direction])</p></td>
-<td><p>Returns each flow direction as a linestring geo-feature</p></td>
+<td><p>Return each selected flow path as a LineString feature.</p></td>
 </tr>
 </tbody>
 </table>
@@ -574,10 +595,10 @@
 <p>The FlwdirRaster object contains <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.shape</span></code>, <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.transform</span></code>
 and <code class="xref py py-attr docutils literal notranslate"><span class="pre">FlwdirRaster.latlon</span></code> attributes describing its geospatial location. The first
 attribute is required at initializiation, while the others can be set later.</p>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.set_transform.html#pyflwdir.FlwdirRaster.set_transform" title="pyflwdir.FlwdirRaster.set_transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.set_transform</span></code></a>(transform[, latlon])</p></td>
-<td><p>Set transform affine.</p></td>
+<td><p>Set the affine transform and coordinate-system type.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.index.html#pyflwdir.FlwdirRaster.index" title="pyflwdir.FlwdirRaster.index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.index</span></code></a>(xs, ys, **kwargs)</p></td>
 <td><p>Returns linear cell indices based on x, y coordinates.</p></td>
@@ -597,31 +618,31 @@ attribute is required at initializiation, while the others can be set later.</p>
 </section>
 <section id="streams-and-flow-paths">
 <h2>Streams and flow paths<a class="headerlink" href="#streams-and-flow-paths" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.stream_order.html#pyflwdir.FlwdirRaster.stream_order" title="pyflwdir.FlwdirRaster.stream_order"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.stream_order</span></code></a>([type, mask])</p></td>
-<td><p>Returns the Strahler (default) or classic stream order map.</p></td>
+<td><p>Return the Strahler (default) or classic stream-order map.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.path.html#pyflwdir.FlwdirRaster.path" title="pyflwdir.FlwdirRaster.path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.path</span></code></a>([idxs, xy, mask, ...])</p></td>
-<td><p>Returns paths of indices in down- or upstream direction from the starting points until: 1) a pit is found (including) or now more upstream cells are found; or 2) a True cell is found in mask (including); or 3) the max_length threshold is exceeded.</p></td>
+<td><p>Trace paths downstream or upstream from starting cells.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.snap.html#pyflwdir.FlwdirRaster.snap" title="pyflwdir.FlwdirRaster.snap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.snap</span></code></a>([idxs, xy, mask, ...])</p></td>
-<td><p>Returns the last index in down- or upstream direction from the starting points where:</p></td>
+<td><p>Snap starting cells to a downstream or upstream target.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.outflow_idxs.html#pyflwdir.FlwdirRaster.outflow_idxs" title="pyflwdir.FlwdirRaster.outflow_idxs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.outflow_idxs</span></code></a>(region)</p></td>
-<td><p>Returns linear indices of most downstream cells within region</p></td>
+<td><p>Return linear indices of the most downstream cells within a region.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.inflow_idxs.html#pyflwdir.FlwdirRaster.inflow_idxs" title="pyflwdir.FlwdirRaster.inflow_idxs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.inflow_idxs</span></code></a>(region)</p></td>
-<td><p>Returns linear indices of most upstream cells within region</p></td>
+<td><p>Return linear indices of the most upstream cells within a region.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.stream_distance.html#pyflwdir.FlwdirRaster.stream_distance" title="pyflwdir.FlwdirRaster.stream_distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.stream_distance</span></code></a>([mask, unit])</p></td>
-<td><p>Returns distance to outlet or next downstream True cell in mask</p></td>
+<td><p>Return the distance to the outlet or the next downstream True cell in <cite>mask</cite>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.streams.html#pyflwdir.FlwdirRaster.streams" title="pyflwdir.FlwdirRaster.streams"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.streams</span></code></a>([mask, min_sto, xs, ...])</p></td>
-<td><p>Returns a list of stream segment as linestring geo-features.</p></td>
+<td><p>Return stream segments as LineString geographic features.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.geofeatures.html#pyflwdir.FlwdirRaster.geofeatures" title="pyflwdir.FlwdirRaster.geofeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.geofeatures</span></code></a>(flowpaths[, xs, ys])</p></td>
-<td><p>Returns a geo-features of flowpaths defined by a list of arrays of linear indices.</p></td>
+<td><p>Return geographic features for flow paths represented by linear indices.</p></td>
 </tr>
 </tbody>
 </table>
@@ -629,25 +650,31 @@ attribute is required at initializiation, while the others can be set later.</p>
 </section>
 <section id="sub-basins">
 <h2>(Sub)basins<a class="headerlink" href="#sub-basins" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.basins.html#pyflwdir.FlwdirRaster.basins" title="pyflwdir.FlwdirRaster.basins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.basins</span></code></a>([idxs, xy, ids])</p></td>
-<td><p>Returns a (sub)basin map with a unique ID for every (sub)basin.</p></td>
+<td><p>Return a basin map with a unique ID for each basin.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins_streamorder.html#pyflwdir.FlwdirRaster.subbasins_streamorder" title="pyflwdir.FlwdirRaster.subbasins_streamorder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_streamorder</span></code></a>([strord, ...])</p></td>
-<td><p>Returns a subbasin map with unique IDs and its outlet linear indices.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins.html#pyflwdir.FlwdirRaster.subbasins" title="pyflwdir.FlwdirRaster.subbasins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins</span></code></a>(riv_mask)</p></td>
+<td><p>Return a subbasin map with unique IDs starting from 1.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins_pfafstetter.html#pyflwdir.FlwdirRaster.subbasins_pfafstetter" title="pyflwdir.FlwdirRaster.subbasins_pfafstetter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_pfafstetter</span></code></a>([depth, ...])</p></td>
-<td><p>Returns the pfafstetter subbasins.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins_streamorder.html#pyflwdir.FlwdirRaster.subbasins_streamorder" title="pyflwdir.FlwdirRaster.subbasins_streamorder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_streamorder</span></code></a>([strord, ...])</p></td>
+<td><p>Return subbasins defined by stream-order changes and their outlet indices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins_area.html#pyflwdir.FlwdirRaster.subbasins_area" title="pyflwdir.FlwdirRaster.subbasins_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_area</span></code></a>(area_min[, uparea])</p></td>
-<td><p>Returns map with basin IDs, with a minimal area of <cite>area_min</cite>.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins_pfafstetter.html#pyflwdir.FlwdirRaster.subbasins_pfafstetter" title="pyflwdir.FlwdirRaster.subbasins_pfafstetter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_pfafstetter</span></code></a>([depth, ...])</p></td>
+<td><p>Return subbasins using the Pfafstetter coding system.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.basin_outlets.html#pyflwdir.FlwdirRaster.basin_outlets" title="pyflwdir.FlwdirRaster.basin_outlets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.basin_outlets</span></code></a>(basins)</p></td>
-<td><p>Returns the linear index of the outlet cell of <cite>basins</cite>.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subbasins_area.html#pyflwdir.FlwdirRaster.subbasins_area" title="pyflwdir.FlwdirRaster.subbasins_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subbasins_area</span></code></a>(area_min[, uparea])</p></td>
+<td><p>Return subbasins with a minimum contributing area of <cite>area_min</cite>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.basin_bounds.html#pyflwdir.FlwdirRaster.basin_bounds" title="pyflwdir.FlwdirRaster.basin_bounds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.basin_bounds</span></code></a>([basins])</p></td>
-<td><p>Returns a the basin boundaries.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.basin_outlets.html#pyflwdir.FlwdirRaster.basin_outlets" title="pyflwdir.FlwdirRaster.basin_outlets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.basin_outlets</span></code></a>(basins)</p></td>
+<td><p>Return basin IDs and the linear index of each outlet cell.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.basin_bounds.html#pyflwdir.FlwdirRaster.basin_bounds" title="pyflwdir.FlwdirRaster.basin_bounds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.basin_bounds</span></code></a>([basins])</p></td>
+<td><p>Return the bounding boxes of basins.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.interbasin_mask.html#pyflwdir.FlwdirRaster.interbasin_mask" title="pyflwdir.FlwdirRaster.interbasin_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.interbasin_mask</span></code></a>(region[, stream])</p></td>
+<td><p>Return a mask for the most downstream contiguous area within a region.</p></td>
 </tr>
 </tbody>
 </table>
@@ -655,13 +682,13 @@ attribute is required at initializiation, while the others can be set later.</p>
 </section>
 <section id="up-and-downstream-values">
 <h2>Up- and downstream values<a class="headerlink" href="#up-and-downstream-values" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.downstream.html#pyflwdir.FlwdirRaster.downstream" title="pyflwdir.FlwdirRaster.downstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.downstream</span></code></a>(data)</p></td>
-<td><p>Returns next downstream value.</p></td>
+<td><p>Return the next downstream node's value for each node.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upstream_sum.html#pyflwdir.FlwdirRaster.upstream_sum" title="pyflwdir.FlwdirRaster.upstream_sum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_sum</span></code></a>(data[, mv])</p></td>
-<td><p>Returns sum of next upstream values.</p></td>
+<td><p>Return the sum of values at each node's immediate upstream neighbors.</p></td>
 </tr>
 </tbody>
 </table>
@@ -669,13 +696,13 @@ attribute is required at initializiation, while the others can be set later.</p>
 </section>
 <section id="up-and-downstream-arithmetics">
 <h2>Up- and downstream arithmetics<a class="headerlink" href="#up-and-downstream-arithmetics" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.accuflux.html#pyflwdir.FlwdirRaster.accuflux" title="pyflwdir.FlwdirRaster.accuflux"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.accuflux</span></code></a>(data[, nodata, direction])</p></td>
 <td><p>Return accumulated data values along the flow directions.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upstream_area.html#pyflwdir.FlwdirRaster.upstream_area" title="pyflwdir.FlwdirRaster.upstream_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_area</span></code></a>([unit])</p></td>
-<td><p>Returns the upstream area map based on the flow direction map.</p></td>
+<td><p>Return the upstream-area raster for the flow directions.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.moving_average.html#pyflwdir.FlwdirRaster.moving_average" title="pyflwdir.FlwdirRaster.moving_average"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.moving_average</span></code></a>(data, n[, ...])</p></td>
 <td><p>Take the moving weighted average over the flow direction network</p></td>
@@ -687,7 +714,7 @@ attribute is required at initializiation, while the others can be set later.</p>
 <td><p>Return smoothed river length, by taking the window average of river length.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.fillnodata.html#pyflwdir.FlwdirRaster.fillnodata" title="pyflwdir.FlwdirRaster.fillnodata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.fillnodata</span></code></a>(data, nodata[, ...])</p></td>
-<td><p>Returns data where cells with nodata value have been filled with the nearest up- or downstream valid neighbor value.</p></td>
+<td><p>Fill no-data nodes with values from valid upstream or downstream neighbors.</p></td>
 </tr>
 </tbody>
 </table>
@@ -695,31 +722,34 @@ attribute is required at initializiation, while the others can be set later.</p>
 </section>
 <section id="upscale-and-subgrid-methods">
 <h2>Upscale and subgrid methods<a class="headerlink" href="#upscale-and-subgrid-methods" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upscale.html#pyflwdir.FlwdirRaster.upscale" title="pyflwdir.FlwdirRaster.upscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.upscale</span></code></a>(scale_factor[, method, ...])</p></td>
-<td><p>Upscale flow direction network to lower resolution.</p></td>
+<td><p>Upscale a flow-direction network to a lower resolution.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upscale_error.html#pyflwdir.FlwdirRaster.upscale_error" title="pyflwdir.FlwdirRaster.upscale_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.upscale_error</span></code></a>(other, idxs_out)</p></td>
-<td><p>Returns an array with ones (True) where the upscaled flow directions are valid and zeros (False) where erroneous.</p></td>
+<td><p>Return an error map for the upscaled flow directions.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subgrid_rivlen.html#pyflwdir.FlwdirRaster.subgrid_rivlen" title="pyflwdir.FlwdirRaster.subgrid_rivlen"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivlen</span></code></a>(idxs_out[, ...])</p></td>
 <td><p>Returns the subgrid river length [m] based on unit catchment outlet locations.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subgrid_rivslp.html#pyflwdir.FlwdirRaster.subgrid_rivslp" title="pyflwdir.FlwdirRaster.subgrid_rivslp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivslp</span></code></a>(idxs_out, elevtn)</p></td>
-<td><p>Returns the subgrid river slope [m/m] estimated at unit catchment outlet pixel.</p></td>
+<td><p>Return the subgrid river slope [m/m] estimated at unit-catchment outlets.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subgrid_rivavg.html#pyflwdir.FlwdirRaster.subgrid_rivavg" title="pyflwdir.FlwdirRaster.subgrid_rivavg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivavg</span></code></a>(idxs_out, data)</p></td>
-<td><p>Returns the average value over the subgrid river, based on unit catchment outlet locations.</p></td>
+<td><p>Return the average value over the subgrid river at unit-catchment outlets.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subgrid_rivmed.html#pyflwdir.FlwdirRaster.subgrid_rivmed" title="pyflwdir.FlwdirRaster.subgrid_rivmed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.subgrid_rivmed</span></code></a>(idxs_out, data)</p></td>
-<td><p>Returns the median value over the subgrid river, based on unit catchment outlet locations.</p></td>
+<td><p>Return the median value over the subgrid river at unit-catchment outlets.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.ucat_area.html#pyflwdir.FlwdirRaster.ucat_area" title="pyflwdir.FlwdirRaster.ucat_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.ucat_area</span></code></a>(idxs_out[, unit])</p></td>
-<td><p>Returns the unit catchment map (highres) and area (lowres) [unit].</p></td>
+<td><p>Return the high-resolution unit-catchment map and low-resolution cell areas.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.ucat_outlets.html#pyflwdir.FlwdirRaster.ucat_outlets" title="pyflwdir.FlwdirRaster.ucat_outlets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.ucat_outlets</span></code></a>(cellsize[, ...])</p></td>
-<td><p>Returns linear indices of unit catchment outlet pixel.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.ucat_volume.html#pyflwdir.FlwdirRaster.ucat_volume" title="pyflwdir.FlwdirRaster.ucat_volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.ucat_volume</span></code></a>(idxs_out, hand[, ...])</p></td>
+<td><p>Return the high-resolution unit-catchment map and flood volumes by depth.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.ucat_outlets.html#pyflwdir.FlwdirRaster.ucat_outlets" title="pyflwdir.FlwdirRaster.ucat_outlets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.ucat_outlets</span></code></a>(cellsize[, ...])</p></td>
+<td><p>Return linear indices of unit-catchment outlet pixels.</p></td>
 </tr>
 </tbody>
 </table>
@@ -727,19 +757,19 @@ attribute is required at initializiation, while the others can be set later.</p>
 </section>
 <section id="elevation">
 <h2>Elevation<a class="headerlink" href="#elevation" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.dem_adjust.html#pyflwdir.FlwdirRaster.dem_adjust" title="pyflwdir.FlwdirRaster.dem_adjust"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.dem_adjust</span></code></a>(elevtn)</p></td>
 <td><p>Returns the hydrologically adjusted elevation where each downstream cell has the same or lower elevation as the current cell.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.dem_dig_d4.html#pyflwdir.FlwdirRaster.dem_dig_d4" title="pyflwdir.FlwdirRaster.dem_dig_d4"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.dem_dig_d4</span></code></a>(elevtn[, rivmsk, nodata])</p></td>
-<td><p>Returns the hydrologically adjusted elevation where for each cell river cell there is an adjacent D4 connected cell which has has the same or lower elevation as the current cell.</p></td>
+<td><p>Return elevation adjusted to satisfy D4 connectivity along river cells.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.hand.html#pyflwdir.FlwdirRaster.hand" title="pyflwdir.FlwdirRaster.hand"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.hand</span></code></a>(drain, elevtn)</p></td>
-<td><p>Returns the height above the nearest drain (HAND), i.e.: the relative vertical distance (drop) to the nearest dowstream river based on drainage-normalized topography and flowpaths.</p></td>
+<td><p>Return the height above the nearest drain (HAND).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.floodplains.html#pyflwdir.FlwdirRaster.floodplains" title="pyflwdir.FlwdirRaster.floodplains"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.floodplains</span></code></a>(elevtn[, uparea, ...])</p></td>
-<td><p>Returns floodplain boundaries based on a maximum treshold (h) of HAND which is scaled with upstream area (A) following h ~ A**b.</p></td>
+<td><p>Identify floodplain cells using an upstream-area-scaled HAND threshold.</p></td>
 </tr>
 </tbody>
 </table>
@@ -792,8 +822,8 @@ attribute is required at initializiation, while the others can be set later.</p>
     class="page-toc tocsection onthispage">
     <i class="fa-solid fa-list"></i> On this page
   </div>
-  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#input-output">Input/Output</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#flow-direction-attributes">Flow direction attributes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#flow-direction-methods">Flow direction methods</a></li>
@@ -824,13 +854,13 @@ attribute is required at initializiation, while the others can be set later.</p>
 </div>
 
   <div class="sidebar-secondary-item">
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/api/flwdirraster.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div></div>
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/api/flwdirraster.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
 
 </div></div>
               
@@ -845,8 +875,8 @@ attribute is required at initializiation, while the others can be set later.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -866,8 +896,7 @@ attribute is required at initializiation, while the others can be set later.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
-    <br/>
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
   </p>
 </div>
       
@@ -880,7 +909,7 @@ attribute is required at initializiation, while the others can be set later.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>
