@@ -238,7 +238,7 @@ intersphinx_mapping = {
 
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
-{% set docname = env.doc2path(env.docname, base=None).split('\\')[-1].split('/')[-1] %}
+{% set docname = env.doc2path(env.docname, base=None).name %}
 
 .. TIP::
 
