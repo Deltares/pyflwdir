@@ -35,6 +35,7 @@ The following attributes describe the flow direction and are at the core to the 
    FlwdirRaster.idxs_seq
    FlwdirRaster.idxs_pit
    FlwdirRaster.ncells
+   FlwdirRaster.nnodes
    FlwdirRaster.rank
    FlwdirRaster.isvalid
    FlwdirRaster.mask
@@ -96,11 +97,13 @@ Streams and flow paths
    :toctree: ../_generated
 
    FlwdirRaster.basins
+   FlwdirRaster.subbasins
    FlwdirRaster.subbasins_streamorder
    FlwdirRaster.subbasins_pfafstetter
    FlwdirRaster.subbasins_area
    FlwdirRaster.basin_outlets
    FlwdirRaster.basin_bounds
+   FlwdirRaster.interbasin_mask
 
 
 Up- and downstream values
@@ -140,6 +143,7 @@ Upscale and subgrid methods
    FlwdirRaster.subgrid_rivavg
    FlwdirRaster.subgrid_rivmed
    FlwdirRaster.ucat_area
+   FlwdirRaster.ucat_volume
    FlwdirRaster.ucat_outlets
 
 

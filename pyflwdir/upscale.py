@@ -88,7 +88,7 @@ def dmm_exitcell(
     shape : tuple of int
         lowres raster shape
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
 
     Returns
     -------
@@ -144,7 +144,7 @@ def dmm_nextidx(
     shape : tuple of int
         lowres raster shape
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
 
     Returns
     -------
@@ -209,7 +209,7 @@ def dmm(
     subshape : tuple of int
         highres raster shape
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
 
     Returns
     -------
@@ -294,7 +294,7 @@ def eam_repcell(
     shape : tuple of int
         lowres raster shape
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
 
     Returns
     -------
@@ -349,7 +349,7 @@ def eam_nextidx(
     shape : tuple of int
         lowres raster shape
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
 
     Returns
     -------
@@ -402,7 +402,7 @@ def eam(
     subshape : tuple of int
         highres raster shape
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
 
     Returns
     -------
@@ -455,7 +455,7 @@ def ihu_outlets(
     shape : tuple of int
         lowres raster shape
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
 
     Returns
     -------
@@ -511,7 +511,7 @@ def ihu_nextidx(
     shape : tuple of int
         lowres raster shape
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
 
     Returns
     -------
@@ -608,7 +608,7 @@ def ihu_relocate_outlets(
     shape : tuple of int
         lowres raster shape
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
     minupa : float
 
     Returns
@@ -989,7 +989,7 @@ def new_outlet(
     """Returns an alternative outlet subgrid cell which is connected to neighboring
     outlet cell in d8, not located on any existing stream, with a minimum downstream
     length of <minlen> and upstream area of <minupa>. This method can be
-    applied to lowres head water cells (i.e. without upstream neighbors)."""
+    Applied to low-resolution headwater cells (those without upstream neighbors)."""
     # streams array: outlets cell indices (>=0) and streams (-1); nodata value is -9
     path0 = np.full(1, mv, dtype=subidxs_ds.dtype)
     subidx_out = mv
@@ -1230,46 +1230,52 @@ def ihu(
     pit_out_of_cell: int = 2,
     mv: int = _mv,
 ) -> tuple[np.ndarray, np.ndarray, tuple[int, int]]:
-    """Returns the upscaled next downstream index based on the
-    iterative hydrography upscaling (IHU).
+    """Return the upscaled flow directions and outlet indices using IHU.
 
     Parameters
     ----------
     subidxs_ds : 1D-array of int
-        highres linear indices of downstream cells
+        High-resolution linear indices of downstream cells.
     subuparea : 1D-array
-        highres flattened upstream area array
+        Flattened high-resolution upstream-area array.
     subshape : tuple of int
-        highres raster shape
+        High-resolution raster shape.
     cellsize : int
-        size of lowres cell measured in higres cells
+        Size of each low-resolution cell in high-resolution cells.
     minlen_ratio : float, optional
         Minimum downstream subgrid distance between outlet cells expressed as ratio of
         cell length. Used to minimize the number of cells with a downstream subgrid
-        distance below this treshold. By default 0.25.
+        distance below this threshold. By default 0.25.
     minupa_ratio : float, optional
-        Minimum upstream area for head water cells expressed ratio of cell area.
-        By default 0.25.
-    r_ratio: float, optional
-        Distance from cell center lines which defines effective area, expressed as
-        square root of the cell length ratio, by default 0.5
+        Minimum upstream area for headwater cells, expressed as a fraction of cell area,
+        by default 0.25.
+    r_ratio : float, optional
+        Distance from cell-center lines defining the effective area, expressed as the
+        square root of the area ratio, by default 0.5.
     niter : int, optional
-        Maximum number of iterations applied to relocate outletes, optimize river lengths
-        and minimize upstream area errors in order to improve the overal upscaled flow
-        direction quality, by default 5.
-    opt_rivlen: bool, optional
-        If True, try to find alternatives for short cells with short river legth. By default True.
-    min_error: bool, optional
-        If True, minimmize total cells with upstream area error for cells with
-        upscale error by finding the neighboring cell with the shortest combined path to
-        a common downstream outlet pixel. By default True.
+        Maximum number of passes to relocate outlets, optimize river lengths, and reduce
+        upstream-area errors, by default 5.
+    opt_rivlen : bool, optional
+        Whether to seek alternatives for cells with short subgrid river lengths, by
+        default True.
+    min_error : bool, optional
+        Whether to reduce upstream-area errors in cells with flow-direction errors by
+        selecting a neighboring cell with a shorter combined path to a common
+        downstream outlet, by default True.
+    pit_out_of_cell : int, optional
+        Controls how pits outside their corresponding low-resolution cells are handled,
+        by default 2.
+    mv : int, optional
+        Missing-index value, by default the package default.
 
     Returns
     -------
-    lowres linear indices of next downstream
-        1D-array of int
-    highres linear indices of outlet cells
-        1D-array of int
+    idxs_ds : 1D array of int
+        Low-resolution linear indices of next downstream cells.
+    idxs_out : 1D array of int
+        High-resolution linear indices of outlet cells.
+    shape : tuple of int
+        Shape of the upscaled raster.
     """
     # calculate new size
     subnrow, subncol = subshape
@@ -1376,6 +1382,32 @@ def eam_plus(
     cellsize: int,
     mv: int = _mv,
 ) -> tuple[np.ndarray, np.ndarray, tuple[int, int]]:
+    """Upscale a flow-direction network with the EAM+ method.
+
+    EAM+ uses the IHU implementation without iterative outlet relocation.
+
+    Parameters
+    ----------
+    subidxs_ds : 1D array of int
+        High-resolution linear indices of downstream cells.
+    subuparea : 1D array
+        Flattened high-resolution upstream-area values.
+    subshape : tuple of int
+        High-resolution raster shape.
+    cellsize : int
+        Size of each low-resolution cell in high-resolution cells.
+    mv : int, optional
+        Missing-index value, by default the package default.
+
+    Returns
+    -------
+    idxs_ds : 1D array of int
+        Low-resolution linear indices of downstream cells.
+    idxs_out : 1D array of int
+        High-resolution outlet-cell indices.
+    shape : tuple of int
+        Shape of the upscaled raster.
+    """
     return ihu(subidxs_ds, subuparea, subshape, cellsize, niter=0, mv=mv)
 
 
@@ -1383,8 +1415,10 @@ def eam_plus(
 def upscale_error(
     subidxs_out: np.ndarray, idxs_ds: np.ndarray, subidxs_ds: np.ndarray, mv: int = _mv
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Returns an array with ones (zeros) if subgrid outlet/representative cells are
-    valid (erroneous) in D8, cells with missing values are set to -1.
+    """Return an error map for upscaled flow directions.
+
+    Values are 1 for valid links, 0 for erroneous links, and 255 for cells with missing
+    flow-direction data.
 
     The flow direction of a cell is erroneous if the first outlet pixel downstream of
     the outlet pixel of that cell is not located in its downstream cell, i.e.: the cell
@@ -1392,17 +1426,22 @@ def upscale_error(
 
     Parameters
     ----------
-    subidxs_out : 1D-array of int with same size as idxs_ds
-        linear (highres) indices of unit catchment outlet cells
-    idxs_ds : 1D-array of int with same size as subidxs_out
-        linear lowres indices of next downstream cell
-    subidxs_out, subidxs_ds : 1D-array of int
-        linear highres indices of outlet, next downstream cells
+    subidxs_out : 1D array of int
+        High-resolution linear indices of unit-catchment outlet cells, one per
+        low-resolution cell.
+    idxs_ds : 1D array of int
+        Low-resolution linear indices of next downstream cells.
+    subidxs_ds : 1D array of int
+        High-resolution linear indices of next downstream cells.
+    mv : int, optional
+        Missing-index value, by default the package default.
 
     Returns
     -------
-    1D-array of int
-        ones where outlets are connected
+    connect_map : 1D array of uint8
+        1 for valid flow-direction links, 0 for erroneous links, and 255 for no-data.
+    idxs_fix : 1D array of int
+        Indices of low-resolution cells with erroneous links.
     """
     assert subidxs_out.size == idxs_ds.size
     # binary array with outlets

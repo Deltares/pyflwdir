@@ -88,9 +88,10 @@ def upstream_area(
     nodata: float = -9999.0,
     dtype: type = np.float64,
 ) -> np.ndarray:
-    """Returns the accumulated upstream area, invalid cells are assinged a the nodata
-    value. The arae is calculated using the transform. If latlon is True, the resolution
-    is interpreted in degree and transformed to m2.
+    """Return accumulated upstream area, assigning `nodata` to invalid cells.
+
+    Cell areas are calculated from the affine transform. If `latlon` is True, the
+    resolution is interpreted in degrees and converted to square metres.
 
     NOTE: does not require area grid in memory
 
@@ -209,11 +210,10 @@ def stream_order(
     mask: np.ndarray | None = None,
     mv: int = core._mv,
 ) -> np.ndarray:
-    """Returns the classic or Hack's "bottum up" stream order.
+    """Return the classic or Hack's bottom-up stream order.
 
-    The main stem, based on upstream area has order 1.
-    Each tributary is given a number one greater than that of the
-    river or stream into which they discharge.
+    The main stem, selected using upstream area, has order 1. Each tributary receives
+    an order one greater than the stream it joins.
 
     Parameters
     ----------
@@ -248,11 +248,11 @@ def stream_order(
 def strahler_order(
     idxs_ds: np.ndarray, seq: np.ndarray, mask: np.ndarray | None = None
 ) -> np.ndarray:
-    """Returns the strahler "top down" stream order.
+    """Return the Strahler top-down stream order.
 
-    Rivers of the first order are the most upstream tributaries or head water cells.
-    If two streams of the same order merge, the resulting stream has an order of one higher.
-    If two rivers with different stream orders merge, the resulting stream is given the maximum of the two order.
+    First-order streams are the most upstream tributaries, or headwater cells. When two
+    streams of the same order merge, the downstream stream has an order one higher. When
+    streams of different orders merge, the downstream stream takes the higher order.
 
     Parameters
     ----------

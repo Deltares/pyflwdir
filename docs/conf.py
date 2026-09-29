@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # pyflwdir documentation build configuration file, created by
 # sphinx-quickstart on Wed Jul 24 15:19:00 2019.
@@ -13,16 +12,16 @@
 # serve to show the default.
 
 # If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+# add these directories to sys.path here.
 import os
 import sys
-from distutils.dir_util import copy_tree
+from pathlib import Path
+from shutil import copytree
+
 import pyflwdir
 
-here = os.path.dirname(__file__)
-sys.path.insert(0, os.path.abspath(os.path.join(here, "..")))
+here = Path(__file__).resolve().parent
+sys.path.insert(0, str(here.parent))
 
 
 # -- Project information -----------------------------------------------------
@@ -35,10 +34,10 @@ author = "Dirk Eilander"
 version = pyflwdir.__version__.split("dev")[0]
 
 # # -- Copy notebooks to include in docs -------
-SKIP_DOC_EXAMPLES = bool(os.environ.get("SKIP_DOC_EXAMPLES", False))
-if not os.path.isdir("_examples") and not SKIP_DOC_EXAMPLES:
-    os.makedirs("_examples")
-    copy_tree("../examples", "_examples")
+SKIP_DOC_EXAMPLES = bool(os.environ.get("SKIP_DOC_EXAMPLES", ""))
+examples_dir = here / "_examples"
+if not examples_dir.is_dir() and not SKIP_DOC_EXAMPLES:
+    copytree(here.parent / "examples", examples_dir, symlinks=True)
 
 # -- General configuration ------------------------------------------------
 
@@ -231,7 +230,7 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "geopandas": (" https://geopandas.org/en/stable/", None),
+    "geopandas": ("https://geopandas.org/en/stable/", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "scipy": ("https://docs.scipy.org/doc/scipy", None),
     # "numba": ("https://numba.pydata.org/numba-doc/latest", None),
@@ -239,7 +238,7 @@ intersphinx_mapping = {
 
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
-{% set docname = env.doc2path(env.docname, base=None).split('\\')[-1].split('/')[-1] %}
+{% set docname = env.doc2path(env.docname, base=None).name %}
 
 .. TIP::
 

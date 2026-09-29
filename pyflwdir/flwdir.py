@@ -59,14 +59,14 @@ def from_dataframe(df: "pd.DataFrame", ds_col: str = "idx_ds") -> "Flwdir":
     Parameters
     ----------
     df : pandas.DataFrame
-        dataframe with flow directions
+        DataFrame containing flow-direction links.
     ds_col : str, optional
-        name of column with downstream indices, by default "idx_ds"
+        Name of the column containing downstream indices, by default "idx_ds".
 
     Returns
     -------
     Flwdir
-        flow direction object
+        Flow-direction graph.
     """
 
     idxs_ds = df[ds_col].values
@@ -87,23 +87,24 @@ class Flwdir:
         nnodes: int | None = None,
         cache: bool = True,
     ):
-        """Flow direction raster array
+        """Initialize a flow-direction graph from downstream-node indices.
 
         Parameters
         ----------
         idxs_ds : 1D-array of int
-            linear index of next downstream cell
-        shape : tuple of int
-            shape of raster
-        ftype : {'d8', 'ldd', 'nextxy'}
-            name of flow direction type
-        idxs_pit, idxs_outlet : 2D array of int, optional
-            linear indices of all pits/outlets,
-            outlets exclude pits of inclomplete basins at the domain boundary
-        idxs_seq : 2D array of int, optional
-            linear indices of valid cells ordered from down- to upstream
-        nnodes : integer
-            number of valid cells
+            Linear index of the next downstream node for each node.
+        area : 1D array, optional
+            Node-area values, cached for use by accumulation methods.
+        idxs_pit : 1D array of int, optional
+            Linear indices of pit nodes. Calculated from `idxs_ds` if omitted.
+        idxs_outlet : 1D array of int, optional
+            Linear indices of basin outlet nodes.
+        idxs_seq : 1D array of int, optional
+            Valid node indices ordered from downstream to upstream.
+        nnodes : int, optional
+            Number of valid nodes. Calculated when needed if omitted.
+        cache : bool, optional
+            Whether to cache derived arrays, by default True.
         """
         # dimension
         self.size = idxs_ds.size
@@ -216,7 +217,7 @@ class Flwdir:
 
     @property
     def distnc(self) -> np.ndarray:
-        """Distance to outlet [m]"""
+        """Per-node distance weights; one graph link has unit length."""
         if "distnc" in self._cached:
             distnc = self._cached["distnc"]
         else:
@@ -225,7 +226,7 @@ class Flwdir:
 
     @property
     def area(self) -> np.ndarray:
-        """Cell area [m]"""
+        """Per-node area weights; each node has unit area by default."""
         if "area" in self._cached:
             area = self._cached["area"]
         else:
@@ -234,7 +235,7 @@ class Flwdir:
 
     @property
     def n_upstream(self) -> np.ndarray:
-        """Number of upstream connection"""
+        """Number of immediate upstream connections for each node."""
         return core.upstream_count(self.idxs_ds, mv=self._mv).reshape(self.shape)
 
     ### SET/MODIFY PROPERTIES ###
@@ -288,6 +289,19 @@ class Flwdir:
         self._nnodes = self._seq.size
 
     def main_upstream(self, uparea: np.ndarray | None = None) -> np.ndarray:
+        """Return the main upstream node for each node.
+
+        Parameters
+        ----------
+        uparea : 1D array of float, optional
+            Upstream area used to select the main upstream node. Calculated from the
+            graph if omitted.
+
+        Returns
+        -------
+        1D array of int
+            Linear indices of the selected upstream nodes.
+        """
         idxs_us_main = core.main_upstream(
             idxs_ds=self.idxs_ds, uparea=self._check_data(uparea, "uparea"), mv=self._mv
         )
@@ -298,16 +312,17 @@ class Flwdir:
     def add_pits(
         self, idxs: np.ndarray | None = None, streams: np.ndarray | None = None
     ) -> None:
-        """Add pits the flow direction.
-        If `streams` is given, the pits are snapped to the first downstream True node.
+        """Add pits to the flow direction graph.
+
+        If `streams` is given, each pit is snapped to the first downstream True node.
 
         Parameters
         ----------
         idxs : array_like, optional
-            linear indices of pits, by default is None.
+            Linear indices of pits.
         streams : 1D array of bool, optional
-            1D raster with cells flagged 'True' at stream nodes, only used
-            in combination with idx, by default None.
+            One-dimensional boolean mask of stream nodes. When provided, pits in `idxs`
+            are snapped to the first downstream True node.
         """
         idxs1 = self._check_idxs_xy(idxs, streams=streams)
         # add pits
@@ -329,18 +344,29 @@ class Flwdir:
     ### IO ###
 
     def dump(self, fn: str) -> None:
-        """Serialize object to file using pickle library."""
+        """Serialize the flow-direction graph to a file using pickle.
+
+        Parameters
+        ----------
+        fn : str
+            Output file path.
+        """
         with open(fn, "wb") as handle:
             pickle.dump(self._dict, handle, protocol=-1)
 
     @staticmethod
     def load(fn: str) -> "Flwdir":
-        """Load serialized FlwdirRaster object from file
+        """Load a serialized flow-direction graph from a file.
 
         Parameters
         ----------
         fn : str
-            path
+            Input file path.
+
+        Returns
+        -------
+        Flwdir
+            Loaded flow-direction graph.
         """
         with open(fn, "rb") as handle:
             kwargs = pickle.load(handle)
@@ -354,32 +380,30 @@ class Flwdir:
         max_length: float | None = None,
         direction: Literal["up", "down"] = "down",
     ) -> tuple[list[np.ndarray], np.ndarray]:
-        """Returns paths of indices in down- or upstream direction from the starting
-        points until:
+        """Trace paths upstream or downstream from starting nodes.
 
-        1) a pit is found (including) or now more upstream cells are found; or
-        2) a True cell is found in mask (including); or
-        3) the max_length threshold is exceeded.
-
-        To define starting points, either idxs or xy should be provided.
+        Each path includes its starting node and ends at a pit, at a node where `mask`
+        is True, or when the next link would exceed `max_length`.
 
         Parameters
         ----------
-        idxs : array_like, optional
-            linear indices of starting point, by default is None.
-        mask : 1D array of bool, optional
-            True for path end nodes.
+        idxs : 1D array of int
+            Linear indices of starting nodes.
+        mask : array-like of bool, optional
+            True for path-end nodes. Use a 1D array for `Flwdir` and an array matching
+            the raster shape for `FlwdirRaster`. Matching nodes are included.
         max_length : float, optional
-            maximum length of trace in number of nodes
+            Maximum path length in links. Tracing stops before a link would exceed this
+            distance.
         direction : {'up', 'down'}, optional
-            direction of path, be default 'down', i.e. downstream
+            Path direction, either downstream ('down', default) or upstream ('up').
 
         Returns
         -------
-        list of 1D-array of int
-            linear indices of path
-        1D-array of float
-            distance along path between start and end cell
+        paths : list of 1D arrays of int
+            Linear indices for each traced path.
+        distance : 1D array of float
+            Number of links traversed from each starting node.
         """
         if direction not in ["up", "down"]:
             msg = 'Unknown flow direction: {direction}, select from ["up", "down"].'
@@ -404,25 +428,26 @@ class Flwdir:
         direction: Literal["up", "down"] = "down",
         how: Literal["min", "max", "sum"] = "max",
     ) -> np.ndarray:
-        """Returns data where cells with nodata value have been filled
-        with the nearest up- or downstream valid neighbor value.
+        """Fill no-data nodes with values from valid upstream or downstream neighbors.
 
         Parameters
         ----------
-        data : 2D array
-            values
-        nodata: int, float
-            missing data value
+        data : array-like
+            Values associated with graph cells. Use a 1D array for `Flwdir` and an
+            array matching the raster shape for `FlwdirRaster`.
+        nodata : int or float
+            Missing-data value.
         direction : {'up', 'down'}, optional
-            direction of path, be default 'down', i.e. downstream
-        how: {'min', 'max', 'sum'}, optional.
+            Direction in which to propagate values, downstream ('down', default) or
+            upstream ('up').
+        how : {'min', 'max', 'sum'}, optional
             Method to merge values at confluences. By default 'max'.
             Only used in combination with `direction = 'down'`.
 
         Returns
         -------
-        2D array
-            filled data
+        array
+            Data with no-data cells filled, with the same shape as `data`.
         """
         dflat = self._check_data(data, "data")
         if direction == "up":
@@ -437,17 +462,18 @@ class Flwdir:
         return dout.reshape(data.shape)
 
     def downstream(self, data: np.ndarray) -> np.ndarray:
-        """Returns an array with for each node the next downstream value.
+        """Return the next downstream node's value for each node.
 
         Parameters
         ----------
-        data : 2D array
-            values
+        data : array-like
+            Values associated with graph cells. Use a 1D array for `Flwdir` and an
+            array matching the raster shape for `FlwdirRaster`.
 
         Returns
         -------
-        2D array
-            downstream data
+        array
+            Values from the next downstream cells, with the same shape as `data`.
         """
         dflat = self._check_data(data, "data")
         data_out = dflat.copy()
@@ -455,19 +481,21 @@ class Flwdir:
         return data_out.reshape(data.shape)
 
     def upstream_sum(self, data: np.ndarray, mv: float = -9999) -> np.ndarray:
-        """Returns sum of next upstream values.
+        """Return the sum of values at each node's immediate upstream neighbors.
 
         Parameters
         ----------
-        data : 2D array
-            values
-        mv : int or float
-            missing value
+        data : array-like
+            Values associated with graph cells. Use a 1D array for `Flwdir` and an
+            array matching the raster shape for `FlwdirRaster`.
+        mv : int or float, optional
+            Missing-data value, by default -9999.
 
         Returns
         -------
-        2D array
-            sum of upstream data
+        array
+            Sum of immediate upstream values at each cell, with the same shape as
+            `data`.
         """
         data_out = arithmetics.upstream_sum(
             idxs_ds=self.idxs_ds,
@@ -490,23 +518,24 @@ class Flwdir:
 
         Parameters
         ----------
-        data : 2D array
-            values
+        data : array-like
+            Values associated with graph cells. Use a 1D array for `Flwdir` and an
+            array matching the raster shape for `FlwdirRaster`.
         n : int
             number of up/downstream neighbors to include
-        weights : 2D array, optional
-            weights, by default equal weights are assumed
+        weights : array-like, optional
+            Per-cell weights. Equal weights are used if omitted.
         restrict_strord: bool
             If True, limit the window to cells of same or smaller stream order.
-        strord : 2D array of int, optional
-            Stream order map.
+        strord : array-like of int, optional
+            Stream-order map used when `restrict_strord` is True.
         nodata : float, optional
             Nodata values which is ignored when calculating the average, by default -9999.0
 
         Returns
         -------
-        2D array
-            averaged data
+        array
+            Averaged values, with the same shape as `data`.
         """
         data_out = arithmetics.moving_average(
             data=self._check_data(data, "data"),
@@ -532,21 +561,22 @@ class Flwdir:
 
         Parameters
         ----------
-        data : 2D array
-            values
+        data : array-like
+            Values associated with graph cells. Use a 1D array for `Flwdir` and an
+            array matching the raster shape for `FlwdirRaster`.
         n : int
             number of up/downstream neighbors to include
         restrict_strord: bool
             If True, limit the window to cells of same or smaller stream order.
-        strord : 2D array of int, optional
-            Stream order map.
+        strord : array-like of int, optional
+            Stream-order map used when `restrict_strord` is True.
         nodata : float, optional
             Nodata values which is ignored when calculating the median, by default -9999.0
 
         Returns
         -------
-        2D array
-            median data
+        array
+            Median values, with the same shape as `data`.
         """
         data_out = arithmetics.moving_median(
             data=self._check_data(data, "data"),
@@ -566,31 +596,30 @@ class Flwdir:
         type: Literal["strahler", "classic"] = "strahler",
         mask: np.ndarray | None = None,
     ) -> np.ndarray:
-        """Returns the Strahler (default) or classic stream order map.
+        """Return the Strahler (default) or classic stream-order map.
 
-        In the *classic* "bottum up" stream order map, the main river stem has order 1.
-        Each tributary is given a number one greater than that of the
-        river or stream into which they discharge.
+        In the *classic* bottom-up order, the main stem has order 1. Each tributary
+        receives an order one greater than the stream it joins.
 
-        In the *strahler* "top down" stream order map, rivers of the first order are
-        the most upstream tributaries or head water cells. If two streams of the same
-        order merge, the resulting stream has an order of one higher.
-        If two rivers with different stream orders merge, the resulting stream is
-        given the maximum of the two order.
+        In the *Strahler* top-down order, first-order streams are the most upstream
+        tributaries, or headwater cells. When two streams of the same order merge, the
+        downstream stream has an order one higher. When streams of different orders
+        merge, the downstream stream takes the higher order.
 
         Parameters
         ----------
         type: {"strahler", "classic"}
-            Stream order type. By default Strahler.
-        mask: 2D array of boolean
-            Mask of streams to consider. This can be used to compute the stream order
-            for streams with a minimum upstream area or streams within a specific
-            (sub)basin only.
+            Stream-order type, by default 'strahler'.
+        mask : array-like of bool, optional
+            Mask of stream cells to consider. Use a 1D array for `Flwdir` and an array
+            matching the raster shape for `FlwdirRaster`. Can restrict the calculation
+            to streams above an upstream-area threshold or within a (sub)basin.
 
         Returns
         -------
-        2D array of int
-            strahler order map
+        array of int
+            Stream-order values for each cell, with the same shape as the flow-direction
+            data.
         """
         mask = self._check_data(mask, "mask", optional=True)
         if type.lower() == "strahler":
@@ -634,8 +663,9 @@ class Flwdir:
 
         Parameters
         ----------
-        data : 2D array
-            values
+        data : array-like
+            Values associated with graph cells. Use a 1D array for `Flwdir` and an
+            array matching the raster shape for `FlwdirRaster`.
         nodata : int or float
             Missing data value for cells outside domain
         direction : {'up', 'down'}, optional
@@ -643,8 +673,8 @@ class Flwdir:
 
         Returns
         -------
-        2D array with data.dtype
-            accumulated values
+        array with `data.dtype`
+            Accumulated values, with the same shape as `data`.
         """
         if direction == "up":
             accu = streams.accuflux(
@@ -679,17 +709,19 @@ class Flwdir:
 
         Parameters
         ----------
-        rivlen : 2D array of float
+        rivlen : array-like of float
             River length values.
         min_rivlen : float
             Minimum river length.
         max_window : int
-            maximum window size
+            Maximum window size, by default 10.
+        nodata : float, optional
+            Missing-data value, by default -9999.0.
 
         Returns
         -------
-        2D array of float
-            River length values.
+        array of float
+            Smoothed river-length values, with the same shape as `rivlen`.
         """
         rivlen_out = streams.smooth_rivlen(
             idxs_ds=self.idxs_ds,
@@ -736,21 +768,26 @@ class Flwdir:
         min_convergence: float = 1e-2,
         max_elevtn: float = 0,
     ) -> np.ndarray:
-        """Classifies estuaries based on a minimum width convergence.
+        """Classify estuaries based on river-width convergence.
 
         Parameters
         ----------
-        rivdst, rivwth, elevtn : np.ndarray
-            Distance to river outlet [m], river width [m], elevation [m+REF]
+        elevtn : 1D array of float
+            Elevation values [m + reference elevation].
+        rivwth : 1D array of float
+            River widths [m].
+        rivdst : 1D array of float, optional
+            Distance-to-outlet values [m]. Uses the graph's `distnc` if omitted.
         max_elevtn : float, optional
-            Maximum elevation for estuary outlet, by default 0 m+REF
+            Maximum elevation for estuary outlets [m + reference elevation], by default 0.
         min_convergence : float, optional
-            River width convergence threshold, by default 1e-2 m/m
+            Minimum river-width convergence threshold [m/m], by default 1e-2.
 
         Returns
         -------
         np.ndarray of int8
-            Estuary classification: >= 1 where estuary; 2 at upstream end of estaury.
+            Estuary classification: 1 for estuary nodes, 2 at the upstream end of an
+            estuary, and 0 elsewhere.
         """
         rivdst = self.distnc if rivdst is None else rivdst
         estuary = rivers.classify_estuary(
@@ -778,34 +815,44 @@ class Flwdir:
         min_rivslp: float = 1e-5,
         **kwargs,
     ) -> np.ndarray:
-        """Return an estimated river depth based on mannings equations or a gradually
-        varying flow (gvf) solver a assuming a rectangular river profile.
+        """Estimate river depth from Manning's equation or a gradually varied-flow solver.
+
+        Both methods assume a rectangular river profile. The GVF method requires `zs`
+        and `rivdst`. The Manning method requires `rivslp`, or both `zs` and `rivdst`
+        from which to derive slope.
 
         Parameters
         ----------
         qbankfull : np.ndarray
-            bankfull discharge [m^3/s]
+            Bankfull discharge [m3/s].
         rivwth : np.ndarray
-            bankfull river width [m]
+            Bankfull river width [m].
         zs : np.ndarray, optional
-            bankfull water surface elevation profile [m+REF], required for gvf method
+            Bankfull water-surface elevation [m + reference elevation]. Required for
+            the GVF method and for deriving slope when `rivslp` is not provided.
         rivdst : np.ndarray, optional
-            distance to river outlet [m], required for gvf method
+            Distance-to-outlet values [m]. Required for the GVF method and for deriving
+            slope when `rivslp` is not provided.
         rivslp : np.ndarray, optional
-            river slope [m/m], required if `zs` or `rivdst` is not provided
+            River slope [m/m]. Required by the Manning method unless both `zs` and
+            `rivdst` are supplied.
         manning : float, optional
-            manning roughness [s/m^{1/3}], by default 0.03
+            Manning roughness [s/m^(1/3)], by default 0.03.
         method : {'manning', 'gvf'}
-            Method to estimate river depth, by default 'manning'
-        min_rivdph : int, optional
-            Minimum river depth [m], by default 1
-        min_rivslp : [type], optional
-            Minimum river slope [m/m], by default 1e-5
+            Method to estimate river depth, either 'manning' or 'gvf', by default
+            'manning'.
+        min_rivdph : float, optional
+            Minimum river depth [m], by default 1.
+        min_rivslp : float, optional
+            Minimum river slope [m/m], by default 1e-5.
+        **kwargs : dict
+            Additional arguments passed to the GVF solver, including `eps` and
+            `n_iter`.
 
         Returns
         -------
         rivdph: np.ndarray
-            river depth [m]
+            River-depth values [m].
         """
         methods = ["manning", "gvf"]
         if method not in methods:

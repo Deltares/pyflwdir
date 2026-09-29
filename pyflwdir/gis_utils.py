@@ -39,35 +39,35 @@ def spread2d(
     latlon: bool = False,
     transform: np.ndarray = _IDENTITY,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Returns filled array with nearest observations, origin cells and friction distance to origin.
-    The friction distance is measured through valid cells in the mask and has a uniform value of 1. by default.
-    The diagonal distance is taken as the hypot of the vertical and horizontal distances.
+    """Fill no-data cells with the nearest observation and return source and distance maps.
 
+    Distances are accumulated through valid cells. The default friction is 1 per cell;
+    diagonal steps use the hypotenuse of the horizontal and vertical distances.
 
     Parameters
     ----------
-    obs: 2D array
-        Initial array with observations.
-    msk: 2D array of bool, optional
-        Mask of valid cells to consider for filling.
-    nodata: int, float
-        Missing data value in obs. Cells with this value and where mask equals True are filled, by default 0.
-    frc: 2D array of float
-        Friction values, by default a uniform value of 1 is used.
-    latlon: bool
-        True for geographic CRS, False for projected CRS.
-        If True, the transform units are assumed to be degrees and converted to metric distances.
-    transform: np.ndarray
-        Affine transform coefficients mapping pixel coordinates to coordinate reference system.
+    obs : 2D array
+        Input observations. Cells equal to `nodata` are candidates for filling.
+    msk : 2D array of bool, optional
+        Valid-cell mask. Observations and fill paths are restricted to True cells.
+    nodata : int or float, optional
+        Missing-data value in `obs`, by default 0.
+    frc : 2D array of float, optional
+        Per-cell friction multiplier for distance accumulation, by default 1 everywhere.
+    latlon : bool, optional
+        Whether coordinates are geographic. If True, transform units are interpreted
+        as degrees and distances are converted to metres, by default False.
+    transform : np.ndarray, optional
+        Six affine transform coefficients mapping pixel coordinates to map coordinates.
 
     Returns
     -------
     out: 2D array of obs.dtype
-        Output observations array where nodata values are filled with the nearest observation.
+        Copy of `obs` with fillable no-data cells assigned the nearest observation.
     src: 2D array of int32
-        Linear index of origin cell.
+        Linear index of the nearest observation, or -1 where no observation is reachable.
     dst: 2D array of float32
-        Distance to origin cell.
+        Accumulated friction distance to the nearest observation.
     """
     nrow, ncol = obs.shape
     xres, yres, north = transform[0], abs(transform[4]), transform[5]
@@ -176,10 +176,19 @@ def _get_edge(a: np.ndarray, struct: np.ndarray) -> np.ndarray:
 def transform_from_origin(
     west: float, north: float, xsize: float, ysize: float
 ) -> Affine:
-    """Return an Affine transformation given upper left and pixel sizes.
-    Return an Affine transformation for a georeferenced raster given
-    the coordinates of its upper left corner `west`, `north` and pixel
-    sizes `xsize`, `ysize`.
+    """Return an affine transform from the upper-left corner and pixel sizes.
+
+    Parameters
+    ----------
+    west, north : float
+        Coordinates of the upper-left corner.
+    xsize, ysize : float
+        Pixel width and height in coordinate units.
+
+    Returns
+    -------
+    Affine
+        Transform mapping pixel coordinates to map coordinates.
     """
     return Affine(xsize, 0.0, west, 0.0, -ysize, north)
 
@@ -192,10 +201,19 @@ def transform_from_bounds(
     width: int,
     height: int,
 ) -> Affine:
-    """Return an Affine transformation given bounds, width and height.
-    Return an Affine transformation for a georeferenced raster given
-    its bounds `west`, `south`, `east`, `north` and its `width` and
-    `height` in number of pixels.
+    """Return an affine transform from raster bounds and dimensions.
+
+    Parameters
+    ----------
+    west, south, east, north : float
+        Raster bounds in coordinate units.
+    width, height : int
+        Raster dimensions in pixels.
+
+    Returns
+    -------
+    Affine
+        Transform mapping pixel coordinates to map coordinates.
     """
     return Affine(
         (east - west) / width,
@@ -210,9 +228,19 @@ def transform_from_bounds(
 def array_bounds(
     height: int, width: int, transform: Affine
 ) -> tuple[float, float, float, float]:
-    """Return the bounds of an array given height, width, and a transform.
-    Return the `west, south, east, north` bounds of an array given
-    its height, width, and an affine transform.
+    """Return the west, south, east, and north bounds of an array.
+
+    Parameters
+    ----------
+    height, width : int
+        Array dimensions in pixels.
+    transform : Affine
+        Transform mapping pixel coordinates to map coordinates.
+
+    Returns
+    -------
+    tuple of float
+        Bounds in `(west, south, east, north)` order.
     """
     w, n = transform.xoff, transform.yoff
     e = transform.a * width + transform.b * height + transform.c
@@ -226,14 +254,14 @@ def xy(
     cols: np.ndarray | int,
     offset: Literal["center", "ul", "ur", "ll", "lr"] = "center",
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Returns the x and y coordinates of pixels at `rows` and `cols`.
+    """Return the x and y coordinates of pixels at `rows` and `cols`.
     The pixel's center is returned by default, but a corner can be returned
     by setting `offset` to one of `ul, ur, ll, lr`.
 
     Parameters
     ----------
-    transform: Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
+    transform : Affine
+        Transform mapping pixel coordinates to map coordinates.
     rows : ndarray or int
         Pixel rows.
     cols : ndarray or int
@@ -320,16 +348,16 @@ def idxs_to_coords(
     shape: tuple[int, int],
     offset: Literal["center", "ul", "ur", "ll", "lr"] = "center",
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Returns coordinates of idxs raster indices based affine.
+    """Return map coordinates for linear raster indices.
 
     Parameters
     ----------
     idxs : ndarray of int
         linear indices
-    transform: Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
+    transform : Affine
+        Transform mapping pixel coordinates to map coordinates.
     shape : tuple of int
-        The height, width  of the raster.
+        Raster dimensions as `(height, width)`.
     offset : {'center', 'ul', 'ur', 'll', 'lr'}
         Determines if the returned coordinates are for the center of the
         pixel or for a corner.
@@ -364,7 +392,7 @@ def coords_to_idxs(
     op=np.floor,
     precision: int | None = None,
 ) -> np.ndarray:
-    """Returns linear indices of coordinates.
+    """Return linear raster indices for map coordinates.
 
     Parameters
     ----------
@@ -372,10 +400,10 @@ def coords_to_idxs(
         x values in coordinate reference system
     ys : ndarray or float
         y values in coordinate reference system
-    transform: Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
+    transform : Affine
+        Transform mapping pixel coordinates to map coordinates.
     shape : tuple of int
-        The height, width  of the raster.
+        Raster dimensions as `(height, width)`.
     op : function {numpy.floor, numpy.ceil, numpy.round}
         Function to convert fractional pixels to whole numbers
     precision : int, optional
@@ -407,14 +435,19 @@ def coords_to_idxs(
 def affine_to_coords(
     affine: Affine, shape: tuple[int, int]
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Returs a raster axis with pixel center coordinates based on the affine.
+    """Return the x and y pixel-center coordinate arrays for an affine transform.
 
     Parameters
     ----------
-    affine: Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
+    affine : Affine
+        Transform mapping pixel coordinates to map coordinates.
     shape : tuple of int
-        The height, width  of the raster.
+        Raster dimensions as `(height, width)`.
+
+    Returns
+    -------
+    tuple of 1D arrays
+        The x coordinates for columns and y coordinates for rows.
 
     Returns
     -------
@@ -428,24 +461,54 @@ def affine_to_coords(
 
 ## DISTANCES // AREAS
 def reggrid_dx(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
-    """returns a the cell widths (dx) for a regular grid with cell centers
-    lats & lons [m]."""
+    """Return cell widths [m] for a regular geographic grid.
+
+    Parameters
+    ----------
+    lats, lons : 1D arrays of float
+        Latitude and longitude coordinates at cell centers, in degrees.
+
+    Returns
+    -------
+    2D array of float
+        Cell widths, with shape `(len(lats), len(lons))`.
+    """
     xres = np.abs(np.mean(np.diff(lons)))
     dx = degree_metres_x(lats) * xres
     return dx[:, None] * np.ones((lats.size, lons.size), dtype=lats.dtype)
 
 
 def reggrid_dy(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
-    """returns a the cell heights (dy) for a regular grid with cell centers
-    lats & lons [m]."""
+    """Return cell heights [m] for a regular geographic grid.
+
+    Parameters
+    ----------
+    lats, lons : 1D arrays of float
+        Latitude and longitude coordinates at cell centers, in degrees.
+
+    Returns
+    -------
+    2D array of float
+        Cell heights, with shape `(len(lats), len(lons))`.
+    """
     yres = np.abs(np.mean(np.diff(lats)))
     dy = degree_metres_y(lats) * yres
     return dy[:, None] * np.ones((lats.size, lons.size), dtype=lats.dtype)
 
 
 def reggrid_area(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
-    """returns a the cell area for a regular grid with cell centres
-    lats & lons [m2]."""
+    """Return cell areas [m2] for a regular geographic grid.
+
+    Parameters
+    ----------
+    lats, lons : 1D arrays of float
+        Latitude and longitude coordinates at cell centers, in degrees.
+
+    Returns
+    -------
+    2D array of float
+        Cell areas, with shape `(len(lats), len(lons))`.
+    """
     xres = np.abs(np.mean(np.diff(lons)))
     yres = np.abs(np.mean(np.diff(lats)))
     area = np.ones((lats.size, lons.size), dtype=np.float32)
@@ -458,7 +521,24 @@ def area_grid(
     latlon: bool = False,
     unit: str = "m2",
 ) -> np.ndarray:
-    """Returns a regular grid with cell areas"""
+    """Return a raster of cell areas.
+
+    Parameters
+    ----------
+    transform : Affine
+        Affine transform for the raster.
+    shape : tuple of int
+        Raster dimensions `(height, width)`.
+    latlon : bool, optional
+        Whether coordinates are geographic, by default False.
+    unit : {'m2', 'ha', 'km2', 'cell'}, optional
+        Area units, by default 'm2'.
+
+    Returns
+    -------
+    2D array
+        Cell areas in `unit`.
+    """
     unit = str(unit).lower()
     if unit not in AREA_FACTORS:
         fstr = '", "'.join(AREA_FACTORS.keys())
@@ -477,8 +557,20 @@ def area_grid(
 
 @njit(cache=True)
 def cellarea(lat: np.ndarray | float, xres: float, yres: float) -> np.ndarray | float:
-    """returns the area of cell with a given resolution (resx,resy) at a given
-    cell center latitude [m2]."""
+    """Return the area [m2] of a cell at a given center latitude.
+
+    Parameters
+    ----------
+    lat : float or array-like
+        Cell-center latitude in degrees.
+    xres, yres : float
+        Cell width and height in degrees.
+
+    Returns
+    -------
+    float or array-like
+        Cell area in square metres.
+    """
     l1 = np.radians(lat - np.abs(yres) / 2.0)
     l2 = np.radians(lat + np.abs(yres) / 2.0)
     dx = np.radians(np.abs(xres))
@@ -487,8 +579,18 @@ def cellarea(lat: np.ndarray | float, xres: float, yres: float) -> np.ndarray | 
 
 @njit(cache=True)
 def degree_metres_y(lat: np.ndarray | float) -> np.ndarray | float:
-    """ "returns the verical length of a degree in metres at
-    a given latitude."""
+    """Return the north-south length of one degree [m] at a given latitude.
+
+    Parameters
+    ----------
+    lat : float or array-like
+        Latitude in degrees.
+
+    Returns
+    -------
+    float or array-like
+        Length of one degree of latitude in metres.
+    """
     m1 = 111132.92  # latitude calculation term 1
     m2 = -559.82  # latitude calculation term 2
     m3 = 1.175  # latitude calculation term 3
@@ -506,8 +608,18 @@ def degree_metres_y(lat: np.ndarray | float) -> np.ndarray | float:
 
 @njit(cache=True)
 def degree_metres_x(lat: np.ndarray | float) -> np.ndarray | float:
-    """ "returns the horizontal length of a degree in metres at
-    a given latitude."""
+    """Return the east-west length of one degree [m] at a given latitude.
+
+    Parameters
+    ----------
+    lat : float or array-like
+        Latitude in degrees.
+
+    Returns
+    -------
+    float or array-like
+        Length of one degree of longitude in metres.
+    """
     p1 = 111412.84  # longitude calculation term 1
     p2 = -93.5  # longitude calculation term 2
     p3 = 0.118  # longitude calculation term 3
@@ -529,8 +641,9 @@ def distance(
     latlon: bool = False,
     transform: np.ndarray = _IDENTITY,
 ) -> float:
-    """Return the the length between linear indices idx0 and idx1 on a regular raster
-    defined by the affine transform.
+    """Return the distance between two linear raster indices.
+
+    The raster is assumed to have regular spacing defined by `transform`.
 
     Parameters
     ----------
@@ -538,16 +651,16 @@ def distance(
         index of start, end cell
     ncol : int
         number of columns in raster
-    latlon: bool
+    latlon : bool, optional
         True for geographic CRS, False for projected CRS.
         If True, the transform units are assumed to be degrees and converted to metric distances.
-    transform: Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
+    transform : Affine, optional
+        Transform mapping pixel coordinates to map coordinates.
 
     Returns
     -------
     float
-        length
+        Distance in map units, or metres for geographic coordinates.
     """
     xres, yres, north = transform[0], transform[4], transform[5]
     # compute delta row, col
@@ -574,7 +687,7 @@ def features(
     shape: tuple[int, int] | None = None,
     **kwargs,
 ) -> list[dict]:
-    """Returns a LineString feature for each stream
+    """Return one LineString feature for each flow path.
 
     Parameters
     ----------
@@ -582,13 +695,14 @@ def features(
         linear indices of flowpaths
     xs, ys : 1D-array of float
         x, y coordinates
-    transform : Affine
-        Coefficients mapping pixel coordinates to coordinate reference system.
+    transform : Affine, optional
+        Transform mapping pixel coordinates to map coordinates. Required when `xs` or
+        `ys` is omitted.
     shape : tuple of int
         The height, width  of the raster.
-    kwargs : extra sample maps key-word arguments
-        optional maps to sample from
-        e.g.: strord=flw.stream_order()
+    **kwargs : 2D array-like
+        Additional maps sampled at each flow path's most downstream cell and included
+        as feature properties, for example `strord=flw.stream_order()`.
 
     Returns
     -------
