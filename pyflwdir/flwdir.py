@@ -12,6 +12,8 @@ from . import (
     arithmetics,
     core,
     dem,
+    parallel as parallel_utils,
+    partition as partitioning,
     rivers,
     streams,
 )
@@ -372,6 +374,45 @@ class Flwdir:
             self._cached[key] = (cells, offsets)
         return cells, offsets
 
+    def partition(
+        self,
+        level: Literal["basin", "subbasin"] = "subbasin",
+        n_parts: int = 4,
+        **kwargs,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Split a raster into FlowTopo process-level subregions.
+
+        Basin-level partitioning builds a cell-count-weighted basin adjacency
+        graph and partitions its mainland with METIS, then attaches islands
+        geographically and refines small boundary basins. Subbasin-level
+        partitioning further decomposes the dominant basin on the heaviest
+        rank into four parallel trunks and a logical fifth mainstem region.
+
+        This method requires a :class:`FlwdirRaster`. METIS is an optional
+        dependency; install it with ``pip install pyflwdir[partition]``.
+
+        Parameters
+        ----------
+        level : {'basin', 'subbasin'}, optional
+            FlowTopo partition level, by default ``"subbasin"``.
+        n_parts : int, optional
+            Number of basin-level partitions, by default 4. The current
+            FlowTopo subbasin algorithm requires exactly four.
+        **kwargs
+            Additional options passed to
+            :func:`pyflwdir.partition.partition_plan`.
+
+        Returns
+        -------
+        parts : ndarray of int32
+            Partition per cell. ``-1`` marks cells outside the network and
+            ``pyflwdir.MAINSTEM`` marks the logical fifth subregion.
+        load : ndarray of int64
+            Cell count assigned to each parallel trunk. Mainstem cells are
+            excluded because they run in the second stage.
+        """
+        return partitioning.partition(self, level=level, n_parts=n_parts, **kwargs)
+
     def main_upstream(self, uparea: np.ndarray | None = None) -> np.ndarray:
         """Return the main upstream node for each node.
 
@@ -418,7 +459,7 @@ class Flwdir:
         self._nnodes = None
         for key in list(self._cached):
             if key in ("rank", "strord", "idxs_us_main", "distnc") or key.startswith(
-                ("layering_", "decomposition_")
+                ("layering_", "decomposition_", "hybrid_metis_")
             ):
                 self._cached.pop(key, None)
 
@@ -749,6 +790,12 @@ class Flwdir:
         parallel: bool = False,
         layering: Literal["asap", "cfds", "alap"] = "cfds",
         manner: Literal["push", "pull"] = "push",
+        n_processes: int = 1,
+        threads_per_process: int | None = None,
+        partition_level: Literal["basin", "subbasin"] = "subbasin",
+        start_method: str = "spawn",
+        partition_min_subtree_size: int = 100_000,
+        partition_imbalance_target: float = 1.05,
     ) -> np.ndarray:
         """Return accumulated data values along the flow directions.
 
@@ -770,6 +817,24 @@ class Flwdir:
             Threaded propagation manner, by default ``"push"``. Push needs the
             conflict-free ``"cfds"`` layering. Pull is safe with all three
             layerings but builds and reads the upstream-cell index.
+        n_processes : int, optional
+            Number of process-level FlowTopo regions, by default 1. Values
+            above one use METIS basin partitioning. Subbasin execution requires
+            exactly four process trunks and a logical fifth mainstem stage.
+        threads_per_process : int, optional
+            Numba threads used inside each process. By default the available
+            threads are divided over `n_processes`.
+        partition_level : {'basin', 'subbasin'}, optional
+            FlowTopo process-level partition, by default ``"subbasin"``.
+        start_method : str, optional
+            Multiprocessing start method, by default ``"spawn"``.
+        partition_min_subtree_size : int, optional
+            Smallest tributary subtree that Method 2 may move, by default
+            100,000 cells as in the continental FlowTopo C workflow. Smaller
+            rasters may use a lower explicit value.
+        partition_imbalance_target : float, optional
+            Stop Method 2 when maximum trunk load divided by mean load reaches
+            this value, by default 1.05.
 
         Returns
         -------
@@ -786,6 +851,10 @@ class Flwdir:
             raise ValueError(
                 f'Unknown flow direction: {direction}, select from ["up", "down"].'
             )
+        if n_processes < 1:
+            raise ValueError("n_processes must be at least 1")
+        if not parallel and n_processes != 1:
+            raise ValueError("n_processes > 1 requires parallel=True")
         if parallel and direction == "down":
             raise ValueError("parallel=True is only supported for direction='up'.")
         if parallel:
@@ -793,9 +862,26 @@ class Flwdir:
                 raise ValueError("manner must be 'push' or 'pull'")
             if manner == "push" and layering != "cfds":
                 raise ValueError("manner='push' requires layering='cfds'")
-            cells, offsets = self._layer_decomposition(layering)
             checked = self._check_data(data, "data")
-            if manner == "push":
+            if n_processes > 1:
+                if layering != "cfds" or manner != "push":
+                    raise ValueError(
+                        "hybrid process parallelism requires "
+                        "layering='cfds' and manner='push'"
+                    )
+                accu = parallel_utils.accuflux(
+                    self,
+                    checked,
+                    nodata,
+                    n_processes,
+                    threads_per_process,
+                    partition_level,
+                    start_method,
+                    partition_min_subtree_size,
+                    partition_imbalance_target,
+                )
+            elif manner == "push":
+                cells, offsets = self._layer_decomposition(layering)
                 accu = streams.accuflux_layered_push(
                     idxs_ds=self.idxs_ds,
                     cells=cells,
@@ -804,6 +890,7 @@ class Flwdir:
                     nodata=nodata,
                 )
             else:
+                cells, offsets = self._layer_decomposition(layering)
                 indptr, idxs_us = core.upstream_csr(self.idxs_ds, self._mv)
                 accu = streams.accuflux_layered_pull(
                     indptr=indptr,

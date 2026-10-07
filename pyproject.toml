@@ -19,6 +19,7 @@ Documentation = "https://deltares.github.io/pyflwdir"
 [project.optional-dependencies]
 test = ["black[jupyter]", "mypy", "pre-commit", "pytest>=2.7.3", "pytest-cov"]
 doc = ["nbsphinx", "pydata-sphinx-theme", "sphinx", "sphinx_design"]
+partition = ["pymetis>=2025.2"]
 examples = [
     "cartopy>=0.20",
     "descartes",
@@ -29,7 +30,7 @@ examples = [
     "pandoc",
 ]
 
-full = ["pyflwdir[test, doc, examples]"]
+full = ["pyflwdir[test, doc, examples, partition]"]
 
 [tool.black]
 line-length = 88
@@ -58,7 +59,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = ["affine.*", "numba.*", "pandas.*", "scipy.*"]
+module = ["affine.*", "numba.*", "pandas.*", "pymetis.*", "scipy.*"]
 ignore_missing_imports = true
 follow_imports = "skip"
 

@@ -852,6 +852,12 @@ class FlwdirRaster(Flwdir):
         parallel: bool = False,
         layering: Literal["asap", "cfds", "alap"] = "cfds",
         manner: Literal["push", "pull"] = "push",
+        n_processes: int = 1,
+        threads_per_process: int | None = None,
+        partition_level: Literal["basin", "subbasin"] = "subbasin",
+        start_method: str = "spawn",
+        partition_min_subtree_size: int = 100_000,
+        partition_imbalance_target: float = 1.05,
     ) -> np.ndarray:
         """Return the upstream-area raster for the flow directions.
 
@@ -869,6 +875,18 @@ class FlwdirRaster(Flwdir):
         manner : {'push', 'pull'}, optional
             Threaded propagation manner, by default ``"push"``. Push needs the
             conflict-free ``"cfds"`` layering; pull is safe with all three.
+        n_processes : int, optional
+            Number of process-level FlowTopo regions, by default 1.
+        threads_per_process : int, optional
+            Threads used inside each process.
+        partition_level : {'basin', 'subbasin'}, optional
+            FlowTopo coarse partition, by default ``"subbasin"``.
+        start_method : str, optional
+            Multiprocessing start method, by default ``"spawn"``.
+        partition_min_subtree_size : int, optional
+            Smallest Method 2 tributary subtree, by default 100,000 cells.
+        partition_imbalance_target : float, optional
+            Maximum-to-mean trunk-load target, by default 1.05.
 
         Returns
         -------
@@ -889,6 +907,12 @@ class FlwdirRaster(Flwdir):
             parallel=parallel,
             layering=layering,
             manner=manner,
+            n_processes=n_processes,
+            threads_per_process=threads_per_process,
+            partition_level=partition_level,
+            start_method=start_method,
+            partition_min_subtree_size=partition_min_subtree_size,
+            partition_imbalance_target=partition_imbalance_target,
         ).ravel()
         uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)

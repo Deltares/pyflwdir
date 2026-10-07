@@ -116,6 +116,60 @@ def accuflux_layered_pull(
     return accu
 
 
+@njit(cache=True, parallel=True)
+def accuflux_partitioned_push(
+    idxs_ds: np.ndarray,
+    parts: np.ndarray,
+    part: int,
+    cells: np.ndarray,
+    offsets: np.ndarray,
+    accu: np.ndarray,
+    nodata: float,
+) -> None:
+    """Accumulate one trunk with CFDS threads, stopping at its boundary."""
+    for layer in range(offsets.size - 1):
+        for pos in prange(offsets[layer], offsets[layer + 1]):
+            idx0 = cells[pos]
+            idx_ds = idxs_ds[idx0]
+            if (
+                idx0 != idx_ds
+                and parts[idx_ds] == part
+                and accu[idx_ds] != nodata
+                and accu[idx0] != nodata
+            ):
+                accu[idx_ds] += accu[idx0]
+
+
+@njit(cache=True)
+def accuflux_subbasin_mainstem(
+    mainstem: np.ndarray,
+    predecessor: int,
+    cut_outlets: np.ndarray,
+    cut_inlets: np.ndarray,
+    data: np.ndarray,
+    accu: np.ndarray,
+    nodata: float,
+) -> None:
+    """Inject cut inflows and walk the logical fifth subregion."""
+    previous = data[0] * 0
+    if predecessor >= 0 and accu[predecessor] != nodata:
+        previous = accu[predecessor]
+    cut = 0
+    for cell in mainstem:
+        total = data[cell]
+        if total == nodata:
+            accu[cell] = nodata
+            continue
+        total += previous
+        while cut < cut_outlets.size and cut_inlets[cut] == cell:
+            value = accu[cut_outlets[cut]]
+            if value != nodata:
+                total += value
+            cut += 1
+        accu[cell] = total
+        previous = total
+
+
 @njit(cache=True)
 def accuflux_ds(
     idxs_ds: np.ndarray, seq: np.ndarray, data: np.ndarray, nodata: float
