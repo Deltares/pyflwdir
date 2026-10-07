@@ -100,6 +100,85 @@ def test_subbasin_plan_has_four_trunks_and_one_accounted_mainstem():
 
 
 @pytest.mark.unit
+def test_empty_subbasin_ranks_receive_separated_spatial_anchors():
+    records = [
+        {
+            "root": root,
+            "position": root,
+            "size": 9,
+            "row": row,
+            "col": col,
+            "rank": -1,
+        }
+        for root, (row, col) in enumerate(
+            [(10.0, 10.0), (10.0, 90.0), (90.0, 10.0), (90.0, 90.0)]
+        )
+    ]
+    rank_rows = np.full(4, 50.0)
+    rank_cols = np.full(4, 50.0)
+    rank_occupied = np.array([True, False, False, False])
+    cap = np.array([0, 25, 25, 25])
+
+    partition._seed_empty_rank_centroids(
+        records,
+        rank_rows,
+        rank_cols,
+        rank_occupied,
+        [1, 2, 3],
+        cap,
+        (100, 100),
+        min_subtree_size=1,
+    )
+
+    anchors = set(zip(rank_rows[1:], rank_cols[1:]))
+    assert len(anchors) == 3
+    assert anchors <= {(10.0, 10.0), (10.0, 90.0), (90.0, 10.0), (90.0, 90.0)}
+
+
+@pytest.mark.unit
+def test_tributary_assignment_prefers_spatial_clusters():
+    records = [
+        {
+            "root": root,
+            "position": root,
+            "size": 9,
+            "row": row,
+            "col": col,
+            "rank": -1,
+        }
+        for root, (row, col) in enumerate(
+            [
+                (10.0, 10.0),
+                (12.0, 12.0),
+                (10.0, 50.0),
+                (12.0, 52.0),
+                (10.0, 90.0),
+                (12.0, 88.0),
+            ]
+        )
+    ]
+    load = np.array([60, 0, 0, 0])
+    rank_rows = np.array([50.0, 10.0, 10.0, 10.0])
+    rank_cols = np.array([50.0, 10.0, 50.0, 90.0])
+
+    partition._assign_tributary_records(
+        records,
+        load,
+        rank_rows,
+        rank_cols,
+        max_rank=0,
+        target=15,
+        shape=(100, 100),
+        min_subtree_size=1,
+        imbalance_target=1.3,
+    )
+
+    assert records[0]["rank"] == records[1]["rank"] == 1
+    assert records[2]["rank"] == records[3]["rank"] == 2
+    assert records[4]["rank"] == records[5]["rank"] == 3
+
+
+@pytest.mark.unit
 def test_four_trunks_and_mainstem_walk_match_serial_accumulation():
     flw = tributaries_to_mainstem()
     data = np.arange(1, flw.size + 1, dtype=np.int64)

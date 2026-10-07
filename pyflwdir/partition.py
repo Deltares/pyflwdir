@@ -2,7 +2,9 @@
 
 The basin graph, METIS island handling, dominant-basin refinement and 4+1
 mainstem execution follow the current FlowTopo C implementation:
-https://doi.org/10.5281/zenodo.22227621.
+https://doi.org/10.5281/zenodo.22227621. Tributary allocation additionally
+seeds empty ranks from spatially separated tributaries so that small,
+single-basin domains retain coherent process regions.
 """
 
 from __future__ import annotations
@@ -22,6 +24,9 @@ if TYPE_CHECKING:
 N_TRUNKS = 4
 MAINSTEM = 4
 """Logical fifth subregion, processed after the four parallel trunks."""
+
+SPATIAL_LOAD_WEIGHT = 0.5
+"""Relative load penalty used by the spatial tributary assignment."""
 
 logger = logging.getLogger(__name__)
 
@@ -413,6 +418,105 @@ def _trace_mainstem(
     return np.asarray(stem[::-1], dtype=flw.idxs_ds.dtype)
 
 
+def _seed_empty_rank_centroids(
+    records: list[dict],
+    rank_rows: np.ndarray,
+    rank_cols: np.ndarray,
+    rank_occupied: np.ndarray,
+    recipient_ranks: list[int],
+    cap: np.ndarray,
+    shape: tuple[int, int],
+    min_subtree_size: int,
+) -> None:
+    """Seed empty ranks with spatially separated eligible tributaries."""
+    anchors = [
+        (rank_rows[rank] / shape[0], rank_cols[rank] / shape[1])
+        for rank in range(N_TRUNKS)
+        if rank_occupied[rank]
+    ]
+    used_roots: set[int] = set()
+    for rank in recipient_ranks:
+        if rank_occupied[rank]:
+            continue
+        candidates = [
+            record
+            for record in records
+            if record["root"] not in used_roots
+            and record["size"] >= min_subtree_size
+            and record["size"] <= cap[rank]
+        ]
+        if not candidates:
+            continue
+
+        def separation(record: dict) -> tuple[float, int, int]:
+            row = record["row"] / shape[0]
+            col = record["col"] / shape[1]
+            distance = min(
+                np.hypot(row - anchor_row, col - anchor_col)
+                for anchor_row, anchor_col in anchors
+            )
+            return float(distance), record["size"], record["position"]
+
+        seed = max(candidates, key=separation)
+        rank_rows[rank] = seed["row"]
+        rank_cols[rank] = seed["col"]
+        anchors.append((seed["row"] / shape[0], seed["col"] / shape[1]))
+        used_roots.add(seed["root"])
+
+
+def _assign_tributary_records(
+    records: list[dict],
+    load: np.ndarray,
+    rank_rows: np.ndarray,
+    rank_cols: np.ndarray,
+    max_rank: int,
+    target: int,
+    shape: tuple[int, int],
+    min_subtree_size: int,
+    imbalance_target: float,
+) -> np.ndarray:
+    """Assign tributaries by spatial affinity while respecting load capacity."""
+    mean_load = float(load.sum()) / N_TRUNKS
+    max_load = int(np.floor(mean_load * imbalance_target))
+    cap = np.maximum(max_load - load, 0).astype(np.int64)
+    cap[max_rank] = 0
+    recipient_ranks = [
+        rank for rank in range(N_TRUNKS) if rank != max_rank and cap[rank] > 0
+    ]
+    current_load = load.copy()
+
+    for record in records:
+        if record["size"] < min_subtree_size:
+            continue
+        best_rank = -1
+        best_score = np.inf
+        for rank in recipient_ranks:
+            if cap[rank] < record["size"]:
+                continue
+            distance = np.hypot(
+                (record["row"] - rank_rows[rank]) / shape[0],
+                (record["col"] - rank_cols[rank]) / shape[1],
+            )
+            projected_load = (current_load[rank] + record["size"]) / target
+            score = distance + SPATIAL_LOAD_WEIGHT * projected_load
+            if score < best_score:
+                best_score = float(score)
+                best_rank = rank
+        if best_rank < 0:
+            continue
+        record["rank"] = best_rank
+        cap[best_rank] -= record["size"]
+        current_load[best_rank] += record["size"]
+        current_load[max_rank] -= record["size"]
+        minimum_ratio = max(0.0, 2.0 - imbalance_target)
+        if (
+            current_load.max() / mean_load <= imbalance_target
+            and current_load.min() / mean_load >= minimum_ratio
+        ):
+            break
+    return current_load
+
+
 def _subbasin_partition(
     flw: "Flwdir",
     parts: np.ndarray,
@@ -484,42 +588,42 @@ def _subbasin_partition(
 
     rank_rows = np.full(N_TRUNKS, 0.5 * shape[0], dtype=np.float64)
     rank_cols = np.full(N_TRUNKS, 0.5 * shape[1], dtype=np.float64)
+    rank_occupied = np.zeros(N_TRUNKS, dtype=np.bool_)
     for rank in range(N_TRUNKS):
         cells = np.flatnonzero(parts == rank)
         if cells.size:
             rank_rows[rank] = flat_row[cells].mean()
             rank_cols[rank] = flat_col[cells].mean()
+            rank_occupied[rank] = True
 
-    cap = np.maximum(target - load, 0).astype(np.int64)
+    mean_load = float(load.sum()) / N_TRUNKS
+    max_load = int(np.floor(mean_load * imbalance_target))
+    cap = np.maximum(max_load - load, 0).astype(np.int64)
     cap[max_rank] = 0
-    cap_max = int(cap.max())
-    alpha = 0.05 * cap_max
-    current_load = load.copy()
-    mean_load = float(current_load.sum()) / N_TRUNKS
-    for record in records:
-        if record["size"] < min_subtree_size:
-            continue
-        best_rank = -1
-        best_score = -np.inf
-        for rank in range(N_TRUNKS):
-            if cap[rank] < record["size"]:
-                continue
-            distance = np.hypot(
-                (record["row"] - rank_rows[rank]) / shape[0],
-                (record["col"] - rank_cols[rank]) / shape[1],
-            )
-            score = cap[rank] - alpha * distance
-            if score > best_score:
-                best_score = float(score)
-                best_rank = rank
-        if best_rank < 0:
-            continue
-        record["rank"] = best_rank
-        cap[best_rank] -= record["size"]
-        current_load[best_rank] += record["size"]
-        current_load[max_rank] -= record["size"]
-        if current_load.max() / mean_load <= imbalance_target:
-            break
+    recipient_ranks = [
+        rank for rank in range(N_TRUNKS) if rank != max_rank and cap[rank] > 0
+    ]
+    _seed_empty_rank_centroids(
+        records,
+        rank_rows,
+        rank_cols,
+        rank_occupied,
+        recipient_ranks,
+        cap,
+        shape,
+        min_subtree_size,
+    )
+    _assign_tributary_records(
+        records,
+        load,
+        rank_rows,
+        rank_cols,
+        max_rank,
+        target,
+        shape,
+        min_subtree_size,
+        imbalance_target,
+    )
 
     extracted = [record for record in records if record["rank"] >= 0]
     if not extracted:
