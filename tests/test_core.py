@@ -258,6 +258,13 @@ def _seq_segments_body(test_data):
     # with max_size at the size of the sequence every basin is one segment
     starts, sizes = core.seq_segments(dfs, n_upstream, dfs.size)
     assert starts.size == idxs_pit.size and sizes.sum() == dfs.size
+    # empty inputs return empty, exactly allocated outputs
+    empty = np.empty(0, dtype=np.int64)
+    starts, sizes = core.seq_segments(empty, empty, 1)
+    assert starts.size == sizes.size == 0
+    # invalid upstream counts must not leave the scan stuck at one position
+    with pytest.raises(ValueError, match="positive"):
+        core.seq_segments(np.array([0]), np.array([0]), 1)
 
 
 @pytest.mark.unit

@@ -657,10 +657,20 @@ def test_accumulation_in_threads_matches_the_serial_one(flw_real):
         assert np.array_equal(
             flw.upstream_area(unit=unit, parallel=True), flw.upstream_area(unit=unit)
         )
+    downstream = flw.accuflux(data, direction="down")
+    assert downstream.shape == data.shape
+    with pytest.raises(ValueError, match="only supported"):
+        flw.accuflux(data, direction="down", parallel=True)
+    with pytest.raises(ValueError, match="Unknown flow direction: invalid"):
+        flw.accuflux(data, direction="invalid", parallel=True)
     # any other ordering has no segments to run in threads
     flw.order_cells(method="walk")
     with pytest.raises(ValueError, match="depth-first"):
         flw.seq_segments()
+    with pytest.raises(ValueError, match="depth-first"):
+        flw.accuflux(data, parallel=True)
+    with pytest.raises(ValueError, match="depth-first"):
+        flw.upstream_area(parallel=True)
 
 
 @pytest.mark.integration

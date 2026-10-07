@@ -363,8 +363,20 @@ def seq_segments(
     order adds the values of a cell's upstream cells in the same order as a run
     over the whole sequence.
     """
-    starts = np.empty(idxs_seq.size, dtype=np.int64)
-    sizes = np.empty(idxs_seq.size, dtype=np.int64)
+    n_seg = 0
+    pos = 0
+    while pos < idxs_seq.size:
+        size = int(n_upstream[idxs_seq[pos]])
+        if size < 1:
+            raise ValueError("n_upstream must be positive for every cell in idxs_seq")
+        if size <= max_size:
+            n_seg += 1
+            pos += size
+        else:  # a main stem cell: step over it and try the cells upstream of it
+            pos += 1
+
+    starts = np.empty(n_seg, dtype=np.int64)
+    sizes = np.empty(n_seg, dtype=np.int64)
     n_seg = 0
     pos = 0
     while pos < idxs_seq.size:
@@ -374,9 +386,9 @@ def seq_segments(
             sizes[n_seg] = size
             n_seg += 1
             pos += size
-        else:  # a main stem cell: step over it and try the cells upstream of it
+        else:
             pos += 1
-    return starts[:n_seg], sizes[:n_seg]
+    return starts, sizes
 
 
 @njit(cache=True)

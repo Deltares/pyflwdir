@@ -746,8 +746,20 @@ class Flwdir:
         -------
         array with `data.dtype`
             Accumulated values, with the same shape as `data`.
+
+        Raises
+        ------
+        ValueError
+            If `direction` is invalid, or if `parallel=True` is requested for
+            downstream accumulation.
         """
-        if parallel and direction == "up":
+        if direction not in ("up", "down"):
+            raise ValueError(
+                f'Unknown flow direction: {direction}, select from ["up", "down"].'
+            )
+        if parallel and direction == "down":
+            raise ValueError("parallel=True is only supported for direction='up'.")
+        if parallel:
             starts, sizes = self.seq_segments()
             accu = streams.accuflux_segments(
                 idxs_ds=self.idxs_ds,
@@ -764,16 +776,12 @@ class Flwdir:
                 data=self._check_data(data, "data"),
                 nodata=nodata,
             )
-        elif direction == "down":
+        else:
             accu = streams.accuflux_ds(
                 idxs_ds=self.idxs_ds,
                 seq=self.idxs_seq,
                 data=self._check_data(data, "data"),
                 nodata=nodata,
-            )
-        else:
-            raise ValueError(
-                'Unknown flow direction: {direction}, select from ["up", "down"].'
             )
         return accu.reshape(data.shape)
 
