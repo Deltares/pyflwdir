@@ -116,6 +116,44 @@ def accuflux_layered_pull(
     return accu
 
 
+@njit(cache=True, parallel=True)
+def accuflux_partitioned_push(
+    idxs_ds: np.ndarray,
+    parts: np.ndarray,
+    part: int,
+    cells: np.ndarray,
+    offsets: np.ndarray,
+    accu: np.ndarray,
+    nodata: float,
+) -> None:
+    """Accumulate one process region with CFDS threads, stopping at its edge."""
+    for layer in range(offsets.size - 1):
+        for pos in prange(offsets[layer], offsets[layer + 1]):
+            idx0 = cells[pos]
+            idx_ds = idxs_ds[idx0]
+            if (
+                idx0 != idx_ds
+                and parts[idx_ds] == part
+                and accu[idx_ds] != nodata
+                and accu[idx0] != nodata
+            ):
+                accu[idx_ds] += accu[idx0]
+
+
+@njit(cache=True)
+def accuflux_partition_mainstem(
+    idxs_ds: np.ndarray,
+    cells: np.ndarray,
+    accu: np.ndarray,
+    nodata: float,
+) -> None:
+    """Join partition roots and propagate them through the held-back mainstem."""
+    for idx0 in cells:
+        idx_ds = idxs_ds[idx0]
+        if accu[idx_ds] != nodata and accu[idx0] != nodata:
+            accu[idx_ds] += accu[idx0]
+
+
 @njit(cache=True)
 def accuflux_ds(
     idxs_ds: np.ndarray, seq: np.ndarray, data: np.ndarray, nodata: float

@@ -12,6 +12,8 @@ from . import (
     arithmetics,
     core,
     dem,
+    parallel as parallel_utils,
+    partition as partitioning,
     rivers,
     streams,
 )
@@ -372,6 +374,38 @@ class Flwdir:
             self._cached[key] = (cells, offsets)
         return cells, offsets
 
+    def partition(
+        self,
+        n_parts: int = 4,
+        level: Literal["basin", "subbasin"] = "subbasin",
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Split the network into independent process-level regions.
+
+        Parameters
+        ----------
+        n_parts : int, optional
+            Number of regions, normally one per process, by default 4.
+        level : {'basin', 'subbasin'}, optional
+            Keep complete basins together or split oversized basins along their
+            mainstem, by default ``"subbasin"``.
+
+        Returns
+        -------
+        parts : ndarray of int32
+            Region per cell, shaped like the flow-direction object. ``-1`` is
+            outside the network and ``pyflwdir.MAINSTEM`` marks cells held for
+            the second stage.
+        load : ndarray of float64
+            Number of first-stage cells assigned to each region.
+
+        Notes
+        -----
+        A partition is the coarse process-level structure. The three layerings
+        remain valid when filtered to one region and provide the fine-grained
+        thread-level structure inside each process.
+        """
+        return partitioning.partition(self, n_parts=n_parts, level=level)
+
     def main_upstream(self, uparea: np.ndarray | None = None) -> np.ndarray:
         """Return the main upstream node for each node.
 
@@ -418,7 +452,7 @@ class Flwdir:
         self._nnodes = None
         for key in list(self._cached):
             if key in ("rank", "strord", "idxs_us_main", "distnc") or key.startswith(
-                ("layering_", "decomposition_")
+                ("layering_", "decomposition_", "hybrid_")
             ):
                 self._cached.pop(key, None)
 
@@ -749,6 +783,10 @@ class Flwdir:
         parallel: bool = False,
         layering: Literal["asap", "cfds", "alap"] = "cfds",
         manner: Literal["push", "pull"] = "push",
+        n_processes: int = 1,
+        threads_per_process: int | None = None,
+        partition_level: Literal["basin", "subbasin"] = "subbasin",
+        start_method: str = "spawn",
     ) -> np.ndarray:
         """Return accumulated data values along the flow directions.
 
@@ -770,6 +808,19 @@ class Flwdir:
             Threaded propagation manner, by default ``"push"``. Push needs the
             conflict-free ``"cfds"`` layering. Pull is safe with all three
             layerings but builds and reads the upstream-cell index.
+        n_processes : int, optional
+            Number of shared-memory process regions, by default 1. Values above
+            one use coarse basin or subbasin partitions, with CFDS threads
+            inside every process.
+        threads_per_process : int, optional
+            Numba threads used inside each process. By default the available
+            threads are divided over `n_processes`.
+        partition_level : {'basin', 'subbasin'}, optional
+            Coarse partitioning strategy, by default ``"subbasin"``.
+        start_method : str, optional
+            Multiprocessing start method, by default ``"spawn"``. Spawn calls
+            must come from an importable script below an
+            ``if __name__ == "__main__":`` guard.
 
         Returns
         -------
@@ -786,6 +837,10 @@ class Flwdir:
             raise ValueError(
                 f'Unknown flow direction: {direction}, select from ["up", "down"].'
             )
+        if n_processes < 1:
+            raise ValueError("n_processes must be at least 1")
+        if not parallel and n_processes != 1:
+            raise ValueError("n_processes > 1 requires parallel=True")
         if parallel and direction == "down":
             raise ValueError("parallel=True is only supported for direction='up'.")
         if parallel:
@@ -793,9 +848,24 @@ class Flwdir:
                 raise ValueError("manner must be 'push' or 'pull'")
             if manner == "push" and layering != "cfds":
                 raise ValueError("manner='push' requires layering='cfds'")
-            cells, offsets = self._layer_decomposition(layering)
             checked = self._check_data(data, "data")
-            if manner == "push":
+            if n_processes > 1:
+                if layering != "cfds" or manner != "push":
+                    raise ValueError(
+                        "hybrid process parallelism requires "
+                        "layering='cfds' and manner='push'"
+                    )
+                accu = parallel_utils.accuflux(
+                    self,
+                    checked,
+                    nodata,
+                    n_processes,
+                    threads_per_process,
+                    partition_level,
+                    start_method,
+                )
+            elif manner == "push":
+                cells, offsets = self._layer_decomposition(layering)
                 accu = streams.accuflux_layered_push(
                     idxs_ds=self.idxs_ds,
                     cells=cells,
@@ -804,6 +874,7 @@ class Flwdir:
                     nodata=nodata,
                 )
             else:
+                cells, offsets = self._layer_decomposition(layering)
                 indptr, idxs_us = core.upstream_csr(self.idxs_ds, self._mv)
                 accu = streams.accuflux_layered_pull(
                     indptr=indptr,

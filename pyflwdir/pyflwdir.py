@@ -852,6 +852,10 @@ class FlwdirRaster(Flwdir):
         parallel: bool = False,
         layering: Literal["asap", "cfds", "alap"] = "cfds",
         manner: Literal["push", "pull"] = "push",
+        n_processes: int = 1,
+        threads_per_process: int | None = None,
+        partition_level: Literal["basin", "subbasin"] = "subbasin",
+        start_method: str = "spawn",
     ) -> np.ndarray:
         """Return the upstream-area raster for the flow directions.
 
@@ -869,6 +873,14 @@ class FlwdirRaster(Flwdir):
         manner : {'push', 'pull'}, optional
             Threaded propagation manner, by default ``"push"``. Push needs the
             conflict-free ``"cfds"`` layering; pull is safe with all three.
+        n_processes : int, optional
+            Number of process regions, by default 1.
+        threads_per_process : int, optional
+            Threads used inside each process.
+        partition_level : {'basin', 'subbasin'}, optional
+            Coarse partitioning strategy, by default ``"subbasin"``.
+        start_method : str, optional
+            Multiprocessing start method, by default ``"spawn"``.
 
         Returns
         -------
@@ -889,6 +901,10 @@ class FlwdirRaster(Flwdir):
             parallel=parallel,
             layering=layering,
             manner=manner,
+            n_processes=n_processes,
+            threads_per_process=threads_per_process,
+            partition_level=partition_level,
+            start_method=start_method,
         ).ravel()
         uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)

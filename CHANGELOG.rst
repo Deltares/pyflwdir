@@ -56,6 +56,13 @@ unreleased
   pull is available with all three layerings. The result is reproducible at
   every thread count and agrees with the serial accumulation to floating-point
   rounding (#85)
+* add ``Flwdir.partition`` for coarse process-level parallelism. Complete
+  basins can be assigned with longest-processing-time-first, or an oversized
+  basin can be cut along its mainstem into tributary subtrees. Hybrid
+  accumulation uses shared memory, runs CFDS threads inside each process
+  region, then joins the tributary roots through the held-back mainstem.
+  Process startup and shared-memory setup have a cost, so this path is opt-in
+  through ``n_processes`` and is intended for grids large enough to repay it
 
 0.5.12 (01-07-2026)
 *******************
