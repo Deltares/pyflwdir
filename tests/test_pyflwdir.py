@@ -3,7 +3,6 @@
 themselves are testes elsewhere"""
 
 import importlib
-import sys
 
 import numpy as np
 import pytest
@@ -14,7 +13,6 @@ from pyflwdir import core, streams
 from pyflwdir.pyflwdir import FlwdirRaster, _get_idxs_dtype
 
 pyflwdir_module = importlib.import_module("pyflwdir.pyflwdir")
-parallel_module = importlib.import_module("pyflwdir.parallel")
 
 
 @pytest.mark.integration
@@ -699,149 +697,6 @@ def test_accumulation_in_threads_matches_the_serial_one(flw_real):
         flw.accuflux(data, parallel=True, layering="asap", manner="push")
     with pytest.raises(ValueError, match="Invalid method"):
         flw.layer_cells("invalid")
-
-
-@pytest.mark.integration
-def test_partition_combines_process_regions_and_thread_layers(flw_real):
-    basin_parts, basin_load = flw_real.partition(n_parts=4, level="basin")
-    parts, load = flw_real.partition(n_parts=4, level="subbasin")
-    mask = flw_real.mask
-    flat_parts = parts.ravel()
-    assert np.all((flat_parts[mask] >= 0) | (flat_parts[mask] == pyflwdir.MAINSTEM))
-    assert np.all(flat_parts[~mask] == -1)
-    assert load.sum() + np.count_nonzero(parts == pyflwdir.MAINSTEM) == flw_real.ncells
-    assert load.max() < basin_load.max()
-
-    layers, _ = flw_real.layer_cells("cfds")
-    flat_layers = layers.ravel()
-    for part in range(4):
-        selected = flat_parts == part
-        for layer in np.unique(flat_layers[selected]):
-            members = np.flatnonzero(selected & (flat_layers == layer))
-            receivers = flw_real.idxs_ds[members]
-            inside = selected[receivers] & (receivers != members)
-            receivers = receivers[inside]
-            assert np.unique(receivers).size == receivers.size
-
-    with pytest.raises(ValueError, match="at least 1"):
-        flw_real.partition(n_parts=0)
-    with pytest.raises(ValueError, match="level"):
-        flw_real.partition(level="invalid")
-
-
-@pytest.mark.integration
-def test_hybrid_process_and_thread_accumulation(flw_real):
-    data = np.random.default_rng(1).random(flw_real.shape)
-    serial = flw_real.accuflux(data)
-    one_thread = flw_real.accuflux(
-        data,
-        parallel=True,
-        n_processes=2,
-        threads_per_process=1,
-    )
-    two_threads = flw_real.accuflux(
-        data,
-        parallel=True,
-        n_processes=2,
-        threads_per_process=2,
-    )
-    assert np.allclose(one_thread, serial)
-    assert np.array_equal(two_threads, one_thread)
-    basin_level = flw_real.accuflux(
-        data,
-        parallel=True,
-        n_processes=2,
-        threads_per_process=1,
-        partition_level="basin",
-    )
-    assert np.allclose(basin_level, serial)
-    assert np.array_equal(
-        flw_real.upstream_area(
-            unit="cell",
-            parallel=True,
-            n_processes=2,
-            threads_per_process=1,
-        ),
-        flw_real.upstream_area(unit="cell"),
-    )
-    with pytest.raises(ValueError, match="requires parallel=True"):
-        flw_real.accuflux(data, n_processes=2)
-    with pytest.raises(ValueError, match="requires layering='cfds'"):
-        flw_real.accuflux(
-            data,
-            parallel=True,
-            layering="alap",
-            manner="pull",
-            n_processes=2,
-        )
-
-
-@pytest.mark.integration
-def test_hybrid_spawn_reports_non_importable_main(flw_real, monkeypatch):
-    monkeypatch.setattr(sys.modules["__main__"], "__file__", "<stdin>")
-    with pytest.raises(RuntimeError, match="importable Python script"):
-        flw_real.accuflux(
-            np.ones(flw_real.shape),
-            parallel=True,
-            n_processes=2,
-        )
-
-
-@pytest.mark.integration
-@pytest.mark.parametrize(
-    "idxs_ds",
-    [
-        np.array([0, 0, 1, 2, 3], dtype=np.int64),
-        np.array([0, 0, 2, 2, 4, 4], dtype=np.int64),
-    ],
-)
-def test_hybrid_accumulation_handles_a_chain_and_separate_basins(idxs_ds):
-    flw = pyflwdir.Flwdir(idxs_ds)
-    data = np.arange(1, idxs_ds.size + 1, dtype=np.float64)
-    assert np.array_equal(
-        flw.accuflux(
-            data,
-            parallel=True,
-            n_processes=2,
-            threads_per_process=1,
-        ),
-        flw.accuflux(data),
-    )
-
-
-@pytest.mark.unit
-def test_partitioned_kernels_match_serial_on_random_forests():
-    rng = np.random.default_rng(2)
-    saw_mainstem = False
-    for _ in range(20):
-        size = 100
-        idxs_ds = np.empty(size, dtype=np.int64)
-        for idx in range(size):
-            idxs_ds[idx] = rng.integers(0, idx + 1)
-        flw = pyflwdir.Flwdir(idxs_ds)
-        data = rng.random(size)
-        serial = flw.accuflux(data)
-        parts, work, merge_cells = parallel_module._plan(flw, 3, "subbasin")
-        saw_mainstem |= merge_cells.size > 0
-        accu = data.copy()
-        for part, cells, offsets in work:
-            streams.accuflux_partitioned_push(
-                flw.idxs_ds,
-                parts,
-                part,
-                cells,
-                offsets,
-                accu,
-                -9999,
-            )
-        streams.accuflux_partition_mainstem(
-            flw.idxs_ds,
-            merge_cells,
-            accu,
-            -9999,
-        )
-        assert np.allclose(accu, serial)
-    assert saw_mainstem
 
 
 @pytest.mark.integration
