@@ -705,11 +705,15 @@ def _partition_tributary_graph(
             for part in range(N_TRUNKS)
         ]
     )
+    upstream_record = min(eligible, key=lambda index: records[index]["position"])
+    upstream_graph_part = int(graph_parts[owner[upstream_record]])
 
     best_mapping = None
     best_score = None
     mean_load = float(load.sum()) / N_TRUNKS
     for mapping in permutations(range(N_TRUNKS)):
+        if mapping[upstream_graph_part] != max_rank:
+            continue
         candidate_load = base_load.copy()
         spatial_cost = 0.0
         for graph_part, rank in enumerate(mapping):
@@ -858,7 +862,9 @@ def _subbasin_partition(
     extracted = [
         record
         for record in records
-        if record["rank"] >= 0 and record["rank"] != max_rank
+        if record["rank"] >= 0
+        and record["rank"] != max_rank
+        and record["size"] >= min_subtree_size
     ]
     if not extracted:
         return _empty_plan(flw, parts, load, basin_ids, "subbasin", max_rank)

@@ -217,6 +217,7 @@ def test_tributary_metis_partition_is_connected_and_balanced():
     assert partitioned
     ranks = np.array([record["rank"] for record in records])
     assert set(ranks) == {0, 1, 2, 3}
+    assert ranks[0] == 0
     assert np.array_equal(np.bincount(ranks, minlength=4), np.full(4, 3))
     for rank in range(4):
         members = np.flatnonzero(ranks == rank)
