@@ -159,6 +159,9 @@ def accuflux_subbasin_mainstem(
         total = data[cell]
         if total == nodata:
             accu[cell] = nodata
+            previous = data[0] * 0
+            while cut < cut_outlets.size and cut_inlets[cut] == cell:
+                cut += 1
             continue
         total += previous
         while cut < cut_outlets.size and cut_inlets[cut] == cell:

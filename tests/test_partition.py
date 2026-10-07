@@ -274,6 +274,28 @@ def test_four_trunks_and_mainstem_walk_match_serial_accumulation():
     assert np.array_equal(accu, serial)
 
 
+@pytest.mark.unit
+def test_mainstem_nodata_stops_flow_and_keeps_later_cuts():
+    idxs_ds = np.array([1, 2, 2, 1, 2], dtype=np.int32)
+    seq = np.array([2, 1, 0, 4, 3], dtype=np.int32)
+    data = np.array([5, -9999, 7, 11, 13], dtype=np.int64)
+    serial = streams.accuflux(idxs_ds, seq, data, -9999)
+    accu = data.copy()
+
+    streams.accuflux_subbasin_mainstem(
+        mainstem=np.array([0, 1, 2], dtype=np.int32),
+        predecessor=-1,
+        cut_outlets=np.array([3, 4], dtype=np.int32),
+        cut_inlets=np.array([1, 2], dtype=np.int32),
+        data=data,
+        accu=accu,
+        nodata=-9999,
+    )
+
+    assert np.array_equal(accu, serial)
+    assert accu[2] == 20
+
+
 @pytest.mark.integration
 def test_metis_process_and_thread_accumulation_matches_serial():
     pytest.importorskip("pymetis")
