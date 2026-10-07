@@ -3,13 +3,15 @@
 The basin graph, METIS island handling, dominant-basin refinement and 4+1
 mainstem execution follow the current FlowTopo C implementation:
 https://doi.org/10.5281/zenodo.22227621. Tributary allocation additionally
-seeds empty ranks from spatially separated tributaries so that small,
-single-basin domains retain coherent process regions.
+coarsens small neighbouring tributaries and applies contiguous weighted METIS
+so that single-basin domains retain coherent process regions.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from heapq import heappop, heappush
+from itertools import permutations
 import logging
 from typing import TYPE_CHECKING, Literal
 
@@ -24,9 +26,6 @@ if TYPE_CHECKING:
 N_TRUNKS = 4
 MAINSTEM = 4
 """Logical fifth subregion, processed after the four parallel trunks."""
-
-SPATIAL_LOAD_WEIGHT = 0.5
-"""Relative load penalty used by the spatial tributary assignment."""
 
 logger = logging.getLogger(__name__)
 
@@ -464,18 +463,51 @@ def _seed_empty_rank_centroids(
         used_roots.add(seed["root"])
 
 
+def _tributary_adjacency(
+    records: list[dict],
+    roots: np.ndarray,
+    shape: tuple[int, int],
+) -> list[set[int]]:
+    """Return tributary neighbours across boundaries and along the mainstem."""
+    adjacency = [set() for _ in records]
+    root_to_record = {record["root"]: index for index, record in enumerate(records)}
+    labels = roots.reshape(shape)
+    for first, second in (
+        (labels[:, :-1], labels[:, 1:]),
+        (labels[:-1, :], labels[1:, :]),
+    ):
+        boundary = (first >= 0) & (second >= 0) & (first != second)
+        pairs = np.column_stack((first[boundary], second[boundary]))
+        if pairs.size == 0:
+            continue
+        pairs.sort(axis=1)
+        for first_root, second_root in np.unique(pairs, axis=0):
+            first_index = root_to_record.get(int(first_root))
+            second_index = root_to_record.get(int(second_root))
+            if first_index is None or second_index is None:
+                continue
+            adjacency[first_index].add(second_index)
+            adjacency[second_index].add(first_index)
+
+    ordered = sorted(range(len(records)), key=lambda index: records[index]["position"])
+    for first_index, second_index in zip(ordered[:-1], ordered[1:]):
+        adjacency[first_index].add(second_index)
+        adjacency[second_index].add(first_index)
+    return adjacency
+
+
 def _assign_tributary_records(
     records: list[dict],
+    adjacency: list[set[int]],
     load: np.ndarray,
     rank_rows: np.ndarray,
     rank_cols: np.ndarray,
     max_rank: int,
-    target: int,
     shape: tuple[int, int],
     min_subtree_size: int,
     imbalance_target: float,
 ) -> np.ndarray:
-    """Assign tributaries by spatial affinity while respecting load capacity."""
+    """Grow spatially connected tributary regions within the load bound."""
     mean_load = float(load.sum()) / N_TRUNKS
     max_load = int(np.floor(mean_load * imbalance_target))
     cap = np.maximum(max_load - load, 0).astype(np.int64)
@@ -484,37 +516,221 @@ def _assign_tributary_records(
         rank for rank in range(N_TRUNKS) if rank != max_rank and cap[rank] > 0
     ]
     current_load = load.copy()
+    eligible = {
+        index
+        for index, record in enumerate(records)
+        if record["size"] >= min_subtree_size
+    }
+    assigned: dict[int, int] = {}
+    owned = {rank: set() for rank in recipient_ranks}
 
-    for record in records:
-        if record["size"] < min_subtree_size:
+    for rank in recipient_ranks:
+        candidates = [
+            index
+            for index in eligible - assigned.keys()
+            if records[index]["size"] <= cap[rank]
+        ]
+        if not candidates:
             continue
-        best_rank = -1
-        best_score = np.inf
-        for rank in recipient_ranks:
-            if cap[rank] < record["size"]:
-                continue
-            distance = np.hypot(
-                (record["row"] - rank_rows[rank]) / shape[0],
-                (record["col"] - rank_cols[rank]) / shape[1],
-            )
-            projected_load = (current_load[rank] + record["size"]) / target
-            score = distance + SPATIAL_LOAD_WEIGHT * projected_load
-            if score < best_score:
-                best_score = float(score)
-                best_rank = rank
-        if best_rank < 0:
-            continue
-        record["rank"] = best_rank
-        cap[best_rank] -= record["size"]
-        current_load[best_rank] += record["size"]
+        seed = min(
+            candidates,
+            key=lambda index: (
+                np.hypot(
+                    (records[index]["row"] - rank_rows[rank]) / shape[0],
+                    (records[index]["col"] - rank_cols[rank]) / shape[1],
+                ),
+                -records[index]["size"],
+                -records[index]["position"],
+            ),
+        )
+        record = records[seed]
+        assigned[seed] = rank
+        owned[rank].add(seed)
+        cap[rank] -= record["size"]
+        current_load[rank] += record["size"]
         current_load[max_rank] -= record["size"]
-        minimum_ratio = max(0.0, 2.0 - imbalance_target)
+
+    minimum_ratio = max(0.0, 2.0 - imbalance_target)
+    while assigned:
         if (
             current_load.max() / mean_load <= imbalance_target
             and current_load.min() / mean_load >= minimum_ratio
         ):
             break
+        progressed = False
+        for rank in sorted(
+            recipient_ranks, key=lambda item: (current_load[item], item)
+        ):
+            frontier: set[int] = set()
+            for index in owned[rank]:
+                frontier.update(adjacency[index])
+            candidates = [
+                index
+                for index in frontier - assigned.keys()
+                if index in eligible and records[index]["size"] <= cap[rank]
+            ]
+            if not candidates:
+                continue
+            selected = min(
+                candidates,
+                key=lambda index: (
+                    np.hypot(
+                        (records[index]["row"] - rank_rows[rank]) / shape[0],
+                        (records[index]["col"] - rank_cols[rank]) / shape[1],
+                    ),
+                    -records[index]["size"],
+                    -records[index]["position"],
+                ),
+            )
+            record = records[selected]
+            assigned[selected] = rank
+            owned[rank].add(selected)
+            cap[rank] -= record["size"]
+            current_load[rank] += record["size"]
+            current_load[max_rank] -= record["size"]
+            progressed = True
+            break
+        if not progressed:
+            break
+
+    for index, rank in assigned.items():
+        records[index]["rank"] = rank
     return current_load
+
+
+def _partition_tributary_graph(
+    records: list[dict],
+    adjacency: list[set[int]],
+    load: np.ndarray,
+    rank_rows: np.ndarray,
+    rank_cols: np.ndarray,
+    max_rank: int,
+    target: int,
+    shape: tuple[int, int],
+    min_subtree_size: int,
+    imbalance_target: float,
+) -> bool:
+    """Partition eligible tributaries into contiguous, weighted graph regions."""
+    eligible = np.asarray(
+        [
+            index
+            for index, record in enumerate(records)
+            if record["size"] >= min_subtree_size
+        ],
+        dtype=np.int64,
+    )
+    if eligible.size < N_TRUNKS:
+        return False
+
+    weights = np.asarray([record["size"] for record in records], dtype=np.int64)
+    owner = np.full(len(records), -1, dtype=np.int32)
+    queue: list[tuple[int, int, int]] = []
+    for supernode, record_index in enumerate(eligible):
+        owner[record_index] = supernode
+        heappush(queue, (0, supernode, int(record_index)))
+    while queue:
+        distance, supernode, record_index = heappop(queue)
+        if owner[record_index] != supernode:
+            continue
+        for neighbour in adjacency[record_index]:
+            if owner[neighbour] < 0:
+                owner[neighbour] = supernode
+                heappush(queue, (distance + 1, supernode, neighbour))
+    if np.any(owner < 0):
+        raise RuntimeError("Tributary adjacency graph is disconnected.")
+
+    super_weights = np.bincount(owner, weights=weights, minlength=eligible.size).astype(
+        np.int64
+    )
+    super_rows = (
+        np.bincount(
+            owner,
+            weights=np.asarray([record["row"] for record in records]) * weights,
+            minlength=eligible.size,
+        )
+        / super_weights
+    )
+    super_cols = (
+        np.bincount(
+            owner,
+            weights=np.asarray([record["col"] for record in records]) * weights,
+            minlength=eligible.size,
+        )
+        / super_weights
+    )
+    super_adjacency = [set() for _ in eligible]
+    for record_index, neighbours in enumerate(adjacency):
+        first = int(owner[record_index])
+        for neighbour in neighbours:
+            second = int(owner[neighbour])
+            if first != second:
+                super_adjacency[first].add(second)
+                super_adjacency[second].add(first)
+
+    base_load = load.copy()
+    base_load[max_rank] -= int(weights.sum())
+    desired = np.maximum(float(target) - base_load, 1.0)
+    target_weights = desired / desired.sum()
+
+    pymetis = _require_pymetis()
+    ufactor = max(1, int(round((imbalance_target - 1.0) * 1000)))
+    options = pymetis.Options(seed=0, ufactor=ufactor, contig=1)
+    result = pymetis.part_graph(
+        N_TRUNKS,
+        adjacency=[sorted(neighbours) for neighbours in super_adjacency],
+        vweights=super_weights.tolist(),
+        tpwgts=target_weights.tolist(),
+        recursive=False,
+        options=options,
+    )
+    graph_parts = np.asarray(result.vertex_part, dtype=np.int32)
+    graph_load = np.bincount(
+        graph_parts, weights=super_weights, minlength=N_TRUNKS
+    ).astype(np.int64)
+    graph_rows = np.asarray(
+        [
+            np.average(
+                super_rows[graph_parts == part],
+                weights=super_weights[graph_parts == part],
+            )
+            for part in range(N_TRUNKS)
+        ]
+    )
+    graph_cols = np.asarray(
+        [
+            np.average(
+                super_cols[graph_parts == part],
+                weights=super_weights[graph_parts == part],
+            )
+            for part in range(N_TRUNKS)
+        ]
+    )
+
+    best_mapping = None
+    best_score = None
+    mean_load = float(load.sum()) / N_TRUNKS
+    for mapping in permutations(range(N_TRUNKS)):
+        candidate_load = base_load.copy()
+        spatial_cost = 0.0
+        for graph_part, rank in enumerate(mapping):
+            candidate_load[rank] += graph_load[graph_part]
+            spatial_cost += np.hypot(
+                (graph_rows[graph_part] - rank_rows[rank]) / shape[0],
+                (graph_cols[graph_part] - rank_cols[rank]) / shape[1],
+            )
+        score = (
+            float(candidate_load.max() / mean_load),
+            int(candidate_load.max() - candidate_load.min()),
+            float(spatial_cost),
+        )
+        if best_score is None or score < best_score:
+            best_score = score
+            best_mapping = mapping
+
+    assert best_mapping is not None
+    for record_index, supernode in enumerate(owner):
+        records[record_index]["rank"] = best_mapping[graph_parts[supernode]]
+    return True
 
 
 def _subbasin_partition(
@@ -613,8 +829,10 @@ def _subbasin_partition(
         shape,
         min_subtree_size,
     )
-    _assign_tributary_records(
+    adjacency = _tributary_adjacency(records, roots, shape)
+    graph_partitioned = _partition_tributary_graph(
         records,
+        adjacency,
         load,
         rank_rows,
         rank_cols,
@@ -624,15 +842,32 @@ def _subbasin_partition(
         min_subtree_size,
         imbalance_target,
     )
+    if not graph_partitioned:
+        _assign_tributary_records(
+            records,
+            adjacency,
+            load,
+            rank_rows,
+            rank_cols,
+            max_rank,
+            shape,
+            min_subtree_size,
+            imbalance_target,
+        )
 
-    extracted = [record for record in records if record["rank"] >= 0]
+    extracted = [
+        record
+        for record in records
+        if record["rank"] >= 0 and record["rank"] != max_rank
+    ]
     if not extracted:
         return _empty_plan(flw, parts, load, basin_ids, "subbasin", max_rank)
     p_min = min(record["position"] for record in extracted)
 
     refined = parts.copy()
-    for record in extracted:
-        refined[record["cells"]] = record["rank"]
+    for record in records:
+        if record["rank"] >= 0 and record["position"] >= p_min:
+            refined[record["cells"]] = record["rank"]
     refined[mainstem[p_min:]] = MAINSTEM
     refined[mainstem[:p_min]] = max_rank
 

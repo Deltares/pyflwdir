@@ -163,11 +163,11 @@ def test_tributary_assignment_prefers_spatial_clusters():
 
     partition._assign_tributary_records(
         records,
+        [{1}, {0}, {3}, {2}, {5}, {4}],
         load,
         rank_rows,
         rank_cols,
         max_rank=0,
-        target=15,
         shape=(100, 100),
         min_subtree_size=1,
         imbalance_target=1.3,
@@ -176,6 +176,51 @@ def test_tributary_assignment_prefers_spatial_clusters():
     assert records[0]["rank"] == records[1]["rank"] == 1
     assert records[2]["rank"] == records[3]["rank"] == 2
     assert records[4]["rank"] == records[5]["rank"] == 3
+
+
+@pytest.mark.unit
+def test_tributary_metis_partition_is_connected_and_balanced():
+    pytest.importorskip("pymetis")
+    records = [
+        {
+            "root": index,
+            "position": index,
+            "size": 10,
+            "row": 0.0,
+            "col": float(index),
+            "rank": -1,
+        }
+        for index in range(12)
+    ]
+    adjacency = [
+        set(
+            neighbour
+            for neighbour in (index - 1, index + 1)
+            if 0 <= neighbour < len(records)
+        )
+        for index in range(len(records))
+    ]
+
+    partitioned = partition._partition_tributary_graph(
+        records,
+        adjacency,
+        load=np.array([120, 0, 0, 0]),
+        rank_rows=np.zeros(4),
+        rank_cols=np.array([0.0, 2.0, 6.0, 10.0]),
+        max_rank=0,
+        target=30,
+        shape=(1, 12),
+        min_subtree_size=1,
+        imbalance_target=1.05,
+    )
+
+    assert partitioned
+    ranks = np.array([record["rank"] for record in records])
+    assert set(ranks) == {0, 1, 2, 3}
+    assert np.array_equal(np.bincount(ranks, minlength=4), np.full(4, 3))
+    for rank in range(4):
+        members = np.flatnonzero(ranks == rank)
+        assert np.all(np.diff(members) == 1)
 
 
 @pytest.mark.unit
