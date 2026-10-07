@@ -645,32 +645,58 @@ def test_accumulation_in_threads_matches_the_serial_one(flw_real):
         latlon=flw_real.latlon,
         cache=False,
     )
-    # the default ordering is depth-first, so the segments can be built
-    starts, sizes = flw.seq_segments()
-    assert starts.size > 1
-    assert np.all(starts[:-1] + sizes[:-1] <= starts[1:])
+    for method in ["asap", "cfds", "alap"]:
+        layers, n_layers = flw.layer_cells(method)
+        assert n_layers > 1
+        assert np.count_nonzero(layers >= 0) == flw.ncells
+    cfds, n_layers = flw.layer_cells("cfds")
+    for layer in range(n_layers):
+        members = np.flatnonzero(cfds.ravel() == layer)
+        members = members[flw.idxs_ds[members] != members]
+        receivers = flw.idxs_ds[members]
+        assert np.unique(receivers).size == receivers.size
+
     data = np.random.default_rng(0).random(flw.shape)
+    serial = flw.accuflux(data)
+    pushed = flw.accuflux(data, parallel=True)
+    assert np.allclose(pushed, serial)
+    assert np.array_equal(pushed, flw.accuflux(data, parallel=True))
+    import numba
+
+    previous_threads = numba.get_num_threads()
+    try:
+        threaded = []
+        max_threads = numba.config.NUMBA_NUM_THREADS
+        thread_counts = sorted({1, min(2, max_threads), min(4, max_threads)})
+        for n_threads in thread_counts:
+            numba.set_num_threads(n_threads)
+            threaded.append(flw.accuflux(data, parallel=True))
+    finally:
+        numba.set_num_threads(previous_threads)
+    for result in threaded[1:]:
+        assert np.array_equal(result, threaded[0])
+    for layering in ["asap", "cfds", "alap"]:
+        pulled = flw.accuflux(data, parallel=True, layering=layering, manner="pull")
+        assert np.allclose(pulled, serial)
+
     assert np.array_equal(
-        flw.accuflux(data, parallel=True), flw.accuflux(data)
-    )  # identical, not just close
-    for unit in ["cell", "km2"]:
-        assert np.array_equal(
-            flw.upstream_area(unit=unit, parallel=True), flw.upstream_area(unit=unit)
-        )
+        flw.upstream_area(unit="cell", parallel=True),
+        flw.upstream_area(unit="cell"),
+    )
+    assert np.allclose(
+        flw.upstream_area(unit="km2", parallel=True),
+        flw.upstream_area(unit="km2"),
+    )
     downstream = flw.accuflux(data, direction="down")
     assert downstream.shape == data.shape
     with pytest.raises(ValueError, match="only supported"):
         flw.accuflux(data, direction="down", parallel=True)
     with pytest.raises(ValueError, match="Unknown flow direction: invalid"):
         flw.accuflux(data, direction="invalid", parallel=True)
-    # any other ordering has no segments to run in threads
-    flw.order_cells(method="walk")
-    with pytest.raises(ValueError, match="depth-first"):
-        flw.seq_segments()
-    with pytest.raises(ValueError, match="depth-first"):
-        flw.accuflux(data, parallel=True)
-    with pytest.raises(ValueError, match="depth-first"):
-        flw.upstream_area(parallel=True)
+    with pytest.raises(ValueError, match="requires layering='cfds'"):
+        flw.accuflux(data, parallel=True, layering="asap", manner="push")
+    with pytest.raises(ValueError, match="Invalid method"):
+        flw.layer_cells("invalid")
 
 
 @pytest.mark.integration

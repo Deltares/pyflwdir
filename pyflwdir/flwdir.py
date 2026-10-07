@@ -6,7 +6,7 @@ import pprint
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import numpy as np
-from numba import get_num_threads, njit
+from numba import njit
 
 from . import (
     arithmetics,
@@ -306,51 +306,71 @@ class Flwdir:
         self._seq_method = method
         self._nnodes = self._seq.size
 
-    def seq_segments(self, n_parts: int | None = None) -> tuple[np.ndarray, np.ndarray]:
-        """Split the sequence into subbasins that drain into one another nowhere.
-
-        Each segment is a stretch of `idxs_seq` holding a cell and every cell
-        that drains to it, so a kernel can be run over the segments
-        independently. What is left outside them are the main stems, which take
-        values from several segments and have to be run afterwards.
+    def layer_cells(
+        self, method: Literal["asap", "cfds", "alap"] = "cfds"
+    ) -> tuple[np.ndarray, int]:
+        """Group cells into dependency-free layers.
 
         Parameters
         ----------
-        n_parts : int, optional
-            Number of segments aimed for, by default four per thread. A larger
-            number gives smaller segments and leaves more cells on the main
-            stems.
+        method : {'asap', 'cfds', 'alap'}, optional
+            Layering method, by default ``"cfds"``. ``"asap"`` places every
+            cell as soon as its upstream dependencies allow. ``"alap"`` delays
+            cells within each basin to balance later layers. ``"cfds"`` starts
+            from ``"asap"`` and also prevents two cells in one layer from
+            sharing a downstream receiver, so a threaded push is race-free.
 
         Returns
         -------
-        starts : 1D-array of int
-            position in `idxs_seq` where each segment starts
-        sizes : 1D-array of int
-            number of cells in each segment
+        layers : ndarray of int32
+            Layer index per cell, shaped like the flow-direction object. ``-1``
+            marks cells outside the network or cells that cannot be scheduled
+            because of a loop.
+        n_layers : int
+            Number of layers.
 
-        Raises
-        ------
-        ValueError
-            if the cells are not ordered depth-first. A sequence restored from a
-            file does not carry the method that built it, so call
-            order_cells(method="dfs") after loading one.
+        References
+        ----------
+        The three layerings and their implementations come from FlowTopo:
+
+        Jiang, L., Wu, H., Chen, W., Huang, Z., Yamazaki, D., Yang, T. and Li,
+        L. (2026). FlowTopo (v1.0.0). Zenodo.
+        https://doi.org/10.5281/zenodo.22227621
         """
-        idxs_seq = self.idxs_seq  # ordered on first use, depth-first by default
-        if self._seq_method != "dfs":
+        if method not in ("asap", "cfds", "alap"):
             raise ValueError(
-                "The segments need the cells ordered depth-first; "
-                'call order_cells(method="dfs") first.'
+                f'Invalid method {method}, select from ["asap", "cfds", "alap"]'
             )
-        if n_parts is None:
-            n_parts = get_num_threads() * 4
-        n_upstream = streams.accuflux(
-            idxs_ds=self.idxs_ds,
-            seq=idxs_seq,
-            data=np.ones(self.idxs_ds.size, dtype=np.int64),
-            nodata=-1,
+        key = f"layering_{method}"
+        if key in self._cached:
+            layers, n_layers = self._cached[key]
+        elif method == "asap":
+            layers, n_layers = core.layering_asap(self.idxs_ds, self._mv)
+        elif method == "cfds":
+            layers, n_layers = core.layering_cfds(self.idxs_ds, self._mv)
+        else:
+            layers, n_layers = core.layering_alap(self.idxs_ds, self.idxs_seq, self._mv)
+        if method != "alap":
+            layers[self.rank.ravel() < 0] = -1
+            n_layers = int(layers.max()) + 1 if np.any(layers >= 0) else 0
+        if key not in self._cached and self.cache:
+            self._cached[key] = (layers, n_layers)
+        return layers.reshape(self.shape), n_layers
+
+    def _layer_decomposition(
+        self, method: Literal["asap", "cfds", "alap"]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Return cells grouped by layer and the offsets between layers."""
+        key = f"decomposition_{method}"
+        if key in self._cached:
+            return self._cached[key]
+        layers, n_layers = self.layer_cells(method)
+        cells, offsets = core.layer_decomposition(
+            layers.ravel(), n_layers, self.idxs_ds
         )
-        max_size = max(1, int(idxs_seq.size // max(1, n_parts)))
-        return core.seq_segments(idxs_seq, n_upstream, max_size)
+        if self.cache:
+            self._cached[key] = (cells, offsets)
+        return cells, offsets
 
     def main_upstream(self, uparea: np.ndarray | None = None) -> np.ndarray:
         """Return the main upstream node for each node.
@@ -396,8 +416,11 @@ class Flwdir:
         self._seq = None
         self._seq_method = None
         self._nnodes = None
-        for key in ("rank", "strord", "idxs_us_main", "distnc"):
-            self._cached.pop(key, None)
+        for key in list(self._cached):
+            if key in ("rank", "strord", "idxs_us_main", "distnc") or key.startswith(
+                ("layering_", "decomposition_")
+            ):
+                self._cached.pop(key, None)
 
     def repair_loops(self) -> None:
         """Repair loops by setting a pit at every cell which does not drain to a pit."""
@@ -724,6 +747,8 @@ class Flwdir:
         nodata: float = -9999,
         direction: Literal["up", "down"] = "up",
         parallel: bool = False,
+        layering: Literal["asap", "cfds", "alap"] = "cfds",
+        manner: Literal["push", "pull"] = "push",
     ) -> np.ndarray:
         """Return accumulated data values along the flow directions.
 
@@ -737,10 +762,14 @@ class Flwdir:
         direction : {'up', 'down'}, optional
             direction in which to accumulate data, by default upstream
         parallel : bool, optional
-            Accumulate the subbasins in threads, by default False. Needs the
-            cells ordered depth-first, which is the default ordering, and
-            accumulates upstream only. The result is the same as the serial one
-            whatever the number of threads, see `accuflux_segments`.
+            Accumulate one layer at a time in threads, by default False.
+            Available for upstream accumulation only.
+        layering : {'asap', 'cfds', 'alap'}, optional
+            Layering used by the threaded path, by default ``"cfds"``.
+        manner : {'push', 'pull'}, optional
+            Threaded propagation manner, by default ``"push"``. Push needs the
+            conflict-free ``"cfds"`` layering. Pull is safe with all three
+            layerings but builds and reads the upstream-cell index.
 
         Returns
         -------
@@ -760,15 +789,30 @@ class Flwdir:
         if parallel and direction == "down":
             raise ValueError("parallel=True is only supported for direction='up'.")
         if parallel:
-            starts, sizes = self.seq_segments()
-            accu = streams.accuflux_segments(
-                idxs_ds=self.idxs_ds,
-                seq=self.idxs_seq,
-                data=self._check_data(data, "data"),
-                nodata=nodata,
-                starts=starts,
-                sizes=sizes,
-            )
+            if manner not in ("push", "pull"):
+                raise ValueError("manner must be 'push' or 'pull'")
+            if manner == "push" and layering != "cfds":
+                raise ValueError("manner='push' requires layering='cfds'")
+            cells, offsets = self._layer_decomposition(layering)
+            checked = self._check_data(data, "data")
+            if manner == "push":
+                accu = streams.accuflux_layered_push(
+                    idxs_ds=self.idxs_ds,
+                    cells=cells,
+                    offsets=offsets,
+                    data=checked,
+                    nodata=nodata,
+                )
+            else:
+                indptr, idxs_us = core.upstream_csr(self.idxs_ds, self._mv)
+                accu = streams.accuflux_layered_pull(
+                    indptr=indptr,
+                    idxs_us=idxs_us,
+                    cells=cells,
+                    offsets=offsets,
+                    data=checked,
+                    nodata=nodata,
+                )
         elif direction == "up":
             accu = streams.accuflux(
                 idxs_ds=self.idxs_ds,
@@ -1000,8 +1044,7 @@ class Flwdir:
         optional: Literal[True] = ...,
         flatten: bool = ...,
         **kwargs,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def _check_data(
@@ -1011,8 +1054,7 @@ class Flwdir:
         optional: Literal[False] = ...,
         flatten: bool = ...,
         **kwargs,
-    ) -> np.ndarray:
-        ...
+    ) -> np.ndarray: ...
 
     @overload
     def _check_data(
@@ -1022,8 +1064,7 @@ class Flwdir:
         optional: bool,
         flatten: bool = ...,
         **kwargs,
-    ) -> np.ndarray | None:
-        ...
+    ) -> np.ndarray | None: ...
 
     def _check_data(
         self,

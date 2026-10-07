@@ -850,6 +850,8 @@ class FlwdirRaster(Flwdir):
         self,
         unit: Literal["m2", "ha", "km2", "cell"] = "cell",
         parallel: bool = False,
+        layering: Literal["asap", "cfds", "alap"] = "cfds",
+        manner: Literal["push", "pull"] = "push",
     ) -> np.ndarray:
         """Return the upstream-area raster for the flow directions.
 
@@ -861,9 +863,12 @@ class FlwdirRaster(Flwdir):
             Upstream-area units: square metres ('m2'), hectares ('ha'), square kilometres
             ('km2'), or cells ('cell'), by default 'cell'.
         parallel : bool, optional
-            Accumulate the subbasins in threads, by default False. Needs the
-            cells ordered depth-first, which is the default ordering. The result
-            is the same as the serial one whatever the number of threads.
+            Accumulate one layer at a time in threads, by default False.
+        layering : {'asap', 'cfds', 'alap'}, optional
+            Layering used by the threaded path, by default ``"cfds"``.
+        manner : {'push', 'pull'}, optional
+            Threaded propagation manner, by default ``"push"``. Push needs the
+            conflict-free ``"cfds"`` layering; pull is safe with all three.
 
         Returns
         -------
@@ -878,23 +883,13 @@ class FlwdirRaster(Flwdir):
             area = np.ones(self.size, dtype=np.int32)
         else:
             area = self.area.ravel() / gis.AREA_FACTORS[unit]
-        if parallel:
-            starts, sizes = self.seq_segments()
-            uparea = streams.accuflux_segments(
-                idxs_ds=self.idxs_ds,
-                seq=self.idxs_seq,
-                data=area,
-                nodata=-9999,
-                starts=starts,
-                sizes=sizes,
-            )
-        else:
-            uparea = streams.accuflux(
-                idxs_ds=self.idxs_ds,
-                seq=self.idxs_seq,
-                data=area,
-                nodata=-9999,
-            )
+        uparea = self.accuflux(
+            area,
+            nodata=-9999,
+            parallel=parallel,
+            layering=layering,
+            manner=manner,
+        ).ravel()
         uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)
 
@@ -1706,8 +1701,7 @@ class FlwdirRaster(Flwdir):
         optional: Literal[True] = ...,
         flatten: bool = ...,
         **kwargs,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def _check_data(
@@ -1717,8 +1711,7 @@ class FlwdirRaster(Flwdir):
         optional: Literal[False] = ...,
         flatten: bool = ...,
         **kwargs,
-    ) -> np.ndarray:
-        ...
+    ) -> np.ndarray: ...
 
     @overload
     def _check_data(
@@ -1728,8 +1721,7 @@ class FlwdirRaster(Flwdir):
         optional: bool,
         flatten: bool = ...,
         **kwargs,
-    ) -> np.ndarray | None:
-        ...
+    ) -> np.ndarray | None: ...
 
     def _check_data(
         self,

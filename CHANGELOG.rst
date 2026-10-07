@@ -48,12 +48,14 @@ unreleased
   come in, so their result follows the ordering. They now return what they
   returned before, whatever ordering is set on the object
 * accumulate upstream in threads with ``accuflux(parallel=True)`` and
-  ``upstream_area(parallel=True)``. ``Flwdir.seq_segments`` cuts the depth-first
-  sequence into stretches that each hold a cell and everything draining to it, so
-  a thread reads and writes inside its own stretch; the main stems left outside
-  them follow in sequence order. The values of a cell's upstream cells are added
-  in the same order as in a serial run, so the result is identical whatever the
-  number of threads (#85)
+  ``upstream_area(parallel=True)``, one dependency-free layer at a time.
+  ``Flwdir.layer_cells`` builds the as-soon-as-possible (``"asap"``),
+  as-late-as-possible (``"alap"``) and conflict-free downstream (``"cfds"``)
+  layerings from FlowTopo. The default ``"cfds"`` push lets threads write
+  without locks or atomics because no two cells in a layer share a receiver;
+  pull is available with all three layerings. The result is reproducible at
+  every thread count and agrees with the serial accumulation to floating-point
+  rounding (#85)
 
 0.5.12 (01-07-2026)
 *******************

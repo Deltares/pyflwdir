@@ -47,33 +47,27 @@ def accuflux(
 
 
 @njit(cache=True, parallel=True)
-def accuflux_segments(
+def accuflux_layered_push(
     idxs_ds: np.ndarray,
-    seq: np.ndarray,
+    cells: np.ndarray,
+    offsets: np.ndarray,
     data: np.ndarray,
     nodata: float,
-    starts: np.ndarray,
-    sizes: np.ndarray,
 ) -> np.ndarray:
-    """Returns maps of accumulate upstream <data>, over the segments in threads
-
-    Each segment is a complete subbasin and holds every cell upstream of its
-    first cell, so a thread writes only inside the segment it is given. What is
-    left, the first cell of every segment and the cells outside the segments,
-    is accumulated afterwards in sequence order.
+    """Accumulate upstream values with a conflict-free downstream layering.
 
     Parameters
     ----------
     idxs_ds : 1D-array of intp
         index of next downstream cell
-    seq : 1D array of int
-        ordered cell indices from down- to upstream, depth-first
+    cells : 1D array of int
+        cell indices grouped from upstream to downstream by layer
+    offsets : 1D array of int
+        start of each layer in `cells`, including the final end offset
     data : 1D array
         local values to be accumulated
     nodata : float, integer
         nodata value
-    starts, sizes : 1D-array of int
-        position and length of each segment in `seq`, from `core.seq_segments`
 
     Returns
     -------
@@ -82,30 +76,43 @@ def accuflux_segments(
 
     Notes
     -----
-    The values of a cell's upstream cells are added in the same order as in
-    `accuflux`, so the result is identical to it, whatever the number of
-    threads.
+    No two cells in one conflict-free layer share a receiver. The additions
+    therefore have a fixed order and produce the same result at every thread
+    count without atomics. Floating-point results can differ from `accuflux`
+    in the last bits because its sequence adds tributaries in another order.
     """
     accu = data.copy()
-    for k in prange(starts.size):  # the segments, in threads
-        start = starts[k]
-        for pos in range(start + sizes[k] - 1, start, -1):  # up- to downstream
-            idx0 = seq[pos]
+    for layer in range(offsets.size - 1):
+        for pos in prange(offsets[layer], offsets[layer + 1]):
+            idx0 = cells[pos]
             idx_ds = idxs_ds[idx0]
-            if accu[idx_ds] != nodata and accu[idx0] != nodata:
+            if idx0 != idx_ds and accu[idx_ds] != nodata and accu[idx0] != nodata:
                 accu[idx_ds] += accu[idx0]
-    # the cells left: the first cell of every segment drains outside it, and a
-    # main stem cell takes values from several segments
-    done = np.zeros(seq.size, dtype=np.bool_)
-    for k in range(starts.size):
-        done[starts[k] + 1 : starts[k] + sizes[k]] = True
-    for pos in range(seq.size - 1, -1, -1):  # up- to downstream
-        if done[pos]:
-            continue
-        idx0 = seq[pos]
-        idx_ds = idxs_ds[idx0]
-        if idx0 != idx_ds and accu[idx_ds] != nodata and accu[idx0] != nodata:
-            accu[idx_ds] += accu[idx0]
+    return accu
+
+
+@njit(cache=True, parallel=True)
+def accuflux_layered_pull(
+    indptr: np.ndarray,
+    idxs_us: np.ndarray,
+    cells: np.ndarray,
+    offsets: np.ndarray,
+    data: np.ndarray,
+    nodata: float,
+) -> np.ndarray:
+    """Accumulate upstream values by gathering donors one layer at a time."""
+    accu = data.copy()
+    for layer in range(offsets.size - 1):
+        for pos in prange(offsets[layer], offsets[layer + 1]):
+            idx0 = cells[pos]
+            total = accu[idx0]
+            if total == nodata:
+                continue
+            for idx in range(indptr[idx0], indptr[idx0 + 1]):
+                value = accu[idxs_us[idx]]
+                if value != nodata:
+                    total += value
+            accu[idx0] = total
     return accu
 
 

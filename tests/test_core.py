@@ -230,83 +230,90 @@ def test_idxs_seq_dfs_keeps_basins_together_integration(test_data, request):
     _idxs_seq_dfs_keeps_basins_together_body(request.getfixturevalue(test_data))
 
 
-def _seq_segments_body(test_data):
-    # the segments hold no cell twice, each one is the cells draining to its
-    # first cell, and only cells with more upstream cells than max_size are
-    # left out of them
+def _layerings_body(test_data):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     idxs_ds[rank == -1] = mv
     dfs = core.idxs_seq_dfs(idxs_ds, idxs_pit, mv=mv)
-    n_upstream = streams.accuflux(
-        idxs_ds, dfs, np.ones(idxs_ds.size, dtype=np.int64), -1
-    )
-    for max_size in [1, 3, max(1, dfs.size // 4), dfs.size]:
-        starts, sizes = core.seq_segments(dfs, n_upstream, max_size)
-        assert np.all(sizes > 0) and np.all(sizes <= max_size)
-        assert np.all(starts[:-1] + sizes[:-1] <= starts[1:])  # in order, no overlap
-        assert starts.size == 0 or starts[-1] + sizes[-1] <= dfs.size
-        covered = np.zeros(dfs.size, dtype=bool)
-        for start, size in zip(starts, sizes):
-            covered[start : start + size] = True
-            assert size == n_upstream[dfs[start]]
-            ids = basins.basins(idxs_ds, dfs[start : start + 1], dfs)
-            assert np.array_equal(
-                np.sort(dfs[start : start + size]), np.flatnonzero(ids > 0)
-            )
-        # the cells left out have more cells upstream than fit in a segment
-        assert np.all(n_upstream[dfs[~covered]] > max_size)
-    # with max_size at the size of the sequence every basin is one segment
-    starts, sizes = core.seq_segments(dfs, n_upstream, dfs.size)
-    assert starts.size == idxs_pit.size and sizes.sum() == dfs.size
-    # empty inputs return empty, exactly allocated outputs
-    empty = np.empty(0, dtype=np.int64)
-    starts, sizes = core.seq_segments(empty, empty, 1)
-    assert starts.size == sizes.size == 0
-    # invalid upstream counts must not leave the scan stuck at one position
-    with pytest.raises(ValueError, match="positive"):
-        core.seq_segments(np.array([0]), np.array([0]), 1)
+    outputs = {
+        "asap": core.layering_asap(idxs_ds, mv),
+        "cfds": core.layering_cfds(idxs_ds, mv),
+        "alap": core.layering_alap(idxs_ds, dfs, mv),
+    }
+    for layers, n_layers in outputs.values():
+        assert layers.dtype == np.int32
+        assert n_layers == layers[dfs].max() + 1
+        assert np.all(layers[dfs] >= 0)
+        upstream = dfs[idxs_ds[dfs] != dfs]
+        assert np.all(layers[upstream] < layers[idxs_ds[upstream]])
+        cells, offsets = core.layer_decomposition(layers, n_layers, idxs_ds)
+        assert offsets.size == n_layers + 1
+        assert offsets[0] == 0 and offsets[-1] == dfs.size
+        assert np.array_equal(np.sort(cells), np.sort(dfs))
+        for layer in range(n_layers):
+            members = cells[offsets[layer] : offsets[layer + 1]]
+            assert np.all(layers[members] == layer)
+
+    layers, n_layers = outputs["cfds"]
+    for layer in range(n_layers):
+        members = np.flatnonzero(layers == layer)
+        members = members[idxs_ds[members] != members]
+        receivers = idxs_ds[members]
+        assert np.unique(receivers).size == receivers.size
+    assert outputs["cfds"][1] >= outputs["asap"][1]
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize("test_data", ["test_data_uint32", "test_data_int64"])
-def test_seq_segments_unit(test_data, request):
-    _seq_segments_body(request.getfixturevalue(test_data))
+def test_layerings_unit(test_data, request):
+    _layerings_body(request.getfixturevalue(test_data))
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", ["test_data_real"])
-def test_seq_segments_integration(test_data, request):
-    _seq_segments_body(request.getfixturevalue(test_data))
+def test_layerings_integration(test_data, request):
+    _layerings_body(request.getfixturevalue(test_data))
 
 
-def _accuflux_segments_body(test_data):
-    # the threaded accumulation gives the same values as the serial one
+def _accuflux_layered_body(test_data):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     idxs_ds[rank == -1] = mv
     dfs = core.idxs_seq_dfs(idxs_ds, idxs_pit, mv=mv)
-    n_upstream = streams.accuflux(
-        idxs_ds, dfs, np.ones(idxs_ds.size, dtype=np.int64), -1
-    )
     rng = np.random.default_rng(0)
-    data = rng.random(idxs_ds.size).astype(np.float64)
+    data = rng.random(idxs_ds.size)
     data[idxs_ds == mv] = -9999.0
     serial = streams.accuflux(idxs_ds, dfs, data, -9999.0)
-    for max_size in [1, 3, max(1, dfs.size // 4), dfs.size]:
-        starts, sizes = core.seq_segments(dfs, n_upstream, max_size)
-        out = streams.accuflux_segments(idxs_ds, dfs, data, -9999.0, starts, sizes)
-        assert np.array_equal(out, serial)  # identical, not just close
+
+    cfds, n_layers = core.layering_cfds(idxs_ds, mv)
+    cells, offsets = core.layer_decomposition(cfds, n_layers, idxs_ds)
+    pushed = streams.accuflux_layered_push(idxs_ds, cells, offsets, data, -9999.0)
+    assert np.allclose(pushed, serial)
+
+    indptr, idxs_us = core.upstream_csr(idxs_ds, mv)
+    for builder in (core.layering_asap, core.layering_cfds):
+        layers, n_layers = builder(idxs_ds, mv)
+        cells, offsets = core.layer_decomposition(layers, n_layers, idxs_ds)
+        pulled = streams.accuflux_layered_pull(
+            indptr, idxs_us, cells, offsets, data, -9999.0
+        )
+        assert np.allclose(pulled, serial)
+    layers, n_layers = core.layering_alap(idxs_ds, dfs, mv)
+    cells, offsets = core.layer_decomposition(layers, n_layers, idxs_ds)
+    pulled = streams.accuflux_layered_pull(
+        indptr, idxs_us, cells, offsets, data, -9999.0
+    )
+    assert np.allclose(pulled, serial)
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize("test_data", ["test_data_uint32", "test_data_int64"])
-def test_accuflux_segments_unit(test_data, request):
-    _accuflux_segments_body(request.getfixturevalue(test_data))
+def test_accuflux_layered_unit(test_data, request):
+    _accuflux_layered_body(request.getfixturevalue(test_data))
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", ["test_data_real"])
-def test_accuflux_segments_integration(test_data, request):
-    _accuflux_segments_body(request.getfixturevalue(test_data))
+def test_accuflux_layered_integration(test_data, request):
+    _accuflux_layered_body(request.getfixturevalue(test_data))
 
 
 def _upstream_csr_body(test_data):
