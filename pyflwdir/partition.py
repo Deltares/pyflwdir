@@ -482,8 +482,8 @@ def _subbasin_partition(
         )
     records.sort(key=lambda record: (-record["size"], -record["position"]))
 
-    rank_rows = np.zeros(N_TRUNKS, dtype=np.float64)
-    rank_cols = np.zeros(N_TRUNKS, dtype=np.float64)
+    rank_rows = np.full(N_TRUNKS, 0.5 * shape[0], dtype=np.float64)
+    rank_cols = np.full(N_TRUNKS, 0.5 * shape[1], dtype=np.float64)
     for rank in range(N_TRUNKS):
         cells = np.flatnonzero(parts == rank)
         if cells.size:
