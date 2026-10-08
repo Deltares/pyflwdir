@@ -513,12 +513,13 @@ def test_method_2_tries_basins_in_or_beside_the_heaviest_and_lightest_parts(monk
     monkeypatch.setattr(partition, "_open_basins", recording)
     partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
     first_round = [opened for opened in tried if opened.size == 1]
-    assert 1 <= len(first_round) <= 4
+    # in or beside every part over the target and the lightest: at most 4 x 2
+    assert 1 <= len(first_round) <= 8
     assert len({int(opened[0]) for opened in first_round}) == len(first_round)
     for opened in first_round:
         assert _in_or_beside(basin.basin_ids == labels[opened[0]], ends)
     for size in {opened.size for opened in tried}:
-        assert sum(opened.size == size for opened in tried) <= 4
+        assert sum(opened.size == size for opened in tried) <= 8
 
 
 @pytest.mark.unit
