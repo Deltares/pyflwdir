@@ -11,8 +11,8 @@ process-level parts, at two levels:
 * ``"subbasin"`` (Method 2): when Method 1's parts are not within
   ``imbalance_target`` of an equal share, basins are opened along their
   mainstems into the tributary subtrees that drain into the mainstem -- as few
-  as the balance needs: the dominant basin first; another only when it is the
-  heaviest whole basin of the heaviest or the lightest part and opening it
+  as the balance needs: the dominant basin first; another only when it is a
+  whole basin in or beside the heaviest or the lightest part and opening it
   lowers the heaviest part by ``OPEN_MIN_GAIN`` of the mean or more.  Those
   tributaries and the other basins form one graph, divided at once into equal
   parts; each mainstem cell weighs with the tributary that enters it.
@@ -1794,6 +1794,28 @@ def _open_basins(
     )
 
 
+def _heaviest_bordering(
+    parts: np.ndarray, label: np.ndarray, part: int, n_parts: int, eligible: np.ndarray, weights: np.ndarray
+) -> int:
+    """The heaviest ``eligible`` basin bordering ``part`` from another of the
+    ``n_parts`` parts: across a pair of side neighbours of the 2-D ``parts``,
+    whose basin number is ``label`` (-1 outside a basin).  -1 when none."""
+    far = []
+    for a, b, la, lb in (
+        (parts[:, :-1], parts[:, 1:], label[:, :-1], label[:, 1:]),
+        (parts[:-1, :], parts[1:, :], label[:-1, :], label[1:, :]),
+    ):
+        pair = (a >= 0) & (a < n_parts) & (b >= 0) & (b < n_parts) & (a != b)
+        far.append(lb[pair & (a == part)])
+        far.append(la[pair & (b == part)])
+    found = np.unique(np.concatenate(far))
+    found = found[found >= 0]
+    found = found[eligible[found]]
+    if found.size == 0:
+        return -1
+    return int(found[np.lexsort((found, -weights[found]))][0])
+
+
 def _subbasin_partition(
     flw: "Flwdir",
     parts: np.ndarray,
@@ -1809,15 +1831,19 @@ def _subbasin_partition(
     """Method 2 on a raster: open as few basins as the balance needs.
 
     Method 1's parts stand when they are within ``imbalance_target``.
-    Otherwise, round by round, two basins are tried, each opened together with
-    those kept so far: the heaviest whole basin of the heaviest part (which
-    cannot shed it) and that of the lightest part (which cannot grow around
-    it); the better is kept only when it lowers the heaviest part by
-    ``OPEN_MIN_GAIN`` of the mean or more.  The rounds stop at the target, at a
-    round without such a gain, or at ``MAX_OPENED_BASINS``.  So the first basin
-    opened is the dominant one, and a further one only a basin that holds the
-    balance up, and only when that clearly pays off.  A basin that is one chain
-    of cells has no tributaries to open into and stays whole.
+    Otherwise, round by round, the whole basins that can hold the balance up are
+    tried, each opened together with those kept so far: the heaviest of the
+    heaviest part, which cannot shed it, and the heaviest bordering it; the
+    heaviest of the lightest part, which cannot grow around it, and the
+    heaviest bordering it (as a basin that walls off a piece of land).  A
+    basin of the heaviest part heavier than an equal share can never be
+    balanced whole and is then the only one tried.  The best is kept only when
+    it lowers the heaviest part by ``OPEN_MIN_GAIN`` of the mean or more; the
+    rounds stop at the target, at a round without such a gain, or at
+    ``MAX_OPENED_BASINS``.  So the first basin opened is the dominant one, and a
+    further one only a basin that holds the balance up, and only when that
+    clearly pays off.  A basin that is one chain of cells has no tributaries to
+    open into and stays whole.
     """
     best = _empty_plan(flw, parts, load, basin_ids, "subbasin")
     best_ratio = float(load.max() / max(load.mean(), 1))
@@ -1829,6 +1855,10 @@ def _subbasin_partition(
     weights = np.bincount(label_of_cell, minlength=labels.size)
     # one cell of every basin: a whole basin is in one part, so it tells which
     first_cell = cells[np.unique(label_of_cell, return_index=True)[1]]
+    shape = _raster_shape(flw)
+    label_2d = np.full(flw.size, -1, dtype=np.int64)
+    label_2d[cells] = label_of_cell
+    label_2d = label_2d.reshape(shape)
     seq_d2u = core.idxs_seq_dfs(flw.idxs_ds, flw.idxs_pit, flw._mv)
     upstream = streams.accuflux(
         flw.idxs_ds, seq_d2u, np.ones(flw.size, dtype=np.int64), -1
@@ -1842,11 +1872,28 @@ def _subbasin_partition(
         part_of_basin = best.parts.ravel()[first_cell]
         eligible = sources > 1
         eligible[opened] = False
-        candidates: list[int] = []
-        for part in (int(np.argmax(best.loads)), int(np.argmin(best.loads))):
+        heaviest, lightest = int(np.argmax(best.loads)), int(np.argmin(best.loads))
+        share = float(best.loads.sum()) / best.loads.size
+
+        def heaviest_in(part: int) -> int:
             pool = by_weight[eligible[by_weight] & (part_of_basin[by_weight] == part)]
-            if pool.size and int(pool[0]) not in candidates:
-                candidates.append(int(pool[0]))
+            return int(pool[0]) if pool.size else -1
+
+        inside = heaviest_in(heaviest)
+        if inside >= 0 and weights[inside] > share * imbalance_target:
+            found = [inside]
+        else:
+            parts_2d = best.parts.reshape(shape)
+            found = [
+                inside,
+                _heaviest_bordering(parts_2d, label_2d, heaviest, N_TRUNKS, eligible, weights),
+                heaviest_in(lightest),
+                _heaviest_bordering(parts_2d, label_2d, lightest, N_TRUNKS, eligible, weights),
+            ]
+        candidates: list[int] = []
+        for basin in found:
+            if basin >= 0 and basin not in candidates:
+                candidates.append(basin)
         if not candidates:
             break
         round_best = None

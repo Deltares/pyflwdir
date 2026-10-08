@@ -486,14 +486,23 @@ def test_basins_are_opened_when_method_1_is_unequal():
     assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
 
 
+def _in_or_beside(cells: np.ndarray, region: np.ndarray) -> bool:
+    """Whether the 2-D mask ``cells`` lies in ``region`` or shares a side with it."""
+    grown = cells.copy()
+    grown[1:, :] |= cells[:-1, :]
+    grown[:-1, :] |= cells[1:, :]
+    grown[:, 1:] |= cells[:, :-1]
+    grown[:, :-1] |= cells[:, 1:]
+    return bool(np.any(grown & region))
+
+
 @pytest.mark.unit
-def test_method_2_tries_the_heaviest_basins_of_the_heaviest_and_lightest_parts(monkeypatch):
+def test_method_2_tries_basins_in_or_beside_the_heaviest_and_lightest_parts(monkeypatch):
     pytest.importorskip("pymetis")
     flw = rivers(21, [11] * 5)
     basin = partition.partition_plan(flw, level="basin")
-    ends = {int(np.argmax(basin.loads)), int(np.argmin(basin.loads))}
+    ends = np.isin(basin.parts, [int(np.argmax(basin.loads)), int(np.argmin(basin.loads))])
     labels = np.unique(basin.basin_ids[basin.parts >= 0])
-    part_of_label = {int(label): int(basin.parts[basin.basin_ids == label][0]) for label in labels}
     tried = []
     original = partition._open_basins
 
@@ -504,12 +513,12 @@ def test_method_2_tries_the_heaviest_basins_of_the_heaviest_and_lightest_parts(m
     monkeypatch.setattr(partition, "_open_basins", recording)
     partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
     first_round = [opened for opened in tried if opened.size == 1]
-    assert 1 <= len(first_round) <= 2
+    assert 1 <= len(first_round) <= 4
     assert len({int(opened[0]) for opened in first_round}) == len(first_round)
     for opened in first_round:
-        assert part_of_label[int(labels[opened[0]])] in ends
+        assert _in_or_beside(basin.basin_ids == labels[opened[0]], ends)
     for size in {opened.size for opened in tried}:
-        assert sum(opened.size == size for opened in tried) <= 2
+        assert sum(opened.size == size for opened in tried) <= 4
 
 
 @pytest.mark.unit
