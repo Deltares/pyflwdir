@@ -382,11 +382,15 @@ class Flwdir:
     ) -> tuple[np.ndarray, np.ndarray]:
         """Split a raster into FlowTopo process-level subregions.
 
-        Basin-level partitioning builds a cell-count-weighted basin adjacency
-        graph and partitions its mainland with METIS, then attaches islands
-        geographically and refines small boundary basins. Subbasin-level
-        partitioning further decomposes the dominant basin on the heaviest
-        rank into four parallel trunks and a logical fifth mainstem region.
+        Basin-level partitioning (Method 1) keeps every basin whole: a basin
+        larger than an equal share is a part of its own, and the other basins
+        are divided into equal parts, each connected on the ground, by
+        contiguous METIS followed by a balance refinement; islands join the
+        part of their nearest basin. Subbasin-level partitioning (Method 2)
+        opens the basins too large to balance whole -- the largest first --
+        along their mainstems into tributary subtrees, divides those and the
+        other basins into four parallel trunks, and leaves each opened mainstem
+        below its ``P_min`` as a logical fifth region.
 
         This method requires a :class:`FlwdirRaster`. METIS is an optional
         dependency; install it with ``pip install pyflwdir[partition]``.
@@ -795,7 +799,7 @@ class Flwdir:
         partition_level: Literal["basin", "subbasin"] = "subbasin",
         start_method: str = "spawn",
         partition_min_subtree_size: int = 100_000,
-        partition_imbalance_target: float = 1.05,
+        partition_imbalance_target: float = 1.005,
     ) -> np.ndarray:
         """Return accumulated data values along the flow directions.
 
@@ -833,8 +837,9 @@ class Flwdir:
             100,000 cells as in the continental FlowTopo C workflow. Smaller
             rasters may use a lower explicit value.
         partition_imbalance_target : float, optional
-            Stop Method 2 when maximum trunk load divided by mean load reaches
-            this value, by default 1.05.
+            Largest trunk load divided by the mean load that the partition aims
+            for, by default 1.005. Method 2 opens further basins only while it
+            is not reached.
 
         Returns
         -------

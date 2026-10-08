@@ -1,10 +1,34 @@
 """Spatial FlowTopo partitions for process-level parallelism.
 
-The basin graph, METIS island handling, dominant-basin refinement and 4+1
-mainstem execution follow the current FlowTopo C implementation:
-https://doi.org/10.5281/zenodo.22227621. Tributary allocation additionally
-coarsens small neighbouring tributaries and applies contiguous weighted METIS
-so that single-basin domains retain coherent process regions.
+FlowTopo (https://doi.org/10.5281/zenodo.22227621) divides a region into four
+process-level parts, at two levels:
+
+* ``"basin"`` (Method 1): every basin stays whole.  The basins are the nodes of
+  a graph whose edges are their shared raster boundaries, weighted by the length
+  of the boundary.  A basin larger than an equal share is a part of its own; the
+  other basins share the remaining parts, every part connected on the ground.
+* ``"subbasin"`` (Method 2): the basins too large to balance whole are opened
+  along their mainstems into the tributary subtrees that drain into the
+  mainstem -- the largest basin first, then the next, while the parts are not
+  within ``imbalance_target`` of an equal share.  Those tributaries and the other
+  basins form one graph, divided at once into equal, connected parts.  Below
+  ``P_min``, the most upstream mainstem cell where a tributary of another part
+  enters, each opened mainstem is a logical fifth region, walked once after the
+  four parts; above it, the mainstem stays with the part of its most upstream
+  tributaries (its trunk).
+
+The graph is first divided between its large components -- land that touches
+on the ground, the two banks of an opened mainstem joined -- in proportion to
+their weights, so that no part spans land that does not touch; small
+components (islands) join the part of their nearest node.  Within a component,
+contiguous weighted METIS runs from several seeds on a graph whose small
+tributaries are grouped with a larger neighbour, the most balanced result is
+kept, and boundary nodes then move, one tributary or basin at a time, from
+heavier to lighter neighbouring parts until every part is within
+``imbalance_target`` of its target load.  A part is never cut in two.
+
+The graph functions take arrays, not a raster, so that a graph built from tiles
+(FlowTopo's 90 m region tiles, for one) is partitioned by the same code.
 """
 
 from __future__ import annotations
@@ -27,7 +51,33 @@ N_TRUNKS = 4
 MAINSTEM = 4
 """Logical fifth subregion, processed after the four parallel trunks."""
 
+METIS_SEEDS = 4
+"""METIS runs from this many seeds; the most balanced result is kept."""
+
+MAX_OPENED_BASINS = 4
+"""Method 2 opens at most this many basins along their mainstems."""
+
+FRAGMENT_SHARE = 0.01
+"""A piece of a part cut off from its main piece and lighter than this share of
+an equal part joins the neighbouring part it touches the most."""
+
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FifthRegion:
+    """One opened basin's mainstem below ``P_min``, walked after the four parts.
+
+    ``cut_inlets`` are in mainstem order; ``predecessor`` is the mainstem cell
+    just above ``P_min`` (-1 when ``P_min`` is the source), held by ``trunk``.
+    """
+
+    mainstem: np.ndarray
+    predecessor: int
+    cut_outlets: np.ndarray
+    cut_inlets: np.ndarray
+    cut_ranks: np.ndarray
+    trunk: int
 
 
 @dataclass
@@ -38,12 +88,52 @@ class PartitionPlan:
     loads: np.ndarray
     basin_ids: np.ndarray
     level: str
-    cut_outlets: np.ndarray
-    cut_inlets: np.ndarray
-    cut_ranks: np.ndarray
-    mainstem: np.ndarray
-    predecessor: int
-    max_rank: int
+    stems: tuple[FifthRegion, ...] = ()
+
+    @property
+    def mainstem(self) -> np.ndarray:
+        """The cells of every fifth region, one opened basin after the other."""
+        if not self.stems:
+            return np.empty(0, dtype=np.intp)
+        return np.concatenate([stem.mainstem for stem in self.stems])
+
+    @property
+    def cut_outlets(self) -> np.ndarray:
+        if not self.stems:
+            return np.empty(0, dtype=np.intp)
+        return np.concatenate([stem.cut_outlets for stem in self.stems])
+
+    @property
+    def cut_inlets(self) -> np.ndarray:
+        if not self.stems:
+            return np.empty(0, dtype=np.intp)
+        return np.concatenate([stem.cut_inlets for stem in self.stems])
+
+    @property
+    def cut_ranks(self) -> np.ndarray:
+        if not self.stems:
+            return np.empty(0, dtype=np.int8)
+        return np.concatenate([stem.cut_ranks for stem in self.stems])
+
+
+@dataclass
+class PartitionGraph:
+    """Nodes (whole basins or tributary subtrees) and their shared boundaries.
+
+    ``edges`` holds every adjacent pair once, first node smaller; ``edge_weights``
+    is the length of the shared boundary in cell sides.  Centroids are in cell
+    rows and columns.
+    """
+
+    weights: np.ndarray
+    rows: np.ndarray
+    cols: np.ndarray
+    edges: np.ndarray
+    edge_weights: np.ndarray
+
+    @property
+    def size(self) -> int:
+        return int(self.weights.size)
 
 
 def _require_pymetis():
@@ -64,319 +154,813 @@ def _raster_shape(flw: "Flwdir") -> tuple[int, int]:
     return int(shape[0]), int(shape[1])
 
 
-def _basin_graph(
-    basin_ids: np.ndarray,
-    mask: np.ndarray,
-    shape: tuple[int, int],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[list[int]]]:
-    """Return basin labels, weights, centroids and 4-neighbour adjacency."""
-    basin_ids = basin_ids.reshape(shape)
-    mask = mask.reshape(shape)
-    labels, weights = np.unique(basin_ids[mask & (basin_ids > 0)], return_counts=True)
-    labels = labels.astype(np.int64, copy=False)
-    weights = weights.astype(np.int64, copy=False)
-    if labels.size == 0:
-        return (
-            labels,
-            weights,
-            np.empty(0, dtype=np.float64),
-            np.empty(0, dtype=np.float64),
-            [],
-        )
+# ---------------------------------------------------------------------------
+# The graph
+# ---------------------------------------------------------------------------
 
-    lookup = np.full(int(labels[-1]) + 1, -1, dtype=np.int64)
-    lookup[labels] = np.arange(labels.size)
-    flat = basin_ids.ravel()
-    valid = mask.ravel() & (flat > 0)
-    nodes = np.full(flat.size, -1, dtype=np.int64)
-    nodes[valid] = lookup[flat[valid]]
-    rows, cols = np.indices(shape)
-    centroid_row = (
-        np.bincount(nodes[valid], weights=rows.ravel()[valid], minlength=labels.size)
-        / weights
-    )
-    centroid_col = (
-        np.bincount(nodes[valid], weights=cols.ravel()[valid], minlength=labels.size)
-        / weights
-    )
 
-    node_grid = nodes.reshape(shape)
+def merge_edges(
+    pairs: list[np.ndarray],
+    n_nodes: int,
+    weights: list[np.ndarray] | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Unique ``(first, second)`` node pairs, first smaller, and their summed weights.
+
+    Each array of ``pairs`` has two columns; a pair without a weight counts 1.
+    """
+    if not pairs:
+        return np.empty((0, 2), dtype=np.int64), np.empty(0, dtype=np.int64)
+    stacked = np.concatenate([np.asarray(pair, dtype=np.int64) for pair in pairs])
+    if weights is None:
+        counted = np.ones(stacked.shape[0], dtype=np.int64)
+    else:
+        counted = np.concatenate([np.asarray(w, dtype=np.int64) for w in weights])
+    first = np.minimum(stacked[:, 0], stacked[:, 1])
+    second = np.maximum(stacked[:, 0], stacked[:, 1])
+    keep = first != second
+    keys = first[keep] * np.int64(n_nodes) + second[keep]
+    unique, inverse = np.unique(keys, return_inverse=True)
+    summed = np.bincount(inverse, weights=counted[keep]).astype(np.int64)
+    edges = np.column_stack((unique // n_nodes, unique % n_nodes)).astype(np.int64)
+    return edges, summed
+
+
+def graph_from_node_raster(nodes: np.ndarray, n_nodes: int) -> PartitionGraph:
+    """The graph of a 2-D raster of node ids (-1 for cells outside every node).
+
+    Two nodes are adjacent where a cell of one shares a side with a cell of the
+    other; the edge weight counts those sides.
+    """
+    nodes = np.asarray(nodes, dtype=np.int64)
+    shape = nodes.shape
+    flat = nodes.ravel()
+    valid = np.flatnonzero(flat >= 0)
+    owner = flat[valid]
+    weights = np.bincount(owner, minlength=n_nodes).astype(np.int64)
+    rows, cols = np.divmod(valid, shape[1])
+    with np.errstate(invalid="ignore", divide="ignore"):
+        centroid_row = np.bincount(owner, weights=rows, minlength=n_nodes) / weights
+        centroid_col = np.bincount(owner, weights=cols, minlength=n_nodes) / weights
     pairs = []
     for first, second in (
-        (node_grid[:, :-1], node_grid[:, 1:]),
-        (node_grid[:-1, :], node_grid[1:, :]),
+        (nodes[:, :-1], nodes[:, 1:]),
+        (nodes[:-1, :], nodes[1:, :]),
     ):
-        edge = (first >= 0) & (second >= 0) & (first != second)
-        if np.any(edge):
-            a = first[edge]
-            b = second[edge]
-            pairs.append(np.column_stack((np.minimum(a, b), np.maximum(a, b))))
-    if pairs:
-        edges = np.unique(np.concatenate(pairs, axis=0), axis=0)
-    else:
-        edges = np.empty((0, 2), dtype=np.int64)
-
-    adjacency = [[] for _ in range(labels.size)]
-    for first, second in edges:
-        adjacency[int(first)].append(int(second))
-        adjacency[int(second)].append(int(first))
-    return labels, weights, centroid_row, centroid_col, adjacency
+        boundary = (first >= 0) & (second >= 0) & (first != second)
+        if np.any(boundary):
+            pairs.append(np.column_stack((first[boundary], second[boundary])))
+    edges, edge_weights = merge_edges(pairs, n_nodes)
+    return PartitionGraph(weights, centroid_row, centroid_col, edges, edge_weights)
 
 
-def _components(adjacency: list[list[int]]) -> list[np.ndarray]:
-    component = np.full(len(adjacency), -1, dtype=np.int32)
-    groups = []
-    for start in range(len(adjacency)):
-        if component[start] >= 0:
-            continue
-        number = len(groups)
-        queue = [start]
-        component[start] = number
-        members = []
-        while queue:
-            node = queue.pop()
-            members.append(node)
-            for neighbour in adjacency[node]:
-                if component[neighbour] < 0:
-                    component[neighbour] = number
-                    queue.append(neighbour)
-        groups.append(np.asarray(members, dtype=np.int64))
-    return groups
+def _contract(graph: PartitionGraph, group: np.ndarray, n_groups: int) -> PartitionGraph:
+    """The graph whose nodes are the groups of ``graph``'s nodes."""
+    weights = np.bincount(group, weights=graph.weights, minlength=n_groups).astype(
+        np.int64
+    )
+    rows = np.bincount(group, weights=graph.rows * graph.weights, minlength=n_groups)
+    cols = np.bincount(group, weights=graph.cols * graph.weights, minlength=n_groups)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        rows = rows / weights
+        cols = cols / weights
+    edges, edge_weights = merge_edges(
+        [group[graph.edges]], n_groups, [graph.edge_weights]
+    )
+    return PartitionGraph(weights, rows, cols, edges, edge_weights)
 
 
-def _greedy_dominant(weights: np.ndarray, n_parts: int, dominant: int) -> np.ndarray:
-    assignment = np.full(weights.size, -1, dtype=np.int32)
-    assignment[dominant] = 0
-    load = np.zeros(n_parts, dtype=np.int64)
-    load[0] = weights[dominant]
-    remaining = np.flatnonzero(np.arange(weights.size) != dominant)
-    for item in remaining[np.argsort(-weights[remaining], kind="stable")]:
-        if n_parts > 1:
-            part = 1 + int(np.argmin(load[1:]))
-        else:
-            part = 0
-        assignment[item] = part
-        load[part] += weights[item]
-    return assignment
+def _csr(n_nodes: int, edges: np.ndarray, edge_weights: np.ndarray):
+    """Symmetric compressed sparse rows of an edge list."""
+    source = np.concatenate((edges[:, 0], edges[:, 1]))
+    target = np.concatenate((edges[:, 1], edges[:, 0]))
+    weight = np.concatenate((edge_weights, edge_weights))
+    order = np.lexsort((target, source))
+    xadj = np.zeros(n_nodes + 1, dtype=np.int64)
+    xadj[1:] = np.cumsum(np.bincount(source, minlength=n_nodes))
+    return xadj, target[order].astype(np.int64), weight[order].astype(np.int64)
 
 
-def _metis_component(
-    adjacency: list[list[int]],
-    weights: np.ndarray,
-    members: np.ndarray,
+# ---------------------------------------------------------------------------
+# METIS and the balance refinement
+# ---------------------------------------------------------------------------
+
+
+def _scaled(values: np.ndarray, limit: int = 2**30) -> np.ndarray:
+    """Positive integer weights whose sum stays below METIS's 32-bit range."""
+    values = np.asarray(values, dtype=np.int64)
+    factor = max(1, int(np.ceil(float(values.sum()) / limit)))
+    if factor == 1:
+        return np.maximum(values, 1)
+    return np.maximum((values + factor - 1) // factor, 1)
+
+
+def _metis(
+    graph: PartitionGraph,
     n_parts: int,
+    targets: np.ndarray,
     seed: int,
+    ufactor: int,
 ) -> np.ndarray:
     pymetis = _require_pymetis()
-    local = {int(old): new for new, old in enumerate(members)}
-    subgraph = [
-        [local[neighbour] for neighbour in adjacency[int(old)] if neighbour in local]
-        for old in members
-    ]
-    subweights = weights[members]
-    target = float(subweights.sum()) / n_parts
-    imbalance = max(1.05, float(subweights.max()) / target * 1.05)
-    ufactor = max(1, int(round((imbalance - 1.0) * 1000)))
+    xadj, adjncy, eweights = _csr(graph.size, graph.edges, graph.edge_weights)
     options = pymetis.Options(seed=seed, ufactor=ufactor, contig=1)
     result = pymetis.part_graph(
         n_parts,
-        adjacency=subgraph,
-        vweights=subweights.tolist(),
+        adjacency=pymetis.CSRAdjacency(xadj.tolist(), adjncy.tolist()),
+        vweights=_scaled(graph.weights).tolist(),
+        eweights=_scaled(eweights).tolist(),
+        tpwgts=[float(t) for t in targets],
         recursive=False,
         options=options,
     )
     return np.asarray(result.vertex_part, dtype=np.int32)
 
 
-def _assign_islands(
-    assignment: np.ndarray,
-    components: list[np.ndarray],
-    mainland_index: int,
-    weights: np.ndarray,
-    centroid_row: np.ndarray,
-    centroid_col: np.ndarray,
-    n_parts: int,
-    cap_factor: float,
-) -> None:
-    mainland = components[mainland_index]
-    load = np.bincount(
-        assignment[mainland], weights=weights[mainland], minlength=n_parts
-    ).astype(np.int64)
-    target = float(weights.sum()) / n_parts
-    cap = cap_factor * target
-    islands = [
-        component
-        for index, component in enumerate(components)
-        if index != mainland_index
-    ]
-    islands.sort(key=lambda nodes: int(weights[nodes].sum()), reverse=True)
-    for island in islands:
-        island_row = float(centroid_row[island].mean())
-        island_col = float(centroid_col[island].mean())
-        best_part = -1
-        best_distance = np.inf
-        for part in range(n_parts):
-            if load[part] >= cap:
+@njit(cache=True)
+def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit, out):
+    """The nodes that leave ``part`` with ``node``: itself and the peninsulas it holds.
+
+    Without ``node``, its same-part neighbours fall into components.  The body of
+    the part -- the one component too large to explore within ``limit`` visited
+    nodes, or else the heaviest component -- stays; the other components are
+    peninsulas and leave with ``node``.  Returns the number of nodes put into
+    ``out`` (``node`` first) and the last stamp used, or -1 when two components
+    are too large to explore (``node`` holds the body together).
+
+    ``mark`` holds stamps: ``stamp`` for ``node``, ``stamp + k`` for the k-th
+    component of this call.  A search that meets an earlier component of this
+    call is part of it; only a component left unexplored can be met that way.
+    """
+    base = stamp
+    mark[node] = base
+    out[0] = node
+    count = 1
+    degree = xadj[node + 1] - xadj[node]
+    begins = np.empty(degree + 1, dtype=np.int64)
+    ends = np.empty(degree + 1, dtype=np.int64)
+    component_weight = np.zeros(degree + 1, dtype=np.float64)
+    n_components = 0
+    n_large = 0
+    for j in range(xadj[node], xadj[node + 1]):
+        start = adjncy[j]
+        if parts[start] != part or mark[start] > base:
+            continue
+        n_components += 1
+        own = base + n_components
+        begin = count
+        head = 0
+        tail = 0
+        queue[tail] = start
+        tail += 1
+        mark[start] = own
+        visited = 0
+        merged = False
+        too_large = False
+        while head < tail:
+            current = queue[head]
+            head += 1
+            visited += 1
+            if visited > limit or count >= out.size:
+                too_large = True
+                break
+            out[count] = current
+            count += 1
+            component_weight[n_components] += weights[current]
+            for k in range(xadj[current], xadj[current + 1]):
+                neighbour = adjncy[k]
+                if neighbour == node or parts[neighbour] != part:
+                    continue
+                seen = mark[neighbour]
+                if seen == own:
+                    continue
+                if seen > base and seen < own:
+                    merged = True
+                    break
+                mark[neighbour] = own
+                queue[tail] = neighbour
+                tail += 1
+            if merged:
+                break
+        if merged or too_large:
+            # (part of) the body: its nodes are not taken
+            count = begin
+            begins[n_components] = begin
+            ends[n_components] = begin
+            component_weight[n_components] = -1.0
+            if too_large:
+                n_large += 1
+                if n_large > 1:
+                    return -1, base + n_components
+            continue
+        begins[n_components] = begin
+        ends[n_components] = count
+    if n_large == 0 and n_components > 0:
+        # every component was explored: the heaviest is the body and stays
+        body = 1
+        for k in range(2, n_components + 1):
+            if component_weight[k] > component_weight[body]:
+                body = k
+        removed = ends[body] - begins[body]
+        for k in range(ends[body], count):
+            out[k - removed] = out[k]
+        count -= removed
+    return count, base + n_components
+
+
+@njit(cache=True)
+def _refine_balance(
+    xadj, adjncy, weights, parts, extra, target_load, goal, max_moves, search_limit
+):
+    """Move boundary nodes to lighter neighbouring parts until balanced.
+
+    The objective is the sum over the parts of (load / target - 1) squared: each
+    move takes the node, of any part, whose move to a lighter neighbouring part
+    lowers that sum the most.  A node whose departure would cut a peninsula off
+    its part takes the peninsula with it (``_detach``), so that both parts stay
+    connected; a move that would cut the part's body in two is not made.  Load
+    can so pass on through a middle part to a light one that does not touch the
+    heavy one.  It stops when the largest load-to-target ratio is at most
+    ``goal`` or no move lowers the sum.  ``extra`` is load a part holds outside
+    the graph and keeps.  Returns the number of moves.
+    """
+    n = weights.size
+    n_parts = target_load.size
+    load = extra.astype(np.float64)
+    for node in range(n):
+        load[parts[node]] += weights[node]
+    mark = np.zeros(n, dtype=np.int64)
+    queue = np.empty(n, dtype=np.int64)
+    out = np.empty(n, dtype=np.int64)
+    stamp = np.int64(1)
+    moves = 0
+    candidate_node = np.empty(n, dtype=np.int64)
+    candidate_part = np.empty(n, dtype=np.int64)
+    candidate_gain = np.empty(n, dtype=np.float64)
+    while moves < max_moves:
+        ratio = load / target_load
+        if np.max(ratio) <= goal:
+            break
+        count = 0
+        for node in range(n):
+            source = parts[node]
+            weight = weights[node]
+            if weight >= load[source]:
                 continue
-            candidates = mainland[assignment[mainland] == part]
-            if candidates.size == 0:
-                continue
-            distance = np.min(
-                (centroid_row[candidates] - island_row) ** 2
-                + (centroid_col[candidates] - island_col) ** 2
+            before_source = (ratio[source] - 1.0) ** 2
+            after_source = ((load[source] - weight) / target_load[source] - 1.0) ** 2
+            best_other = -1
+            best_gain = -1e-15
+            for j in range(xadj[node], xadj[node + 1]):
+                other = parts[adjncy[j]]
+                if other == source or ratio[other] >= ratio[source]:
+                    continue
+                after_other = ((load[other] + weight) / target_load[other] - 1.0) ** 2
+                gain = (after_source + after_other) - (
+                    before_source + (ratio[other] - 1.0) ** 2
+                )
+                if gain < best_gain or (
+                    best_other >= 0 and gain == best_gain and other < best_other
+                ):
+                    best_gain = gain
+                    best_other = other
+            if best_other >= 0:
+                candidate_node[count] = node
+                candidate_part[count] = best_other
+                candidate_gain[count] = best_gain
+                count += 1
+        if count == 0:
+            break
+        order = np.argsort(candidate_gain[:count], kind="mergesort")
+        moved = False
+        for index in order:
+            node = candidate_node[index]
+            source = parts[node]
+            other = candidate_part[index]
+            stamp += 1
+            taken, stamp = _detach(
+                xadj,
+                adjncy,
+                weights,
+                parts,
+                node,
+                source,
+                mark,
+                queue,
+                stamp,
+                search_limit,
+                out,
             )
-            if distance < best_distance:
-                best_distance = float(distance)
-                best_part = part
-        if best_part < 0:
-            best_part = int(np.argmin(load))
-        assignment[island] = best_part
-        load[best_part] += int(weights[island].sum())
+            if taken < 0:
+                continue
+            weight = 0.0
+            for k in range(taken):
+                weight += weights[out[k]]
+            if weight >= load[source]:
+                continue
+            gain = (
+                ((load[source] - weight) / target_load[source] - 1.0) ** 2
+                + ((load[other] + weight) / target_load[other] - 1.0) ** 2
+                - (load[source] / target_load[source] - 1.0) ** 2
+                - (load[other] / target_load[other] - 1.0) ** 2
+            )
+            if gain >= -1e-15:
+                continue
+            for k in range(taken):
+                parts[out[k]] = other
+            load[source] -= weight
+            load[other] += weight
+            moves += 1
+            moved = True
+            break
+        if not moved:
+            break
+    return moves
 
 
-def _boundary_refine(
-    assignment: np.ndarray,
-    adjacency: list[list[int]],
-    weights: np.ndarray,
-    centroid_row: np.ndarray,
-    centroid_col: np.ndarray,
+def _metis_parts(
+    graph: PartitionGraph,
     n_parts: int,
-) -> None:
-    """Move small adjacent basins toward under-loaded partitions."""
-    target = int(weights.sum()) // n_parts
-    tolerance = int(0.05 * target)
-    max_movable = int(0.25 * target)
-    from_floor = int(0.30 * target)
-    load = np.bincount(assignment, weights=weights, minlength=n_parts).astype(np.int64)
+    targets: np.ndarray,
+    seed: int,
+    imbalance_target: float,
+) -> np.ndarray:
+    """Contiguous METIS from several seeds; the most balanced result is kept.
 
-    for _ in range(weights.size):
-        deficits = target - load
-        under = int(np.argmax(deficits))
-        if deficits[under] <= tolerance:
+    ``graph`` must be connected (one land component, see ``_partition_components``).
+    """
+    total = float(graph.weights.sum())
+    target_load = np.asarray(targets, dtype=np.float64) * total
+    ufactor = max(1, int(round((imbalance_target - 1.0) * 1000)))
+    best = None
+    best_score = None
+    for attempt in range(METIS_SEEDS):
+        parts = _metis(graph, n_parts, targets, seed + attempt, ufactor)
+        load = np.bincount(parts, weights=graph.weights, minlength=n_parts)
+        score = float(np.max(load / target_load))
+        if best_score is None or score < best_score:
+            best, best_score = parts, score
+    assert best is not None
+    return best
+
+
+def _refine(
+    graph: PartitionGraph,
+    parts: np.ndarray,
+    n_parts: int,
+    targets: np.ndarray,
+    imbalance_target: float,
+    extra: np.ndarray | None = None,
+) -> int:
+    """Balance ``parts`` in place by moving boundary nodes of ``graph``.
+
+    ``graph`` holds only shared raster boundaries: a node moves only to a part
+    it touches on the ground, and only when its own part stays connected on the
+    ground.  The links METIS also uses -- tributaries entering consecutive
+    mainstem cells, islands tied to the mainland -- are left out here, or a part
+    could creep along the mainstem from bank to bank, connected only on paper.
+    ``extra`` is load each part holds outside the graph (an opened mainstem
+    above ``P_min``, with its trunk).
+    """
+    if n_parts < 2:
+        return 0
+    if extra is None:
+        extra = np.zeros(n_parts, dtype=np.int64)
+    extra = np.asarray(extra, dtype=np.int64)
+    total = float(graph.weights.sum() + extra.sum())
+    target_load = np.asarray(targets, dtype=np.float64) * total
+    xadj, adjncy, _ = _csr(graph.size, graph.edges, graph.edge_weights)
+    return int(
+        _refine_balance(
+            xadj,
+            adjncy,
+            graph.weights.astype(np.int64),
+            parts,
+            extra,
+            target_load,
+            float(imbalance_target),
+            10 * graph.size,
+            50_000,
+        )
+    )
+
+
+def _subgraph(graph: PartitionGraph, nodes: np.ndarray) -> PartitionGraph:
+    """The graph of ``nodes`` (sorted), renumbered 0 .. nodes.size - 1."""
+    index = np.full(graph.size, -1, dtype=np.int64)
+    index[nodes] = np.arange(nodes.size)
+    keep = (index[graph.edges[:, 0]] >= 0) & (index[graph.edges[:, 1]] >= 0)
+    return PartitionGraph(
+        graph.weights[nodes],
+        graph.rows[nodes],
+        graph.cols[nodes],
+        index[graph.edges[keep]],
+        graph.edge_weights[keep],
+    )
+
+
+def _components(graph: PartitionGraph, keep: np.ndarray | None = None) -> np.ndarray:
+    """Connected component of every node, over the edges ``keep`` selects (all)."""
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+
+    n = graph.size
+    edges = graph.edges if keep is None else graph.edges[keep]
+    matrix = coo_matrix(
+        (np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])), shape=(n, n)
+    )
+    return connected_components(matrix, directed=False)[1]
+
+
+def _absorb_fragments(graph: PartitionGraph, parts: np.ndarray, limit: float) -> int:
+    """Pieces of a part apart from its heaviest piece and lighter than ``limit``
+    join the neighbouring part they share the longest boundary with (in place).
+
+    Tiny tributaries along an opened mainstem can end up so: in their part only
+    through the mainstem, after the parts around them moved.  A piece that is
+    a component of ``graph`` of its own (an island) stays.  Returns the number
+    of nodes moved.
+    """
+    if graph.size == 0:
+        return 0
+    first, second = graph.edges[:, 0], graph.edges[:, 1]
+    n_parts = int(parts.max()) + 1
+    moved_nodes = 0
+    for _ in range(8):
+        same = parts[first] == parts[second]
+        piece = _components(graph, same)
+        weight = np.bincount(piece, weights=graph.weights)
+        part_of_piece = np.empty(weight.size, dtype=np.int64)
+        part_of_piece[piece] = parts
+        order = np.lexsort((-weight, part_of_piece))
+        _, heads = np.unique(part_of_piece[order], return_index=True)
+        candidate = weight < limit
+        candidate[order[heads]] = False
+        cross = ~same
+        pieces = np.concatenate((piece[first[cross]], piece[second[cross]]))
+        beyond = np.concatenate((piece[second[cross]], piece[first[cross]]))
+        others = np.concatenate((parts[second[cross]], parts[first[cross]]))
+        lengths = np.concatenate((graph.edge_weights[cross], graph.edge_weights[cross]))
+        # a fragment joins a piece that stays, so that two fragments never swap;
+        # one that touches only fragments waits for the next round
+        keep = candidate[pieces] & ~candidate[beyond]
+        if not keep.any():
             break
-        rank_weight = np.bincount(
-            assignment,
-            weights=weights,
-            minlength=n_parts,
-        ).astype(np.float64)
-        row_sum = np.bincount(
-            assignment,
-            weights=centroid_row * weights,
-            minlength=n_parts,
-        )
-        col_sum = np.bincount(
-            assignment,
-            weights=centroid_col * weights,
-            minlength=n_parts,
-        )
-        rank_row = np.divide(
-            row_sum, rank_weight, out=np.zeros(n_parts), where=rank_weight > 0
-        )
-        rank_col = np.divide(
-            col_sum, rank_weight, out=np.zeros(n_parts), where=rank_weight > 0
-        )
-
-        best = -1
-        best_distance = np.inf
-        for basin in range(weights.size):
-            source = int(assignment[basin])
-            weight = int(weights[basin])
-            if source == under or load[source] <= target:
-                continue
-            if weight > max_movable:
-                continue
-            if load[under] + weight > target + tolerance:
-                continue
-            if load[source] - weight < from_floor:
-                continue
-            if not any(
-                assignment[neighbour] == under for neighbour in adjacency[basin]
-            ):
-                continue
-            distance = (centroid_row[basin] - rank_row[under]) ** 2 + (
-                centroid_col[basin] - rank_col[under]
-            ) ** 2
-            if distance < best_distance:
-                best_distance = float(distance)
-                best = basin
-        if best < 0:
-            break
-        source = int(assignment[best])
-        assignment[best] = under
-        load[source] -= weights[best]
-        load[under] += weights[best]
+        shared = np.zeros((weight.size, n_parts), dtype=np.int64)
+        np.add.at(shared, (pieces[keep], others[keep]), lengths[keep])
+        absorbed = np.flatnonzero(shared.sum(axis=1) > 0)
+        target = np.full(weight.size, -1, dtype=np.int64)
+        target[absorbed] = np.argmax(shared[absorbed], axis=1)
+        moving = target[piece] >= 0
+        parts[moving] = target[piece[moving]]
+        moved_nodes += int(np.count_nonzero(moving))
+    return moved_nodes
 
 
-def _basin_partition(
-    flw: "Flwdir",
+def _apportion(weights: np.ndarray, n_parts: int) -> np.ndarray:
+    """Parts per component, in proportion to weight, at least one each.
+
+    Largest remainder; ``weights`` are of components that each get a part, so
+    there are at most ``n_parts`` of them.
+    """
+    quota = weights / weights.sum() * n_parts
+    count = np.maximum(np.floor(quota).astype(np.int64), 1)
+    while count.sum() > n_parts:
+        # too many: take one back where the quota is exceeded the most
+        excess = np.where(count > 1, count - quota, -np.inf)
+        count[int(np.argmax(excess))] -= 1
+    while count.sum() < n_parts:
+        count[int(np.argmax(quota - count))] += 1
+    return count
+
+
+def _partition_components(
+    linked: PartitionGraph,
+    ground: PartitionGraph,
     n_parts: int,
     seed: int,
+    imbalance_target: float,
     refine: bool,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    shape = _raster_shape(flw)
-    mask = flw.mask.ravel()
-    basin_ids = flw.basins().ravel()
-    labels, weights, centroid_row, centroid_col, adjacency = _basin_graph(
-        basin_ids.reshape(shape), mask.reshape(shape), shape
-    )
-    parts = np.full(flw.size, -1, dtype=np.int32)
-    if labels.size == 0:
-        return parts, np.zeros(n_parts, dtype=np.int64), basin_ids
+    group: np.ndarray | None = None,
+    n_groups: int = 0,
+) -> np.ndarray:
+    """Equal, connected parts of a graph that may have several components.
 
-    if n_parts == 1:
-        assignment = np.zeros(labels.size, dtype=np.int32)
-    elif labels.size < n_parts:
-        assignment = np.arange(labels.size, dtype=np.int32)
-    else:
-        dominant = int(np.argmax(weights))
-        if weights[dominant] / weights.sum() > 0.70:
-            assignment = _greedy_dominant(weights, n_parts, dominant)
+    ``linked`` decides what touches (the ground with the banks of opened
+    mainstems joined); ``ground`` holds only shared raster boundaries and is
+    used for the balance refinement.  Components of at least half an equal share
+    are land: the parts are apportioned between them by weight, and each is
+    divided by contiguous METIS on its nodes grouped by ``group`` (small
+    tributaries with a larger neighbour; each node its own group when None).
+    Smaller components (islands) take the part of their nearest land node.
+    """
+    from scipy.spatial import cKDTree
+
+    n = linked.size
+    parts = np.full(n, -1, dtype=np.int32)
+    if n == 0:
+        return parts
+    if group is None:
+        group = np.arange(n, dtype=np.int64)
+        n_groups = n
+    component = _components(linked)
+    component_weight = np.bincount(component, weights=linked.weights)
+    share = component_weight.sum() / n_parts
+    land = np.flatnonzero(component_weight >= 0.5 * share)
+    if land.size == 0:
+        land = np.array([int(np.argmax(component_weight))])
+    land = land[np.argsort(-component_weight[land], kind="stable")][:n_parts]
+    counts = _apportion(component_weight[land], n_parts)
+    first_part = 0
+    for comp, count in zip(land, counts):
+        nodes = np.flatnonzero(component == comp)
+        if count == 1:
+            parts[nodes] = first_part
         else:
-            components = _components(adjacency)
-            mainland_index = int(
-                np.argmax([weights[component].sum() for component in components])
+            sub = _subgraph(linked, nodes)
+            # the groups of these nodes, renumbered
+            local_groups, local_group = np.unique(group[nodes], return_inverse=True)
+            coarse = _contract(sub, local_group, local_groups.size)
+            targets = np.full(count, 1.0 / count)
+            coarse_parts = _metis_parts(coarse, count, targets, seed, imbalance_target)
+            parts[nodes] = first_part + coarse_parts[local_group]
+        first_part += count
+    # islands: the part of the nearest land node
+    assigned = np.flatnonzero(parts >= 0)
+    islands = np.flatnonzero(parts < 0)
+    if islands.size:
+        tree = cKDTree(np.column_stack((linked.rows[assigned], linked.cols[assigned])))
+        _, nearest = tree.query(np.column_stack((linked.rows[islands], linked.cols[islands])))
+        # one part per island component, from its member nearest to land
+        island_component = component[islands]
+        distance = np.hypot(
+            linked.rows[islands] - linked.rows[assigned[nearest]],
+            linked.cols[islands] - linked.cols[assigned[nearest]],
+        )
+        order = np.lexsort((islands, distance, island_component))
+        _, first = np.unique(island_component[order], return_index=True)
+        part_of_component = dict(
+            zip(
+                island_component[order][first].tolist(),
+                parts[assigned[nearest[order[first]]]].tolist(),
             )
-            mainland = components[mainland_index]
-            assignment = np.full(labels.size, -1, dtype=np.int32)
-            try:
-                if mainland.size < n_parts:
-                    raise ValueError("mainland has fewer basins than partitions")
-                assignment[mainland] = _metis_component(
-                    adjacency, weights, mainland, n_parts, seed
-                )
-                _assign_islands(
-                    assignment,
-                    components,
-                    mainland_index,
-                    weights,
-                    centroid_row,
-                    centroid_col,
-                    n_parts,
-                    cap_factor=1.5,
-                )
-            except (RuntimeError, ValueError) as error:
-                logger.warning(
-                    "METIS partitioning failed; using the C implementation's "
-                    "round-robin fallback: %s",
-                    error,
-                )
-                assignment = np.arange(labels.size, dtype=np.int32) % n_parts
-        if refine:
-            _boundary_refine(
-                assignment,
-                adjacency,
-                weights,
-                centroid_row,
-                centroid_col,
-                n_parts,
-            )
+        )
+        parts[islands] = [part_of_component[c] for c in island_component.tolist()]
+    if refine and n_parts > 1:
+        targets = np.full(n_parts, 1.0 / n_parts)
+        _refine(ground, parts, n_parts, targets, imbalance_target)
+        _absorb_fragments(linked, parts, FRAGMENT_SHARE * linked.weights.sum() / n_parts)
+    return parts
 
-    lookup = np.full(int(labels[-1]) + 1, -1, dtype=np.int32)
-    lookup[labels] = assignment
-    valid = mask & (basin_ids > 0)
-    parts[valid] = lookup[basin_ids[valid]]
-    load = np.bincount(parts[parts >= 0], minlength=n_parts).astype(np.int64)
-    return parts, load, basin_ids
+
+def _attach_enclaves(
+    graph: PartitionGraph, parts: np.ndarray, rest: np.ndarray, n_rest_parts: int
+) -> None:
+    """Small components that the assigned (dominant) basins cut off from the other
+    basins -- enclaves, strips along their edge -- join the part they share the
+    longest boundary with, so that the parts stay connected on the ground.
+
+    Small is less than half an equal share of the other basins, the size below
+    which a component does not get a part of its own; nothing moves when no
+    component is that large.
+    """
+    sub = _subgraph(graph, rest)
+    component = _components(sub)
+    component_weight = np.bincount(component, weights=sub.weights)
+    small = component_weight < 0.5 * component_weight.sum() / n_rest_parts
+    if small.all():
+        return
+    assigned = parts >= 0
+    first, second = graph.edges[:, 0], graph.edges[:, 1]
+    forward = assigned[first] & ~assigned[second]
+    backward = assigned[second] & ~assigned[first]
+    outside = np.concatenate((second[forward], first[backward]))
+    inside = np.concatenate((first[forward], second[backward]))
+    length = np.concatenate((graph.edge_weights[forward], graph.edge_weights[backward]))
+    local = np.full(graph.size, -1, dtype=np.int64)
+    local[rest] = np.arange(rest.size)
+    touching = component[local[outside]]
+    keep = small[touching]
+    if not keep.any():
+        return
+    # the boundary each small component shares with each part, the longest wins
+    n_parts = int(parts.max()) + 1
+    shared = np.zeros((component_weight.size, n_parts), dtype=np.int64)
+    np.add.at(shared, (touching[keep], parts[inside[keep]]), length[keep])
+    cut_off = np.flatnonzero(shared.sum(axis=1) > 0)
+    part_of = np.argmax(shared[cut_off], axis=1)
+    target = np.full(component_weight.size, -1, dtype=np.int64)
+    target[cut_off] = part_of
+    moved = target[component] >= 0
+    parts[rest[moved]] = target[component[moved]]
+
+
+def assign_basins(
+    graph: PartitionGraph,
+    n_parts: int,
+    *,
+    seed: int = 42,
+    imbalance_target: float = 1.005,
+    refine: bool = True,
+) -> np.ndarray:
+    """Method 1: the part of every basin node.
+
+    A basin heavier than an equal share is a part of its own (the largest
+    first, at most ``n_parts - 1``), together with the small basins it cuts off
+    from the others; the other basins share the other parts.
+    """
+    n = graph.size
+    if n == 0:
+        return np.empty(0, dtype=np.int32)
+    if n_parts == 1:
+        return np.zeros(n, dtype=np.int32)
+    if n < n_parts:
+        return np.arange(n, dtype=np.int32)
+    total = float(graph.weights.sum())
+    order = np.argsort(-graph.weights, kind="stable")
+    dominant = [
+        int(node)
+        for node in order[: n_parts - 1]
+        if graph.weights[node] > total / n_parts
+    ]
+    parts = np.full(n, -1, dtype=np.int32)
+    for index, node in enumerate(dominant):
+        parts[node] = index
+    rest = np.flatnonzero(parts < 0)
+    if dominant:
+        _attach_enclaves(graph, parts, rest, n_parts - len(dominant))
+        rest = np.flatnonzero(parts < 0)
+    sub = _subgraph(graph, rest)
+    parts[rest] = len(dominant) + _partition_components(
+        sub, sub, n_parts - len(dominant), seed, imbalance_target, refine
+    )
+    return parts
+
+
+def _coarsen_tributaries(
+    graph: PartitionGraph,
+    is_tributary: np.ndarray,
+    min_subtree_size: int,
+) -> tuple[np.ndarray, int]:
+    """Group small tributaries with the nearest eligible tributary (graph hops).
+
+    Returns the group of every node and the number of groups; a basin node is a
+    group of its own, an eligible tributary (at least ``min_subtree_size``)
+    starts one, and a smaller tributary joins the eligible one it reaches first
+    through tributary-to-tributary edges (ties by the lower group).  When no
+    tributary is eligible, every tributary is a group of its own.
+    """
+    n = graph.size
+    eligible = np.flatnonzero(is_tributary & (graph.weights >= min_subtree_size))
+    group = np.full(n, -1, dtype=np.int64)
+    non_tributary = np.flatnonzero(~is_tributary)
+    group[non_tributary] = np.arange(non_tributary.size)
+    next_group = non_tributary.size
+    tributaries = np.flatnonzero(is_tributary)
+    if eligible.size == 0:
+        group[tributaries] = next_group + np.arange(tributaries.size)
+        return group, next_group + tributaries.size
+    xadj, adjncy, _ = _csr(n, graph.edges, graph.edge_weights)
+    queue: list[tuple[int, int, int]] = []
+    for offset, node in enumerate(eligible):
+        group[node] = next_group + offset
+        heappush(queue, (0, next_group + offset, int(node)))
+    while queue:
+        hops, owner, node = heappop(queue)
+        if group[node] != owner:
+            continue
+        for neighbour in adjncy[xadj[node] : xadj[node + 1]]:
+            if is_tributary[neighbour] and group[neighbour] < 0:
+                group[neighbour] = owner
+                heappush(queue, (hops + 1, owner, int(neighbour)))
+    unreached = np.flatnonzero(is_tributary & (group < 0))
+    count = next_group + eligible.size
+    group[unreached] = count + np.arange(unreached.size)
+    return group, count + unreached.size
+
+
+def _align_labels(parts: np.ndarray, weights: np.ndarray, hint: np.ndarray, n_parts: int):
+    """Relabel the parts to overlap ``hint`` (another assignment) the most."""
+    if n_parts > 8:
+        return parts
+    overlap = np.zeros((n_parts, n_parts))
+    np.add.at(overlap, (parts, hint), weights)
+    best = max(
+        permutations(range(n_parts)),
+        key=lambda mapping: sum(overlap[part, mapping[part]] for part in range(n_parts)),
+    )
+    return np.asarray(best, dtype=np.int32)[parts]
+
+
+def _split_stem(
+    mine: np.ndarray, tributary_parts: np.ndarray, tributary_position: np.ndarray
+) -> tuple[int, int]:
+    """Trunk and ``P_min`` of one opened mainstem; ``P_min`` is -1 when every
+    tributary is in the trunk.  ``mine`` holds its tributaries, source first."""
+    trunk = int(tributary_parts[mine[0]])
+    transferred = mine[tributary_parts[mine] != trunk]
+    if transferred.size == 0:
+        return trunk, -1
+    return trunk, int(tributary_position[transferred].min())
+
+
+def _stem_tributaries(stem: np.ndarray, position: np.ndarray, n_stems: int):
+    """The tributaries of each opened mainstem, source first."""
+    tributaries = np.flatnonzero(stem >= 0)
+    ordered = tributaries[
+        np.lexsort((tributaries, position[tributaries], stem[tributaries]))
+    ]
+    bounds = np.searchsorted(stem[ordered], np.arange(n_stems + 1))
+    return [ordered[bounds[k] : bounds[k + 1]] for k in range(n_stems)]
+
+
+def _trunk_mainstems(
+    parts: np.ndarray,
+    stem: np.ndarray,
+    position: np.ndarray,
+    stem_lengths: np.ndarray,
+    n_parts: int,
+) -> np.ndarray:
+    """Load of each part from the opened mainstems above ``P_min``, with their trunks."""
+    extra = np.zeros(n_parts, dtype=np.int64)
+    for k, mine in enumerate(_stem_tributaries(stem, position, len(stem_lengths))):
+        if mine.size:
+            trunk, p_min = _split_stem(mine, parts, position)
+            extra[trunk] += int(stem_lengths[k]) if p_min < 0 else p_min
+    return extra
+
+
+def assign_subbasins(
+    graph: PartitionGraph,
+    is_tributary: np.ndarray,
+    position: np.ndarray,
+    n_parts: int,
+    *,
+    stem: np.ndarray | None = None,
+    stem_lengths: np.ndarray | None = None,
+    hint: np.ndarray | None = None,
+    min_subtree_size: int = 100_000,
+    seed: int = 42,
+    imbalance_target: float = 1.005,
+    refine: bool = True,
+) -> np.ndarray:
+    """Method 2: the part of every node, the opened basins' tributaries included.
+
+    ``is_tributary`` marks the tributary subtrees that drain into an opened
+    basin's mainstem, ``stem`` says which mainstem (0 when there is one) and
+    ``position`` gives the mainstem cell each enters (0 at the source);
+    tributaries entering consecutive cells of one mainstem touch, across it.
+    Small tributaries move with the nearest eligible one.  ``hint`` (one part per
+    node, Method 1's) only fixes the part labels.  With ``stem_lengths`` (cells
+    of each mainstem), the parts are balanced once more with each mainstem above
+    ``P_min`` in its trunk's load, as the raster plan assigns it.
+    """
+    is_tributary = np.asarray(is_tributary, dtype=np.bool_)
+    position = np.asarray(position, dtype=np.int64)
+    if stem is None:
+        stem = np.where(is_tributary, 0, -1)
+    stem = np.asarray(stem, dtype=np.int64)
+    linked = graph
+    tributaries = np.flatnonzero(is_tributary)
+    if tributaries.size > 1:
+        ordered = tributaries[
+            np.lexsort((tributaries, position[tributaries], stem[tributaries]))
+        ]
+        same_stem = stem[ordered[:-1]] == stem[ordered[1:]]
+        stem_edges = np.column_stack((ordered[:-1], ordered[1:]))[same_stem]
+        edges, edge_weights = merge_edges(
+            [graph.edges, stem_edges],
+            graph.size,
+            [graph.edge_weights, np.ones(stem_edges.shape[0], dtype=np.int64)],
+        )
+        linked = PartitionGraph(
+            graph.weights, graph.rows, graph.cols, edges, edge_weights
+        )
+    group, n_groups = _coarsen_tributaries(linked, is_tributary, min_subtree_size)
+    parts = _partition_components(
+        linked, graph, n_parts, seed, imbalance_target, refine, group, n_groups
+    )
+    if hint is not None:
+        parts = _align_labels(parts, graph.weights, np.asarray(hint), n_parts)
+    if refine and stem_lengths is not None and n_parts > 1:
+        stem_of_tributary = np.where(is_tributary, stem, -1)
+        extra = _trunk_mainstems(
+            parts, stem_of_tributary, position, np.asarray(stem_lengths), n_parts
+        )
+        _refine(
+            graph,
+            parts,
+            n_parts,
+            np.full(n_parts, 1.0 / n_parts),
+            imbalance_target,
+            extra,
+        )
+        _absorb_fragments(linked, parts, FRAGMENT_SHARE * graph.weights.sum() / n_parts)
+    return parts
+
+
+# ---------------------------------------------------------------------------
+# Rasters
+# ---------------------------------------------------------------------------
 
 
 @njit(cache=True)
@@ -417,491 +1001,156 @@ def _trace_mainstem(
     return np.asarray(stem[::-1], dtype=flw.idxs_ds.dtype)
 
 
-def _seed_empty_rank_centroids(
-    records: list[dict],
-    rank_rows: np.ndarray,
-    rank_cols: np.ndarray,
-    rank_occupied: np.ndarray,
-    recipient_ranks: list[int],
-    cap: np.ndarray,
-    shape: tuple[int, int],
-    min_subtree_size: int,
-) -> None:
-    """Seed empty ranks with spatially separated eligible tributaries."""
-    anchors = [
-        (rank_rows[rank] / shape[0], rank_cols[rank] / shape[1])
-        for rank in range(N_TRUNKS)
-        if rank_occupied[rank]
-    ]
-    used_roots: set[int] = set()
-    for rank in recipient_ranks:
-        if rank_occupied[rank]:
-            continue
-        candidates = [
-            record
-            for record in records
-            if record["root"] not in used_roots
-            and record["size"] >= min_subtree_size
-            and record["size"] <= cap[rank]
-        ]
-        if not candidates:
-            continue
-
-        def separation(record: dict) -> tuple[float, int, int]:
-            row = record["row"] / shape[0]
-            col = record["col"] / shape[1]
-            distance = min(
-                np.hypot(row - anchor_row, col - anchor_col)
-                for anchor_row, anchor_col in anchors
-            )
-            return float(distance), record["size"], record["position"]
-
-        seed = max(candidates, key=separation)
-        rank_rows[rank] = seed["row"]
-        rank_cols[rank] = seed["col"]
-        anchors.append((seed["row"] / shape[0], seed["col"] / shape[1]))
-        used_roots.add(seed["root"])
-
-
-def _tributary_adjacency(
-    records: list[dict],
-    roots: np.ndarray,
-    shape: tuple[int, int],
-) -> list[set[int]]:
-    """Return tributary neighbours across boundaries and along the mainstem."""
-    adjacency = [set() for _ in records]
-    root_to_record = {record["root"]: index for index, record in enumerate(records)}
-    labels = roots.reshape(shape)
-    for first, second in (
-        (labels[:, :-1], labels[:, 1:]),
-        (labels[:-1, :], labels[1:, :]),
-    ):
-        boundary = (first >= 0) & (second >= 0) & (first != second)
-        pairs = np.column_stack((first[boundary], second[boundary]))
-        if pairs.size == 0:
-            continue
-        pairs.sort(axis=1)
-        for first_root, second_root in np.unique(pairs, axis=0):
-            first_index = root_to_record.get(int(first_root))
-            second_index = root_to_record.get(int(second_root))
-            if first_index is None or second_index is None:
-                continue
-            adjacency[first_index].add(second_index)
-            adjacency[second_index].add(first_index)
-
-    ordered = sorted(range(len(records)), key=lambda index: records[index]["position"])
-    for first_index, second_index in zip(ordered[:-1], ordered[1:]):
-        adjacency[first_index].add(second_index)
-        adjacency[second_index].add(first_index)
-    return adjacency
-
-
-def _assign_tributary_records(
-    records: list[dict],
-    adjacency: list[set[int]],
-    load: np.ndarray,
-    rank_rows: np.ndarray,
-    rank_cols: np.ndarray,
-    max_rank: int,
-    shape: tuple[int, int],
-    min_subtree_size: int,
-    imbalance_target: float,
-) -> np.ndarray:
-    """Grow spatially connected tributary regions within the load bound."""
-    mean_load = float(load.sum()) / N_TRUNKS
-    max_load = int(np.floor(mean_load * imbalance_target))
-    cap = np.maximum(max_load - load, 0).astype(np.int64)
-    cap[max_rank] = 0
-    recipient_ranks = [
-        rank for rank in range(N_TRUNKS) if rank != max_rank and cap[rank] > 0
-    ]
-    current_load = load.copy()
-    eligible = {
-        index
-        for index, record in enumerate(records)
-        if record["size"] >= min_subtree_size
-    }
-    assigned: dict[int, int] = {}
-    owned = {rank: set() for rank in recipient_ranks}
-
-    for rank in recipient_ranks:
-        candidates = [
-            index
-            for index in eligible - assigned.keys()
-            if records[index]["size"] <= cap[rank]
-        ]
-        if not candidates:
-            continue
-        seed = min(
-            candidates,
-            key=lambda index: (
-                np.hypot(
-                    (records[index]["row"] - rank_rows[rank]) / shape[0],
-                    (records[index]["col"] - rank_cols[rank]) / shape[1],
-                ),
-                -records[index]["size"],
-                -records[index]["position"],
-            ),
-        )
-        record = records[seed]
-        assigned[seed] = rank
-        owned[rank].add(seed)
-        cap[rank] -= record["size"]
-        current_load[rank] += record["size"]
-        current_load[max_rank] -= record["size"]
-
-    minimum_ratio = max(0.0, 2.0 - imbalance_target)
-    while assigned:
-        if (
-            current_load.max() / mean_load <= imbalance_target
-            and current_load.min() / mean_load >= minimum_ratio
-        ):
-            break
-        progressed = False
-        for rank in sorted(
-            recipient_ranks, key=lambda item: (current_load[item], item)
-        ):
-            frontier: set[int] = set()
-            for index in owned[rank]:
-                frontier.update(adjacency[index])
-            candidates = [
-                index
-                for index in frontier - assigned.keys()
-                if index in eligible and records[index]["size"] <= cap[rank]
-            ]
-            if not candidates:
-                continue
-            selected = min(
-                candidates,
-                key=lambda index: (
-                    np.hypot(
-                        (records[index]["row"] - rank_rows[rank]) / shape[0],
-                        (records[index]["col"] - rank_cols[rank]) / shape[1],
-                    ),
-                    -records[index]["size"],
-                    -records[index]["position"],
-                ),
-            )
-            record = records[selected]
-            assigned[selected] = rank
-            owned[rank].add(selected)
-            cap[rank] -= record["size"]
-            current_load[rank] += record["size"]
-            current_load[max_rank] -= record["size"]
-            progressed = True
-            break
-        if not progressed:
-            break
-
-    for index, rank in assigned.items():
-        records[index]["rank"] = rank
-    return current_load
-
-
-def _partition_tributary_graph(
-    records: list[dict],
-    adjacency: list[set[int]],
-    load: np.ndarray,
-    rank_rows: np.ndarray,
-    rank_cols: np.ndarray,
-    max_rank: int,
-    target: int,
-    shape: tuple[int, int],
-    min_subtree_size: int,
-    imbalance_target: float,
-) -> bool:
-    """Partition eligible tributaries into contiguous, weighted graph regions."""
-    eligible = np.asarray(
-        [
-            index
-            for index, record in enumerate(records)
-            if record["size"] >= min_subtree_size
-        ],
-        dtype=np.int64,
-    )
-    if eligible.size < N_TRUNKS:
-        return False
-
-    weights = np.asarray([record["size"] for record in records], dtype=np.int64)
-    owner = np.full(len(records), -1, dtype=np.int32)
-    queue: list[tuple[int, int, int]] = []
-    for supernode, record_index in enumerate(eligible):
-        owner[record_index] = supernode
-        heappush(queue, (0, supernode, int(record_index)))
-    while queue:
-        distance, supernode, record_index = heappop(queue)
-        if owner[record_index] != supernode:
-            continue
-        for neighbour in adjacency[record_index]:
-            if owner[neighbour] < 0:
-                owner[neighbour] = supernode
-                heappush(queue, (distance + 1, supernode, neighbour))
-    if np.any(owner < 0):
-        raise RuntimeError("Tributary adjacency graph is disconnected.")
-
-    super_weights = np.bincount(owner, weights=weights, minlength=eligible.size).astype(
-        np.int64
-    )
-    super_rows = (
-        np.bincount(
-            owner,
-            weights=np.asarray([record["row"] for record in records]) * weights,
-            minlength=eligible.size,
-        )
-        / super_weights
-    )
-    super_cols = (
-        np.bincount(
-            owner,
-            weights=np.asarray([record["col"] for record in records]) * weights,
-            minlength=eligible.size,
-        )
-        / super_weights
-    )
-    super_adjacency = [set() for _ in eligible]
-    for record_index, neighbours in enumerate(adjacency):
-        first = int(owner[record_index])
-        for neighbour in neighbours:
-            second = int(owner[neighbour])
-            if first != second:
-                super_adjacency[first].add(second)
-                super_adjacency[second].add(first)
-
-    base_load = load.copy()
-    base_load[max_rank] -= int(weights.sum())
-    desired = np.maximum(float(target) - base_load, 1.0)
-    target_weights = desired / desired.sum()
-
-    pymetis = _require_pymetis()
-    ufactor = max(1, int(round((imbalance_target - 1.0) * 1000)))
-    options = pymetis.Options(seed=0, ufactor=ufactor, contig=1)
-    result = pymetis.part_graph(
-        N_TRUNKS,
-        adjacency=[sorted(neighbours) for neighbours in super_adjacency],
-        vweights=super_weights.tolist(),
-        tpwgts=target_weights.tolist(),
-        recursive=False,
-        options=options,
-    )
-    graph_parts = np.asarray(result.vertex_part, dtype=np.int32)
-    graph_load = np.bincount(
-        graph_parts, weights=super_weights, minlength=N_TRUNKS
-    ).astype(np.int64)
-    graph_rows = np.asarray(
-        [
-            np.average(
-                super_rows[graph_parts == part],
-                weights=super_weights[graph_parts == part],
-            )
-            for part in range(N_TRUNKS)
-        ]
-    )
-    graph_cols = np.asarray(
-        [
-            np.average(
-                super_cols[graph_parts == part],
-                weights=super_weights[graph_parts == part],
-            )
-            for part in range(N_TRUNKS)
-        ]
-    )
-    upstream_record = min(eligible, key=lambda index: records[index]["position"])
-    upstream_graph_part = int(graph_parts[owner[upstream_record]])
-
-    best_mapping = None
-    best_score = None
-    mean_load = float(load.sum()) / N_TRUNKS
-    for mapping in permutations(range(N_TRUNKS)):
-        if mapping[upstream_graph_part] != max_rank:
-            continue
-        candidate_load = base_load.copy()
-        spatial_cost = 0.0
-        for graph_part, rank in enumerate(mapping):
-            candidate_load[rank] += graph_load[graph_part]
-            spatial_cost += np.hypot(
-                (graph_rows[graph_part] - rank_rows[rank]) / shape[0],
-                (graph_cols[graph_part] - rank_cols[rank]) / shape[1],
-            )
-        score = (
-            float(candidate_load.max() / mean_load),
-            int(candidate_load.max() - candidate_load.min()),
-            float(spatial_cost),
-        )
-        if best_score is None or score < best_score:
-            best_score = score
-            best_mapping = mapping
-
-    assert best_mapping is not None
-    for record_index, supernode in enumerate(owner):
-        records[record_index]["rank"] = best_mapping[graph_parts[supernode]]
-    return True
-
-
-def _subbasin_partition(
+def _basin_partition(
     flw: "Flwdir",
-    parts: np.ndarray,
-    load: np.ndarray,
+    n_parts: int,
+    seed: int,
+    refine: bool,
+    imbalance_target: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Method 1 on a raster: parts and loads of the cells, basin ids, labels, node parts."""
+    shape = _raster_shape(flw)
+    mask = flw.mask.ravel()
+    basin_ids = flw.basins().ravel()
+    valid = mask & (basin_ids > 0)
+    labels = np.unique(basin_ids[valid]).astype(np.int64)
+    parts = np.full(flw.size, -1, dtype=np.int32)
+    if labels.size == 0:
+        return parts, np.zeros(n_parts, dtype=np.int64), basin_ids, labels, labels
+    lookup = np.full(int(labels[-1]) + 1, -1, dtype=np.int64)
+    lookup[labels] = np.arange(labels.size)
+    nodes = np.full(flw.size, -1, dtype=np.int64)
+    nodes[valid] = lookup[basin_ids[valid]]
+    graph = graph_from_node_raster(nodes.reshape(shape), labels.size)
+    node_parts = assign_basins(
+        graph, n_parts, seed=seed, imbalance_target=imbalance_target, refine=refine
+    )
+    parts[valid] = node_parts[nodes[valid]]
+    load = np.bincount(parts[parts >= 0], minlength=n_parts).astype(np.int64)
+    return parts, load, basin_ids, labels, node_parts
+
+
+def _open_basins(
+    flw: "Flwdir",
+    opened: np.ndarray,
     basin_ids: np.ndarray,
+    labels: np.ndarray,
+    basin_node_parts: np.ndarray,
+    seq_d2u: np.ndarray,
+    upstream: np.ndarray,
     min_subtree_size: int,
     imbalance_target: float,
+    seed: int,
+    refine: bool,
 ) -> PartitionPlan:
-    target = int(np.count_nonzero(parts >= 0)) // N_TRUNKS
-    max_rank = int(np.argmax(load))
-    if load[max_rank] <= target:
-        return _empty_plan(flw, parts, load, basin_ids, "subbasin", max_rank)
-
-    candidate_ids = basin_ids[parts == max_rank]
-    labels, counts = np.unique(candidate_ids[candidate_ids > 0], return_counts=True)
-    if labels.size == 0:
-        return _empty_plan(flw, parts, load, basin_ids, "subbasin", max_rank)
-    dominant_id = int(labels[np.argmax(counts)])
-    dominant_size = int(counts.max())
-    in_dominant = basin_ids == dominant_id
-
-    seq_d2u = core.idxs_seq_dfs(flw.idxs_ds, flw.idxs_pit, flw._mv)
-    upstream = streams.accuflux(
-        flw.idxs_ds,
-        seq_d2u,
-        np.ones(flw.size, dtype=np.int64),
-        -1,
-    )
-    members = np.flatnonzero(in_dominant)
-    pits = members[flw.idxs_ds[members] == members]
-    pit = int(pits[0]) if pits.size else int(members[np.argmax(upstream[members])])
-    mainstem = _trace_mainstem(flw, pit, upstream, in_dominant)
-    on_mainstem = np.zeros(flw.size, dtype=np.bool_)
-    on_mainstem[mainstem] = True
-    mainstem_position = np.full(flw.size, -1, dtype=np.int32)
-    mainstem_position[mainstem] = np.arange(mainstem.size, dtype=np.int32)
-
-    roots = _label_tributaries(
-        flw.idxs_ds,
-        seq_d2u,
-        np.ascontiguousarray(in_dominant),
-        on_mainstem,
-    )
-    roots_found = np.unique(roots[roots >= 0])
-    if roots_found.size == 0:
-        return _empty_plan(flw, parts, load, basin_ids, "subbasin", max_rank)
-
+    """Method 2 with the basins of node numbers ``opened`` opened along their mainstems."""
     shape = _raster_shape(flw)
-    row, col = np.indices(shape)
-    flat_row = row.ravel()
-    flat_col = col.ravel()
-    records = []
-    for root in roots_found:
-        cells = np.flatnonzero(roots == root)
-        inlet = int(flw.idxs_ds[root])
-        records.append(
-            {
-                "root": int(root),
-                "inlet": inlet,
-                "position": int(mainstem_position[inlet]),
-                "cells": cells,
-                "size": int(cells.size),
-                "row": float(flat_row[cells].mean()),
-                "col": float(flat_col[cells].mean()),
-                "rank": -1,
-            }
+    opened_ids = labels[opened]
+    in_opened = np.isin(basin_ids, opened_ids)
+    mainstems = []
+    for basin_id in opened_ids:
+        members = np.flatnonzero(basin_ids == basin_id)
+        pits = members[flw.idxs_ds[members] == members]
+        pit = int(pits[0]) if pits.size else int(members[np.argmax(upstream[members])])
+        mainstems.append(_trace_mainstem(flw, pit, upstream, basin_ids == basin_id))
+    on_mainstem = np.zeros(flw.size, dtype=np.bool_)
+    stem_of_cell = np.full(flw.size, -1, dtype=np.int64)
+    position_of_cell = np.full(flw.size, -1, dtype=np.int64)
+    for k, mainstem in enumerate(mainstems):
+        on_mainstem[mainstem] = True
+        stem_of_cell[mainstem] = k
+        position_of_cell[mainstem] = np.arange(mainstem.size, dtype=np.int64)
+    roots = _label_tributaries(
+        flw.idxs_ds, seq_d2u, np.ascontiguousarray(in_opened), on_mainstem
+    )
+    tributary_roots = np.unique(roots[roots >= 0])
+
+    # nodes: the other basins, then one per tributary; mainstem cells belong to none
+    others = np.flatnonzero(~np.isin(np.arange(labels.size), opened))
+    basin_lookup = np.full(int(labels[-1]) + 1, -1, dtype=np.int64)
+    basin_lookup[labels[others]] = np.arange(others.size)
+    nodes = np.full(flw.size, -1, dtype=np.int64)
+    in_basin = (basin_ids > 0) & flw.mask.ravel() & ~in_opened
+    nodes[in_basin] = basin_lookup[basin_ids[in_basin]]
+    tributary_cells = roots >= 0
+    nodes[tributary_cells] = others.size + np.searchsorted(
+        tributary_roots, roots[tributary_cells]
+    )
+    n_nodes = others.size + tributary_roots.size
+    graph = graph_from_node_raster(nodes.reshape(shape), n_nodes)
+    inlets = flw.idxs_ds[tributary_roots]
+    is_tributary = np.zeros(n_nodes, dtype=np.bool_)
+    is_tributary[others.size :] = True
+    stem = np.full(n_nodes, -1, dtype=np.int64)
+    stem[others.size :] = stem_of_cell[inlets]
+    position = np.full(n_nodes, -1, dtype=np.int64)
+    position[others.size :] = position_of_cell[inlets]
+    lookup_all = np.full(int(labels[-1]) + 1, -1, dtype=np.int64)
+    lookup_all[labels] = np.arange(labels.size)
+    hint = np.empty(n_nodes, dtype=np.int64)
+    hint[: others.size] = basin_node_parts[others]
+    hint[others.size :] = basin_node_parts[lookup_all[basin_ids[tributary_roots]]]
+    node_parts = assign_subbasins(
+        graph,
+        is_tributary,
+        position,
+        N_TRUNKS,
+        stem=stem,
+        stem_lengths=np.array([mainstem.size for mainstem in mainstems]),
+        hint=hint,
+        min_subtree_size=min_subtree_size,
+        seed=seed,
+        imbalance_target=imbalance_target,
+        refine=refine,
+    )
+
+    # per opened basin: the trunk holds its most upstream tributary; P_min is where
+    # the first other part enters, and the mainstem above it stays with the trunk
+    # (tributary nodes are numbered in root order, which breaks ties in position)
+    tributary_parts = node_parts[others.size :]
+    tributary_position = position[others.size :]
+    sizes = graph.weights[others.size :]
+    stem_tributaries = _stem_tributaries(
+        stem[others.size :], tributary_position, len(mainstems)
+    )
+    refined = np.full(flw.size, -1, dtype=np.int32)
+    valid = nodes >= 0
+    refined[valid] = node_parts[nodes[valid]]
+    stems = []
+    for k, mainstem in enumerate(mainstems):
+        mine = stem_tributaries[k]
+        if mine.size == 0:
+            # a basin that is its mainstem alone: whole, in its Method 1 part
+            refined[mainstem] = int(basin_node_parts[opened[k]])
+            continue
+        trunk, p_min = _split_stem(mine, tributary_parts, tributary_position)
+        if p_min < 0:
+            refined[mainstem] = trunk
+            continue
+        refined[mainstem[:p_min]] = trunk
+        refined[mainstem[p_min:]] = MAINSTEM
+        cut = mine[tributary_position[mine] >= p_min]
+        cut_outlets = tributary_roots[cut].astype(flw.idxs_ds.dtype)
+        predecessor = int(mainstem[p_min - 1]) if p_min > 0 else -1
+        basin_size = int(np.count_nonzero(basin_ids == opened_ids[k]))
+        accounted = mainstem.size - p_min + int(sizes[cut].sum())
+        if predecessor >= 0:
+            accounted += int(upstream[predecessor])
+        if accounted != basin_size:
+            raise RuntimeError(
+                "Subbasin partition does not account for every opened-basin cell: "
+                f"{accounted} != {basin_size}."
+            )
+        stems.append(
+            FifthRegion(
+                mainstem=mainstem[p_min:],
+                predecessor=predecessor,
+                cut_outlets=cut_outlets,
+                cut_inlets=flw.idxs_ds[cut_outlets].astype(flw.idxs_ds.dtype),
+                cut_ranks=tributary_parts[cut].astype(np.int8),
+                trunk=trunk,
+            )
         )
-    records.sort(key=lambda record: (-record["size"], -record["position"]))
-
-    rank_rows = np.full(N_TRUNKS, 0.5 * shape[0], dtype=np.float64)
-    rank_cols = np.full(N_TRUNKS, 0.5 * shape[1], dtype=np.float64)
-    rank_occupied = np.zeros(N_TRUNKS, dtype=np.bool_)
-    for rank in range(N_TRUNKS):
-        cells = np.flatnonzero(parts == rank)
-        if cells.size:
-            rank_rows[rank] = flat_row[cells].mean()
-            rank_cols[rank] = flat_col[cells].mean()
-            rank_occupied[rank] = True
-
-    mean_load = float(load.sum()) / N_TRUNKS
-    max_load = int(np.floor(mean_load * imbalance_target))
-    cap = np.maximum(max_load - load, 0).astype(np.int64)
-    cap[max_rank] = 0
-    recipient_ranks = [
-        rank for rank in range(N_TRUNKS) if rank != max_rank and cap[rank] > 0
-    ]
-    _seed_empty_rank_centroids(
-        records,
-        rank_rows,
-        rank_cols,
-        rank_occupied,
-        recipient_ranks,
-        cap,
-        shape,
-        min_subtree_size,
-    )
-    adjacency = _tributary_adjacency(records, roots, shape)
-    graph_partitioned = _partition_tributary_graph(
-        records,
-        adjacency,
-        load,
-        rank_rows,
-        rank_cols,
-        max_rank,
-        target,
-        shape,
-        min_subtree_size,
-        imbalance_target,
-    )
-    if not graph_partitioned:
-        _assign_tributary_records(
-            records,
-            adjacency,
-            load,
-            rank_rows,
-            rank_cols,
-            max_rank,
-            shape,
-            min_subtree_size,
-            imbalance_target,
-        )
-
-    extracted = [
-        record
-        for record in records
-        if record["rank"] >= 0
-        and record["rank"] != max_rank
-        and record["size"] >= min_subtree_size
-    ]
-    if not extracted:
-        return _empty_plan(flw, parts, load, basin_ids, "subbasin", max_rank)
-    p_min = min(record["position"] for record in extracted)
-
-    refined = parts.copy()
-    for record in records:
-        if record["rank"] >= 0 and record["position"] >= p_min:
-            refined[record["cells"]] = record["rank"]
-    refined[mainstem[p_min:]] = MAINSTEM
-    refined[mainstem[:p_min]] = max_rank
-
-    cuts = sorted(
-        (record for record in records if record["position"] >= p_min),
-        key=lambda record: record["position"],
-    )
-    cut_outlets = np.asarray(
-        [record["root"] for record in cuts], dtype=flw.idxs_ds.dtype
-    )
-    cut_inlets = np.asarray(
-        [record["inlet"] for record in cuts], dtype=flw.idxs_ds.dtype
-    )
-    cut_ranks = np.asarray(
-        [record["rank"] if record["rank"] >= 0 else max_rank for record in cuts],
-        dtype=np.int8,
-    )
-    predecessor = int(mainstem[p_min - 1]) if p_min > 0 else -1
-
-    accounted = mainstem.size - p_min + sum(record["size"] for record in cuts)
-    if predecessor >= 0:
-        accounted += int(upstream[predecessor])
-    if accounted != dominant_size:
-        raise RuntimeError(
-            "Subbasin partition does not account for every dominant-basin cell: "
-            f"{accounted} != {dominant_size}."
-        )
-
     final_load = np.bincount(
         refined[(refined >= 0) & (refined < N_TRUNKS)], minlength=N_TRUNKS
     ).astype(np.int64)
@@ -910,13 +1159,59 @@ def _subbasin_partition(
         loads=final_load,
         basin_ids=basin_ids.reshape(flw.shape),
         level="subbasin",
-        cut_outlets=cut_outlets,
-        cut_inlets=cut_inlets,
-        cut_ranks=cut_ranks,
-        mainstem=mainstem[p_min:],
-        predecessor=predecessor,
-        max_rank=max_rank,
+        stems=tuple(stems),
     )
+
+
+def _subbasin_partition(
+    flw: "Flwdir",
+    parts: np.ndarray,
+    load: np.ndarray,
+    basin_ids: np.ndarray,
+    labels: np.ndarray,
+    basin_node_parts: np.ndarray,
+    min_subtree_size: int,
+    imbalance_target: float,
+    seed: int,
+    refine: bool,
+) -> PartitionPlan:
+    """Method 2 on a raster: open the largest basins while the parts are unequal."""
+    if labels.size == 0:
+        return _empty_plan(flw, parts, load, basin_ids, "subbasin")
+    valid = parts >= 0
+    weights = np.bincount(np.searchsorted(labels, basin_ids[valid]), minlength=labels.size)
+    share = float(np.count_nonzero(valid)) / N_TRUNKS
+    order = np.argsort(-weights, kind="stable")
+    if weights[order[0]] <= imbalance_target * share:
+        # every basin fits a part whole: Method 1 is already the subbasin partition
+        return _empty_plan(flw, parts, load, basin_ids, "subbasin")
+    seq_d2u = core.idxs_seq_dfs(flw.idxs_ds, flw.idxs_pit, flw._mv)
+    upstream = streams.accuflux(
+        flw.idxs_ds, seq_d2u, np.ones(flw.size, dtype=np.int64), -1
+    )
+    best = None
+    best_ratio = np.inf
+    for n_opened in range(1, min(MAX_OPENED_BASINS, labels.size) + 1):
+        plan = _open_basins(
+            flw,
+            order[:n_opened],
+            basin_ids,
+            labels,
+            basin_node_parts,
+            seq_d2u,
+            upstream,
+            min_subtree_size,
+            imbalance_target,
+            seed,
+            refine,
+        )
+        ratio = float(plan.loads.max() / max(plan.loads.mean(), 1))
+        if ratio < best_ratio - 1e-12:
+            best, best_ratio = plan, ratio
+        if ratio <= imbalance_target:
+            break
+    assert best is not None
+    return best
 
 
 def _empty_plan(
@@ -925,20 +1220,12 @@ def _empty_plan(
     load: np.ndarray,
     basin_ids: np.ndarray,
     level: str,
-    max_rank: int = -1,
 ) -> PartitionPlan:
-    empty = np.empty(0, dtype=flw.idxs_ds.dtype)
     return PartitionPlan(
         parts=parts.reshape(flw.shape),
         loads=load,
         basin_ids=basin_ids.reshape(flw.shape),
         level=level,
-        cut_outlets=empty,
-        cut_inlets=empty.copy(),
-        cut_ranks=np.empty(0, dtype=np.int8),
-        mainstem=empty.copy(),
-        predecessor=-1,
-        max_rank=max_rank,
     )
 
 
@@ -950,7 +1237,7 @@ def partition_plan(
     seed: int = 42,
     refine: bool = True,
     min_subtree_size: int = 100_000,
-    imbalance_target: float = 1.05,
+    imbalance_target: float = 1.005,
 ) -> PartitionPlan:
     """Build the full FlowTopo partition and merge plan."""
     if level not in ("basin", "subbasin"):
@@ -964,7 +1251,9 @@ def partition_plan(
     if imbalance_target < 1:
         raise ValueError("imbalance_target must be at least 1")
 
-    parts, load, basin_ids = _basin_partition(flw, n_parts, seed, refine)
+    parts, load, basin_ids, labels, node_parts = _basin_partition(
+        flw, n_parts, seed, refine, imbalance_target
+    )
     if level == "basin":
         return _empty_plan(flw, parts, load, basin_ids, level)
     return _subbasin_partition(
@@ -972,8 +1261,12 @@ def partition_plan(
         parts,
         load,
         basin_ids,
+        labels,
+        node_parts,
         min_subtree_size,
         imbalance_target,
+        seed,
+        refine,
     )
 
 

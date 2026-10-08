@@ -857,7 +857,7 @@ class FlwdirRaster(Flwdir):
         partition_level: Literal["basin", "subbasin"] = "subbasin",
         start_method: str = "spawn",
         partition_min_subtree_size: int = 100_000,
-        partition_imbalance_target: float = 1.05,
+        partition_imbalance_target: float = 1.005,
     ) -> np.ndarray:
         """Return the upstream-area raster for the flow directions.
 
@@ -886,7 +886,7 @@ class FlwdirRaster(Flwdir):
         partition_min_subtree_size : int, optional
             Smallest Method 2 tributary subtree, by default 100,000 cells.
         partition_imbalance_target : float, optional
-            Maximum-to-mean trunk-load target, by default 1.05.
+            Maximum-to-mean trunk-load target, by default 1.005.
 
         Returns
         -------

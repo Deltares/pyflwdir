@@ -207,12 +207,13 @@ def accuflux(
                 )
             raise RuntimeError(message) from error
 
-        if plan.mainstem.size:
+        # one fifth region per opened basin; they lie in different basins, so any order
+        for stem in plan.stems:
             streams.accuflux_subbasin_mainstem(
-                plan.mainstem,
-                plan.predecessor,
-                plan.cut_outlets,
-                plan.cut_inlets,
+                stem.mainstem,
+                stem.predecessor,
+                stem.cut_outlets,
+                stem.cut_inlets,
                 data,
                 accu,
                 nodata,
