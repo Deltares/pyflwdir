@@ -314,8 +314,11 @@ def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit,
     are too large to explore (``node`` holds the body together).
 
     ``mark`` holds stamps: ``stamp`` for ``node``, ``stamp + k`` for the k-th
-    component of this call.  A search that meets an earlier component of this
-    call is part of it; only a component left unexplored can be met that way.
+    component of this call, ``-stamp`` for a same-part neighbour of ``node`` not
+    reached yet.  A search that meets an earlier component of this call is part
+    of it; only a component left unexplored can be met that way.  The first
+    search stops as soon as it has reached every same-part neighbour: then
+    ``node`` holds nothing apart and leaves alone.
     """
     base = stamp
     mark[node] = base
@@ -326,8 +329,10 @@ def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit,
     for j in range(xadj[node], xadj[node + 1]):
         if parts[adjncy[j]] == part:
             same += 1
+            mark[adjncy[j]] = -base
     if same <= 1:
         return 1, base
+    found = 0
     degree = xadj[node + 1] - xadj[node]
     begins = np.empty(degree + 1, dtype=np.int64)
     ends = np.empty(degree + 1, dtype=np.int64)
@@ -345,6 +350,8 @@ def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit,
         tail = 0
         queue[tail] = start
         tail += 1
+        if mark[start] == -base:
+            found += 1
         mark[start] = own
         visited = 0
         merged = False
@@ -369,11 +376,16 @@ def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit,
                 if seen > base and seen < own:
                     merged = True
                     break
+                if seen == -base:
+                    found += 1
                 mark[neighbour] = own
                 queue[tail] = neighbour
                 tail += 1
             if merged:
                 break
+            if n_components == 1 and found == same:
+                # every same-part neighbour is reached: node holds nothing apart
+                return 1, own
         if merged or too_large:
             # (part of) the body: its nodes are not taken
             count = begin
@@ -456,8 +468,9 @@ def _refine_balance(
     ``adjncy``) whose move lowers that sum the most, and makes the moves in
     that order, each checked again as it is made (the node still in its part
     and next to the other, the other still lighter, the sum still lowered);
-    after each move, it follows the boundary on: the moved nodes' neighbours
-    left in the part try the same part next.  A node whose departure would cut
+    after each move, it follows the boundary on, first in first out, so that
+    the boundary moves as a front: the moved nodes' neighbours left in the
+    part try the same part next.  A node whose departure would cut
     a peninsula off its part (``link_xadj``, ``link_adjncy``) takes the
     peninsula with it (``_detach``), so that both parts stay connected; a move
     that would cut the part's body in two is not made.  Load can so pass on
@@ -473,7 +486,7 @@ def _refine_balance(
     mark = np.zeros(n, dtype=np.int64)
     queue = np.empty(n, dtype=np.int64)
     out = np.empty(n, dtype=np.int64)
-    stack = np.empty(n, dtype=np.int64)
+    stack = np.empty(n + 1, dtype=np.int64)
     seen = np.zeros(n, dtype=np.int64)
     stamp = np.int64(1)
     sweep = 0
@@ -522,14 +535,16 @@ def _refine_balance(
         for index in order:
             if moves >= max_moves or done:
                 break
-            top = 0
-            stack[top] = candidate_node[index]
-            top += 1
+            head = 0
+            tail = 0
+            stack[tail] = candidate_node[index]
+            tail += 1
+            seen[candidate_node[index]] = sweep
             other = candidate_part[index]
             source = parts[candidate_node[index]]
-            while top > 0 and moves < max_moves:
-                top -= 1
-                node = stack[top]
+            while head < tail and moves < max_moves:
+                node = stack[head]
+                head += 1
                 if parts[node] != source or other == source:
                     continue
                 if load[other] / target_load[other] >= load[source] / target_load[source]:
@@ -559,8 +574,8 @@ def _refine_balance(
                         neighbour = adjncy[j]
                         if parts[neighbour] == source and seen[neighbour] != sweep:
                             seen[neighbour] = sweep
-                            stack[top] = neighbour
-                            top += 1
+                            stack[tail] = neighbour
+                            tail += 1
         if not moved:
             break
     return moves
@@ -580,7 +595,9 @@ def _metis_parts(
     near enough for the refinement -- the one with the shortest boundary between
     the parts is kept; when there is none, the most balanced.  With ``contig``,
     ``graph`` must be connected (one land component, see
-    ``_partition_components``).
+    ``_partition_components``): results with every part one piece come first,
+    and the pieces METIS leaves apart (it may, with very unequal weights) join
+    the neighbouring part they share the longest boundary with.
     """
     if graph.size <= n_parts:
         return np.arange(graph.size, dtype=np.int32)
@@ -593,12 +610,26 @@ def _metis_parts(
         parts, cut = _metis(graph, n_parts, targets, seed + attempt, ufactor, contig)
         load = np.bincount(parts, weights=graph.weights, minlength=n_parts)
         n_empty = int(np.count_nonzero(np.bincount(parts, minlength=n_parts) == 0))
+        apart = _pieces_apart(graph, parts) if contig else 0
         ratio = float(np.max(load / target_load))
-        score = (n_empty, 0, cut, ratio) if ratio <= METIS_SLACK else (n_empty, 1, ratio, cut)
+        score = (
+            (apart, n_empty, 0, cut, ratio)
+            if ratio <= METIS_SLACK
+            else (apart, n_empty, 1, ratio, cut)
+        )
         if best_score is None or score < best_score:
             best, best_score = parts, score
     assert best is not None
+    if best_score[0]:
+        _absorb_fragments(graph, best, np.inf)
     return _fill_empty_parts(graph, best, n_parts)
+
+
+def _pieces_apart(graph: PartitionGraph, parts: np.ndarray) -> int:
+    """The pieces of the parts beyond one per part, over ``graph``'s edges."""
+    same = parts[graph.edges[:, 0]] == parts[graph.edges[:, 1]]
+    piece = _components(graph, same)
+    return int(np.unique(piece).size - np.unique(parts).size)
 
 
 def _fill_empty_parts(graph: PartitionGraph, parts: np.ndarray, n_parts: int) -> np.ndarray:
@@ -1055,7 +1086,8 @@ def _partition_components(
     as light as can be (``_apportion``), and contiguous METIS cuts each mass
     into equal parts, on its nodes grouped by ``group`` (small tributaries with
     a larger neighbour; each node its own group when None) with its islands
-    tied on.  The components of ``land_nodes`` (a node mask) are land first,
+    tied on; a node heavier than an equal share of its mass is a part of its
+    own first (``_divide``).  The components of ``land_nodes`` (a node mask) are land first,
     whatever their weight, and never move.  When no component is land (an
     archipelago), METIS divides the components, each linked to its nearest.
     Nodes must have cells and a centroid.
@@ -1103,8 +1135,15 @@ def _partition_components(
     first = 0
     for m, k in zip(land, counts):
         nodes = np.flatnonzero(mass == m)
-        targets = np.full(k, 1.0 / k)
-        parts[nodes] = first + _carve(tied, nodes, group, targets, seed, imbalance_target)
+        if k > 1 and linked.weights[nodes].max() > linked.weights[nodes].sum() / k:
+            # a node heavier than an equal share of its mass: a part of its own,
+            # and what it cuts off goes with it, as in Method 1
+            parts[nodes] = first + _divide(
+                _subgraph(tied, nodes), k, seed, imbalance_target, False, group[nodes]
+            )
+        else:
+            targets = np.full(k, 1.0 / k)
+            parts[nodes] = first + _carve(tied, nodes, group, targets, seed, imbalance_target)
         first += k
     return _balance(linked, ground, parts, n_parts, imbalance_target, refine, pinned)
 
@@ -1209,6 +1248,25 @@ def assign_basins(
         return np.zeros(n, dtype=np.int32)
     if n < n_parts:
         return np.arange(n, dtype=np.int32)
+    return _divide(graph, n_parts, seed, imbalance_target, refine)
+
+
+def _divide(
+    graph: PartitionGraph,
+    n_parts: int,
+    seed: int,
+    imbalance_target: float,
+    refine: bool,
+    group: np.ndarray | None = None,
+) -> np.ndarray:
+    """``n_parts`` parts of ``graph``: a node heavier than an equal share is a
+    part of its own (the largest first, at most ``n_parts - 1``), with the
+    components it cuts off from the others that get no part of their own
+    (``_attach_enclaves``); the other nodes share the other parts
+    (``_partition_components``, ``group`` as there)."""
+    n = graph.size
+    if n <= n_parts:
+        return np.arange(n, dtype=np.int32)
     total = float(graph.weights.sum())
     order = np.argsort(-graph.weights, kind="stable")
     dominant = [
@@ -1232,6 +1290,7 @@ def assign_basins(
         seed,
         imbalance_target,
         refine,
+        group=None if group is None else group[rest],
         land_nodes=np.isin(rest, kept) if kept.size else None,
     )
     return parts

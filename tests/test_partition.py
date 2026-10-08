@@ -768,6 +768,41 @@ def test_a_basin_that_touches_only_the_mainstem_is_joined_across_it():
 
 
 @pytest.mark.unit
+def test_a_metis_part_left_in_two_pieces_is_joined_up():
+    pytest.importorskip("pymetis")
+    weights = np.array([5, 2, 1, 1, 8, 7, 4, 1, 12, 7], dtype=np.int64)
+    edges = np.array([[0, 1], [1, 4], [2, 6], [3, 4], [4, 6], [4, 9], [5, 8], [5, 9], [7, 9]])
+    graph = partition.PartitionGraph(
+        weights, np.zeros(10), np.arange(10, dtype=np.float64), edges,
+        np.array([1, 1, 3, 2, 2, 2, 9, 1, 1], dtype=np.int64),
+    )
+    for refine in (True, False):
+        parts = partition.assign_basins(graph, 4, seed=42, refine=refine)
+        assert connected_parts(parts, edges)
+
+
+@pytest.mark.unit
+def test_a_node_heavier_than_its_share_of_a_land_mass_is_a_part_of_its_own():
+    pytest.importorskip("pymetis")
+    # a land mass of 30 nodes around a heavy middle node that cuts it in two
+    # (left 0..9, right 11..20, below 21..29 touching only the middle node),
+    # and three parts: the heavy node alone, its enclave with it, each side one
+    weights = np.r_[np.ones(10), 100, np.ones(10), np.ones(9)].astype(np.int64)
+    edges = np.array(
+        [[i, i + 1] for i in range(9)] + [[9, 10], [10, 11]]
+        + [[i, i + 1] for i in range(11, 20)] + [[10, 21]] + [[i, i + 1] for i in range(21, 29)]
+    )
+    graph = partition.PartitionGraph(
+        weights, np.zeros(30), np.arange(30, dtype=np.float64), edges,
+        np.ones(edges.shape[0], dtype=np.int64),
+    )
+    parts = partition._partition_components(graph, graph, 3, 42, 1.005, True)
+    assert connected_parts(parts, edges)
+    assert np.unique(parts[:10]).size == 1 and np.unique(parts[11:21]).size == 1
+    assert len({parts[0], parts[10], parts[11]}) == 3 and np.all(parts[21:] == parts[10])
+
+
+@pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()
     with pytest.raises(ValueError, match="requires n_parts=4"):
