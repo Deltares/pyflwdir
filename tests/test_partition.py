@@ -833,6 +833,25 @@ def test_a_long_chain_of_cell_less_nodes_follows_its_one_live_node():
 
 
 @pytest.mark.unit
+def test_a_group_a_dominant_node_cuts_is_carved_in_pieces():
+    pytest.importorskip("pymetis")
+    # 34 tributaries along one stem, the first one dominant; the only ground
+    # edge joins it to node 18, so without it the small ones group across a gap
+    weights = np.full(34, 10, dtype=np.int64)
+    weights[0], weights[1], weights[18] = 1000, 1, 1
+    ground = np.array([[0, 18]])
+    graph = partition.PartitionGraph(
+        weights, np.zeros(34), np.arange(34, dtype=np.float64), ground, np.ones(1, dtype=np.int64)
+    )
+    banks = np.column_stack((np.arange(33), np.arange(1, 34)))
+    for refine in (True, False):
+        parts = partition.assign_subbasins(
+            graph, np.ones(34, dtype=bool), np.arange(34), 4, refine=refine
+        )
+        assert connected_parts(parts, np.concatenate((ground, banks)))
+
+
+@pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()
     with pytest.raises(ValueError, match="requires n_parts=4"):

@@ -943,7 +943,8 @@ def _follow_neighbours(graph: PartitionGraph, parts: np.ndarray, fill: int = 0) 
         return
     xadj, adjncy, _ = _csr(graph.size, graph.edges, graph.edge_weights)
     frontier = np.flatnonzero(~missing)
-    while frontier.size and missing.any():
+    remaining = int(missing.sum())
+    while frontier.size and remaining:
         starts = xadj[frontier]
         counts = xadj[frontier + 1] - starts
         offsets = np.repeat(starts - np.cumsum(counts) + counts, counts) + np.arange(
@@ -957,6 +958,7 @@ def _follow_neighbours(graph: PartitionGraph, parts: np.ndarray, fill: int = 0) 
         reached, first = np.unique(nodes[order], return_index=True)
         parts[reached] = given[order][first]
         missing[reached] = False
+        remaining -= reached.size
         frontier = reached
     parts[missing] = fill
 
@@ -1028,12 +1030,18 @@ def _carve(
     imbalance_target: float,
 ) -> np.ndarray:
     """Contiguous METIS of ``nodes`` (connected in ``graph``), grouped by
-    ``group``, into ``targets.size`` pieces of those shares."""
+    ``group``, into ``targets.size`` pieces of those shares.  A group is split
+    into its pieces connected among ``nodes`` (a dominant node taken out can cut
+    one), so that every coarse node is one piece."""
     if targets.size == 1:
         return np.zeros(nodes.size, dtype=np.int32)
     sub = _subgraph(graph, nodes)
-    local_groups, local_group = np.unique(group[nodes], return_inverse=True)
-    coarse = _contract(sub, local_group, local_groups.size)
+    local = group[nodes]
+    piece = _components(sub, local[sub.edges[:, 0]] == local[sub.edges[:, 1]])
+    # numbered by group first: a group in one piece keeps its place for METIS
+    keys, local_group = np.unique(np.column_stack((local, piece)), axis=0, return_inverse=True)
+    local_group = local_group.ravel()
+    coarse = _contract(sub, local_group, keys.shape[0])
     return _metis_parts(coarse, targets.size, targets, seed, imbalance_target)[local_group]
 
 
