@@ -65,6 +65,12 @@ unreleased
   accumulation runs CFDS threads inside the four processes, injects every cut
   inflow at its mainstem inlet and then walks the fifth region once. Install
   ``pyflwdir[partition]`` to enable the optional ``pymetis`` backend (#85)
+* the subbasin level opens as few basins as the balance needs: each round
+  tries the heaviest whole basins in or beside the parts over the target and
+  the lightest part (at most ``OPEN_TRIALS``, the heaviest first, stopping at
+  the first within the target), and keeps the best only when it lowers
+  max/mean by ``OPEN_MIN_GAIN`` or, the heaviest part no heavier, the
+  overload by as much
 
 0.5.12 (01-07-2026)
 *******************
