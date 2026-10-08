@@ -622,6 +622,21 @@ def test_basins_cut_off_by_a_dominant_basin_without_a_part_join_it():
 
 
 @pytest.mark.unit
+def test_an_archipelago_a_dominant_basin_encloses_joins_it_but_three():
+    pytest.importorskip("pymetis")
+    # a dominant basin around ten one-cell basins: three keep parts, seven join it
+    weights = np.array([490] + [1] * 10, dtype=np.int64)
+    edges = np.column_stack((np.zeros(10, dtype=np.int64), np.arange(1, 11)))
+    graph = partition.PartitionGraph(
+        weights, np.zeros(11), np.arange(11, dtype=np.float64), edges,
+        np.ones(10, dtype=np.int64),
+    )
+    parts = partition.assign_basins(graph, 4)
+    assert np.array_equal(np.sort(np.bincount(parts, weights=weights)), [1, 1, 1, 497])
+    assert connected_parts(parts, edges)
+
+
+@pytest.mark.unit
 def test_a_cell_less_tributary_keeps_its_banks_joined():
     pytest.importorskip("pymetis")
     weights = np.array([24, 2, 0, 1] + [2] * 31, dtype=np.int64)

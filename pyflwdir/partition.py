@@ -1060,7 +1060,8 @@ def _attach_enclaves(
     """Components of the other basins that the assigned (dominant) basins cut off
     from the land -- enclaves, strips along their edge -- and that get no part of
     their own join the part they share the longest boundary with, so that every
-    part stays connected on the ground.  Nothing moves in an archipelago.
+    part stays connected on the ground.  When none is land (an archipelago), the
+    ``n_rest_parts`` largest keep parts of their own.
     """
     sub = _subgraph(graph, rest)
     component = _components(sub)
@@ -1068,7 +1069,7 @@ def _attach_enclaves(
     capacity = np.bincount(component, minlength=component_weight.size)
     land = _choose_land(component_weight, capacity, n_rest_parts)
     if land.size == 0:
-        return
+        land = np.argsort(-component_weight, kind="stable")[:n_rest_parts]
     small = np.ones(component_weight.size, dtype=np.bool_)
     small[land] = False
     assigned = parts >= 0
