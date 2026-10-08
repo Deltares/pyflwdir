@@ -522,8 +522,8 @@ def test_method_2_tries_basins_in_or_beside_the_overloaded_and_lightest_parts(mo
         ends = [k for k in range(loads.size) if loads[k] > share * 1.005] + [int(np.argmin(loads))]
         assert _in_or_beside(basin.basin_ids == labels[opened[-1]], np.isin(kept.parts, ends))
     for size in {len(opened) for opened, _ in tried}:
-        # in or beside every part over the target and the lightest: at most 4 x 2
-        assert sum(len(opened) == size for opened, _ in tried) <= 8
+        # at most OPEN_TRIALS a round, the heaviest of those in or beside
+        assert sum(len(opened) == size for opened, _ in tried) <= partition.OPEN_TRIALS
 
 
 @pytest.mark.unit

@@ -76,6 +76,10 @@ OPEN_MIN_GAIN = 0.01
 """Method 2 keeps an opened basin only when it lowers the heaviest subregion
 by this much of the mean (max/mean) or more."""
 
+OPEN_TRIALS = 4
+"""Of the candidates of a round, Method 2 tries at most this many, the heaviest
+first, and stops at the first that brings the plan within the target."""
+
 ARCHIPELAGO_NEIGHBOURS = 4
 """Without land, each component is linked to this many nearest for METIS; in
 the balance refinement, a node of an island may move to the part of this many
@@ -1846,7 +1850,9 @@ def _subbasin_partition(
     in the lightest part, the heaviest, which it cannot grow around, and the
     heaviest bordering it (as a basin that walls off a piece of land).  A basin
     heavier than an equal share in a part over the target can never be
-    balanced whole, and the heaviest such is then the only one tried.  The best
+    balanced whole, and the heaviest such is then the only one tried.  They are tried the
+    heaviest first, at most ``OPEN_TRIALS``, and a round stops at the first
+    that brings the plan within the target.  The best
     has the lowest max/mean, then the least overload (``_overload``: how much
     the parts over the mean exceed it).  It is kept only when it lowers
     max/mean by ``OPEN_MIN_GAIN`` or more, or leaves the heaviest part no
@@ -1911,6 +1917,8 @@ def _subbasin_partition(
         for basin in found:
             if basin >= 0 and basin not in candidates:
                 candidates.append(basin)
+        # the heaviest first (a light basin cannot move a large imbalance)
+        candidates = sorted(candidates, key=lambda b: (-weights[b], b))[:OPEN_TRIALS]
         if not candidates:
             break
         round_best = None
@@ -1934,6 +1942,8 @@ def _subbasin_partition(
                 ratio <= round_best[2] + 1e-12 and key[1] < round_best[3][1] - 1e-12
             ):
                 round_best = (int(candidate), plan, ratio, key)
+            if round_best[2] <= imbalance_target:
+                break  # within the target: the rest need not be tried
         candidate, plan, ratio, key = round_best
         lower = ratio <= best_ratio - OPEN_MIN_GAIN
         # or the heaviest no heavier (in cells: the mainstem held back lowers the
