@@ -20,18 +20,20 @@ process-level parts, at two levels:
   upstream tributaries (its trunk).
 
 Contiguity comes first, balance second: every part is one piece of land.
-Land is one of the largest components of the graph -- what touches on the
-ground, the two banks of an opened mainstem joined -- each at least half an
-equal share and at most one per part; every other component (an island) goes
-with its nearest land, a land mass.  The masses get the parts so that the
-heaviest is as light as can be, and no part spans two masses.  A mass is
-cut by contiguous weighted METIS, run from several seeds on a graph whose small
-tributaries are grouped with a larger neighbour; the most balanced result is
-kept, and boundary nodes then move, one tributary or basin at a time, from
-heavier to lighter neighbouring parts until every part is within
-``imbalance_target`` of its target load.  An island moves whole, to a part
-near it.  A part is never cut in two; the odd piece left apart from its part
-joins the part around it.
+Land is the largest components of the graph -- what touches on the ground, the
+two banks of an opened mainstem joined -- at most one per part: those of at
+least half an equal share, and the next largest when these are too few to be
+cut into every part.  Every other component (an island) goes with its nearest
+land, a land mass.  The masses get the parts so that the heaviest is as light
+as can be, and no part spans two masses; when no component is land (an
+archipelago), METIS divides the components.  A mass is cut by contiguous
+weighted METIS, run from several seeds on a graph whose small tributaries are
+grouped with a larger neighbour; the most balanced result is kept, and boundary
+nodes then move, one tributary or basin at a time, from heavier to lighter
+neighbouring parts until every part is within ``imbalance_target`` of its
+target load or no move helps.  An island moves whole, to a part near it.  A
+part is never cut in two; the odd piece left apart from its part joins the part
+around it.
 
 The graph functions take arrays, not a raster, so that a graph built from tiles
 (FlowTopo's 90 m region tiles, for one) is partitioned by the same code.
