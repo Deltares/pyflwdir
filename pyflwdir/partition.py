@@ -1849,9 +1849,10 @@ def _subbasin_partition(
     balanced whole, and the heaviest such is then the only one tried.  The best
     has the lowest max/mean, then the least overload (``_overload``: how much
     the parts over the mean exceed it).  It is kept only when it lowers
-    max/mean by ``OPEN_MIN_GAIN`` or more, or leaves max/mean as it is and
-    lowers the overload by that much: so a basin that lightens one of two
-    equally heavy parts counts, as the first of two that must both be opened.  The rounds stop at
+    max/mean by ``OPEN_MIN_GAIN`` or more, or leaves the heaviest part no
+    heavier and lowers the overload by that much: so a basin that lightens one
+    of two equally heavy parts counts, as the first of two that must both be
+    opened.  The rounds stop at
     the target, at a round without such a gain, or at
     ``MAX_OPENED_BASINS``.  So the first basin opened is the dominant one, and a
     further one only a basin that holds the balance up, and only when that
@@ -1934,7 +1935,12 @@ def _subbasin_partition(
                 round_best = (int(candidate), plan, ratio, key)
         candidate, plan, ratio, key = round_best
         lower = ratio <= best_ratio - OPEN_MIN_GAIN
-        lighter = ratio <= best_ratio + 1e-12 and key[1] <= _overload(best.loads) - OPEN_MIN_GAIN
+        # or the heaviest no heavier (in cells: the mainstem held back lowers the
+        # mean a little) and the overload lower: one of two equal bottlenecks opened
+        lighter = (
+            round_best[1].loads.max() <= best.loads.max()
+            and key[1] <= _overload(best.loads) - OPEN_MIN_GAIN
+        )
         if not (lower or lighter):
             break
         opened.append(candidate)
