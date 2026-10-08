@@ -526,6 +526,56 @@ def test_two_tributaries_entering_one_cell_keep_a_fifth_region():
     assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
 
 
+def connected_parts(parts, edges):
+    """Is every part connected over ``edges``?"""
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+
+    n = parts.size
+    for part in np.unique(parts):
+        members = parts == part
+        keep = members[edges[:, 0]] & members[edges[:, 1]]
+        matrix = coo_matrix(
+            (np.ones(int(keep.sum())), (edges[keep, 0], edges[keep, 1])), shape=(n, n)
+        )
+        labels = connected_components(matrix, directed=False)[1]
+        if np.unique(labels[members]).size > 1:
+            return False
+    return True
+
+
+@pytest.mark.unit
+def test_a_node_without_cells_still_joins_its_neighbours():
+    pytest.importorskip("pymetis")
+    # a hub without cells (and so without a centroid) is all that joins six basins
+    weights = np.array([0, 1, 1, 1, 1, 1, 1], dtype=np.int64)
+    rows = np.zeros(7)
+    cols = np.array([np.nan, 0, 10, 20, 30, 10.1, 20.1])
+    edges = np.column_stack((np.zeros(6, dtype=np.int64), np.arange(1, 7)))
+    graph = partition.PartitionGraph(weights, rows, cols, edges, np.ones(6, dtype=np.int64))
+    parts = partition.assign_basins(graph, 4)
+    assert np.unique(parts).size == 4
+    assert connected_parts(parts, edges)
+
+
+@pytest.mark.unit
+def test_refinement_keeps_parts_joined_across_the_mainstem():
+    pytest.importorskip("pymetis")
+    weights = np.array([22, 14, 11, 3, 24, 9, 17, 12], dtype=np.int64)
+    ground = np.array([[0, 3], [0, 6], [1, 4], [2, 6], [3, 7], [4, 5], [4, 6]])
+    graph = partition.PartitionGraph(
+        weights, np.zeros(8), np.arange(8, dtype=np.float64), ground,
+        np.ones(ground.shape[0], dtype=np.int64),
+    )
+    is_tributary = np.arange(8) > 0
+    position = np.arange(8)
+    parts = partition.assign_subbasins(
+        graph, is_tributary, position, 4, stem_lengths=np.array([8]), min_subtree_size=1
+    )
+    banks = np.column_stack((np.arange(1, 7), np.arange(2, 8)))
+    assert connected_parts(parts, np.concatenate((ground, banks)))
+
+
 @pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()

@@ -388,15 +388,25 @@ def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit,
 
 @njit(cache=True)
 def _refine_balance(
-    xadj, adjncy, weights, parts, target_load, goal, max_moves, search_limit
+    xadj,
+    adjncy,
+    link_xadj,
+    link_adjncy,
+    weights,
+    parts,
+    target_load,
+    goal,
+    max_moves,
+    search_limit,
 ):
     """Move boundary nodes to lighter neighbouring parts until balanced.
 
     The objective is the sum over the parts of (load / target - 1) squared: each
     move takes the node, of any part, whose move to a lighter neighbouring part
-    lowers that sum the most.  A node whose departure would cut a peninsula off
-    its part takes the peninsula with it (``_detach``), so that both parts stay
-    connected; a move that would cut the part's body in two is not made.  Load
+    (``xadj``, ``adjncy``) lowers that sum the most.  A node whose departure
+    would cut a peninsula off its part (``link_xadj``, ``link_adjncy``) takes
+    the peninsula with it (``_detach``), so that both parts stay connected; a
+    move that would cut the part's body in two is not made.  Load
     can so pass on through a middle part to a light one that does not touch the
     heavy one.  It stops when the largest load-to-target ratio is at most
     ``goal`` or no move lowers the sum.  Returns the number of moves.
@@ -456,8 +466,8 @@ def _refine_balance(
             other = candidate_part[index]
             stamp += 1
             taken, stamp = _detach(
-                xadj,
-                adjncy,
+                link_xadj,
+                link_adjncy,
                 weights,
                 parts,
                 node,
@@ -566,23 +576,29 @@ def _refine(
     n_parts: int,
     targets: np.ndarray,
     imbalance_target: float,
+    linked: PartitionGraph | None = None,
 ) -> int:
     """Balance ``parts`` in place by moving boundary nodes of ``graph``.
 
     ``graph`` holds only shared raster boundaries: a node moves only to a part
-    it touches on the ground, and only when its own part stays connected on the
-    ground.  The links METIS also uses -- tributaries entering consecutive
-    mainstem cells, islands tied to the mainland -- are left out here, or a part
-    could creep along the mainstem from bank to bank, connected only on paper.
+    it touches on the ground, or a part could creep along an opened mainstem
+    from bank to bank.  Whether a part stays connected is judged on ``linked``
+    (``graph`` when None), where the two banks of an opened mainstem touch, as
+    they do for METIS.
     """
     if n_parts < 2:
         return 0
+    if linked is None:
+        linked = graph
     target_load = np.asarray(targets, dtype=np.float64) * float(graph.weights.sum())
     xadj, adjncy, _ = _csr(graph.size, graph.edges, graph.edge_weights)
+    link_xadj, link_adjncy, _ = _csr(linked.size, linked.edges, linked.edge_weights)
     return int(
         _refine_balance(
             xadj,
             adjncy,
+            link_xadj,
+            link_adjncy,
             graph.weights.astype(np.int64),
             parts,
             target_load,
@@ -691,9 +707,25 @@ def _apportion(
     return count
 
 
-def _follow_neighbours(graph: PartitionGraph, parts: np.ndarray) -> None:
-    """Nodes without a part take the part of a neighbour that has one (the lowest
-    part when several), step by step; those that reach none take part 0."""
+def _merge_into(graph: PartitionGraph, nodes: np.ndarray, live: np.ndarray) -> PartitionGraph:
+    """``graph`` with every node merged into node ``nodes`` (-1: left out) of a
+    graph whose nodes are ``live``, which keep their centroids."""
+    keep = nodes >= 0
+    weights = np.bincount(
+        nodes[keep], weights=graph.weights[keep], minlength=live.size
+    ).astype(np.int64)
+    pairs = nodes[graph.edges]
+    inside = (pairs[:, 0] >= 0) & (pairs[:, 1] >= 0)
+    edges, edge_weights = merge_edges(
+        [pairs[inside]], live.size, [graph.edge_weights[inside]]
+    )
+    return PartitionGraph(weights, graph.rows[live], graph.cols[live], edges, edge_weights)
+
+
+def _follow_neighbours(graph: PartitionGraph, parts: np.ndarray, fill: int = 0) -> None:
+    """Nodes without a part (-1) take the part of a neighbour that has one (the
+    lowest part when several), step by step; those that reach none take
+    ``fill``."""
     first, second = graph.edges[:, 0], graph.edges[:, 1]
     while True:
         missing = parts < 0
@@ -702,7 +734,7 @@ def _follow_neighbours(graph: PartitionGraph, parts: np.ndarray) -> None:
         forward = missing[first] & ~missing[second]
         backward = missing[second] & ~missing[first]
         if not (np.any(forward) or np.any(backward)):
-            parts[missing] = 0
+            parts[missing] = fill
             return
         nodes = np.concatenate((first[forward], second[backward]))
         given = np.concatenate((parts[second[forward]], parts[first[backward]]))
@@ -774,20 +806,28 @@ def _partition_components(
         group = np.arange(n, dtype=np.int64)
     empty = (linked.weights <= 0) | ~np.isfinite(linked.rows) | ~np.isfinite(linked.cols)
     if np.any(empty):
-        # nodes without cells (or a centroid) carry no work: the others are
-        # divided, and these follow a neighbour
-        keep = np.flatnonzero(~empty)
-        if keep.size:
-            parts[keep] = _partition_components(
-                _subgraph(linked, keep),
-                _subgraph(ground, keep),
+        # a node without cells (or a centroid) joins a node with them that it
+        # reaches, so that every connection it makes stays; the merged graph is
+        # divided, and a component with no cells at all takes part 0
+        owner = np.where(empty, -1, np.arange(n)).astype(np.int32)
+        _follow_neighbours(linked, owner, fill=-1)
+        live = np.flatnonzero(~empty)
+        merged = owner >= 0
+        if live.size:
+            index = np.searchsorted(live, owner[merged])
+            nodes = np.full(n, -1, dtype=np.int64)
+            nodes[merged] = index
+            merged_parts = _partition_components(
+                _merge_into(linked, nodes, live),
+                _merge_into(ground, nodes, live),
                 n_parts,
                 seed,
                 imbalance_target,
                 refine,
-                group[keep],
+                group[live],
             )
-        _follow_neighbours(linked, parts)
+            parts[merged] = merged_parts[index]
+        parts[~merged] = 0
         return parts
     component = _components(linked)
     component_weight = np.bincount(component, weights=linked.weights)
@@ -848,7 +888,7 @@ def _partition_components(
         parts[islands] = [part_of_component[c] for c in island_component.tolist()]
     if refine and n_parts > 1:
         targets = np.full(n_parts, 1.0 / n_parts)
-        _refine(ground, parts, n_parts, targets, imbalance_target)
+        _refine(ground, parts, n_parts, targets, imbalance_target, linked)
         _absorb_fragments(linked, parts, FRAGMENT_SHARE * linked.weights.sum() / n_parts)
     return parts
 
@@ -1137,14 +1177,11 @@ def assign_subbasins(
             ground = PartitionGraph(
                 weights, graph.rows, graph.cols, graph.edges, graph.edge_weights
             )
-            _refine(ground, parts, n_parts, targets, imbalance_target)
-            _absorb_fragments(
-                PartitionGraph(
-                    weights, linked.rows, linked.cols, linked.edges, linked.edge_weights
-                ),
-                parts,
-                FRAGMENT_SHARE * weights.sum() / n_parts,
+            banks = PartitionGraph(
+                weights, linked.rows, linked.cols, linked.edges, linked.edge_weights
             )
+            _refine(ground, parts, n_parts, targets, imbalance_target, banks)
+            _absorb_fragments(banks, parts, FRAGMENT_SHARE * weights.sum() / n_parts)
     return parts
 
 
