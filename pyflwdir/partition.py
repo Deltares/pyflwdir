@@ -10,8 +10,10 @@ process-level parts, at two levels:
   remaining parts.
 * ``"subbasin"`` (Method 2): when Method 1's parts are not within
   ``imbalance_target`` of an equal share, basins are opened along their
-  mainstems into the tributary subtrees that drain into the mainstem -- the
-  largest basin first, then the next, while the parts are still unequal.  Those
+  mainstems into the tributary subtrees that drain into the mainstem -- as few
+  as the balance needs: the dominant basin first; another only when it is the
+  heaviest whole basin of the heaviest or the lightest part and opening it
+  lowers the heaviest part by ``OPEN_MIN_GAIN`` of the mean or more.  Those
   tributaries and the other basins form one graph, divided at once into equal
   parts; each mainstem cell weighs with the tributary that enters it.
   Below ``P_min``, the most upstream mainstem cell where a tributary of another
@@ -68,6 +70,10 @@ enough for the refinement; among those, the shortest boundary wins."""
 
 MAX_OPENED_BASINS = 4
 """Method 2 opens at most this many basins along their mainstems."""
+
+OPEN_MIN_GAIN = 0.01
+"""Method 2 keeps an opened basin only when it lowers the heaviest subregion
+by this much of the mean (max/mean) or more."""
 
 ARCHIPELAGO_NEIGHBOURS = 4
 """Without land, each component is linked to this many nearest for METIS; in
@@ -1800,20 +1806,29 @@ def _subbasin_partition(
     seed: int,
     refine: bool,
 ) -> PartitionPlan:
-    """Method 2 on a raster: open the largest basins while the parts are unequal.
+    """Method 2 on a raster: open as few basins as the balance needs.
 
-    Method 1's parts stand when they are within ``imbalance_target``; otherwise
-    the largest basin is opened, then the next, and the most balanced plan
-    (Method 1's included) is kept.  A basin that is one chain of cells has no
-    tributaries to open into and stays whole.
+    Method 1's parts stand when they are within ``imbalance_target``.
+    Otherwise, round by round, two basins are tried, each opened together with
+    those kept so far: the heaviest whole basin of the heaviest part (which
+    cannot shed it) and that of the lightest part (which cannot grow around
+    it); the better is kept only when it lowers the heaviest part by
+    ``OPEN_MIN_GAIN`` of the mean or more.  The rounds stop at the target, at a
+    round without such a gain, or at ``MAX_OPENED_BASINS``.  So the first basin
+    opened is the dominant one, and a further one only a basin that holds the
+    balance up, and only when that clearly pays off.  A basin that is one chain
+    of cells has no tributaries to open into and stays whole.
     """
-    method_1 = _empty_plan(flw, parts, load, basin_ids, "subbasin")
+    best = _empty_plan(flw, parts, load, basin_ids, "subbasin")
     best_ratio = float(load.max() / max(load.mean(), 1))
     if labels.size == 0 or best_ratio <= imbalance_target:
-        return method_1
+        return best
     valid = parts >= 0
-    weights = np.bincount(np.searchsorted(labels, basin_ids[valid]), minlength=labels.size)
-    order = np.argsort(-weights, kind="stable")
+    cells = np.flatnonzero(valid)
+    label_of_cell = np.searchsorted(labels, basin_ids[cells])
+    weights = np.bincount(label_of_cell, minlength=labels.size)
+    # one cell of every basin: a whole basin is in one part, so it tells which
+    first_cell = cells[np.unique(label_of_cell, return_index=True)[1]]
     seq_d2u = core.idxs_seq_dfs(flw.idxs_ds, flw.idxs_pit, flw._mv)
     upstream = streams.accuflux(
         flw.idxs_ds, seq_d2u, np.ones(flw.size, dtype=np.int64), -1
@@ -1821,27 +1836,42 @@ def _subbasin_partition(
     sources = np.bincount(
         np.searchsorted(labels, basin_ids[valid & (upstream == 1)]), minlength=labels.size
     )
-    order = order[sources[order] > 1]
-    best = method_1
-    for n_opened in range(1, min(MAX_OPENED_BASINS, order.size) + 1):
-        plan = _open_basins(
-            flw,
-            order[:n_opened],
-            basin_ids,
-            labels,
-            basin_node_parts,
-            seq_d2u,
-            upstream,
-            min_subtree_size,
-            imbalance_target,
-            seed,
-            refine,
-        )
-        ratio = float(plan.loads.max() / max(plan.loads.mean(), 1))
-        if ratio < best_ratio - 1e-12:
-            best, best_ratio = plan, ratio
-        if ratio <= imbalance_target:
+    by_weight = np.argsort(-weights, kind="stable")
+    opened: list[int] = []
+    while best_ratio > imbalance_target and len(opened) < MAX_OPENED_BASINS:
+        part_of_basin = best.parts.ravel()[first_cell]
+        eligible = sources > 1
+        eligible[opened] = False
+        candidates: list[int] = []
+        for part in (int(np.argmax(best.loads)), int(np.argmin(best.loads))):
+            pool = by_weight[eligible[by_weight] & (part_of_basin[by_weight] == part)]
+            if pool.size and int(pool[0]) not in candidates:
+                candidates.append(int(pool[0]))
+        if not candidates:
             break
+        round_best = None
+        for candidate in candidates:
+            plan = _open_basins(
+                flw,
+                np.asarray(opened + [int(candidate)]),
+                basin_ids,
+                labels,
+                basin_node_parts,
+                seq_d2u,
+                upstream,
+                min_subtree_size,
+                imbalance_target,
+                seed,
+                refine,
+            )
+            ratio = float(plan.loads.max() / max(plan.loads.mean(), 1))
+            if round_best is None or ratio < round_best[2] - 1e-12:
+                round_best = (int(candidate), plan, ratio)
+        candidate, plan, ratio = round_best
+        if ratio > best_ratio - OPEN_MIN_GAIN:
+            break
+        opened.append(candidate)
+        best, best_ratio = plan, ratio
     return best
 
 

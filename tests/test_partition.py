@@ -479,9 +479,48 @@ def test_basins_are_opened_when_method_1_is_unequal():
     plan = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
     check_plan(flw, plan)
     assert len(plan.stems) >= 1
-    assert plan.loads.max() / plan.loads.mean() <= 1.05
+    # one basin opened: 231 x [1, 1, 1.5, 1.45]; opening a second (of the heaviest
+    # or the lightest part) gains nothing here, so it is not opened
+    assert plan.loads.max() / plan.loads.mean() <= 1.6 - partition.OPEN_MIN_GAIN
     data = np.arange(1, flw.size + 1, dtype=np.int64)
     assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
+
+
+@pytest.mark.unit
+def test_method_2_tries_the_heaviest_basins_of_the_heaviest_and_lightest_parts(monkeypatch):
+    pytest.importorskip("pymetis")
+    flw = rivers(21, [11] * 5)
+    basin = partition.partition_plan(flw, level="basin")
+    ends = {int(np.argmax(basin.loads)), int(np.argmin(basin.loads))}
+    labels = np.unique(basin.basin_ids[basin.parts >= 0])
+    part_of_label = {int(label): int(basin.parts[basin.basin_ids == label][0]) for label in labels}
+    tried = []
+    original = partition._open_basins
+
+    def recording(flw_, opened, basin_ids, labels_, *args, **kwargs):
+        tried.append(np.asarray(opened).copy())
+        return original(flw_, opened, basin_ids, labels_, *args, **kwargs)
+
+    monkeypatch.setattr(partition, "_open_basins", recording)
+    partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
+    first_round = [opened for opened in tried if opened.size == 1]
+    assert 1 <= len(first_round) <= 2
+    assert len({int(opened[0]) for opened in first_round}) == len(first_round)
+    for opened in first_round:
+        assert part_of_label[int(labels[opened[0]])] in ends
+    for size in {opened.size for opened in tried}:
+        assert sum(opened.size == size for opened in tried) <= 2
+
+
+@pytest.mark.unit
+def test_method_2_opens_no_basin_without_a_clear_gain(monkeypatch):
+    pytest.importorskip("pymetis")
+    flw = rivers(21, [11] * 5)
+    basin = partition.partition_plan(flw, level="basin")
+    monkeypatch.setattr(partition, "OPEN_MIN_GAIN", 10.0)
+    plan = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
+    assert plan.stems == ()
+    assert np.array_equal(plan.parts, basin.parts)
 
 
 @pytest.mark.unit
