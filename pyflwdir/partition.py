@@ -20,10 +20,11 @@ process-level parts, at two levels:
   upstream tributaries (its trunk).
 
 Contiguity comes first, balance second: every part is one piece of land.
-Land is a large component of the graph -- what touches on the ground, the two
-banks of an opened mainstem joined -- and each small component (an island) goes
+Land is one of the largest components of the graph -- what touches on the
+ground, the two banks of an opened mainstem joined -- each at least half an
+equal share and at most one per part; every other component (an island) goes
 with its nearest land, a land mass.  The masses get the parts so that the
-heaviest part is as light as can be, and no part spans two masses.  A mass is
+heaviest is as light as can be, and no part spans two masses.  A mass is
 cut by contiguous weighted METIS, run from several seeds on a graph whose small
 tributaries are grouped with a larger neighbour; the most balanced result is
 kept, and boundary nodes then move, one tributary or basin at a time, from
