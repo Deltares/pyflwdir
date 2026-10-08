@@ -72,8 +72,7 @@ the balance refinement, a node of an island may move to the part of this many
 nearest nodes of other components."""
 
 ISLAND_PROBES = 16
-"""The nearest nodes an island node looks through for those of other components
-(doubled while its island has found fewer than ``ARCHIPELAGO_NEIGHBOURS``)."""
+"""The nearest nodes an island node looks through for those of other components."""
 
 METIS_GROUPS_PER_PART = 8
 """Method 2 groups small tributaries for METIS, but keeps at least this many
@@ -586,7 +585,10 @@ def _island_units(linked: PartitionGraph, parts: np.ndarray, n_parts: int):
     island; else the unit of every node, the number of units and the pairs
     (island unit, unit of a node of another component near it): per node of the
     island the ``ARCHIPELAGO_NEIGHBOURS`` nearest of its ``ISLAND_PROBES``
-    nearest nodes, the probes doubled until the island has that many.
+    nearest nodes.  An island that met fewer than that many (dense, or far from
+    everything) takes those nearest to its nodes among the nodes of the other
+    components, but such islands, and the ``ARCHIPELAGO_NEIGHBOURS`` such islands
+    nearest to it.
     """
     from scipy.spatial import cKDTree
 
@@ -621,26 +623,41 @@ def _island_units(linked: PartitionGraph, parts: np.ndarray, n_parts: int):
     island_unit[islands] = loose.size + np.arange(islands.size)
     unit[on_island] = island_unit[component[on_island]]
     points = np.column_stack((linked.rows, linked.cols))
-    tree = cKDTree(points)
     nodes = np.flatnonzero(on_island)
     k = min(ISLAND_PROBES + 1, n)
-    found = []
-    while nodes.size:
-        _, near = tree.query(points[nodes], k=k)
-        near = near.reshape(nodes.size, k)
-        other = component[near] != component[nodes][:, None]
-        keep = (other & (np.cumsum(other, axis=1) <= ARCHIPELAGO_NEIGHBOURS)).ravel()
-        found.append(np.column_stack((np.repeat(nodes, k)[keep], near.ravel()[keep])))
-        if k >= n:
-            break
-        # islands that met fewer other nodes than wanted look farther
-        met = np.unique(np.concatenate(found), axis=0)
-        met = np.unique(np.column_stack((component[met[:, 0]], met[:, 1])), axis=0)
-        count = np.bincount(met[:, 0], minlength=component_weight.size)
-        nodes = nodes[count[component[nodes]] < ARCHIPELAGO_NEIGHBOURS]
-        k = min(2 * k, n)
+    _, near = cKDTree(points).query(points[nodes], k=k)
+    near = near.reshape(nodes.size, k)
+    other = component[near] != component[nodes][:, None]
+    keep = (other & (np.cumsum(other, axis=1) <= ARCHIPELAGO_NEIGHBOURS)).ravel()
+    found = [np.column_stack((np.repeat(nodes, k)[keep], near.ravel()[keep]))]
+    met = np.unique(np.column_stack((component[found[0][:, 0]], found[0][:, 1])), axis=0)
+    count = np.bincount(met[:, 0], minlength=component_weight.size)
+    short = whole & (count < ARCHIPELAGO_NEIGHBOURS)
+    links = np.empty((0, 2), dtype=np.int64)
+    if short.any():
+        in_short = short[component]
+        rest = np.flatnonzero(~in_short)
+        asking = np.flatnonzero(in_short)
+        if rest.size:
+            k = min(ARCHIPELAGO_NEIGHBOURS, rest.size)
+            _, near = cKDTree(points[rest]).query(points[asking], k=k)
+            found.append(np.column_stack((np.repeat(asking, k), rest[near.ravel()])))
+        dense = np.flatnonzero(short)
+        if dense.size > 1:
+            centroids = np.column_stack(
+                [
+                    np.bincount(component, weights=linked.weights * axis)[dense]
+                    for axis in (linked.rows, linked.cols)
+                ]
+            ) / component_weight[dense][:, None]
+            k = min(ARCHIPELAGO_NEIGHBOURS + 1, dense.size)
+            _, near = cKDTree(centroids).query(centroids, k=k)
+            near = near.reshape(dense.size, k)[:, 1:]
+            links = np.column_stack(
+                (island_unit[np.repeat(dense, k - 1)], island_unit[dense[near.ravel()]])
+            )
     pairs = np.unique(np.concatenate(found), axis=0)
-    reach = np.column_stack((unit[pairs[:, 0]], unit[pairs[:, 1]]))
+    reach = np.concatenate((np.column_stack((unit[pairs[:, 0]], unit[pairs[:, 1]])), links))
     return unit, loose.size + islands.size, reach
 
 
@@ -1586,7 +1603,8 @@ def _subbasin_partition(
 
     Method 1's parts stand when they are within ``imbalance_target``; otherwise
     the largest basin is opened, then the next, and the most balanced plan
-    (Method 1's included) is kept.
+    (Method 1's included) is kept.  A basin that is one chain of cells has no
+    tributaries to open into and stays whole.
     """
     method_1 = _empty_plan(flw, parts, load, basin_ids, "subbasin")
     best_ratio = float(load.max() / max(load.mean(), 1))
@@ -1599,8 +1617,12 @@ def _subbasin_partition(
     upstream = streams.accuflux(
         flw.idxs_ds, seq_d2u, np.ones(flw.size, dtype=np.int64), -1
     )
+    sources = np.bincount(
+        np.searchsorted(labels, basin_ids[valid & (upstream == 1)]), minlength=labels.size
+    )
+    order = order[sources[order] > 1]
     best = method_1
-    for n_opened in range(1, min(MAX_OPENED_BASINS, labels.size) + 1):
+    for n_opened in range(1, min(MAX_OPENED_BASINS, order.size) + 1):
         plan = _open_basins(
             flw,
             order[:n_opened],

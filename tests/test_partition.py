@@ -699,6 +699,26 @@ def test_a_dense_island_still_finds_the_parts_around_it():
 
 
 @pytest.mark.unit
+def test_a_basin_without_tributaries_stays_whole_and_apart():
+    pytest.importorskip("pymetis")
+    # a 180-cell column apart (nodata between), and a 100-cell mainstem that four
+    # 250-cell tributaries enter from the east: the column is not opened, it is
+    # its own land and part
+    d8 = np.full((180, 253), 247, dtype=np.uint8)
+    d8[:-1, 0] = 4
+    d8[-1, 0] = 0
+    d8[:99, 2] = 4
+    d8[99, 2] = 0
+    d8[50:54, 3:] = 16
+    flw = pyflwdir.from_array(d8, ftype="d8")
+    plan = partition.partition_plan(flw, level="subbasin")
+    check_plan(flw, plan)
+    column = np.unique(plan.parts[:, 0])
+    assert column.size == 1 and column[0] < partition.N_TRUNKS
+    assert not np.any(plan.parts[:, 2:] == column[0])
+
+
+@pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()
     with pytest.raises(ValueError, match="requires n_parts=4"):
