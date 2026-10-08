@@ -321,6 +321,13 @@ def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit,
     mark[node] = base
     out[0] = node
     count = 1
+    # with at most one neighbour in its part, the node holds nothing together
+    same = 0
+    for j in range(xadj[node], xadj[node + 1]):
+        if parts[adjncy[j]] == part:
+            same += 1
+    if same <= 1:
+        return 1, base
     degree = xadj[node + 1] - xadj[node]
     begins = np.empty(degree + 1, dtype=np.int64)
     ends = np.empty(degree + 1, dtype=np.int64)
@@ -394,6 +401,42 @@ def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit,
 
 
 @njit(cache=True)
+def _try_move(
+    link_xadj, link_adjncy, weights, parts, load, target_load, node, other,
+    mark, queue, stamp, limit, out,
+):
+    """Move ``node``, with the peninsulas it holds (``_detach``), to part
+    ``other`` when that lowers the objective; returns the number of nodes moved
+    (in ``out``; 0 for none) and the last stamp used."""
+    source = parts[node]
+    stamp += 1
+    taken, stamp = _detach(
+        link_xadj, link_adjncy, weights, parts, node, source, mark, queue, stamp,
+        limit, out,
+    )
+    if taken < 0:
+        return 0, stamp
+    weight = 0.0
+    for k in range(taken):
+        weight += weights[out[k]]
+    if weight >= load[source]:
+        return 0, stamp
+    gain = (
+        ((load[source] - weight) / target_load[source] - 1.0) ** 2
+        + ((load[other] + weight) / target_load[other] - 1.0) ** 2
+        - (load[source] / target_load[source] - 1.0) ** 2
+        - (load[other] / target_load[other] - 1.0) ** 2
+    )
+    if gain >= -1e-15:
+        return 0, stamp
+    for k in range(taken):
+        parts[out[k]] = other
+    load[source] -= weight
+    load[other] += weight
+    return taken, stamp
+
+
+@njit(cache=True)
 def _refine_balance(
     xadj,
     adjncy,
@@ -408,15 +451,19 @@ def _refine_balance(
 ):
     """Move boundary nodes to lighter neighbouring parts until balanced.
 
-    The objective is the sum over the parts of (load / target - 1) squared: each
-    move takes the node, of any part, whose move to a lighter neighbouring part
-    (``xadj``, ``adjncy``) lowers that sum the most.  A node whose departure
-    would cut a peninsula off its part (``link_xadj``, ``link_adjncy``) takes
-    the peninsula with it (``_detach``), so that both parts stay connected; a
-    move that would cut the part's body in two is not made.  Load
-    can so pass on through a middle part to a light one that does not touch the
-    heavy one.  It stops when the largest load-to-target ratio is at most
-    ``goal`` or no move lowers the sum.  Returns the number of moves.
+    The objective is the sum over the parts of (load / target - 1) squared.  A
+    sweep finds, for every node, the lighter neighbouring part (``xadj``,
+    ``adjncy``) whose move lowers that sum the most, and makes the moves in
+    that order, each checked again as it is made (the node still in its part
+    and next to the other, the other still lighter, the sum still lowered);
+    after each move, it follows the boundary on: the moved nodes' neighbours
+    left in the part try the same part next.  A node whose departure would cut
+    a peninsula off its part (``link_xadj``, ``link_adjncy``) takes the
+    peninsula with it (``_detach``), so that both parts stay connected; a move
+    that would cut the part's body in two is not made.  Load can so pass on
+    through a middle part to a light one that does not touch the heavy one.  It
+    stops when the largest load-to-target ratio is at most ``goal``, or a sweep
+    makes no move.  Returns the number of moves.
     """
     n = weights.size
     n_parts = target_load.size
@@ -426,12 +473,16 @@ def _refine_balance(
     mark = np.zeros(n, dtype=np.int64)
     queue = np.empty(n, dtype=np.int64)
     out = np.empty(n, dtype=np.int64)
+    stack = np.empty(n, dtype=np.int64)
+    seen = np.zeros(n, dtype=np.int64)
     stamp = np.int64(1)
+    sweep = 0
     moves = 0
+    done = False
     candidate_node = np.empty(n, dtype=np.int64)
     candidate_part = np.empty(n, dtype=np.int64)
     candidate_gain = np.empty(n, dtype=np.float64)
-    while moves < max_moves:
+    while moves < max_moves and not done:
         ratio = load / target_load
         if np.max(ratio) <= goal:
             break
@@ -466,47 +517,50 @@ def _refine_balance(
         if count == 0:
             break
         order = np.argsort(candidate_gain[:count], kind="mergesort")
+        sweep += 1
         moved = False
         for index in order:
-            node = candidate_node[index]
-            source = parts[node]
+            if moves >= max_moves or done:
+                break
+            top = 0
+            stack[top] = candidate_node[index]
+            top += 1
             other = candidate_part[index]
-            stamp += 1
-            taken, stamp = _detach(
-                link_xadj,
-                link_adjncy,
-                weights,
-                parts,
-                node,
-                source,
-                mark,
-                queue,
-                stamp,
-                search_limit,
-                out,
-            )
-            if taken < 0:
-                continue
-            weight = 0.0
-            for k in range(taken):
-                weight += weights[out[k]]
-            if weight >= load[source]:
-                continue
-            gain = (
-                ((load[source] - weight) / target_load[source] - 1.0) ** 2
-                + ((load[other] + weight) / target_load[other] - 1.0) ** 2
-                - (load[source] / target_load[source] - 1.0) ** 2
-                - (load[other] / target_load[other] - 1.0) ** 2
-            )
-            if gain >= -1e-15:
-                continue
-            for k in range(taken):
-                parts[out[k]] = other
-            load[source] -= weight
-            load[other] += weight
-            moves += 1
-            moved = True
-            break
+            source = parts[candidate_node[index]]
+            while top > 0 and moves < max_moves:
+                top -= 1
+                node = stack[top]
+                if parts[node] != source or other == source:
+                    continue
+                if load[other] / target_load[other] >= load[source] / target_load[source]:
+                    break
+                touches = False
+                for j in range(xadj[node], xadj[node + 1]):
+                    if parts[adjncy[j]] == other:
+                        touches = True
+                        break
+                if not touches:
+                    continue
+                taken, stamp = _try_move(
+                    link_xadj, link_adjncy, weights, parts, load, target_load, node,
+                    other, mark, queue, stamp, search_limit, out,
+                )
+                if taken == 0:
+                    continue
+                moves += 1
+                moved = True
+                if np.max(load / target_load) <= goal:
+                    done = True
+                    break
+                # follow the boundary: the moved nodes' neighbours left in the part
+                for k in range(taken):
+                    moved_node = out[k]
+                    for j in range(xadj[moved_node], xadj[moved_node + 1]):
+                        neighbour = adjncy[j]
+                        if parts[neighbour] == source and seen[neighbour] != sweep:
+                            seen[neighbour] = sweep
+                            stack[top] = neighbour
+                            top += 1
         if not moved:
             break
     return moves
@@ -1291,6 +1345,36 @@ def _mainstem_weights(
     return extra
 
 
+def _mainstem_contacts(
+    nodes: np.ndarray,
+    mainstems: list[np.ndarray],
+    stem: np.ndarray,
+    position: np.ndarray,
+) -> np.ndarray:
+    """Pairs (node, tributary): a node that touches a cell of an opened mainstem
+    and the tributary that cell weighs with (``_mainstem_weights``).  Across the
+    mainstem they touch, as its two banks do.  ``nodes`` is the 2-D raster of
+    node ids, -1 on the mainstems."""
+    nrow, ncol = nodes.shape
+    flat = nodes.ravel()
+    pairs = [np.empty((0, 2), dtype=np.int64)]
+    for k, mine in enumerate(_stem_tributaries(stem, position, len(mainstems))):
+        if mine.size == 0:
+            continue
+        cells = np.asarray(mainstems[k], dtype=np.int64)
+        entered, first = np.unique(position[mine], return_index=True)
+        at = np.searchsorted(entered, np.arange(cells.size), side="right") - 1
+        receiver = mine[first[np.maximum(at, 0)]]
+        row, col = np.divmod(cells, ncol)
+        for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            r, c = row + dr, col + dc
+            inside = (r >= 0) & (r < nrow) & (c >= 0) & (c < ncol)
+            touching = flat[r[inside] * ncol + c[inside]]
+            keep = touching >= 0
+            pairs.append(np.column_stack((touching[keep], receiver[inside][keep])))
+    return np.concatenate(pairs).astype(np.int64)
+
+
 def _p_mins(
     parts: np.ndarray, stem: np.ndarray, position: np.ndarray, stem_lengths: np.ndarray
 ) -> np.ndarray:
@@ -1312,6 +1396,7 @@ def assign_subbasins(
     *,
     stem: np.ndarray | None = None,
     stem_lengths: np.ndarray | None = None,
+    stem_contacts: np.ndarray | None = None,
     hint: np.ndarray | None = None,
     min_subtree_size: int = 100_000,
     seed: int = 42,
@@ -1323,7 +1408,9 @@ def assign_subbasins(
     ``is_tributary`` marks the tributary subtrees that drain into an opened
     basin's mainstem, ``stem`` says which mainstem (0 when there is one) and
     ``position`` gives the mainstem cell each enters (0 at the source);
-    tributaries entering consecutive cells of one mainstem touch, across it.
+    tributaries entering consecutive cells of one mainstem touch, across it, and
+    so do the pairs of ``stem_contacts`` (a node that touches a mainstem cell and
+    the tributary that cell weighs with, ``_mainstem_contacts``).
     Small tributaries move with the nearest eligible one.  ``hint`` (one part per
     node, Method 1's) only fixes the part labels.  A node without cells or a
     centroid is merged into one it touches.
@@ -1345,10 +1432,17 @@ def assign_subbasins(
     ordered = tributaries[np.lexsort((tributaries, position[tributaries], stem[tributaries]))]
     same_stem = stem[ordered[:-1]] == stem[ordered[1:]]
     stem_edges = np.column_stack((ordered[:-1], ordered[1:]))[same_stem]
+    if stem_contacts is None:
+        stem_contacts = np.empty((0, 2), dtype=np.int64)
+    stem_contacts = np.asarray(stem_contacts, dtype=np.int64).reshape(-1, 2)
     edges, edge_weights = merge_edges(
-        [graph.edges, stem_edges],
+        [graph.edges, stem_edges, stem_contacts],
         graph.size,
-        [graph.edge_weights, np.ones(stem_edges.shape[0], dtype=np.int64)],
+        [
+            graph.edge_weights,
+            np.ones(stem_edges.shape[0], dtype=np.int64),
+            np.ones(stem_contacts.shape[0], dtype=np.int64),
+        ],
     )
     linked = PartitionGraph(graph.weights, graph.rows, graph.cols, edges, edge_weights)
     # every tributary keeps its stem and position, merged or not: the mainstem
@@ -1550,6 +1644,7 @@ def _open_basins(
         N_TRUNKS,
         stem=stem,
         stem_lengths=np.array([mainstem.size for mainstem in mainstems]),
+        stem_contacts=_mainstem_contacts(nodes.reshape(shape), mainstems, stem, position),
         hint=hint,
         min_subtree_size=min_subtree_size,
         seed=seed,

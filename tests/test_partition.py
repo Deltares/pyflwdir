@@ -750,6 +750,24 @@ def test_a_basin_without_tributaries_stays_whole_and_apart():
 
 
 @pytest.mark.unit
+def test_a_basin_that_touches_only_the_mainstem_is_joined_across_it():
+    pytest.importorskip("pymetis")
+    # (2,5) is a one-cell basin whose only neighbour, (1,5), is a mainstem cell
+    # of the right basin; the tributary (0,8) is the one that cell weighs with
+    code = {".": 247, "S": 4, "E": 1, "o": 0}
+    rows = ["........S", ".S.S.EEES", "EEEo.o.Eo"]
+    d8 = np.array([[code[c] for c in row] for row in rows], dtype=np.uint8)
+    flw = pyflwdir.from_array(d8, ftype="d8")
+    for refine in (True, False):
+        plan = partition.partition_plan(flw, level="subbasin", refine=refine)
+        check_plan(flw, plan)
+        part = plan.parts[2, 5]
+        # it shares a part with the right basin's tributaries only through (0,8)
+        if plan.parts[2, 7] == part:
+            assert plan.parts[0, 8] == part
+
+
+@pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()
     with pytest.raises(ValueError, match="requires n_parts=4"):
