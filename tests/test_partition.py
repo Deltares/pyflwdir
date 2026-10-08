@@ -486,6 +486,47 @@ def test_an_archipelago_is_divided_by_proximity():
 
 
 @pytest.mark.unit
+def test_metis_never_leaves_a_part_empty():
+    pytest.importorskip("pymetis")
+    graph = line_graph([101, 1])
+    parts = partition._metis_parts(graph, 2, np.array([0.5, 0.5]), 42, 1.0)
+    assert sorted(parts) == [0, 1]
+    graph = line_graph([1, 1, 5, 1, 2])
+    parts = partition._fill_empty_parts(graph, np.zeros(5, dtype=np.int32), 2)
+    assert np.array_equal(parts, [0, 0, 0, 0, 1]) or np.array_equal(parts, [1, 0, 0, 0, 0])
+
+
+@pytest.mark.unit
+def test_nodes_without_cells_follow_a_neighbour():
+    pytest.importorskip("pymetis")
+    weights = np.array([1] * 20 + [0], dtype=np.int64)
+    rows = np.zeros(21)
+    cols = np.r_[np.arange(20) * 2.0, np.nan]
+    edges = np.array([[19, 20]])
+    graph = partition.PartitionGraph(weights, rows, cols, edges, np.ones(1, dtype=np.int64))
+    parts = partition.assign_basins(graph, 4)
+    assert np.array_equal(np.bincount(parts[:20], minlength=4), [5, 5, 5, 5])
+    assert parts[20] == parts[19]
+
+
+@pytest.mark.unit
+def test_two_tributaries_entering_one_cell_keep_a_fifth_region():
+    pytest.importorskip("pymetis")
+    d8 = np.full((100, 3), 247, dtype=np.uint8)
+    d8[:-1, 1] = 4
+    d8[-1, 1] = 0
+    d8[50, 0] = 1
+    d8[50, 2] = 16
+    flw = pyflwdir.from_array(d8, ftype="d8")
+    plan = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
+    check_plan(flw, plan)
+    assert np.array_equal(np.sort(plan.loads), [0, 0, 1, 51])
+    assert plan.mainstem.size == 50
+    data = np.arange(1, flw.size + 1, dtype=np.int64)
+    assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
+
+
+@pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()
     with pytest.raises(ValueError, match="requires n_parts=4"):

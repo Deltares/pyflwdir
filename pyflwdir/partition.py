@@ -511,6 +511,8 @@ def _metis_parts(
     ``graph`` must be connected (one land component, see
     ``_partition_components``).
     """
+    if graph.size <= n_parts:
+        return np.arange(graph.size, dtype=np.int32)
     total = float(graph.weights.sum())
     target_load = np.asarray(targets, dtype=np.float64) * total
     ufactor = max(1, int(round((imbalance_target - 1.0) * 1000)))
@@ -519,12 +521,43 @@ def _metis_parts(
     for attempt in range(METIS_SEEDS):
         parts, cut = _metis(graph, n_parts, targets, seed + attempt, ufactor, contig)
         load = np.bincount(parts, weights=graph.weights, minlength=n_parts)
+        n_empty = int(np.count_nonzero(np.bincount(parts, minlength=n_parts) == 0))
         ratio = float(np.max(load / target_load))
-        score = (0, cut, ratio) if ratio <= METIS_SLACK else (1, ratio, cut)
+        score = (n_empty, 0, cut, ratio) if ratio <= METIS_SLACK else (n_empty, 1, ratio, cut)
         if best_score is None or score < best_score:
             best, best_score = parts, score
     assert best is not None
-    return best
+    return _fill_empty_parts(graph, best, n_parts)
+
+
+def _fill_empty_parts(graph: PartitionGraph, parts: np.ndarray, n_parts: int) -> np.ndarray:
+    """An empty part (METIS leaves one with very unequal weights) takes a node of
+    the heaviest part that has two or more: the lightest leaf of a spanning tree
+    of that part, so that the part stays connected.  ``graph`` has more nodes
+    than ``n_parts``.
+    """
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import breadth_first_order
+
+    for empty in range(n_parts):
+        counts = np.bincount(parts, minlength=n_parts)
+        if counts[empty] > 0:
+            continue
+        load = np.bincount(parts, weights=graph.weights, minlength=n_parts)
+        donor = int(np.argmax(np.where(counts > 1, load, -np.inf)))
+        members = np.flatnonzero(parts == donor)
+        sub = _subgraph(graph, members)
+        matrix = coo_matrix(
+            (np.ones(sub.edges.shape[0]), (sub.edges[:, 0], sub.edges[:, 1])),
+            shape=(sub.size, sub.size),
+        ).tocsr()
+        _, predecessors = breadth_first_order(matrix, 0, directed=False)
+        is_parent = np.zeros(sub.size, dtype=np.bool_)
+        is_parent[predecessors[predecessors >= 0]] = True
+        leaves = np.flatnonzero(~is_parent)
+        leaf = leaves[np.argmin(sub.weights[leaves])]
+        parts[members[leaf]] = empty
+    return parts
 
 
 def _refine(
@@ -658,6 +691,26 @@ def _apportion(
     return count
 
 
+def _follow_neighbours(graph: PartitionGraph, parts: np.ndarray) -> None:
+    """Nodes without a part take the part of a neighbour that has one (the lowest
+    part when several), step by step; those that reach none take part 0."""
+    first, second = graph.edges[:, 0], graph.edges[:, 1]
+    while True:
+        missing = parts < 0
+        if not np.any(missing):
+            return
+        forward = missing[first] & ~missing[second]
+        backward = missing[second] & ~missing[first]
+        if not (np.any(forward) or np.any(backward)):
+            parts[missing] = 0
+            return
+        nodes = np.concatenate((first[forward], second[backward]))
+        given = np.concatenate((parts[second[forward]], parts[first[backward]]))
+        order = np.lexsort((given, nodes))
+        unique, index = np.unique(nodes[order], return_index=True)
+        parts[unique] = given[order][index]
+
+
 def _archipelago(
     graph: PartitionGraph,
     component: np.ndarray,
@@ -719,6 +772,23 @@ def _partition_components(
         return parts
     if group is None:
         group = np.arange(n, dtype=np.int64)
+    empty = (linked.weights <= 0) | ~np.isfinite(linked.rows) | ~np.isfinite(linked.cols)
+    if np.any(empty):
+        # nodes without cells (or a centroid) carry no work: the others are
+        # divided, and these follow a neighbour
+        keep = np.flatnonzero(~empty)
+        if keep.size:
+            parts[keep] = _partition_components(
+                _subgraph(linked, keep),
+                _subgraph(ground, keep),
+                n_parts,
+                seed,
+                imbalance_target,
+                refine,
+                group[keep],
+            )
+        _follow_neighbours(linked, parts)
+        return parts
     component = _components(linked)
     component_weight = np.bincount(component, weights=linked.weights)
     # the groups (coarse nodes) of every component: the most parts it can take
