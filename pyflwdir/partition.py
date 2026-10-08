@@ -72,7 +72,8 @@ the balance refinement, a node of an island may move to the part of this many
 nearest nodes of other components."""
 
 ISLAND_PROBES = 16
-"""The nearest nodes an island node looks through for those of other components."""
+"""The nearest nodes an island node looks through for those of other components
+(doubled while its island has found fewer than ``ARCHIPELAGO_NEIGHBOURS``)."""
 
 METIS_GROUPS_PER_PART = 8
 """Method 2 groups small tributaries for METIS, but keeps at least this many
@@ -578,14 +579,18 @@ def _fill_empty_parts(graph: PartitionGraph, parts: np.ndarray, n_parts: int) ->
 
 
 def _island_units(linked: PartitionGraph, parts: np.ndarray, n_parts: int):
-    """The units the refinement moves: every node, but an island -- a component
-    of ``linked`` lighter than half an equal share -- that is all in one part is
-    one unit.  Returns None when there is no such island; else the unit of every
-    node, the number of units and the pairs (island unit, unit of one of the
-    ``ARCHIPELAGO_NEIGHBOURS`` nearest nodes of other components, among the
-    ``ISLAND_PROBES`` nearest of any of the island's nodes)."""
+    """The units the refinement moves: every node, but an island all in one part
+    is one unit.  An island is a component of ``linked`` lighter than half an
+    equal share that is not its part's land: in a part without a heavier or a
+    shared component, the heaviest stays.  Returns None when there is no such
+    island; else the unit of every node, the number of units and the pairs
+    (island unit, unit of a node of another component near it): per node of the
+    island the ``ARCHIPELAGO_NEIGHBOURS`` nearest of its ``ISLAND_PROBES``
+    nearest nodes, the probes doubled until the island has that many.
+    """
     from scipy.spatial import cKDTree
 
+    n = linked.size
     component = _components(linked)
     component_weight = np.bincount(component, weights=linked.weights)
     small = component_weight < 0.5 * component_weight.sum() / n_parts
@@ -595,27 +600,47 @@ def _island_units(linked: PartitionGraph, parts: np.ndarray, n_parts: int):
     high = np.full(component_weight.size, -1, dtype=np.int64)
     np.minimum.at(low, component, parts)
     np.maximum.at(high, component, parts)
+    # a part's land: a component it shares with another part or one too large to
+    # be an island; without one, its heaviest component
+    has_land = np.zeros(n_parts, dtype=np.bool_)
+    has_land[parts[((low != high) | ~small)[component]]] = True
     whole = small & (low == high)
+    candidate = np.flatnonzero(whole & ~has_land[np.clip(low, 0, n_parts - 1)])
+    if candidate.size:
+        order = candidate[np.lexsort((candidate, -component_weight[candidate], low[candidate]))]
+        _, heads = np.unique(low[order], return_index=True)
+        whole[order[heads]] = False
     if not whole.any():
         return None
     on_island = whole[component]
-    unit = np.empty(linked.size, dtype=np.int64)
+    unit = np.empty(n, dtype=np.int64)
     islands = np.flatnonzero(whole)
     loose = np.flatnonzero(~on_island)
     unit[loose] = np.arange(loose.size)
     island_unit = np.full(component_weight.size, -1, dtype=np.int64)
     island_unit[islands] = loose.size + np.arange(islands.size)
     unit[on_island] = island_unit[component[on_island]]
-    nodes = np.flatnonzero(on_island)
     points = np.column_stack((linked.rows, linked.cols))
-    k = min(ISLAND_PROBES + 1, linked.size)
-    _, near = cKDTree(points).query(points[nodes], k=k)
-    near = near.reshape(nodes.size, k)
-    other = component[near] != component[nodes][:, None]
-    keep = other & (np.cumsum(other, axis=1) <= ARCHIPELAGO_NEIGHBOURS)
-    reach = np.column_stack(
-        (unit[np.repeat(nodes, k)[keep.ravel()]], unit[near.ravel()[keep.ravel()]])
-    )
+    tree = cKDTree(points)
+    nodes = np.flatnonzero(on_island)
+    k = min(ISLAND_PROBES + 1, n)
+    found = []
+    while nodes.size:
+        _, near = tree.query(points[nodes], k=k)
+        near = near.reshape(nodes.size, k)
+        other = component[near] != component[nodes][:, None]
+        keep = (other & (np.cumsum(other, axis=1) <= ARCHIPELAGO_NEIGHBOURS)).ravel()
+        found.append(np.column_stack((np.repeat(nodes, k)[keep], near.ravel()[keep])))
+        if k >= n:
+            break
+        # islands that met fewer other nodes than wanted look farther
+        met = np.unique(np.concatenate(found), axis=0)
+        met = np.unique(np.column_stack((component[met[:, 0]], met[:, 1])), axis=0)
+        count = np.bincount(met[:, 0], minlength=component_weight.size)
+        nodes = nodes[count[component[nodes]] < ARCHIPELAGO_NEIGHBOURS]
+        k = min(2 * k, n)
+    pairs = np.unique(np.concatenate(found), axis=0)
+    reach = np.column_stack((unit[pairs[:, 0]], unit[pairs[:, 1]]))
     return unit, loose.size + islands.size, reach
 
 

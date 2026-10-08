@@ -671,6 +671,34 @@ def test_a_merged_tributary_keeps_its_mainstem_cells():
 
 
 @pytest.mark.unit
+def test_land_chosen_for_its_nodes_never_moves_across_water():
+    pytest.importorskip("pymetis")
+    # seven one-node components; 0 is a part, 1..3 are land for want of nodes
+    weights = np.array([1000, 30, 25, 24, 20, 20, 20], dtype=np.int64)
+    cols = np.array([0, 100, 110, 120, 101, 102, 103], dtype=np.float64)
+    graph = partition.PartitionGraph(
+        weights, np.zeros(7), cols, np.empty((0, 2), dtype=np.int64), np.empty(0, dtype=np.int64)
+    )
+    parts = partition._partition_components(graph, graph, 4, 42, 1.005, True)
+    assert np.unique(parts[:4]).size == 4
+
+
+@pytest.mark.unit
+def test_a_dense_island_still_finds_the_parts_around_it():
+    pytest.importorskip("pymetis")
+    # four one-node lands and a connected island of twenty nodes by the lightest
+    weights = np.r_[120, 80, 120, 120, np.full(20, 2)].astype(np.int64)
+    cols = np.r_[0.0, 100, 200, 300, 40 + 0.01 * np.arange(20)]
+    edges = np.column_stack((np.arange(4, 23), np.arange(5, 24)))
+    graph = partition.PartitionGraph(
+        weights, np.zeros(24), cols, edges, np.ones(19, dtype=np.int64)
+    )
+    parts = partition.assign_basins(graph, 4)
+    assert np.array_equal(np.bincount(parts, weights=weights), [120, 120, 120, 120])
+    assert np.unique(parts[4:]).size == 1
+
+
+@pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()
     with pytest.raises(ValueError, match="requires n_parts=4"):
