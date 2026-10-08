@@ -126,15 +126,27 @@ def test_merge_edges_sums_and_drops_loops():
 
 
 @pytest.mark.unit
-def test_apportion_gives_every_land_a_part_in_proportion():
-    assert np.array_equal(partition._apportion(np.array([80.0, 40.0]), 3), [2, 1])
-    assert np.array_equal(partition._apportion(np.array([10.0, 10.0, 1.0]), 3), [1, 1, 1])
-    assert partition._apportion(np.array([5.0]), 4).sum() == 4
-
-
-# --- the balance refinement ----------------------------------------------------
-
-
+def test_parts_go_where_the_heaviest_part_is_lightest():
+    # 2.9 and 1.1 shares: 3 + 1 parts (1.1 the heaviest), not 2 + 2 (1.45)
+    assert np.array_equal(partition._apportion(np.array([2.9, 1.1]), np.array([9, 9]), 4), [3, 1])
+    assert np.array_equal(partition._apportion(np.array([2.0, 1.0, 1.0]), np.array([9, 9, 9]), 4), [2, 1, 1])
+    # no more parts than a mass has nodes to place
+    assert np.array_equal(partition._apportion(np.array([3.5, 0.5]), np.array([2, 9]), 4), [2, 2])
+@pytest.mark.unit
+def test_islands_move_whole_to_balance_and_land_stays_one_piece():
+    pytest.importorskip("pymetis")
+    # land A (12 nodes) and land B (8 nodes) far apart, four one-node islands
+    # between them; two parts of 12: two islands nearer A go to B's part
+    weights = np.ones(24, dtype=np.int64)
+    edges = np.array([[i, i + 1] for i in range(11)] + [[i, i + 1] for i in range(12, 19)])
+    cols = np.r_[np.arange(12.0), 100 + np.arange(8.0), 40, 50, 60, 70]
+    graph = partition.PartitionGraph(
+        weights, np.zeros(24), cols, edges, np.ones(edges.shape[0], dtype=np.int64)
+    )
+    parts = partition._partition_components(graph, graph, 2, 42, 1.0, True)
+    assert np.array_equal(np.bincount(parts, minlength=2), [12, 12])
+    assert np.unique(parts[:12]).size == 1 and np.unique(parts[12:20]).size == 1
+    assert parts[0] != parts[12]
 def peninsula_graph():
     """part 1 = {p}; part 0 = {c, a, b, x, y, z} with c holding the peninsula
     a-b and touching the body x-y-z and p."""
@@ -544,6 +556,25 @@ def connected_parts(parts, edges):
     return True
 
 
+def connected_within_land(parts, edges, n):
+    """Is every part one piece within each component of ``edges``?"""
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+
+    land = connected_components(
+        coo_matrix((np.ones(len(edges)), (edges[:, 0], edges[:, 1])), shape=(n, n)),
+        directed=False,
+    )[1]
+    for component in np.unique(land):
+        nodes = np.flatnonzero(land == component)
+        index = np.full(n, -1)
+        index[nodes] = np.arange(nodes.size)
+        inside = (index[edges[:, 0]] >= 0) & (index[edges[:, 1]] >= 0)
+        if not connected_parts(parts[nodes], index[edges[inside]]):
+            return False
+    return True
+
+
 @pytest.mark.unit
 def test_a_node_without_cells_still_joins_its_neighbours():
     pytest.importorskip("pymetis")
@@ -608,6 +639,35 @@ def test_a_cell_less_tributary_keeps_its_banks_joined():
     order = np.r_[np.arange(4, 35), 1, 2, 3]
     banks = np.column_stack((order[:-1], order[1:]))
     assert connected_parts(parts, np.concatenate((ground, banks)))
+
+
+@pytest.mark.unit
+def test_a_merged_tributary_keeps_its_mainstem_cells():
+    pytest.importorskip("pymetis")
+    # a star around basin 0; tributary 1 (no centroid) enters the source and is
+    # given the first 80 cells of a 113-cell mainstem; 2..34 enter cells 80..112
+    weights = np.array([1, 1] + [10] * 33, dtype=np.int64)
+    cols = np.arange(35, dtype=np.float64)
+    cols[1] = np.nan
+    edges = np.column_stack((np.zeros(34, dtype=np.int64), np.arange(1, 35)))
+    graph = partition.PartitionGraph(
+        weights, np.zeros(35), cols, edges, np.ones(34, dtype=np.int64)
+    )
+    is_tributary = np.arange(35) > 0
+    position = np.r_[-1, 0, np.arange(80, 113)]
+    lengths = np.array([113])
+    parts = partition.assign_subbasins(
+        graph, is_tributary, position, 4, stem_lengths=lengths, min_subtree_size=1,
+        imbalance_target=1.09,
+    )
+    stem = np.where(is_tributary, 0, -1)
+    p_min = partition._p_mins(parts, stem, position, lengths)
+    loads = np.bincount(
+        parts, weights=weights + partition._mainstem_weights(stem, position, p_min), minlength=4
+    )
+    # it follows basin 0 into the trunk, its 80 cells with it (they were lost: 1.75)
+    assert parts[1] == parts[0] and p_min[0] >= 80
+    assert loads.max() / loads.mean() < 1.15
 
 
 @pytest.mark.unit

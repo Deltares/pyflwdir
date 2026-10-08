@@ -7,28 +7,30 @@ process-level parts, at two levels:
   a graph whose edges are their shared raster boundaries, weighted by the length
   of the boundary.  A basin larger than an equal share is a part of its own,
   with the small basins it cuts off from the others; the other basins share the
-  remaining parts, every part connected on the ground.
+  remaining parts.
 * ``"subbasin"`` (Method 2): when Method 1's parts are not within
   ``imbalance_target`` of an equal share, basins are opened along their
   mainstems into the tributary subtrees that drain into the mainstem -- the
   largest basin first, then the next, while the parts are still unequal.  Those
-  tributaries and the other basins form one graph, divided at once into equal,
-  connected parts; each mainstem cell weighs with the tributary that enters it.
+  tributaries and the other basins form one graph, divided at once into equal
+  parts; each mainstem cell weighs with the tributary that enters it.
   Below ``P_min``, the most upstream mainstem cell where a tributary of another
   part enters, each opened mainstem is a logical fifth region, walked once
   after the four parts; above it, the mainstem stays with the part of its most
   upstream tributaries (its trunk).
 
-The graph is first divided between its large components -- land that touches
-on the ground, the two banks of an opened mainstem joined -- in proportion to
-their weights, so that no part spans land that does not touch; small
-components (islands) join the part of their nearest node.  Within a component,
-contiguous weighted METIS runs from several seeds on a graph whose small
-tributaries are grouped with a larger neighbour, the most balanced result is
+Contiguity comes first, balance second: every part is one piece of land.
+Land is a large component of the graph -- what touches on the ground, the two
+banks of an opened mainstem joined -- and each small component (an island) goes
+with its nearest land, a land mass.  The masses get the parts so that the
+heaviest part is as light as can be, and no part spans two masses.  A mass is
+cut by contiguous weighted METIS, run from several seeds on a graph whose small
+tributaries are grouped with a larger neighbour; the most balanced result is
 kept, and boundary nodes then move, one tributary or basin at a time, from
 heavier to lighter neighbouring parts until every part is within
-``imbalance_target`` of its target load.  A part is never cut in two; the odd
-piece left apart from its part joins the part around it.
+``imbalance_target`` of its target load.  An island moves whole, to a part
+near it.  A part is never cut in two; the odd piece left apart from its part
+joins the part around it.
 
 The graph functions take arrays, not a raster, so that a graph built from tiles
 (FlowTopo's 90 m region tiles, for one) is partitioned by the same code.
@@ -65,7 +67,12 @@ MAX_OPENED_BASINS = 4
 """Method 2 opens at most this many basins along their mainstems."""
 
 ARCHIPELAGO_NEIGHBOURS = 4
-"""Without land, each component is linked to this many nearest for METIS."""
+"""Without land, each component is linked to this many nearest for METIS; in
+the balance refinement, a node of an island may move to the part of this many
+nearest nodes of other components."""
+
+ISLAND_PROBES = 16
+"""The nearest nodes an island node looks through for those of other components."""
 
 METIS_GROUPS_PER_PART = 8
 """Method 2 groups small tributaries for METIS, but keeps at least this many
@@ -570,6 +577,57 @@ def _fill_empty_parts(graph: PartitionGraph, parts: np.ndarray, n_parts: int) ->
     return parts
 
 
+def _island_units(linked: PartitionGraph, parts: np.ndarray, n_parts: int):
+    """The units the refinement moves: every node, but an island -- a component
+    of ``linked`` lighter than half an equal share -- that is all in one part is
+    one unit.  Returns None when there is no such island; else the unit of every
+    node, the number of units and the pairs (island unit, unit of one of the
+    ``ARCHIPELAGO_NEIGHBOURS`` nearest nodes of other components, among the
+    ``ISLAND_PROBES`` nearest of any of the island's nodes)."""
+    from scipy.spatial import cKDTree
+
+    component = _components(linked)
+    component_weight = np.bincount(component, weights=linked.weights)
+    small = component_weight < 0.5 * component_weight.sum() / n_parts
+    if component_weight.size < 2 or not small.any():
+        return None
+    low = np.full(component_weight.size, n_parts, dtype=np.int64)
+    high = np.full(component_weight.size, -1, dtype=np.int64)
+    np.minimum.at(low, component, parts)
+    np.maximum.at(high, component, parts)
+    whole = small & (low == high)
+    if not whole.any():
+        return None
+    on_island = whole[component]
+    unit = np.empty(linked.size, dtype=np.int64)
+    islands = np.flatnonzero(whole)
+    loose = np.flatnonzero(~on_island)
+    unit[loose] = np.arange(loose.size)
+    island_unit = np.full(component_weight.size, -1, dtype=np.int64)
+    island_unit[islands] = loose.size + np.arange(islands.size)
+    unit[on_island] = island_unit[component[on_island]]
+    nodes = np.flatnonzero(on_island)
+    points = np.column_stack((linked.rows, linked.cols))
+    k = min(ISLAND_PROBES + 1, linked.size)
+    _, near = cKDTree(points).query(points[nodes], k=k)
+    near = near.reshape(nodes.size, k)
+    other = component[near] != component[nodes][:, None]
+    keep = other & (np.cumsum(other, axis=1) <= ARCHIPELAGO_NEIGHBOURS)
+    reach = np.column_stack(
+        (unit[np.repeat(nodes, k)[keep.ravel()]], unit[near.ravel()[keep.ravel()]])
+    )
+    return unit, loose.size + islands.size, reach
+
+
+def _adjacency(n_nodes: int, source: np.ndarray, target: np.ndarray):
+    """Compressed sparse rows of directed pairs, unique."""
+    keys = np.unique(source.astype(np.int64) * n_nodes + target.astype(np.int64))
+    source, target = keys // n_nodes, keys % n_nodes
+    xadj = np.zeros(n_nodes + 1, dtype=np.int64)
+    xadj[1:] = np.cumsum(np.bincount(source, minlength=n_nodes))
+    return xadj, target.astype(np.int64)
+
+
 def _refine(
     graph: PartitionGraph,
     parts: np.ndarray,
@@ -582,7 +640,10 @@ def _refine(
 
     ``graph`` holds only shared raster boundaries: a node moves only to a part
     it touches on the ground, or a part could creep along an opened mainstem
-    from bank to bank.  Whether a part stays connected is judged on ``linked``
+    from bank to bank.  An island all in one part moves whole, and to the part
+    of a node of another component near it (``_island_units``), so that
+    islands, and archipelagos, balance the parts without a piece of land apart
+    from its part.  Whether a part stays connected is judged on ``linked``
     (``graph`` when None), where the two banks of an opened mainstem touch, as
     they do for METIS.
     """
@@ -591,22 +652,38 @@ def _refine(
     if linked is None:
         linked = graph
     target_load = np.asarray(targets, dtype=np.float64) * float(graph.weights.sum())
-    xadj, adjncy, _ = _csr(graph.size, graph.edges, graph.edge_weights)
+    units = _island_units(linked, parts, n_parts)
+    unit_parts = parts
+    reach = np.empty((0, 2), dtype=np.int64)
+    if units is not None:
+        unit, n_units, reach = units
+        graph = _contract(graph, unit, n_units)
+        linked = _contract(linked, unit, n_units)
+        unit_parts = np.empty(n_units, dtype=parts.dtype)
+        unit_parts[unit] = parts
+    xadj, adjncy = _adjacency(
+        graph.size,
+        np.concatenate((graph.edges[:, 0], graph.edges[:, 1], reach[:, 0])),
+        np.concatenate((graph.edges[:, 1], graph.edges[:, 0], reach[:, 1])),
+    )
     link_xadj, link_adjncy, _ = _csr(linked.size, linked.edges, linked.edge_weights)
-    return int(
+    moves = int(
         _refine_balance(
             xadj,
             adjncy,
             link_xadj,
             link_adjncy,
             graph.weights.astype(np.int64),
-            parts,
+            unit_parts,
             target_load,
             float(imbalance_target),
             10 * graph.size,
             50_000,
         )
     )
+    if units is not None:
+        parts[:] = unit_parts[unit]
+    return moves
 
 
 def _subgraph(graph: PartitionGraph, nodes: np.ndarray) -> PartitionGraph:
@@ -679,32 +756,6 @@ def _absorb_fragments(graph: PartitionGraph, parts: np.ndarray, limit: float) ->
         parts[moving] = target[piece[moving]]
         moved_nodes += int(np.count_nonzero(moving))
     return moved_nodes
-
-
-def _apportion(
-    weights: np.ndarray, n_parts: int, capacity: np.ndarray | None = None
-) -> np.ndarray:
-    """Parts per component, in proportion to weight, at least one each.
-
-    Largest remainder; ``weights`` are of components that each get a part, so
-    there are at most ``n_parts`` of them.  No component gets more parts than
-    its ``capacity`` (the nodes METIS can place); when the capacities run out,
-    fewer than ``n_parts`` are given.
-    """
-    if capacity is None:
-        capacity = np.full(weights.size, n_parts, dtype=np.int64)
-    quota = weights / weights.sum() * n_parts
-    count = np.minimum(np.maximum(np.floor(quota).astype(np.int64), 1), capacity)
-    while count.sum() > n_parts:
-        # too many: take one back where the quota is exceeded the most
-        excess = np.where(count > 1, count - quota, -np.inf)
-        count[int(np.argmax(excess))] -= 1
-    while count.sum() < n_parts:
-        room = np.where(count < capacity, quota - count, -np.inf)
-        if not np.isfinite(room).any():
-            break
-        count[int(np.argmax(room))] += 1
-    return count
 
 
 def _live_nodes(graph: PartitionGraph):
@@ -799,6 +850,50 @@ def _archipelago(
     return parts[component].astype(np.int32)
 
 
+def _masses(linked: PartitionGraph, component: np.ndarray, land: np.ndarray):
+    """Each island component tied to its nearest land node: the virtual edges,
+    one per island (from its member nearest to land), and the land component
+    every component belongs to (its mass)."""
+    from scipy.spatial import cKDTree
+
+    is_land = np.zeros(component.max() + 1, dtype=np.bool_)
+    is_land[land] = True
+    on_land = np.flatnonzero(is_land[component])
+    off_land = np.flatnonzero(~is_land[component])
+    mass_of = np.arange(is_land.size)
+    if off_land.size == 0:
+        return np.empty((0, 2), dtype=np.int64), mass_of
+    tree = cKDTree(np.column_stack((linked.rows[on_land], linked.cols[on_land])))
+    distance, nearest = tree.query(
+        np.column_stack((linked.rows[off_land], linked.cols[off_land]))
+    )
+    island = component[off_land]
+    order = np.lexsort((off_land, distance, island))
+    _, first = np.unique(island[order], return_index=True)
+    members = off_land[order[first]]
+    anchors = on_land[nearest[order[first]]]
+    mass_of[component[members]] = component[anchors]
+    return np.column_stack((members, anchors)), mass_of
+
+
+def _carve(
+    graph: PartitionGraph,
+    nodes: np.ndarray,
+    group: np.ndarray,
+    targets: np.ndarray,
+    seed: int,
+    imbalance_target: float,
+) -> np.ndarray:
+    """Contiguous METIS of ``nodes`` (connected in ``graph``), grouped by
+    ``group``, into ``targets.size`` pieces of those shares."""
+    if targets.size == 1:
+        return np.zeros(nodes.size, dtype=np.int32)
+    sub = _subgraph(graph, nodes)
+    local_groups, local_group = np.unique(group[nodes], return_inverse=True)
+    coarse = _contract(sub, local_group, local_groups.size)
+    return _metis_parts(coarse, targets.size, targets, seed, imbalance_target)[local_group]
+
+
 def _choose_land(
     component_weight: np.ndarray, capacity: np.ndarray, n_parts: int
 ) -> np.ndarray:
@@ -818,6 +913,20 @@ def _choose_land(
     return order[:n_land]
 
 
+def _apportion(shares: np.ndarray, capacity: np.ndarray, n_parts: int) -> np.ndarray:
+    """Parts per land mass: one each, then one at a time to the mass whose parts
+    are the heaviest, so that the heaviest part is as light as can be.  No mass
+    gets more parts than its ``capacity`` (the nodes METIS can place); when the
+    capacities run out, fewer than ``n_parts`` are given."""
+    count = np.minimum(np.ones(shares.size, dtype=np.int64), capacity)
+    while count.sum() < n_parts:
+        load = np.where(count < capacity, shares / np.maximum(count, 1), -np.inf)
+        if not np.isfinite(load).any():
+            break
+        count[int(np.argmax(load))] += 1
+    return count
+
+
 def _partition_components(
     linked: PartitionGraph,
     ground: PartitionGraph,
@@ -827,20 +936,22 @@ def _partition_components(
     refine: bool,
     group: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Equal, connected parts of a graph that may have several components.
+    """Equal parts of a graph that may have several components, every part one
+    piece of land: contiguity first, balance second.
 
     ``linked`` decides what touches (the ground with the banks of opened
     mainstems joined); ``ground`` holds only shared raster boundaries and is
-    used for the balance refinement.  Components of at least half an equal share
-    are land: the parts are apportioned between them by weight, and each is
-    divided by contiguous METIS on its nodes grouped by ``group`` (small
-    tributaries with a larger neighbour; each node its own group when None).
-    Smaller components (islands) take the part of their nearest land node.  When
-    no component is land (an archipelago), the components are divided by
-    METIS, each linked to its nearest.
+    used for the balance refinement.  The largest components, of at least half
+    an equal share (at most ``n_parts``), are land; each other component (an
+    island) is tied to its nearest land node, and a land component with its
+    islands is a mass.  The masses get the parts so that the heaviest part is
+    as light as can be (``_apportion``), and contiguous METIS cuts each mass
+    into equal parts, on its nodes grouped by ``group`` (small tributaries with
+    a larger neighbour; each node its own group when None) with its islands
+    tied on.  When no component is land (an archipelago), METIS divides the
+    components, each linked to its nearest.  Nodes must have cells and a
+    centroid.
     """
-    from scipy.spatial import cKDTree
-
     n = linked.size
     parts = np.full(n, -1, dtype=np.int32)
     if n == 0:
@@ -857,45 +968,43 @@ def _partition_components(
         parts = _archipelago(
             linked, component, component_weight, n_parts, seed, imbalance_target
         )
-    else:
-        counts = _apportion(component_weight[land], n_parts, capacity[land])
-        first_part = 0
-        for comp, count in zip(land, counts):
-            nodes = np.flatnonzero(component == comp)
-            if count == 1:
-                parts[nodes] = first_part
-            else:
-                sub = _subgraph(linked, nodes)
-                # the groups of these nodes, renumbered
-                local_groups, local_group = np.unique(group[nodes], return_inverse=True)
-                coarse = _contract(sub, local_group, local_groups.size)
-                targets = np.full(count, 1.0 / count)
-                coarse_parts = _metis_parts(
-                    coarse, count, targets, seed, imbalance_target
-                )
-                parts[nodes] = first_part + coarse_parts[local_group]
-            first_part += count
-    # islands: the part of the nearest land node
-    assigned = np.flatnonzero(parts >= 0)
-    islands = np.flatnonzero(parts < 0)
-    if islands.size:
-        tree = cKDTree(np.column_stack((linked.rows[assigned], linked.cols[assigned])))
-        _, nearest = tree.query(np.column_stack((linked.rows[islands], linked.cols[islands])))
-        # one part per island component, from its member nearest to land
-        island_component = component[islands]
-        distance = np.hypot(
-            linked.rows[islands] - linked.rows[assigned[nearest]],
-            linked.cols[islands] - linked.cols[assigned[nearest]],
-        )
-        order = np.lexsort((islands, distance, island_component))
-        _, first = np.unique(island_component[order], return_index=True)
-        part_of_component = dict(
-            zip(
-                island_component[order][first].tolist(),
-                parts[assigned[nearest[order[first]]]].tolist(),
-            )
-        )
-        parts[islands] = [part_of_component[c] for c in island_component.tolist()]
+        return _balance(linked, ground, parts, n_parts, imbalance_target, refine)
+    ties, mass_of = _masses(linked, component, land)
+    mass = mass_of[component]
+    mass_weight = np.bincount(mass, weights=linked.weights, minlength=component_weight.size)
+    pairs = np.unique(np.column_stack((mass, group)), axis=0)
+    mass_capacity = np.bincount(pairs[:, 0], minlength=component_weight.size)
+    counts = _apportion(
+        mass_weight[land] / mass_weight.sum() * n_parts, mass_capacity[land], n_parts
+    )
+    tied = PartitionGraph(
+        linked.weights,
+        linked.rows,
+        linked.cols,
+        *merge_edges(
+            [linked.edges, ties],
+            n,
+            [linked.edge_weights, np.ones(ties.shape[0], dtype=np.int64)],
+        ),
+    )
+    first = 0
+    for m, k in zip(land, counts):
+        nodes = np.flatnonzero(mass == m)
+        targets = np.full(k, 1.0 / k)
+        parts[nodes] = first + _carve(tied, nodes, group, targets, seed, imbalance_target)
+        first += k
+    return _balance(linked, ground, parts, n_parts, imbalance_target, refine)
+
+
+def _balance(
+    linked: PartitionGraph,
+    ground: PartitionGraph,
+    parts: np.ndarray,
+    n_parts: int,
+    imbalance_target: float,
+    refine: bool,
+) -> np.ndarray:
+    """The refinement and the fragments' absorption of ``_partition_components``."""
     if refine and n_parts > 1:
         targets = np.full(n_parts, 1.0 / n_parts)
         _refine(ground, parts, n_parts, targets, imbalance_target, linked)
@@ -1171,6 +1280,9 @@ def assign_subbasins(
         [graph.edge_weights, np.ones(stem_edges.shape[0], dtype=np.int64)],
     )
     linked = PartitionGraph(graph.weights, graph.rows, graph.cols, edges, edge_weights)
+    # every tributary keeps its stem and position, merged or not: the mainstem
+    # cells it is given and P_min are those of the node it is merged into
+    all_stem, all_position = stem, position
     merged = _live_nodes(linked)
     if merged is not None:
         live, index = merged
@@ -1178,14 +1290,26 @@ def assign_subbasins(
             return np.zeros(graph.size, dtype=np.int32)
         graph = _merge_into(graph, index, live)
         linked = _merge_into(linked, index, live)
-        is_tributary, position, stem = is_tributary[live], position[live], stem[live]
+        is_tributary = is_tributary[live]
         hint = None if hint is None else hint[live]
+
+    def node_weights(upto: np.ndarray) -> np.ndarray:
+        extra = _mainstem_weights(all_stem, all_position, upto)
+        if merged is not None:
+            keep = index >= 0
+            extra = np.bincount(index[keep], weights=extra[keep], minlength=live.size)
+        return cells + extra.astype(np.int64)
+
+    def p_mins(node_parts: np.ndarray) -> np.ndarray:
+        if merged is not None:
+            node_parts = _expand(index, node_parts)
+        return _p_mins(node_parts, all_stem, all_position, stem_lengths)
 
     cells = graph.weights
     weights = cells
     if stem_lengths is not None:
         stem_lengths = np.asarray(stem_lengths, dtype=np.int64)
-        weights = cells + _mainstem_weights(stem, position, stem_lengths)
+        weights = node_weights(stem_lengths)
     ground = PartitionGraph(weights, graph.rows, graph.cols, graph.edges, graph.edge_weights)
     banks = PartitionGraph(weights, linked.rows, linked.cols, linked.edges, linked.edge_weights)
     group, _ = _coarsen_tributaries(
@@ -1200,11 +1324,11 @@ def assign_subbasins(
         targets = np.full(n_parts, 1.0 / n_parts)
         p_min = None
         for _ in range(P_MIN_ROUNDS):
-            moved = _p_mins(parts, stem, position, stem_lengths)
+            moved = p_mins(parts)
             if p_min is not None and np.array_equal(moved, p_min):
                 break
             p_min = moved
-            weights = cells + _mainstem_weights(stem, position, p_min)
+            weights = node_weights(p_min)
             ground = PartitionGraph(
                 weights, graph.rows, graph.cols, graph.edges, graph.edge_weights
             )
