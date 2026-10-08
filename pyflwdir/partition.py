@@ -936,23 +936,29 @@ def _merge_into(graph: PartitionGraph, nodes: np.ndarray, live: np.ndarray) -> P
 
 def _follow_neighbours(graph: PartitionGraph, parts: np.ndarray, fill: int = 0) -> None:
     """Nodes without a part (-1) take the part of a neighbour that has one (the
-    lowest part when several), step by step; those that reach none take
-    ``fill``."""
-    first, second = graph.edges[:, 0], graph.edges[:, 1]
-    while True:
-        missing = parts < 0
-        if not np.any(missing):
-            return
-        forward = missing[first] & ~missing[second]
-        backward = missing[second] & ~missing[first]
-        if not (np.any(forward) or np.any(backward)):
-            parts[missing] = fill
-            return
-        nodes = np.concatenate((first[forward], second[backward]))
-        given = np.concatenate((parts[second[forward]], parts[first[backward]]))
+    lowest part when several), step by step outward from the nodes that have
+    one; those that reach none take ``fill``.  One breadth-first pass."""
+    missing = parts < 0
+    if not missing.any():
+        return
+    xadj, adjncy, _ = _csr(graph.size, graph.edges, graph.edge_weights)
+    frontier = np.flatnonzero(~missing)
+    while frontier.size and missing.any():
+        starts = xadj[frontier]
+        counts = xadj[frontier + 1] - starts
+        offsets = np.repeat(starts - np.cumsum(counts) + counts, counts) + np.arange(
+            counts.sum()
+        )
+        nodes = adjncy[offsets]
+        given = np.repeat(parts[frontier], counts)
+        keep = missing[nodes]
+        nodes, given = nodes[keep], given[keep]
         order = np.lexsort((given, nodes))
-        unique, index = np.unique(nodes[order], return_index=True)
-        parts[unique] = given[order][index]
+        reached, first = np.unique(nodes[order], return_index=True)
+        parts[reached] = given[order][first]
+        missing[reached] = False
+        frontier = reached
+    parts[missing] = fill
 
 
 def _archipelago(
@@ -1221,10 +1227,11 @@ def assign_basins(
 ) -> np.ndarray:
     """Method 1: the part of every basin node.
 
-    A basin heavier than an equal share is a part of its own (the largest
-    first, at most ``n_parts - 1``), together with the basins it cuts off from
-    the others that get no part of their own; the other basins share the other
-    parts.  A node without cells or a centroid is merged into one it touches.
+    The land masses get their parts first (``_partition_components``); within
+    a mass, a basin heavier than an equal share of it is a part of its own,
+    together with the basins it cuts off from the others that get no part of
+    their own, and the other basins share the other parts (``_divide``).  A
+    node without cells or a centroid is merged into one it touches.
     """
     n = graph.size
     if n == 0:
@@ -1248,7 +1255,7 @@ def assign_basins(
         return np.zeros(n, dtype=np.int32)
     if n < n_parts:
         return np.arange(n, dtype=np.int32)
-    return _divide(graph, n_parts, seed, imbalance_target, refine)
+    return _partition_components(graph, graph, n_parts, seed, imbalance_target, refine)
 
 
 def _divide(

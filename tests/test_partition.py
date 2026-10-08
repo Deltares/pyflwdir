@@ -803,6 +803,36 @@ def test_a_node_heavier_than_its_share_of_a_land_mass_is_a_part_of_its_own():
 
 
 @pytest.mark.unit
+def test_land_masses_get_parts_before_a_dominant_basin():
+    pytest.importorskip("pymetis")
+    # three apart land masses {0,1}, {2,3}, {4}: none shares a part with another
+    weights = np.array([200, 100, 200, 100, 90], dtype=np.int64)
+    edges = np.array([[0, 1], [2, 3]])
+    graph = partition.PartitionGraph(
+        weights, np.zeros(5), np.array([0.0, 1, 100, 101, 2]), edges,
+        np.ones(2, dtype=np.int64),
+    )
+    for refine in (True, False):
+        parts = partition.assign_basins(graph, 4, refine=refine)
+        assert {parts[0], parts[1]}.isdisjoint({parts[2], parts[3], parts[4]})
+        assert parts[4] not in (parts[2], parts[3])
+
+
+@pytest.mark.unit
+def test_a_long_chain_of_cell_less_nodes_follows_its_one_live_node():
+    n = 20_000
+    weights = np.r_[1, np.zeros(n - 1)].astype(np.int64)
+    edges = np.column_stack((np.arange(n - 1), np.arange(1, n)))
+    graph = partition.PartitionGraph(
+        weights, np.zeros(n), np.arange(n, dtype=np.float64), edges,
+        np.ones(n - 1, dtype=np.int64),
+    )
+    owner = np.r_[0, np.full(n - 1, -1)]
+    partition._follow_neighbours(graph, owner, fill=-1)
+    assert np.all(owner == 0)
+
+
+@pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()
     with pytest.raises(ValueError, match="requires n_parts=4"):
