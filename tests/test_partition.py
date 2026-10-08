@@ -637,6 +637,22 @@ def test_an_archipelago_a_dominant_basin_encloses_joins_it_but_three():
 
 
 @pytest.mark.unit
+def test_enclaves_that_keep_parts_never_share_one():
+    pytest.importorskip("pymetis")
+    # four one-cell basins inside a dominant one, and four islands far away:
+    # three enclaves keep parts of their own, the islands go with them
+    weights = np.array([100] + [1] * 8, dtype=np.int64)
+    edges = np.column_stack((np.zeros(4, dtype=np.int64), np.arange(1, 5)))
+    cols = np.array([0, 1, 2, 3, 4, 100, 200, 300, 400], dtype=np.float64)
+    graph = partition.PartitionGraph(
+        weights, np.zeros(9), cols, edges, np.ones(4, dtype=np.int64)
+    )
+    parts = partition.assign_basins(graph, 4)
+    assert connected_within_land(parts, edges, 9)
+    assert np.unique(parts).size == 4
+
+
+@pytest.mark.unit
 def test_a_cell_less_tributary_keeps_its_banks_joined():
     pytest.importorskip("pymetis")
     weights = np.array([24, 2, 0, 1] + [2] * 31, dtype=np.int64)

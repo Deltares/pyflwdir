@@ -577,11 +577,17 @@ def _fill_empty_parts(graph: PartitionGraph, parts: np.ndarray, n_parts: int) ->
     return parts
 
 
-def _island_units(linked: PartitionGraph, parts: np.ndarray, n_parts: int):
+def _island_units(
+    linked: PartitionGraph,
+    parts: np.ndarray,
+    n_parts: int,
+    pinned: np.ndarray | None = None,
+):
     """The units the refinement moves: every node, but an island all in one part
     is one unit.  An island is a component of ``linked`` lighter than half an
-    equal share that is not its part's land: in a part without a heavier or a
-    shared component, the heaviest stays.  Returns None when there is no such
+    equal share that is not its part's land: the components of ``pinned`` nodes
+    are land, and in a part without land, a heavier or a shared component, the
+    heaviest stays.  Returns None when there is no such
     island; else the unit of every node, the number of units and the pairs
     (island unit, unit of a node of another component near it): per node of the
     island the ``ARCHIPELAGO_NEIGHBOURS`` nearest of its ``ISLAND_PROBES``
@@ -604,9 +610,12 @@ def _island_units(linked: PartitionGraph, parts: np.ndarray, n_parts: int):
     np.maximum.at(high, component, parts)
     # a part's land: a component it shares with another part or one too large to
     # be an island; without one, its heaviest component
+    fixed = np.zeros(component_weight.size, dtype=np.bool_)
+    if pinned is not None:
+        fixed[component[pinned]] = True
     has_land = np.zeros(n_parts, dtype=np.bool_)
-    has_land[parts[((low != high) | ~small)[component]]] = True
-    whole = small & (low == high)
+    has_land[parts[((low != high) | ~small | fixed)[component]]] = True
+    whole = small & (low == high) & ~fixed
     candidate = np.flatnonzero(whole & ~has_land[np.clip(low, 0, n_parts - 1)])
     if candidate.size:
         order = candidate[np.lexsort((candidate, -component_weight[candidate], low[candidate]))]
@@ -677,15 +686,16 @@ def _refine(
     targets: np.ndarray,
     imbalance_target: float,
     linked: PartitionGraph | None = None,
+    pinned: np.ndarray | None = None,
 ) -> int:
     """Balance ``parts`` in place by moving boundary nodes of ``graph``.
 
     ``graph`` holds only shared raster boundaries: a node moves only to a part
     it touches on the ground, or a part could creep along an opened mainstem
     from bank to bank.  An island all in one part moves whole, and to the part
-    of a node of another component near it (``_island_units``), so that
-    islands, and archipelagos, balance the parts without a piece of land apart
-    from its part.  Whether a part stays connected is judged on ``linked``
+    of a node of another component near it (``_island_units``; the components of
+    ``pinned`` nodes stay), so that islands, and archipelagos, balance the parts
+    without a piece of land apart from its part.  Whether a part stays connected is judged on ``linked``
     (``graph`` when None), where the two banks of an opened mainstem touch, as
     they do for METIS.
     """
@@ -694,7 +704,7 @@ def _refine(
     if linked is None:
         linked = graph
     target_load = np.asarray(targets, dtype=np.float64) * float(graph.weights.sum())
-    units = _island_units(linked, parts, n_parts)
+    units = _island_units(linked, parts, n_parts, pinned)
     unit_parts = parts
     reach = np.empty((0, 2), dtype=np.int64)
     if units is not None:
@@ -977,6 +987,7 @@ def _partition_components(
     imbalance_target: float,
     refine: bool,
     group: np.ndarray | None = None,
+    land_nodes: np.ndarray | None = None,
 ) -> np.ndarray:
     """Equal parts of a graph that may have several components, every part one
     piece of land: contiguity first, balance second.
@@ -990,9 +1001,10 @@ def _partition_components(
     as light as can be (``_apportion``), and contiguous METIS cuts each mass
     into equal parts, on its nodes grouped by ``group`` (small tributaries with
     a larger neighbour; each node its own group when None) with its islands
-    tied on.  When no component is land (an archipelago), METIS divides the
-    components, each linked to its nearest.  Nodes must have cells and a
-    centroid.
+    tied on.  The components of ``land_nodes`` (a node mask) are land first,
+    whatever their weight, and never move.  When no component is land (an
+    archipelago), METIS divides the components, each linked to its nearest.
+    Nodes must have cells and a centroid.
     """
     n = linked.size
     parts = np.full(n, -1, dtype=np.int32)
@@ -1006,6 +1018,11 @@ def _partition_components(
     pairs = np.unique(np.column_stack((component, group)), axis=0)
     capacity = np.bincount(pairs[:, 0], minlength=component_weight.size)
     land = _choose_land(component_weight, capacity, n_parts)
+    pinned = None
+    if land_nodes is not None and land_nodes.any():
+        forced = np.unique(component[land_nodes])
+        land = np.r_[forced, land[~np.isin(land, forced)]][:n_parts]
+        pinned = np.isin(component, forced)
     if land.size == 0:
         parts = _archipelago(
             linked, component, component_weight, n_parts, seed, imbalance_target
@@ -1035,7 +1052,7 @@ def _partition_components(
         targets = np.full(k, 1.0 / k)
         parts[nodes] = first + _carve(tied, nodes, group, targets, seed, imbalance_target)
         first += k
-    return _balance(linked, ground, parts, n_parts, imbalance_target, refine)
+    return _balance(linked, ground, parts, n_parts, imbalance_target, refine, pinned)
 
 
 def _balance(
@@ -1045,23 +1062,25 @@ def _balance(
     n_parts: int,
     imbalance_target: float,
     refine: bool,
+    pinned: np.ndarray | None = None,
 ) -> np.ndarray:
     """The refinement and the fragments' absorption of ``_partition_components``."""
     if refine and n_parts > 1:
         targets = np.full(n_parts, 1.0 / n_parts)
-        _refine(ground, parts, n_parts, targets, imbalance_target, linked)
+        _refine(ground, parts, n_parts, targets, imbalance_target, linked, pinned)
         _absorb_fragments(linked, parts, FRAGMENT_SHARE * linked.weights.sum() / n_parts)
     return parts
 
 
 def _attach_enclaves(
     graph: PartitionGraph, parts: np.ndarray, rest: np.ndarray, n_rest_parts: int
-) -> None:
+) -> np.ndarray:
     """Components of the other basins that the assigned (dominant) basins cut off
     from the land -- enclaves, strips along their edge -- and that get no part of
     their own join the part they share the longest boundary with, so that every
     part stays connected on the ground.  When none is land (an archipelago), the
-    ``n_rest_parts`` largest keep parts of their own.
+    ``n_rest_parts`` largest keep parts of their own.  Returns the nodes of the
+    components that keep parts (land, whatever their weight).
     """
     sub = _subgraph(graph, rest)
     component = _components(sub)
@@ -1070,6 +1089,7 @@ def _attach_enclaves(
     land = _choose_land(component_weight, capacity, n_rest_parts)
     if land.size == 0:
         land = np.argsort(-component_weight, kind="stable")[:n_rest_parts]
+    kept = rest[np.isin(component, land)]
     small = np.ones(component_weight.size, dtype=np.bool_)
     small[land] = False
     assigned = parts >= 0
@@ -1084,7 +1104,7 @@ def _attach_enclaves(
     touching = component[local[outside]]
     keep = small[touching]
     if not keep.any():
-        return
+        return kept
     # the boundary each such component shares with each part, the longest wins
     n_parts = int(parts.max()) + 1
     shared = np.zeros((component_weight.size, n_parts), dtype=np.int64)
@@ -1095,6 +1115,7 @@ def _attach_enclaves(
     target[cut_off] = part_of
     moved = target[component] >= 0
     parts[rest[moved]] = target[component[moved]]
+    return kept
 
 
 def assign_basins(
@@ -1145,12 +1166,19 @@ def assign_basins(
     for index, node in enumerate(dominant):
         parts[node] = index
     rest = np.flatnonzero(parts < 0)
+    kept = rest[:0]
     if dominant:
-        _attach_enclaves(graph, parts, rest, n_parts - len(dominant))
+        kept = _attach_enclaves(graph, parts, rest, n_parts - len(dominant))
         rest = np.flatnonzero(parts < 0)
     sub = _subgraph(graph, rest)
     parts[rest] = len(dominant) + _partition_components(
-        sub, sub, n_parts - len(dominant), seed, imbalance_target, refine
+        sub,
+        sub,
+        n_parts - len(dominant),
+        seed,
+        imbalance_target,
+        refine,
+        land_nodes=np.isin(rest, kept) if kept.size else None,
     )
     return parts
 
