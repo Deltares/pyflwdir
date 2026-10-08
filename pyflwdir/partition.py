@@ -5,17 +5,19 @@ process-level parts, at two levels:
 
 * ``"basin"`` (Method 1): every basin stays whole.  The basins are the nodes of
   a graph whose edges are their shared raster boundaries, weighted by the length
-  of the boundary.  A basin larger than an equal share is a part of its own; the
-  other basins share the remaining parts, every part connected on the ground.
-* ``"subbasin"`` (Method 2): the basins too large to balance whole are opened
-  along their mainstems into the tributary subtrees that drain into the
-  mainstem -- the largest basin first, then the next, while the parts are not
-  within ``imbalance_target`` of an equal share.  Those tributaries and the other
-  basins form one graph, divided at once into equal, connected parts.  Below
-  ``P_min``, the most upstream mainstem cell where a tributary of another part
-  enters, each opened mainstem is a logical fifth region, walked once after the
-  four parts; above it, the mainstem stays with the part of its most upstream
-  tributaries (its trunk).
+  of the boundary.  A basin larger than an equal share is a part of its own,
+  with the small basins it cuts off from the others; the other basins share the
+  remaining parts, every part connected on the ground.
+* ``"subbasin"`` (Method 2): when Method 1's parts are not within
+  ``imbalance_target`` of an equal share, basins are opened along their
+  mainstems into the tributary subtrees that drain into the mainstem -- the
+  largest basin first, then the next, while the parts are still unequal.  Those
+  tributaries and the other basins form one graph, divided at once into equal,
+  connected parts; each mainstem cell weighs with the tributary that enters it.
+  Below ``P_min``, the most upstream mainstem cell where a tributary of another
+  part enters, each opened mainstem is a logical fifth region, walked once
+  after the four parts; above it, the mainstem stays with the part of its most
+  upstream tributaries (its trunk).
 
 The graph is first divided between its large components -- land that touches
 on the ground, the two banks of an opened mainstem joined -- in proportion to
@@ -25,7 +27,8 @@ contiguous weighted METIS runs from several seeds on a graph whose small
 tributaries are grouped with a larger neighbour, the most balanced result is
 kept, and boundary nodes then move, one tributary or basin at a time, from
 heavier to lighter neighbouring parts until every part is within
-``imbalance_target`` of its target load.  A part is never cut in two.
+``imbalance_target`` of its target load.  A part is never cut in two; the odd
+piece left apart from its part joins the part around it.
 
 The graph functions take arrays, not a raster, so that a graph built from tiles
 (FlowTopo's 90 m region tiles, for one) is partitioned by the same code.
@@ -52,10 +55,25 @@ MAINSTEM = 4
 """Logical fifth subregion, processed after the four parallel trunks."""
 
 METIS_SEEDS = 4
-"""METIS runs from this many seeds; the most balanced result is kept."""
+"""METIS runs from this many seeds; see ``_metis_parts`` for the one kept."""
+
+METIS_SLACK = 1.03
+"""A METIS result whose parts are within this of their targets is balanced
+enough for the refinement; among those, the shortest boundary wins."""
 
 MAX_OPENED_BASINS = 4
 """Method 2 opens at most this many basins along their mainstems."""
+
+ARCHIPELAGO_NEIGHBOURS = 4
+"""Without land, each component is linked to this many nearest for METIS."""
+
+METIS_GROUPS_PER_PART = 8
+"""Method 2 groups small tributaries for METIS, but keeps at least this many
+groups per part, whatever ``min_subtree_size``."""
+
+P_MIN_ROUNDS = 4
+"""Method 2 balances again, with the trunk's mainstem above the new ``P_min``,
+at most this many times."""
 
 FRAGMENT_SHARE = 0.01
 """A piece of a part cut off from its main piece and lighter than this share of
@@ -260,10 +278,11 @@ def _metis(
     targets: np.ndarray,
     seed: int,
     ufactor: int,
+    contig: bool = True,
 ) -> np.ndarray:
     pymetis = _require_pymetis()
     xadj, adjncy, eweights = _csr(graph.size, graph.edges, graph.edge_weights)
-    options = pymetis.Options(seed=seed, ufactor=ufactor, contig=1)
+    options = pymetis.Options(seed=seed, ufactor=ufactor, contig=int(contig))
     result = pymetis.part_graph(
         n_parts,
         adjacency=pymetis.CSRAdjacency(xadj.tolist(), adjncy.tolist()),
@@ -273,7 +292,7 @@ def _metis(
         recursive=False,
         options=options,
     )
-    return np.asarray(result.vertex_part, dtype=np.int32)
+    return np.asarray(result.vertex_part, dtype=np.int32), int(result.edge_cuts)
 
 
 @njit(cache=True)
@@ -369,7 +388,7 @@ def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit,
 
 @njit(cache=True)
 def _refine_balance(
-    xadj, adjncy, weights, parts, extra, target_load, goal, max_moves, search_limit
+    xadj, adjncy, weights, parts, target_load, goal, max_moves, search_limit
 ):
     """Move boundary nodes to lighter neighbouring parts until balanced.
 
@@ -380,12 +399,11 @@ def _refine_balance(
     connected; a move that would cut the part's body in two is not made.  Load
     can so pass on through a middle part to a light one that does not touch the
     heavy one.  It stops when the largest load-to-target ratio is at most
-    ``goal`` or no move lowers the sum.  ``extra`` is load a part holds outside
-    the graph and keeps.  Returns the number of moves.
+    ``goal`` or no move lowers the sum.  Returns the number of moves.
     """
     n = weights.size
     n_parts = target_load.size
-    load = extra.astype(np.float64)
+    load = np.zeros(n_parts, dtype=np.float64)
     for node in range(n):
         load[parts[node]] += weights[node]
     mark = np.zeros(n, dtype=np.int64)
@@ -483,10 +501,15 @@ def _metis_parts(
     targets: np.ndarray,
     seed: int,
     imbalance_target: float,
+    contig: bool = True,
 ) -> np.ndarray:
-    """Contiguous METIS from several seeds; the most balanced result is kept.
+    """Contiguous METIS from several seeds.
 
-    ``graph`` must be connected (one land component, see ``_partition_components``).
+    Of the results whose parts are within ``METIS_SLACK`` of their targets --
+    near enough for the refinement -- the one with the shortest boundary between
+    the parts is kept; when there is none, the most balanced.  With ``contig``,
+    ``graph`` must be connected (one land component, see
+    ``_partition_components``).
     """
     total = float(graph.weights.sum())
     target_load = np.asarray(targets, dtype=np.float64) * total
@@ -494,9 +517,10 @@ def _metis_parts(
     best = None
     best_score = None
     for attempt in range(METIS_SEEDS):
-        parts = _metis(graph, n_parts, targets, seed + attempt, ufactor)
+        parts, cut = _metis(graph, n_parts, targets, seed + attempt, ufactor, contig)
         load = np.bincount(parts, weights=graph.weights, minlength=n_parts)
-        score = float(np.max(load / target_load))
+        ratio = float(np.max(load / target_load))
+        score = (0, cut, ratio) if ratio <= METIS_SLACK else (1, ratio, cut)
         if best_score is None or score < best_score:
             best, best_score = parts, score
     assert best is not None
@@ -509,7 +533,6 @@ def _refine(
     n_parts: int,
     targets: np.ndarray,
     imbalance_target: float,
-    extra: np.ndarray | None = None,
 ) -> int:
     """Balance ``parts`` in place by moving boundary nodes of ``graph``.
 
@@ -518,16 +541,10 @@ def _refine(
     ground.  The links METIS also uses -- tributaries entering consecutive
     mainstem cells, islands tied to the mainland -- are left out here, or a part
     could creep along the mainstem from bank to bank, connected only on paper.
-    ``extra`` is load each part holds outside the graph (an opened mainstem
-    above ``P_min``, with its trunk).
     """
     if n_parts < 2:
         return 0
-    if extra is None:
-        extra = np.zeros(n_parts, dtype=np.int64)
-    extra = np.asarray(extra, dtype=np.int64)
-    total = float(graph.weights.sum() + extra.sum())
-    target_load = np.asarray(targets, dtype=np.float64) * total
+    target_load = np.asarray(targets, dtype=np.float64) * float(graph.weights.sum())
     xadj, adjncy, _ = _csr(graph.size, graph.edges, graph.edge_weights)
     return int(
         _refine_balance(
@@ -535,7 +552,6 @@ def _refine(
             adjncy,
             graph.weights.astype(np.int64),
             parts,
-            extra,
             target_load,
             float(imbalance_target),
             10 * graph.size,
@@ -616,21 +632,62 @@ def _absorb_fragments(graph: PartitionGraph, parts: np.ndarray, limit: float) ->
     return moved_nodes
 
 
-def _apportion(weights: np.ndarray, n_parts: int) -> np.ndarray:
+def _apportion(
+    weights: np.ndarray, n_parts: int, capacity: np.ndarray | None = None
+) -> np.ndarray:
     """Parts per component, in proportion to weight, at least one each.
 
     Largest remainder; ``weights`` are of components that each get a part, so
-    there are at most ``n_parts`` of them.
+    there are at most ``n_parts`` of them.  No component gets more parts than
+    its ``capacity`` (the nodes METIS can place); when the capacities run out,
+    fewer than ``n_parts`` are given.
     """
+    if capacity is None:
+        capacity = np.full(weights.size, n_parts, dtype=np.int64)
     quota = weights / weights.sum() * n_parts
-    count = np.maximum(np.floor(quota).astype(np.int64), 1)
+    count = np.minimum(np.maximum(np.floor(quota).astype(np.int64), 1), capacity)
     while count.sum() > n_parts:
         # too many: take one back where the quota is exceeded the most
         excess = np.where(count > 1, count - quota, -np.inf)
         count[int(np.argmax(excess))] -= 1
     while count.sum() < n_parts:
-        count[int(np.argmax(quota - count))] += 1
+        room = np.where(count < capacity, quota - count, -np.inf)
+        if not np.isfinite(room).any():
+            break
+        count[int(np.argmax(room))] += 1
     return count
+
+
+def _archipelago(
+    graph: PartitionGraph,
+    component: np.ndarray,
+    component_weight: np.ndarray,
+    n_parts: int,
+    seed: int,
+    imbalance_target: float,
+) -> np.ndarray:
+    """Parts of a graph none of whose components is half a part: the components,
+    each linked to its nearest by centroid, divided by METIS."""
+    from scipy.spatial import cKDTree
+
+    n_components = component_weight.size
+    if n_components <= n_parts:
+        return component.astype(np.int32)
+    rows = np.bincount(component, weights=graph.weights * graph.rows) / component_weight
+    cols = np.bincount(component, weights=graph.weights * graph.cols) / component_weight
+    k = min(ARCHIPELAGO_NEIGHBOURS + 1, n_components)
+    centroids = np.column_stack((rows, cols))
+    _, nearest = cKDTree(centroids).query(centroids, k=k)
+    pairs = np.column_stack(
+        (np.repeat(np.arange(n_components), k - 1), nearest[:, 1:].ravel())
+    )
+    edges, edge_weights = merge_edges([pairs], n_components)
+    linked = PartitionGraph(
+        component_weight.astype(np.int64), rows, cols, edges, edge_weights
+    )
+    targets = np.full(n_parts, 1.0 / n_parts)
+    parts = _metis_parts(linked, n_parts, targets, seed, imbalance_target, contig=False)
+    return parts[component].astype(np.int32)
 
 
 def _partition_components(
@@ -641,7 +698,6 @@ def _partition_components(
     imbalance_target: float,
     refine: bool,
     group: np.ndarray | None = None,
-    n_groups: int = 0,
 ) -> np.ndarray:
     """Equal, connected parts of a graph that may have several components.
 
@@ -651,7 +707,9 @@ def _partition_components(
     are land: the parts are apportioned between them by weight, and each is
     divided by contiguous METIS on its nodes grouped by ``group`` (small
     tributaries with a larger neighbour; each node its own group when None).
-    Smaller components (islands) take the part of their nearest land node.
+    Smaller components (islands) take the part of their nearest land node.  When
+    no component is land (an archipelago), the components are divided by
+    METIS, each linked to its nearest.
     """
     from scipy.spatial import cKDTree
 
@@ -661,29 +719,42 @@ def _partition_components(
         return parts
     if group is None:
         group = np.arange(n, dtype=np.int64)
-        n_groups = n
     component = _components(linked)
     component_weight = np.bincount(component, weights=linked.weights)
+    # the groups (coarse nodes) of every component: the most parts it can take
+    pairs = np.unique(np.column_stack((component, group)), axis=0)
+    capacity = np.bincount(pairs[:, 0], minlength=component_weight.size)
     share = component_weight.sum() / n_parts
-    land = np.flatnonzero(component_weight >= 0.5 * share)
-    if land.size == 0:
-        land = np.array([int(np.argmax(component_weight))])
-    land = land[np.argsort(-component_weight[land], kind="stable")][:n_parts]
-    counts = _apportion(component_weight[land], n_parts)
-    first_part = 0
-    for comp, count in zip(land, counts):
-        nodes = np.flatnonzero(component == comp)
-        if count == 1:
-            parts[nodes] = first_part
-        else:
-            sub = _subgraph(linked, nodes)
-            # the groups of these nodes, renumbered
-            local_groups, local_group = np.unique(group[nodes], return_inverse=True)
-            coarse = _contract(sub, local_group, local_groups.size)
-            targets = np.full(count, 1.0 / count)
-            coarse_parts = _metis_parts(coarse, count, targets, seed, imbalance_target)
-            parts[nodes] = first_part + coarse_parts[local_group]
-        first_part += count
+    order = np.argsort(-component_weight, kind="stable")
+    n_land = min(int(np.count_nonzero(component_weight >= 0.5 * share)), n_parts)
+    if n_land == 0:
+        parts = _archipelago(
+            linked, component, component_weight, n_parts, seed, imbalance_target
+        )
+    else:
+        # with too few nodes on land for every part, the next largest components join
+        while n_land < min(order.size, n_parts) and (
+            capacity[order[:n_land]].sum() < n_parts
+        ):
+            n_land += 1
+        land = order[:n_land]
+        counts = _apportion(component_weight[land], n_parts, capacity[land])
+        first_part = 0
+        for comp, count in zip(land, counts):
+            nodes = np.flatnonzero(component == comp)
+            if count == 1:
+                parts[nodes] = first_part
+            else:
+                sub = _subgraph(linked, nodes)
+                # the groups of these nodes, renumbered
+                local_groups, local_group = np.unique(group[nodes], return_inverse=True)
+                coarse = _contract(sub, local_group, local_groups.size)
+                targets = np.full(count, 1.0 / count)
+                coarse_parts = _metis_parts(
+                    coarse, count, targets, seed, imbalance_target
+                )
+                parts[nodes] = first_part + coarse_parts[local_group]
+            first_part += count
     # islands: the part of the nearest land node
     assigned = np.flatnonzero(parts >= 0)
     islands = np.flatnonzero(parts < 0)
@@ -800,17 +871,26 @@ def _coarsen_tributaries(
     graph: PartitionGraph,
     is_tributary: np.ndarray,
     min_subtree_size: int,
+    min_groups: int = 0,
 ) -> tuple[np.ndarray, int]:
     """Group small tributaries with the nearest eligible tributary (graph hops).
 
     Returns the group of every node and the number of groups; a basin node is a
-    group of its own, an eligible tributary (at least ``min_subtree_size``)
-    starts one, and a smaller tributary joins the eligible one it reaches first
-    through tributary-to-tributary edges (ties by the lower group).  When no
-    tributary is eligible, every tributary is a group of its own.
+    group of its own, an eligible tributary (at least ``min_subtree_size``, or
+    one of the ``min_groups`` heaviest when fewer are that large) starts one,
+    and a smaller tributary joins the eligible one it reaches first through
+    tributary-to-tributary edges (ties by the lower group).  When no tributary
+    is eligible, every tributary is a group of its own.
     """
     n = graph.size
-    eligible = np.flatnonzero(is_tributary & (graph.weights >= min_subtree_size))
+    tributary_weights = graph.weights[is_tributary]
+    threshold = min_subtree_size
+    if 0 < min_groups < tributary_weights.size:
+        heaviest = np.partition(tributary_weights, tributary_weights.size - min_groups)
+        threshold = min(threshold, int(heaviest[tributary_weights.size - min_groups]))
+    elif min_groups >= tributary_weights.size:
+        threshold = 0
+    eligible = np.flatnonzero(is_tributary & (graph.weights >= threshold))
     group = np.full(n, -1, dtype=np.int64)
     non_tributary = np.flatnonzero(~is_tributary)
     group[non_tributary] = np.arange(non_tributary.size)
@@ -873,20 +953,39 @@ def _stem_tributaries(stem: np.ndarray, position: np.ndarray, n_stems: int):
     return [ordered[bounds[k] : bounds[k + 1]] for k in range(n_stems)]
 
 
-def _trunk_mainstems(
-    parts: np.ndarray,
-    stem: np.ndarray,
-    position: np.ndarray,
-    stem_lengths: np.ndarray,
-    n_parts: int,
+def _mainstem_weights(
+    stem: np.ndarray, position: np.ndarray, upto: np.ndarray
 ) -> np.ndarray:
-    """Load of each part from the opened mainstems above ``P_min``, with their trunks."""
-    extra = np.zeros(n_parts, dtype=np.int64)
+    """The first ``upto`` cells of each opened mainstem, given to the tributaries
+    that enter them.
+
+    A mainstem cell weighs with the first tributary (lowest node) entering it, or
+    else with the nearest one entering upstream (the most upstream tributary
+    for the cells above it).  Up to ``P_min`` every tributary is in the trunk, and
+    so the trunk holds those cells.
+    """
+    extra = np.zeros(stem.size, dtype=np.int64)
+    for k, mine in enumerate(_stem_tributaries(stem, position, len(upto))):
+        if mine.size == 0:
+            continue
+        entered, first = np.unique(position[mine], return_index=True)
+        cells = np.arange(int(upto[k]))
+        receiver = np.maximum(np.searchsorted(entered, cells, side="right") - 1, 0)
+        np.add.at(extra, mine[first[receiver]], 1)
+    return extra
+
+
+def _p_mins(
+    parts: np.ndarray, stem: np.ndarray, position: np.ndarray, stem_lengths: np.ndarray
+) -> np.ndarray:
+    """``P_min`` of each opened mainstem; its length when no other part enters it."""
+    p_min = np.asarray(stem_lengths, dtype=np.int64).copy()
     for k, mine in enumerate(_stem_tributaries(stem, position, len(stem_lengths))):
         if mine.size:
-            trunk, p_min = _split_stem(mine, parts, position)
-            extra[trunk] += int(stem_lengths[k]) if p_min < 0 else p_min
-    return extra
+            _, first_other = _split_stem(mine, parts, position)
+            if first_other >= 0:
+                p_min[k] = first_other
+    return p_min
 
 
 def assign_subbasins(
@@ -910,15 +1009,28 @@ def assign_subbasins(
     ``position`` gives the mainstem cell each enters (0 at the source);
     tributaries entering consecutive cells of one mainstem touch, across it.
     Small tributaries move with the nearest eligible one.  ``hint`` (one part per
-    node, Method 1's) only fixes the part labels.  With ``stem_lengths`` (cells
-    of each mainstem), the parts are balanced once more with each mainstem above
-    ``P_min`` in its trunk's load, as the raster plan assigns it.
+    node, Method 1's) only fixes the part labels.
+
+    With ``stem_lengths`` (cells of each mainstem), the mainstem cells weigh
+    with the tributaries that enter them: all of them for METIS, then, while
+    the refinement moves ``P_min``, only those above it -- the trunk's -- so that
+    the balance is that of the parts as the plan builds them.
     """
     is_tributary = np.asarray(is_tributary, dtype=np.bool_)
     position = np.asarray(position, dtype=np.int64)
     if stem is None:
         stem = np.where(is_tributary, 0, -1)
-    stem = np.asarray(stem, dtype=np.int64)
+    stem = np.where(is_tributary, np.asarray(stem, dtype=np.int64), -1)
+    cells = graph.weights
+    if stem_lengths is not None:
+        stem_lengths = np.asarray(stem_lengths, dtype=np.int64)
+        graph = PartitionGraph(
+            cells + _mainstem_weights(stem, position, stem_lengths),
+            graph.rows,
+            graph.cols,
+            graph.edges,
+            graph.edge_weights,
+        )
     linked = graph
     tributaries = np.flatnonzero(is_tributary)
     if tributaries.size > 1:
@@ -935,26 +1047,34 @@ def assign_subbasins(
         linked = PartitionGraph(
             graph.weights, graph.rows, graph.cols, edges, edge_weights
         )
-    group, n_groups = _coarsen_tributaries(linked, is_tributary, min_subtree_size)
+    group, _ = _coarsen_tributaries(
+        linked, is_tributary, min_subtree_size, METIS_GROUPS_PER_PART * n_parts
+    )
     parts = _partition_components(
-        linked, graph, n_parts, seed, imbalance_target, refine, group, n_groups
+        linked, graph, n_parts, seed, imbalance_target, refine, group
     )
     if hint is not None:
         parts = _align_labels(parts, graph.weights, np.asarray(hint), n_parts)
-    if refine and stem_lengths is not None and n_parts > 1:
-        stem_of_tributary = np.where(is_tributary, stem, -1)
-        extra = _trunk_mainstems(
-            parts, stem_of_tributary, position, np.asarray(stem_lengths), n_parts
-        )
-        _refine(
-            graph,
-            parts,
-            n_parts,
-            np.full(n_parts, 1.0 / n_parts),
-            imbalance_target,
-            extra,
-        )
-        _absorb_fragments(linked, parts, FRAGMENT_SHARE * graph.weights.sum() / n_parts)
+    if stem_lengths is not None and refine and n_parts > 1:
+        targets = np.full(n_parts, 1.0 / n_parts)
+        p_min = None
+        for _ in range(P_MIN_ROUNDS):
+            moved = _p_mins(parts, stem, position, stem_lengths)
+            if p_min is not None and np.array_equal(moved, p_min):
+                break
+            p_min = moved
+            weights = cells + _mainstem_weights(stem, position, p_min)
+            ground = PartitionGraph(
+                weights, graph.rows, graph.cols, graph.edges, graph.edge_weights
+            )
+            _refine(ground, parts, n_parts, targets, imbalance_target)
+            _absorb_fragments(
+                PartitionGraph(
+                    weights, linked.rows, linked.cols, linked.edges, linked.edge_weights
+                ),
+                parts,
+                FRAGMENT_SHARE * weights.sum() / n_parts,
+            )
     return parts
 
 
@@ -1175,22 +1295,24 @@ def _subbasin_partition(
     seed: int,
     refine: bool,
 ) -> PartitionPlan:
-    """Method 2 on a raster: open the largest basins while the parts are unequal."""
-    if labels.size == 0:
-        return _empty_plan(flw, parts, load, basin_ids, "subbasin")
+    """Method 2 on a raster: open the largest basins while the parts are unequal.
+
+    Method 1's parts stand when they are within ``imbalance_target``; otherwise
+    the largest basin is opened, then the next, and the most balanced plan
+    (Method 1's included) is kept.
+    """
+    method_1 = _empty_plan(flw, parts, load, basin_ids, "subbasin")
+    best_ratio = float(load.max() / max(load.mean(), 1))
+    if labels.size == 0 or best_ratio <= imbalance_target:
+        return method_1
     valid = parts >= 0
     weights = np.bincount(np.searchsorted(labels, basin_ids[valid]), minlength=labels.size)
-    share = float(np.count_nonzero(valid)) / N_TRUNKS
     order = np.argsort(-weights, kind="stable")
-    if weights[order[0]] <= imbalance_target * share:
-        # every basin fits a part whole: Method 1 is already the subbasin partition
-        return _empty_plan(flw, parts, load, basin_ids, "subbasin")
     seq_d2u = core.idxs_seq_dfs(flw.idxs_ds, flw.idxs_pit, flw._mv)
     upstream = streams.accuflux(
         flw.idxs_ds, seq_d2u, np.ones(flw.size, dtype=np.int64), -1
     )
-    best = None
-    best_ratio = np.inf
+    best = method_1
     for n_opened in range(1, min(MAX_OPENED_BASINS, labels.size) + 1):
         plan = _open_basins(
             flw,
@@ -1210,7 +1332,6 @@ def _subbasin_partition(
             best, best_ratio = plan, ratio
         if ratio <= imbalance_target:
             break
-    assert best is not None
     return best
 
 

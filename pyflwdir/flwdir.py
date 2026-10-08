@@ -833,9 +833,10 @@ class Flwdir:
         start_method : str, optional
             Multiprocessing start method, by default ``"spawn"``.
         partition_min_subtree_size : int, optional
-            Smallest tributary subtree that Method 2 may move, by default
-            100,000 cells as in the continental FlowTopo C workflow. Smaller
-            rasters may use a lower explicit value.
+            Method 2 groups tributary subtrees smaller than this with a larger
+            neighbour before METIS divides them, by default 100,000 cells as in
+            the continental FlowTopo C workflow; the balance refinement still
+            moves single subtrees.
         partition_imbalance_target : float, optional
             Largest trunk load divided by the mean load that the partition aims
             for, by default 1.005. Method 2 opens further basins only while it

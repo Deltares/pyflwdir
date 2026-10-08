@@ -423,6 +423,69 @@ def test_subbasin_process_path_uses_requested_threshold_and_matches_serial():
 
 
 @pytest.mark.unit
+def test_mainstem_cells_weigh_with_the_tributary_entering_them():
+    stem = np.array([-1, 0, 0, 0, 0])
+    position = np.array([-1, 50, 51, 52, 53])
+    weights = partition._mainstem_weights(stem, position, np.array([100]))
+    assert np.array_equal(weights, [0, 51, 1, 1, 47])
+    weights = partition._mainstem_weights(stem, position, np.array([51]))
+    assert np.array_equal(weights, [0, 51, 0, 0, 0])
+    parts = np.array([0, 0, 1, 1, 2])
+    assert np.array_equal(
+        partition._p_mins(parts, stem, position, np.array([100])), [51]
+    )
+
+
+def side_tributaries(length=100, first=50, count=4):
+    """A mainstem column with one-cell tributaries entering it from the east."""
+    d8 = np.full((length, 2), 247, dtype=np.uint8)
+    d8[:-1, 0] = 4
+    d8[-1, 0] = 0
+    d8[first : first + count, 1] = 16
+    return pyflwdir.from_array(d8, ftype="d8")
+
+
+@pytest.mark.unit
+def test_trunk_keeps_its_mainstem_and_the_fifth_region_stays():
+    pytest.importorskip("pymetis")
+    flw = side_tributaries()
+    plan = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
+    check_plan(flw, plan)
+    assert len(plan.stems) == 1
+    assert plan.loads.max() <= 52 and plan.mainstem.size >= 47
+    data = np.arange(1, flw.size + 1, dtype=np.int64)
+    assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
+
+
+@pytest.mark.unit
+def test_basins_are_opened_when_method_1_is_unequal():
+    pytest.importorskip("pymetis")
+    # five equal basins: none is larger than a share, Method 1 is 231 x [1, 1, 1, 2]
+    flw = rivers(21, [11] * 5)
+    basin = partition.partition_plan(flw, level="basin")
+    assert basin.loads.max() / basin.loads.mean() == pytest.approx(1.6)
+    plan = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
+    check_plan(flw, plan)
+    assert len(plan.stems) >= 1
+    assert plan.loads.max() / plan.loads.mean() <= 1.05
+    data = np.arange(1, flw.size + 1, dtype=np.int64)
+    assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
+
+
+@pytest.mark.unit
+def test_an_archipelago_is_divided_by_proximity():
+    pytest.importorskip("pymetis")
+    d8 = np.full((1, 39), 247, dtype=np.uint8)
+    d8[0, ::2] = 0
+    flw = pyflwdir.from_array(d8, ftype="d8")
+    plan = partition.partition_plan(flw, level="basin")
+    assert np.array_equal(np.sort(plan.loads), [5, 5, 5, 5])
+    for part in range(4):
+        columns = np.flatnonzero(plan.parts[0] == part)
+        assert columns.max() - columns.min() == 8
+
+
+@pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()
     with pytest.raises(ValueError, match="requires n_parts=4"):

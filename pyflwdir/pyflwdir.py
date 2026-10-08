@@ -884,7 +884,8 @@ class FlwdirRaster(Flwdir):
         start_method : str, optional
             Multiprocessing start method, by default ``"spawn"``.
         partition_min_subtree_size : int, optional
-            Smallest Method 2 tributary subtree, by default 100,000 cells.
+            Method 2 tributary subtrees smaller than this are grouped for METIS,
+            by default 100,000 cells.
         partition_imbalance_target : float, optional
             Maximum-to-mean trunk-load target, by default 1.005.
 
