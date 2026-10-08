@@ -577,6 +577,40 @@ def test_refinement_keeps_parts_joined_across_the_mainstem():
 
 
 @pytest.mark.unit
+def test_basins_cut_off_by_a_dominant_basin_without_a_part_join_it():
+    pytest.importorskip("pymetis")
+    # a dominant hub with four one-cell basins around it, and three parts besides
+    weights = np.array([10, 1, 1, 1, 1], dtype=np.int64)
+    edges = np.column_stack((np.zeros(4, dtype=np.int64), np.arange(1, 5)))
+    graph = partition.PartitionGraph(
+        weights, np.zeros(5), np.array([0.0, -1, 1, 2, 3]), edges, np.ones(4, dtype=np.int64)
+    )
+    parts = partition.assign_basins(graph, 4)
+    assert np.unique(parts).size == 4
+    assert connected_parts(parts, edges)
+
+
+@pytest.mark.unit
+def test_a_cell_less_tributary_keeps_its_banks_joined():
+    pytest.importorskip("pymetis")
+    weights = np.array([24, 2, 0, 1] + [2] * 31, dtype=np.int64)
+    ground = np.array([[0, 2], [1, 2], [2, 3], [1, 4]] + [[k, k + 1] for k in range(4, 34)])
+    cols = np.arange(35, dtype=np.float64)
+    cols[2] = np.nan
+    graph = partition.PartitionGraph(
+        weights, np.zeros(35), cols, ground, np.ones(ground.shape[0], dtype=np.int64)
+    )
+    is_tributary = np.arange(35) > 0
+    position = np.full(35, -1)
+    position[4:] = np.arange(31)
+    position[[1, 2, 3]] = [31, 32, 33]
+    parts = partition.assign_subbasins(graph, is_tributary, position, 4)
+    order = np.r_[np.arange(4, 35), 1, 2, 3]
+    banks = np.column_stack((order[:-1], order[1:]))
+    assert connected_parts(parts, np.concatenate((ground, banks)))
+
+
+@pytest.mark.unit
 def test_subbasin_partition_requires_the_flowtopo_four_trunks():
     flw = column_basins()
     with pytest.raises(ValueError, match="requires n_parts=4"):

@@ -707,6 +707,30 @@ def _apportion(
     return count
 
 
+def _live_nodes(graph: PartitionGraph):
+    """None when every node has cells and a centroid; else the nodes that do
+    (live), and for every node the index of the live node it is merged into (-1
+    when its component has none).  A node without cells joins a live node it
+    reaches, so that every connection it makes stays."""
+    empty = (graph.weights <= 0) | ~np.isfinite(graph.rows) | ~np.isfinite(graph.cols)
+    if not np.any(empty):
+        return None
+    owner = np.where(empty, -1, np.arange(graph.size)).astype(np.int64)
+    _follow_neighbours(graph, owner, fill=-1)
+    live = np.flatnonzero(~empty)
+    index = np.full(graph.size, -1, dtype=np.int64)
+    merged = owner >= 0
+    index[merged] = np.searchsorted(live, owner[merged])
+    return live, index
+
+
+def _expand(index: np.ndarray, merged_parts: np.ndarray) -> np.ndarray:
+    """The parts of the merged graph back on every node; part 0 where none."""
+    parts = np.zeros(index.size, dtype=np.int32)
+    parts[index >= 0] = merged_parts[index[index >= 0]]
+    return parts
+
+
 def _merge_into(graph: PartitionGraph, nodes: np.ndarray, live: np.ndarray) -> PartitionGraph:
     """``graph`` with every node merged into node ``nodes`` (-1: left out) of a
     graph whose nodes are ``live``, which keep their centroids."""
@@ -775,6 +799,25 @@ def _archipelago(
     return parts[component].astype(np.int32)
 
 
+def _choose_land(
+    component_weight: np.ndarray, capacity: np.ndarray, n_parts: int
+) -> np.ndarray:
+    """The components that get parts of their own (land), the largest first.
+
+    Those of at least half an equal share, at most ``n_parts``; with too few
+    nodes on them for every part (``capacity``), the next largest join.  None
+    when no component is that large (an archipelago).
+    """
+    share = component_weight.sum() / n_parts
+    order = np.argsort(-component_weight, kind="stable")
+    n_land = min(int(np.count_nonzero(component_weight >= 0.5 * share)), n_parts)
+    if n_land == 0:
+        return order[:0]
+    while n_land < min(order.size, n_parts) and capacity[order[:n_land]].sum() < n_parts:
+        n_land += 1
+    return order[:n_land]
+
+
 def _partition_components(
     linked: PartitionGraph,
     ground: PartitionGraph,
@@ -804,50 +847,17 @@ def _partition_components(
         return parts
     if group is None:
         group = np.arange(n, dtype=np.int64)
-    empty = (linked.weights <= 0) | ~np.isfinite(linked.rows) | ~np.isfinite(linked.cols)
-    if np.any(empty):
-        # a node without cells (or a centroid) joins a node with them that it
-        # reaches, so that every connection it makes stays; the merged graph is
-        # divided, and a component with no cells at all takes part 0
-        owner = np.where(empty, -1, np.arange(n)).astype(np.int32)
-        _follow_neighbours(linked, owner, fill=-1)
-        live = np.flatnonzero(~empty)
-        merged = owner >= 0
-        if live.size:
-            index = np.searchsorted(live, owner[merged])
-            nodes = np.full(n, -1, dtype=np.int64)
-            nodes[merged] = index
-            merged_parts = _partition_components(
-                _merge_into(linked, nodes, live),
-                _merge_into(ground, nodes, live),
-                n_parts,
-                seed,
-                imbalance_target,
-                refine,
-                group[live],
-            )
-            parts[merged] = merged_parts[index]
-        parts[~merged] = 0
-        return parts
     component = _components(linked)
     component_weight = np.bincount(component, weights=linked.weights)
     # the groups (coarse nodes) of every component: the most parts it can take
     pairs = np.unique(np.column_stack((component, group)), axis=0)
     capacity = np.bincount(pairs[:, 0], minlength=component_weight.size)
-    share = component_weight.sum() / n_parts
-    order = np.argsort(-component_weight, kind="stable")
-    n_land = min(int(np.count_nonzero(component_weight >= 0.5 * share)), n_parts)
-    if n_land == 0:
+    land = _choose_land(component_weight, capacity, n_parts)
+    if land.size == 0:
         parts = _archipelago(
             linked, component, component_weight, n_parts, seed, imbalance_target
         )
     else:
-        # with too few nodes on land for every part, the next largest components join
-        while n_land < min(order.size, n_parts) and (
-            capacity[order[:n_land]].sum() < n_parts
-        ):
-            n_land += 1
-        land = order[:n_land]
         counts = _apportion(component_weight[land], n_parts, capacity[land])
         first_part = 0
         for comp, count in zip(land, counts):
@@ -896,20 +906,20 @@ def _partition_components(
 def _attach_enclaves(
     graph: PartitionGraph, parts: np.ndarray, rest: np.ndarray, n_rest_parts: int
 ) -> None:
-    """Small components that the assigned (dominant) basins cut off from the other
-    basins -- enclaves, strips along their edge -- join the part they share the
-    longest boundary with, so that the parts stay connected on the ground.
-
-    Small is less than half an equal share of the other basins, the size below
-    which a component does not get a part of its own; nothing moves when no
-    component is that large.
+    """Components of the other basins that the assigned (dominant) basins cut off
+    from the land -- enclaves, strips along their edge -- and that get no part of
+    their own join the part they share the longest boundary with, so that every
+    part stays connected on the ground.  Nothing moves in an archipelago.
     """
     sub = _subgraph(graph, rest)
     component = _components(sub)
     component_weight = np.bincount(component, weights=sub.weights)
-    small = component_weight < 0.5 * component_weight.sum() / n_rest_parts
-    if small.all():
+    capacity = np.bincount(component, minlength=component_weight.size)
+    land = _choose_land(component_weight, capacity, n_rest_parts)
+    if land.size == 0:
         return
+    small = np.ones(component_weight.size, dtype=np.bool_)
+    small[land] = False
     assigned = parts >= 0
     first, second = graph.edges[:, 0], graph.edges[:, 1]
     forward = assigned[first] & ~assigned[second]
@@ -923,7 +933,7 @@ def _attach_enclaves(
     keep = small[touching]
     if not keep.any():
         return
-    # the boundary each small component shares with each part, the longest wins
+    # the boundary each such component shares with each part, the longest wins
     n_parts = int(parts.max()) + 1
     shared = np.zeros((component_weight.size, n_parts), dtype=np.int64)
     np.add.at(shared, (touching[keep], parts[inside[keep]]), length[keep])
@@ -946,12 +956,28 @@ def assign_basins(
     """Method 1: the part of every basin node.
 
     A basin heavier than an equal share is a part of its own (the largest
-    first, at most ``n_parts - 1``), together with the small basins it cuts off
-    from the others; the other basins share the other parts.
+    first, at most ``n_parts - 1``), together with the basins it cuts off from
+    the others that get no part of their own; the other basins share the other
+    parts.  A node without cells or a centroid is merged into one it touches.
     """
     n = graph.size
     if n == 0:
         return np.empty(0, dtype=np.int32)
+    merged = _live_nodes(graph)
+    if merged is not None:
+        live, index = merged
+        sub = (
+            assign_basins(
+                _merge_into(graph, index, live),
+                n_parts,
+                seed=seed,
+                imbalance_target=imbalance_target,
+                refine=refine,
+            )
+            if live.size
+            else np.empty(0, dtype=np.int32)
+        )
+        return _expand(index, sub)
     if n_parts == 1:
         return np.zeros(n, dtype=np.int32)
     if n < n_parts:
@@ -1119,7 +1145,8 @@ def assign_subbasins(
     ``position`` gives the mainstem cell each enters (0 at the source);
     tributaries entering consecutive cells of one mainstem touch, across it.
     Small tributaries move with the nearest eligible one.  ``hint`` (one part per
-    node, Method 1's) only fixes the part labels.
+    node, Method 1's) only fixes the part labels.  A node without cells or a
+    centroid is merged into one it touches.
 
     With ``stem_lengths`` (cells of each mainstem), the mainstem cells weigh
     with the tributaries that enter them: all of them for METIS, then, while
@@ -1131,40 +1158,44 @@ def assign_subbasins(
     if stem is None:
         stem = np.where(is_tributary, 0, -1)
     stem = np.where(is_tributary, np.asarray(stem, dtype=np.int64), -1)
+    if hint is not None:
+        hint = np.asarray(hint)
+    # the two banks of an opened mainstem touch: tributaries entering consecutive cells
+    tributaries = np.flatnonzero(is_tributary)
+    ordered = tributaries[np.lexsort((tributaries, position[tributaries], stem[tributaries]))]
+    same_stem = stem[ordered[:-1]] == stem[ordered[1:]]
+    stem_edges = np.column_stack((ordered[:-1], ordered[1:]))[same_stem]
+    edges, edge_weights = merge_edges(
+        [graph.edges, stem_edges],
+        graph.size,
+        [graph.edge_weights, np.ones(stem_edges.shape[0], dtype=np.int64)],
+    )
+    linked = PartitionGraph(graph.weights, graph.rows, graph.cols, edges, edge_weights)
+    merged = _live_nodes(linked)
+    if merged is not None:
+        live, index = merged
+        if live.size == 0:
+            return np.zeros(graph.size, dtype=np.int32)
+        graph = _merge_into(graph, index, live)
+        linked = _merge_into(linked, index, live)
+        is_tributary, position, stem = is_tributary[live], position[live], stem[live]
+        hint = None if hint is None else hint[live]
+
     cells = graph.weights
+    weights = cells
     if stem_lengths is not None:
         stem_lengths = np.asarray(stem_lengths, dtype=np.int64)
-        graph = PartitionGraph(
-            cells + _mainstem_weights(stem, position, stem_lengths),
-            graph.rows,
-            graph.cols,
-            graph.edges,
-            graph.edge_weights,
-        )
-    linked = graph
-    tributaries = np.flatnonzero(is_tributary)
-    if tributaries.size > 1:
-        ordered = tributaries[
-            np.lexsort((tributaries, position[tributaries], stem[tributaries]))
-        ]
-        same_stem = stem[ordered[:-1]] == stem[ordered[1:]]
-        stem_edges = np.column_stack((ordered[:-1], ordered[1:]))[same_stem]
-        edges, edge_weights = merge_edges(
-            [graph.edges, stem_edges],
-            graph.size,
-            [graph.edge_weights, np.ones(stem_edges.shape[0], dtype=np.int64)],
-        )
-        linked = PartitionGraph(
-            graph.weights, graph.rows, graph.cols, edges, edge_weights
-        )
+        weights = cells + _mainstem_weights(stem, position, stem_lengths)
+    ground = PartitionGraph(weights, graph.rows, graph.cols, graph.edges, graph.edge_weights)
+    banks = PartitionGraph(weights, linked.rows, linked.cols, linked.edges, linked.edge_weights)
     group, _ = _coarsen_tributaries(
-        linked, is_tributary, min_subtree_size, METIS_GROUPS_PER_PART * n_parts
+        banks, is_tributary, min_subtree_size, METIS_GROUPS_PER_PART * n_parts
     )
     parts = _partition_components(
-        linked, graph, n_parts, seed, imbalance_target, refine, group
+        banks, ground, n_parts, seed, imbalance_target, refine, group
     )
     if hint is not None:
-        parts = _align_labels(parts, graph.weights, np.asarray(hint), n_parts)
+        parts = _align_labels(parts, weights, hint, n_parts)
     if stem_lengths is not None and refine and n_parts > 1:
         targets = np.full(n_parts, 1.0 / n_parts)
         p_min = None
@@ -1182,7 +1213,7 @@ def assign_subbasins(
             )
             _refine(ground, parts, n_parts, targets, imbalance_target, banks)
             _absorb_fragments(banks, parts, FRAGMENT_SHARE * weights.sum() / n_parts)
-    return parts
+    return parts if merged is None else _expand(index, parts)
 
 
 # ---------------------------------------------------------------------------
