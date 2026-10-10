@@ -180,7 +180,7 @@ def upstream_sum(
         idx_ds = idxs_ds[idx0]
         if idx_ds != mv and idx_ds != idx0:
             if data[idx0] == nodata or data[idx_ds] == nodata:
-                arr_sum[idx0] = nodata
-            else:
+                arr_sum[idx_ds] = nodata
+            elif arr_sum[idx_ds] != nodata:
                 arr_sum[idx_ds] += data[idx0]
     return arr_sum
