@@ -617,7 +617,9 @@ def _metis_parts(
         return np.arange(graph.size, dtype=np.int32)
     total = float(graph.weights.sum())
     target_load = np.asarray(targets, dtype=np.float64) * total
-    ufactor = max(1, int(round((imbalance_target - 1.0) * 1000)))
+    # rounded half up, as the C code's lround: Python's round takes a half to the
+    # even number (62.5 -> 62)
+    ufactor = max(1, int(np.floor((imbalance_target - 1.0) * 1000 + 0.5)))
     best = None
     best_score = None
     for attempt in range(METIS_SEEDS):
@@ -695,8 +697,6 @@ def _island_units(
     components, but such islands, and the ``ARCHIPELAGO_NEIGHBOURS`` such islands
     nearest to it.
     """
-    from scipy.spatial import cKDTree
-
     n = linked.size
     component = _components(linked)
     component_weight = np.bincount(component, weights=linked.weights)
@@ -733,8 +733,7 @@ def _island_units(
     points = np.column_stack((linked.rows, linked.cols))
     nodes = np.flatnonzero(on_island)
     k = min(ISLAND_PROBES + 1, n)
-    _, near = cKDTree(points).query(points[nodes], k=k)
-    near = near.reshape(nodes.size, k)
+    _, near = _nearest(points, points[nodes], k)
     other = component[near] != component[nodes][:, None]
     keep = (other & (np.cumsum(other, axis=1) <= ARCHIPELAGO_NEIGHBOURS)).ravel()
     found = [np.column_stack((np.repeat(nodes, k)[keep], near.ravel()[keep]))]
@@ -748,7 +747,7 @@ def _island_units(
         asking = np.flatnonzero(in_short)
         if rest.size:
             k = min(ARCHIPELAGO_NEIGHBOURS, rest.size)
-            _, near = cKDTree(points[rest]).query(points[asking], k=k)
+            _, near = _nearest(points[rest], points[asking], k)
             found.append(np.column_stack((np.repeat(asking, k), rest[near.ravel()])))
         dense = np.flatnonzero(short)
         if dense.size > 1:
@@ -759,14 +758,52 @@ def _island_units(
                 ]
             ) / component_weight[dense][:, None]
             k = min(ARCHIPELAGO_NEIGHBOURS + 1, dense.size)
-            _, near = cKDTree(centroids).query(centroids, k=k)
-            near = near.reshape(dense.size, k)[:, 1:]
+            _, near = _nearest(centroids, centroids, k)
+            near = near[:, 1:]
             links = np.column_stack(
                 (island_unit[np.repeat(dense, k - 1)], island_unit[dense[near.ravel()]])
             )
     pairs = np.unique(np.concatenate(found), axis=0)
     reach = np.concatenate((np.column_stack((unit[pairs[:, 0]], unit[pairs[:, 1]])), links))
     return unit, loose.size + islands.size, reach
+
+
+def _nearest(points: np.ndarray, queries: np.ndarray, k: int):
+    """``(squared distance, index)`` of the ``k`` points nearest each query, in the
+    order of (squared distance, index): of points equally far, the one with the
+    lower index comes first.
+
+    A k-d tree alone leaves the order of equally distant points to its own
+    traversal (regular grids of nodes have many), and that order decides which
+    neighbours a node is linked to.  The squared distance is dx * dx + dy * dy on
+    the coordinates themselves.
+    """
+    from scipy.spatial import cKDTree
+
+    points = np.asarray(points, dtype=np.float64)
+    queries = np.asarray(queries, dtype=np.float64)
+    n = points.shape[0]
+    k = min(int(k), n)
+    wider = min(n, k + 8)  # room for points as far as the k-th
+    _, near = cKDTree(points).query(queries, k=wider)
+    near = np.asarray(near, dtype=np.int64).reshape(queries.shape[0], wider)
+    dx = points[near, 0] - queries[:, None, 0]
+    dy = points[near, 1] - queries[:, None, 1]
+    squared = dx * dx + dy * dy
+    order = np.lexsort((near, squared), axis=1)
+    near = np.take_along_axis(near, order, axis=1)
+    squared = np.take_along_axis(squared, order, axis=1)
+    if wider < n:
+        # the k-th distance reaches to the last point fetched: points equally far
+        # may lie beyond it
+        for row in np.flatnonzero(squared[:, k - 1] == squared[:, wider - 1]):
+            dx = points[:, 0] - queries[row, 0]
+            dy = points[:, 1] - queries[row, 1]
+            every = dx * dx + dy * dy
+            first = np.lexsort((np.arange(n), every))[:wider]
+            near[row] = first
+            squared[row] = every[first]
+    return squared[:, :k], near[:, :k]
 
 
 def _adjacency(n_nodes: int, source: np.ndarray, target: np.ndarray):
@@ -987,8 +1024,6 @@ def _archipelago(
 ) -> np.ndarray:
     """Parts of a graph none of whose components is half a part: the components,
     each linked to its nearest by centroid, divided by METIS."""
-    from scipy.spatial import cKDTree
-
     n_components = component_weight.size
     if n_components <= n_parts:
         return component.astype(np.int32)
@@ -996,7 +1031,7 @@ def _archipelago(
     cols = np.bincount(component, weights=graph.weights * graph.cols) / component_weight
     k = min(ARCHIPELAGO_NEIGHBOURS + 1, n_components)
     centroids = np.column_stack((rows, cols))
-    _, nearest = cKDTree(centroids).query(centroids, k=k)
+    _, nearest = _nearest(centroids, centroids, k)
     pairs = np.column_stack(
         (np.repeat(np.arange(n_components), k - 1), nearest[:, 1:].ravel())
     )
@@ -1013,8 +1048,6 @@ def _masses(linked: PartitionGraph, component: np.ndarray, land: np.ndarray):
     """Each island component tied to its nearest land node: the virtual edges,
     one per island (from its member nearest to land), and the land component
     every component belongs to (its mass)."""
-    from scipy.spatial import cKDTree
-
     is_land = np.zeros(component.max() + 1, dtype=np.bool_)
     is_land[land] = True
     on_land = np.flatnonzero(is_land[component])
@@ -1022,10 +1055,13 @@ def _masses(linked: PartitionGraph, component: np.ndarray, land: np.ndarray):
     mass_of = np.arange(is_land.size)
     if off_land.size == 0:
         return np.empty((0, 2), dtype=np.int64), mass_of
-    tree = cKDTree(np.column_stack((linked.rows[on_land], linked.cols[on_land])))
-    distance, nearest = tree.query(
-        np.column_stack((linked.rows[off_land], linked.cols[off_land]))
+    squared, nearest = _nearest(
+        np.column_stack((linked.rows[on_land], linked.cols[on_land])),
+        np.column_stack((linked.rows[off_land], linked.cols[off_land])),
+        1,
     )
+    distance = np.sqrt(squared[:, 0])
+    nearest = nearest[:, 0]
     island = component[off_land]
     order = np.lexsort((off_land, distance, island))
     _, first = np.unique(island[order], return_index=True)
@@ -1631,7 +1667,10 @@ def _trace_mainstem(
         donors = donors[in_dominant[donors]]
         if donors.size == 0:
             break
-        cell = int(donors[np.argmax(upstream[donors])])
+        # the larger tributary; of two equally large, the one with the smaller cell
+        # index, whatever order the donor table lists them in
+        largest = upstream[donors].max()
+        cell = int(donors[upstream[donors] == largest].min())
         stem.append(cell)
     return np.asarray(stem[::-1], dtype=flw.idxs_ds.dtype)
 

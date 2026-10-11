@@ -71,6 +71,11 @@ unreleased
   the first within the target), and keeps the best only when it lowers
   max/mean by ``OPEN_MIN_GAIN`` or, the heaviest part no heavier, the
   overload by as much
+* the partitions break ties as the FlowTopo C code does: of two equally large
+  tributaries the mainstem takes the one with the smaller cell index, and
+  equally distant neighbours are taken in the order of their indices (a k-d
+  tree alone leaves that order to its traversal); METIS' ``ufactor`` is rounded
+  half up
 
 0.5.12 (01-07-2026)
 *******************

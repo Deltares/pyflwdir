@@ -936,3 +936,27 @@ def test_one_part_partition_is_trivial_without_metis():
     parts, load = flw.partition(level="basin", n_parts=1)
     assert np.all(parts == 0)
     assert np.array_equal(load, np.array([flw.ncells]))
+
+
+def test_the_mainstem_takes_the_smaller_index_of_two_equal_tributaries():
+    # cells 0 and 1 drain into the pit 3; both are one cell
+    flw = pyflwdir.FlwdirRaster(
+        np.array([3, 3, 2, 3], dtype=np.int32), shape=(2, 2), ftype="d8"
+    )
+    upstream = np.array([1.0, 1.0, 1.0, 3.0])
+    stem = partition._trace_mainstem(flw, 3, upstream, np.ones(4, dtype=bool))
+    assert list(stem) == [0, 3]
+
+
+def test_equally_distant_neighbours_come_in_the_order_of_their_indices():
+    points = np.array(
+        [(3, 4), (3, -4), (-3, 4), (-3, -4), (4, 3), (4, -3), (-4, 3), (-4, -3), (0, 0)],
+        dtype=float,
+    )
+    squared, near = partition._nearest(points, points[8:9], 5)
+    assert list(near[0]) == [8, 0, 1, 2, 3]
+    assert list(squared[0]) == [0.0, 25.0, 25.0, 25.0, 25.0]
+    # more points at the cut-off distance than the tree was asked for
+    same = np.vstack([np.zeros((40, 2)), [(5.0, 5.0)]])
+    _, near = partition._nearest(same, np.array([[0.0, 0.0]]), 3)
+    assert list(near[0]) == [0, 1, 2]
