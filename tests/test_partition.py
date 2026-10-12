@@ -960,3 +960,26 @@ def test_equally_distant_neighbours_come_in_the_order_of_their_indices():
     same = np.vstack([np.zeros((40, 2)), [(5.0, 5.0)]])
     _, near = partition._nearest(same, np.array([[0.0, 0.0]]), 3)
     assert list(near[0]) == [0, 1, 2]
+
+
+def test_the_mainstem_takes_the_larger_upa_of_two_equal_tributaries_when_given():
+    flw = pyflwdir.FlwdirRaster(
+        np.array([3, 3, 2, 3], dtype=np.int32), shape=(2, 2), ftype="d8"
+    )
+    upstream = np.array([1.0, 1.0, 1.0, 3.0])
+    every = np.ones(4, dtype=bool)
+    upa = np.array([0.004317, 0.004318, 0.0043, 0.0129], dtype=np.float32)
+    assert list(partition._trace_mainstem(flw, 3, upstream, every, upa)) == [1, 3]
+    upa[1] = upa[0]
+    assert list(partition._trace_mainstem(flw, 3, upstream, every, upa)) == [0, 3]
+
+
+def test_a_cell_draining_off_the_network_is_refused():
+    flw = pyflwdir.FlwdirRaster(np.array([1, -1, 2], dtype=np.int32), (1, 3), "d8")
+    with pytest.raises(ValueError, match="drain into a cell off the network"):
+        partition.partition(flw, level="basin", n_parts=1)
+
+
+def test_nearest_of_no_point_finds_none():
+    squared, near = partition._nearest(np.empty((0, 2)), np.array([[0.0, 0.0]]), 3)
+    assert squared.shape == (1, 0) and near.shape == (1, 0)

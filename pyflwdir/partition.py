@@ -780,10 +780,13 @@ def _nearest(points: np.ndarray, queries: np.ndarray, k: int):
     """
     from scipy.spatial import cKDTree
 
-    points = np.asarray(points, dtype=np.float64)
-    queries = np.asarray(queries, dtype=np.float64)
+    points = np.asarray(points, dtype=np.float64).reshape(-1, 2)
+    queries = np.asarray(queries, dtype=np.float64).reshape(-1, 2)
     n = points.shape[0]
     k = min(int(k), n)
+    if k <= 0:  # no point to find, as the C code returns none
+        empty = (queries.shape[0], 0)
+        return np.empty(empty, dtype=np.float64), np.empty(empty, dtype=np.int64)
     wider = min(n, k + 8)  # room for points as far as the k-th
     _, near = cKDTree(points).query(queries, k=wider)
     near = np.asarray(near, dtype=np.int64).reshape(queries.shape[0], wider)
@@ -1658,7 +1661,11 @@ def _trace_mainstem(
     pit: int,
     upstream: np.ndarray,
     in_dominant: np.ndarray,
+    upa: np.ndarray | None = None,
 ) -> np.ndarray:
+    """Cells from the head down to the pit, taking the larger tributary each time:
+    of two with as many cells the one with the larger ``upa`` when it is given,
+    then the one with the smaller cell index, as the FlowTopo C code does."""
     indptr, idxs_us = core.upstream_csr(flw.idxs_ds, flw._mv)
     stem = [pit]
     cell = pit
@@ -1667,10 +1674,14 @@ def _trace_mainstem(
         donors = donors[in_dominant[donors]]
         if donors.size == 0:
             break
-        # the larger tributary; of two equally large, the one with the smaller cell
-        # index, whatever order the donor table lists them in
+        # the larger tributary; of two equally large, the one with the larger upa
+        # (when given), then the one with the smaller cell index, whatever order
+        # the donor table lists them in
         largest = upstream[donors].max()
-        cell = int(donors[upstream[donors] == largest].min())
+        tied = donors[upstream[donors] == largest]
+        if upa is not None and tied.size > 1:
+            tied = tied[upa[tied] == upa[tied].max()]
+        cell = int(tied.min())
         stem.append(cell)
     return np.asarray(stem[::-1], dtype=flw.idxs_ds.dtype)
 
@@ -1716,6 +1727,7 @@ def _open_basins(
     imbalance_target: float,
     seed: int,
     refine: bool,
+    upa: np.ndarray | None = None,
 ) -> PartitionPlan:
     """Method 2 with the basins of node numbers ``opened`` opened along their mainstems."""
     shape = _raster_shape(flw)
@@ -1726,7 +1738,9 @@ def _open_basins(
         members = np.flatnonzero(basin_ids == basin_id)
         pits = members[flw.idxs_ds[members] == members]
         pit = int(pits[0]) if pits.size else int(members[np.argmax(upstream[members])])
-        mainstems.append(_trace_mainstem(flw, pit, upstream, basin_ids == basin_id))
+        mainstems.append(
+            _trace_mainstem(flw, pit, upstream, basin_ids == basin_id, upa)
+        )
     on_mainstem = np.zeros(flw.size, dtype=np.bool_)
     stem_of_cell = np.full(flw.size, -1, dtype=np.int64)
     position_of_cell = np.full(flw.size, -1, dtype=np.int64)
@@ -1879,6 +1893,7 @@ def _subbasin_partition(
     imbalance_target: float,
     seed: int,
     refine: bool,
+    upa: np.ndarray | None = None,
 ) -> PartitionPlan:
     """Method 2 on a raster: open as few basins as the balance needs.
 
@@ -1974,6 +1989,7 @@ def _subbasin_partition(
                 imbalance_target,
                 seed,
                 refine,
+                upa,
             )
             ratio = float(plan.loads.max() / max(plan.loads.mean(), 1))
             key = (ratio, _overload(plan.loads))
@@ -2022,8 +2038,14 @@ def partition_plan(
     refine: bool = True,
     min_subtree_size: int = 100_000,
     imbalance_target: float = 1.005,
+    upa: np.ndarray | None = None,
 ) -> PartitionPlan:
-    """Build the full FlowTopo partition and merge plan."""
+    """Build the full FlowTopo partition and merge plan.
+
+    ``upa`` (optional, one value a cell) is the upstream area that decides
+    between two tributaries with as many cells when a mainstem is traced, as in
+    the FlowTopo C code; without it the one with the smaller cell index is taken.
+    """
     if level not in ("basin", "subbasin"):
         raise ValueError("level must be 'basin' or 'subbasin'")
     if n_parts < 1:
@@ -2034,6 +2056,21 @@ def partition_plan(
         raise ValueError("min_subtree_size must be at least 1")
     if imbalance_target < 1:
         raise ValueError("imbalance_target must be at least 1")
+    if upa is not None:
+        # compared as the C code compares them, in float32
+        upa = np.ascontiguousarray(upa, dtype=np.float32).reshape(-1)
+        if upa.size != flw.size:
+            raise ValueError(f"upa holds {upa.size} values; the raster has {flw.size} cells")
+    # a cell that drains into a cell off the network belongs to no basin and would
+    # be left out of every part: refused (FlwdirRaster.from_array makes such a cell a pit)
+    valid = flw.idxs_ds != flw._mv
+    into_valid = np.zeros(flw.size, dtype=np.bool_)
+    into_valid[valid] = valid[flw.idxs_ds[valid].astype(np.int64)]
+    if np.any(valid & ~into_valid):
+        raise ValueError(
+            f"{int(np.count_nonzero(valid & ~into_valid))} cells drain into a cell "
+            "off the network; make them pits (as FlwdirRaster.from_array does)"
+        )
 
     parts, load, basin_ids, labels, node_parts = _basin_partition(
         flw, n_parts, seed, refine, imbalance_target
@@ -2051,6 +2088,7 @@ def partition_plan(
         imbalance_target,
         seed,
         refine,
+        upa,
     )
 
 

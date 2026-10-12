@@ -71,11 +71,15 @@ unreleased
   the first within the target), and keeps the best only when it lowers
   max/mean by ``OPEN_MIN_GAIN`` or, the heaviest part no heavier, the
   overload by as much
-* the partitions break ties as the FlowTopo C code does: of two equally large
-  tributaries the mainstem takes the one with the smaller cell index, and
-  equally distant neighbours are taken in the order of their indices (a k-d
-  tree alone leaves that order to its traversal); METIS' ``ufactor`` is rounded
-  half up
+* the partitions break ties as the FlowTopo C code does: of two tributaries
+  with as many cells the mainstem takes the one with the larger upstream area
+  when ``upa`` is given (``partition_plan(..., upa=)``), then the one with the
+  smaller cell index, and equally distant neighbours are taken in the order of
+  their indices (a k-d tree alone leaves that order to its traversal); METIS'
+  ``ufactor`` is rounded half up
+* the partitions refuse a raster with a cell that drains into a cell off the
+  network (built directly from downstream indices; ``from_array`` makes such a
+  cell a pit), whose basin was left out of every part
 
 0.5.12 (01-07-2026)
 *******************
