@@ -918,7 +918,11 @@ def _absorb_fragments(graph: PartitionGraph, parts: np.ndarray, limit: float) ->
     first, second = graph.edges[:, 0], graph.edges[:, 1]
     n_parts = int(parts.max()) + 1
     moved_nodes = 0
-    for _ in range(8):
+    # as many rounds as it takes: a fragment that touches only fragments waits for the next round.  (Until
+    # eight rounds at most: fragments more than eight deep were left apart, and the call returned as if
+    # they had joined.)  A round that moves a node joins at least one fragment to a piece that stays, so
+    # the pieces grow fewer and the rounds end; a round that moves nothing is the last.
+    while True:
         same = parts[first] == parts[second]
         piece = _components(graph, same)
         weight = np.bincount(piece, weights=graph.weights)
@@ -944,6 +948,8 @@ def _absorb_fragments(graph: PartitionGraph, parts: np.ndarray, limit: float) ->
         target = np.full(weight.size, -1, dtype=np.int64)
         target[absorbed] = np.argmax(shared[absorbed], axis=1)
         moving = target[piece] >= 0
+        if not moving.any():
+            break
         parts[moving] = target[piece[moving]]
         moved_nodes += int(np.count_nonzero(moving))
     return moved_nodes

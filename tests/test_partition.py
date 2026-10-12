@@ -219,6 +219,19 @@ def test_fragments_join_the_part_around_them():
     assert np.array_equal(parts, [0] * 5 + [1] * 5 + [0])
 
 
+@pytest.mark.unit
+def test_fragments_join_however_deep_they_lie():
+    # two heavy ends and a chain of one-node fragments between them, labelled 0, 1, 0, 1, ...: every
+    # fragment joins, one node a side a round (eight rounds left the middle of a chain of 42 apart)
+    for count in (10, 42, 80):
+        weights = np.ones(count)
+        weights[0] = weights[-1] = 100
+        graph = line_graph(weights)
+        parts = (np.arange(count) % 2).astype(np.int32)
+        partition._absorb_fragments(graph, parts, np.inf)
+        assert np.array_equal(parts, [0] * (count // 2) + [1] * (count // 2))
+
+
 # --- Method 1 and Method 2 on graphs --------------------------------------------
 
 
