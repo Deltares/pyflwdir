@@ -604,6 +604,9 @@ def test_a_hint_that_is_no_part_does_not_count():
     parts = np.array([0, 0, 1], dtype=np.int32)
     weights = np.array([1, 5, 2], dtype=np.int64)
     assert np.array_equal(partition._align_labels(parts, weights, np.array([0, -1, 1]), 2), [0, 0, 1])
+    # and a node without a part keeps what it has while the others are relabelled
+    parts = np.array([0, -1, 1], dtype=np.int32)
+    assert np.array_equal(partition._align_labels(parts, weights, np.array([1, 1, 0]), 2), [1, -1, 0])
 
 
 @pytest.mark.unit

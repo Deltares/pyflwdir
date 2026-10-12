@@ -656,9 +656,10 @@ def _pieces_apart(graph: PartitionGraph, parts: np.ndarray) -> int:
 def _fill_empty_parts(graph: PartitionGraph, parts: np.ndarray, n_parts: int) -> np.ndarray:
     """An empty part (METIS leaves one with very unequal weights) takes a node of
     the heaviest part that has two or more: the lightest leaf of a spanning tree
-    of that part, so that the part stays connected.  The tree grows from the
-    part's first node; where the part is in pieces, a node the tree does not
-    reach counts as a leaf.  ``graph`` has more nodes than ``n_parts``.
+    of that part, so that a part in one piece stays in one piece.  The tree
+    grows from the part's first node; where the part is in pieces, a node the
+    tree does not reach counts as a leaf, whatever its place in its own piece.
+    ``graph`` has more nodes than ``n_parts``.
     """
     from scipy.sparse import coo_matrix
     from scipy.sparse.csgraph import breadth_first_order
@@ -1441,13 +1442,16 @@ def _align_labels(parts: np.ndarray, weights: np.ndarray, hint: np.ndarray, n_pa
         return parts
     overlap = np.zeros((n_parts, n_parts))
     hint = np.asarray(hint)
-    held = (hint >= 0) & (hint < n_parts) & (parts >= 0) & (parts < n_parts)
+    has_part = (parts >= 0) & (parts < n_parts)
+    held = has_part & (hint >= 0) & (hint < n_parts)
     np.add.at(overlap, (parts[held], hint[held]), np.asarray(weights)[held])
     best = max(
         permutations(range(n_parts)),
         key=lambda mapping: sum(overlap[part, mapping[part]] for part in range(n_parts)),
     )
-    return np.asarray(best, dtype=np.int32)[parts]
+    relabelled = np.array(parts, dtype=np.int32)       # a node without a part keeps what it has
+    relabelled[has_part] = np.asarray(best, dtype=np.int32)[parts[has_part]]
+    return relabelled
 
 
 def _split_stem(
