@@ -2061,6 +2061,13 @@ def partition_plan(
         upa = np.ascontiguousarray(upa, dtype=np.float32).reshape(-1)
         if upa.size != flw.size:
             raise ValueError(f"upa holds {upa.size} values; the raster has {flw.size} cells")
+        # finite and positive on every cell of the network, as the FlowTopo C code
+        # asks: a NaN is neither the largest of the tied tributaries nor equal to it
+        network_upa = upa[flw.idxs_ds != flw._mv]
+        if network_upa.size and not np.all(np.isfinite(network_upa) & (network_upa > 0)):
+            raise ValueError(
+                "upa holds a value that is not a finite, positive area on a cell of the network"
+            )
     # a cell that drains into a cell off the network belongs to no basin and would
     # be left out of every part: refused (FlwdirRaster.from_array makes such a cell a pit)
     valid = flw.idxs_ds != flw._mv

@@ -73,7 +73,8 @@ unreleased
   overload by as much
 * the partitions break ties as the FlowTopo C code does: of two tributaries
   with as many cells the mainstem takes the one with the larger upstream area
-  when ``upa`` is given (``partition_plan(..., upa=)``), then the one with the
+  when ``upa`` is given (``partition_plan(..., upa=)``; finite and positive on
+  every cell of the network), then the one with the
   smaller cell index, and equally distant neighbours are taken in the order of
   their indices (a k-d tree alone leaves that order to its traversal); METIS'
   ``ufactor`` is rounded half up

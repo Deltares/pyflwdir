@@ -974,6 +974,19 @@ def test_the_mainstem_takes_the_larger_upa_of_two_equal_tributaries_when_given()
     assert list(partition._trace_mainstem(flw, 3, upstream, every, upa)) == [0, 3]
 
 
+def test_an_upa_that_is_not_finite_and_positive_on_the_network_is_refused():
+    flw = pyflwdir.FlwdirRaster(
+        np.array([3, 3, 2, 3], dtype=np.int32), shape=(2, 2), ftype="d8"
+    )
+    upa = np.array([1.0, 1.0, 1.0, 3.0], dtype=np.float32)
+    partition.partition(flw, level="basin", n_parts=1, upa=upa)
+    for bad in (np.nan, np.inf, 0.0):
+        broken = upa.copy()
+        broken[1] = bad
+        with pytest.raises(ValueError, match="finite, positive area"):
+            partition.partition(flw, level="basin", n_parts=1, upa=broken)
+
+
 def test_a_cell_draining_off_the_network_is_refused():
     flw = pyflwdir.FlwdirRaster(np.array([1, -1, 2], dtype=np.int32), (1, 3), "d8")
     with pytest.raises(ValueError, match="drain into a cell off the network"):
