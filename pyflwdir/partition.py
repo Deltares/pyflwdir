@@ -31,8 +31,10 @@ land, a land mass.  The masses get the parts so that the heaviest is as light
 as can be, and no part spans two masses; when no component is land (an
 archipelago), METIS divides the components.  A mass is cut by contiguous
 weighted METIS, run from several seeds on a graph whose small tributaries are
-grouped with a larger neighbour; the most balanced result is kept, and boundary
-nodes then move, one tributary or basin at a time, from heavier to lighter
+grouped with a larger neighbour; of the results whose heaviest part is within
+``METIS_SLACK`` of its share the one with the shortest boundary is kept,
+otherwise the most balanced, and boundary nodes then move, one tributary or
+basin at a time, from heavier to lighter
 neighbouring parts until every part is within ``imbalance_target`` of its
 target load or no move helps.  An island moves whole, to a part near it.  A
 part is never cut in two; the odd piece left apart from its part joins the part
@@ -73,8 +75,9 @@ MAX_OPENED_BASINS = 4
 """Method 2 opens at most this many basins along their mainstems."""
 
 OPEN_MIN_GAIN = 0.01
-"""Method 2 keeps an opened basin only when it lowers the heaviest subregion
-by this much of the mean (max/mean) or more."""
+"""Method 2 keeps an opened basin when it lowers the heaviest subregion by this
+much of the mean (max/mean) or more, or when the heaviest is no heavier and the
+load above the shares is lower (one of two equal bottlenecks opened)."""
 
 OPEN_TRIALS = 4
 """Of the candidates of a round, Method 2 tries at most this many, the heaviest
@@ -90,7 +93,8 @@ ISLAND_PROBES = 16
 
 METIS_GROUPS_PER_PART = 8
 """Method 2 groups small tributaries for METIS, but keeps at least this many
-groups per part, whatever ``min_subtree_size``."""
+groups per part, whatever ``min_subtree_size`` (every tributary a group of its
+own where there are fewer tributaries than that)."""
 
 P_MIN_ROUNDS = 4
 """Method 2 balances again, with the trunk's mainstem above the new ``P_min``,
