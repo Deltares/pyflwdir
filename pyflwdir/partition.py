@@ -98,7 +98,8 @@ own where there are fewer tributaries than that)."""
 
 P_MIN_ROUNDS = 4
 """Method 2 balances again, with the trunk's mainstem above the new ``P_min``,
-at most this many times."""
+at most this many times.  Where the cut positions have not settled by then the
+last partition is returned; its loads are counted on the raster afterwards."""
 
 FRAGMENT_SHARE = 0.01
 """A piece of a part cut off from its main piece and lighter than this share of
@@ -655,8 +656,9 @@ def _pieces_apart(graph: PartitionGraph, parts: np.ndarray) -> int:
 def _fill_empty_parts(graph: PartitionGraph, parts: np.ndarray, n_parts: int) -> np.ndarray:
     """An empty part (METIS leaves one with very unequal weights) takes a node of
     the heaviest part that has two or more: the lightest leaf of a spanning tree
-    of that part, so that the part stays connected.  ``graph`` has more nodes
-    than ``n_parts``.
+    of that part, so that the part stays connected.  The tree grows from the
+    part's first node; where the part is in pieces, a node the tree does not
+    reach counts as a leaf.  ``graph`` has more nodes than ``n_parts``.
     """
     from scipy.sparse import coo_matrix
     from scipy.sparse.csgraph import breadth_first_order
@@ -669,11 +671,16 @@ def _fill_empty_parts(graph: PartitionGraph, parts: np.ndarray, n_parts: int) ->
         donor = int(np.argmax(np.where(counts > 1, load, -np.inf)))
         members = np.flatnonzero(parts == donor)
         sub = _subgraph(graph, members)
+        # every edge both ways and a node's neighbours by rising index, so that the tree
+        # is the one the FlowTopo C code grows (left to SciPy, an edge stored (a, b) was
+        # followed from a before any edge stored (c, a), and another leaf could come out)
+        both = np.concatenate((sub.edges, sub.edges[:, ::-1]))
         matrix = coo_matrix(
-            (np.ones(sub.edges.shape[0]), (sub.edges[:, 0], sub.edges[:, 1])),
+            (np.ones(both.shape[0]), (both[:, 0], both[:, 1])),
             shape=(sub.size, sub.size),
         ).tocsr()
-        _, predecessors = breadth_first_order(matrix, 0, directed=False)
+        matrix.sort_indices()
+        _, predecessors = breadth_first_order(matrix, 0, directed=True)
         is_parent = np.zeros(sub.size, dtype=np.bool_)
         is_parent[predecessors[predecessors >= 0]] = True
         leaves = np.flatnonzero(~is_parent)
@@ -1036,7 +1043,8 @@ def _archipelago(
     imbalance_target: float,
 ) -> np.ndarray:
     """Parts of a graph none of whose components is half a part: the components,
-    each linked to its nearest by centroid, divided by METIS."""
+    each linked to the ``ARCHIPELAGO_NEIGHBOURS`` nearest to it by centroid,
+    divided by METIS."""
     n_components = component_weight.size
     if n_components <= n_parts:
         return component.astype(np.int32)
@@ -1426,11 +1434,15 @@ def _coarsen_tributaries(
 
 
 def _align_labels(parts: np.ndarray, weights: np.ndarray, hint: np.ndarray, n_parts: int):
-    """Relabel the parts to overlap ``hint`` (another assignment) the most."""
+    """Relabel the parts to overlap ``hint`` (another assignment) the most.  More
+    than 8 parts are left as they are; a node whose hint is not a part does not
+    count."""
     if n_parts > 8:
         return parts
     overlap = np.zeros((n_parts, n_parts))
-    np.add.at(overlap, (parts, hint), weights)
+    hint = np.asarray(hint)
+    held = (hint >= 0) & (hint < n_parts) & (parts >= 0) & (parts < n_parts)
+    np.add.at(overlap, (parts[held], hint[held]), np.asarray(weights)[held])
     best = max(
         permutations(range(n_parts)),
         key=lambda mapping: sum(overlap[part, mapping[part]] for part in range(n_parts)),
@@ -1545,7 +1557,7 @@ def assign_subbasins(
     ``is_tributary`` marks the tributary subtrees that drain into an opened
     basin's mainstem, ``stem`` says which mainstem (0 when there is one) and
     ``position`` gives the mainstem cell each enters (0 at the source);
-    tributaries entering consecutive cells of one mainstem touch, across it, and
+    tributaries that enter one mainstem one after the other touch, across it, and
     so do the pairs of ``stem_contacts`` (a node that touches a mainstem cell and
     the tributary that cell weighs with, ``_mainstem_contacts``).
     Small tributaries move with the nearest eligible one.  ``hint`` (one part per
@@ -1564,7 +1576,7 @@ def assign_subbasins(
     stem = np.where(is_tributary, np.asarray(stem, dtype=np.int64), -1)
     if hint is not None:
         hint = np.asarray(hint)
-    # the two banks of an opened mainstem touch: tributaries entering consecutive cells
+    # the two banks of an opened mainstem touch: tributaries that enter one after the other
     tributaries = np.flatnonzero(is_tributary)
     ordered = tributaries[np.lexsort((tributaries, position[tributaries], stem[tributaries]))]
     same_stem = stem[ordered[:-1]] == stem[ordered[1:]]

@@ -587,6 +587,26 @@ def test_metis_never_leaves_a_part_empty():
 
 
 @pytest.mark.unit
+def test_an_empty_part_takes_the_leaf_of_the_tree_grown_by_rising_index():
+    # five nodes of one weight in one part.  The breadth-first tree from node 0, a node's neighbours by
+    # rising index, is 0-2, 2-1, 2-3, 1-4; its leaves are 3 and 4, and the empty part takes 3, as in the
+    # FlowTopo C code.  (Left to SciPy's own order the tree was 0-2, 2-3, 2-1, 3-4 and the node 1.)
+    graph = partition.PartitionGraph(
+        np.ones(5, dtype=np.int64), np.zeros(5), np.arange(5, dtype=np.float64),
+        np.array([(0, 2), (1, 2), (1, 4), (2, 3), (3, 4)], dtype=np.int32), np.ones(5, dtype=np.int64))
+    parts = partition._fill_empty_parts(graph, np.zeros(5, dtype=np.int32), 2)
+    assert np.array_equal(parts, [0, 0, 0, 1, 0])
+
+
+@pytest.mark.unit
+def test_a_hint_that_is_no_part_does_not_count():
+    # the second node has no hint (-1): it was read as the last part and turned the labels round
+    parts = np.array([0, 0, 1], dtype=np.int32)
+    weights = np.array([1, 5, 2], dtype=np.int64)
+    assert np.array_equal(partition._align_labels(parts, weights, np.array([0, -1, 1]), 2), [0, 0, 1])
+
+
+@pytest.mark.unit
 def test_nodes_without_cells_follow_a_neighbour():
     pytest.importorskip("pymetis")
     weights = np.array([1] * 20 + [0], dtype=np.int64)
