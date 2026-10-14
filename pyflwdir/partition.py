@@ -17,10 +17,10 @@ process-level parts, at two levels:
   ``OPEN_MIN_GAIN`` or more.  Those
   tributaries and the other basins form one graph, divided at once into equal
   parts; each mainstem cell weighs with the tributary that enters it.
-  Below ``P_min``, the most upstream mainstem cell where a tributary of another
-  part enters, each opened mainstem is a logical fifth region, walked once
-  after the four parts; above it, the mainstem stays with the part of its most
-  upstream tributaries (its trunk).
+  From ``P_min`` down, ``P_min`` included -- the most upstream mainstem cell
+  where a tributary of another part enters -- each opened mainstem is a logical
+  fifth region, walked once after the four parts; above it, the mainstem stays
+  with the part of its most upstream tributaries (its trunk).
 
 Contiguity comes first, balance second: every part is one piece of land.
 Land is the largest components of the graph -- what touches on the ground, the
