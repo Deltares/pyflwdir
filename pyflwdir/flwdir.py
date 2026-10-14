@@ -387,10 +387,10 @@ class Flwdir:
         are divided into equal parts, each connected on the ground, by
         contiguous METIS followed by a balance refinement; islands join the
         part of their nearest basin. Subbasin-level partitioning (Method 2)
-        opens the basins too large to balance whole -- the largest first --
-        along their mainstems into tributary subtrees, divides those and the
+        opens the basins that keep the parts from balancing -- usually the
+        dominant basin first -- along their mainstems into tributary subtrees, divides those and the
         other basins into four parallel trunks, and leaves each opened mainstem
-        below its ``P_min`` as a logical fifth region.
+        from its ``P_min`` down, ``P_min`` included, as a logical fifth region.
 
         This method requires a :class:`FlwdirRaster`. METIS is an optional
         dependency; install it with ``pip install pyflwdir[partition]``.

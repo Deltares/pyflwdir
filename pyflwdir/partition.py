@@ -112,7 +112,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class FifthRegion:
-    """One opened basin's mainstem below ``P_min``, walked after the four parts.
+    """One opened basin's mainstem from ``P_min`` down, ``P_min`` included, walked after the four parts.
 
     ``cut_inlets`` are in mainstem order; ``predecessor`` is the mainstem cell
     just above ``P_min`` (-1 when ``P_min`` is the source), held by ``trunk``.
@@ -496,8 +496,8 @@ def _refine_balance(
     peninsula with it (``_detach``), so that both parts stay connected; a move
     that would cut the part's body in two is not made.  Load can so pass on
     through a middle part to a light one that does not touch the heavy one.  It
-    stops when the largest load-to-target ratio is at most ``goal``, or a sweep
-    makes no move.  Returns the number of moves.
+    stops when the largest load-to-target ratio is at most ``goal``, a sweep
+    makes no move, or ``max_moves`` moves are made.  Returns the number of moves.
     """
     n = weights.size
     n_parts = target_load.size
@@ -614,7 +614,8 @@ def _metis_parts(
 
     Of the results whose parts are within ``METIS_SLACK`` of their targets --
     near enough for the refinement -- the one with the shortest boundary between
-    the parts is kept; when there is none, the most balanced.  With ``contig``,
+    the parts is kept; when there is none, the most balanced.  Before both, the
+    results with fewer empty parts come first.  With ``contig``,
     ``graph`` must be connected (one land component, see
     ``_partition_components``): results with every part one piece come first,
     and the pieces METIS leaves apart (it may, with very unequal weights) join
@@ -1566,7 +1567,8 @@ def assign_subbasins(
     tributaries that enter one mainstem one after the other touch, across it, and
     so do the pairs of ``stem_contacts`` (a node that touches a mainstem cell and
     the tributary that cell weighs with, ``_mainstem_contacts``).
-    Small tributaries move with the nearest eligible one.  ``hint`` (one part per
+    Small tributaries are grouped with the nearest eligible one for METIS; the
+    refinement may then move a tributary on its own.  ``hint`` (one part per
     node, Method 1's) only fixes the part labels.  A node without cells or a
     centroid is merged into one it touches.
 
