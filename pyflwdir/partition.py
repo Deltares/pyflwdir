@@ -11,8 +11,9 @@ process-level parts, at two levels:
 * ``"subbasin"`` (Method 2): when Method 1's parts are not within
   ``imbalance_target`` of an equal share, basins are opened along their
   mainstems into the tributary subtrees that drain into the mainstem -- as few
-  as the balance needs: usually the dominant basin first (always when it is
-  heavier than an equal share times the target); another only when it is a
+  as the balance needs: usually the dominant basin first (an eligible basin --
+  more than one headwater -- heavier than an equal share times the target is
+  tried first, and kept open only when that improves the balance); another only when it is a
   whole basin in or beside a part over the target or the lightest part and
   opening it lowers max/mean (or, max/mean as it is, the overload) by
   ``OPEN_MIN_GAIN`` or more.  Those
