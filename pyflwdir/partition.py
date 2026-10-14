@@ -1946,7 +1946,8 @@ def _subbasin_partition(
     opened.  The rounds stop at
     the target, at a round without such a gain, or at
     ``MAX_OPENED_BASINS``.  So the first basin opened is usually the dominant one
-    (always when it is heavier than an equal share times the target), and a
+    (an eligible one -- more than one headwater -- heavier than an equal share times
+    the target is tried first, and kept only when it pays off), and a
     further one only a basin that holds the balance up, and only when that
     clearly pays off.  A basin that is one chain of cells has no tributaries to
     open into and stays whole.
