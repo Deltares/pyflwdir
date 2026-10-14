@@ -11,7 +11,8 @@ process-level parts, at two levels:
 * ``"subbasin"`` (Method 2): when Method 1's parts are not within
   ``imbalance_target`` of an equal share, basins are opened along their
   mainstems into the tributary subtrees that drain into the mainstem -- as few
-  as the balance needs: the dominant basin first; another only when it is a
+  as the balance needs: usually the dominant basin first (always when it is
+  heavier than an equal share times the target); another only when it is a
   whole basin in or beside a part over the target or the lightest part and
   opening it lowers max/mean (or, max/mean as it is, the overload) by
   ``OPEN_MIN_GAIN`` or more.  Those
@@ -93,8 +94,9 @@ ISLAND_PROBES = 16
 
 METIS_GROUPS_PER_PART = 8
 """Method 2 groups small tributaries for METIS, but keeps at least this many
-groups per part, whatever ``min_subtree_size`` (every tributary a group of its
-own where there are fewer tributaries than that)."""
+groups times the number of parts in all, whatever ``min_subtree_size`` (every
+tributary a group of its own where there are fewer tributaries than that); a
+part is not promised this many of its own."""
 
 P_MIN_ROUNDS = 4
 """Method 2 balances again, with the trunk's mainstem above the new ``P_min``,
