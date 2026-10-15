@@ -318,12 +318,24 @@ def test_metis_basin_partition_keeps_basins_whole_and_contiguous():
         assert np.all(np.diff(columns) == 1)
 
 
+def single_cell_basins(flw):
+    """The cells of the basins of a single cell, which take no part in a plan."""
+    basins = flw.basins().ravel()
+    in_a_basin = flw.mask.ravel() & (basins > 0)
+    cells_of_basin = np.bincount(basins[in_a_basin].astype(np.int64))
+    single = np.zeros(basins.size, dtype=bool)
+    single[in_a_basin] = cells_of_basin[basins[in_a_basin].astype(np.int64)] == 1
+    return single
+
+
 def check_plan(flw, plan):
     parts = plan.parts.ravel()
     mask = flw.mask.ravel()
+    single = single_cell_basins(flw)
     fifth = sum(stem.mainstem.size for stem in plan.stems)
-    assert plan.loads.sum() + fifth == flw.ncells
-    assert np.all(parts[mask] >= 0)
+    assert plan.loads.sum() + fifth == flw.ncells - np.count_nonzero(single)
+    assert np.all(parts[mask & ~single] >= 0)
+    assert np.all(parts[single] == -1)
     for stem in plan.stems:
         assert stem.cut_outlets.size == stem.cut_inlets.size == stem.cut_ranks.size
         assert stem.mainstem.size > 0
@@ -565,14 +577,137 @@ def test_method_2_opens_no_basin_without_a_clear_gain(monkeypatch):
 @pytest.mark.unit
 def test_an_archipelago_is_divided_by_proximity():
     pytest.importorskip("pymetis")
-    d8 = np.full((1, 39), 247, dtype=np.uint8)
-    d8[0, ::2] = 0
+    # twenty islands of two cells (a cell flowing east into a pit), one column of sea between two
+    d8 = np.full((1, 59), 247, dtype=np.uint8)
+    d8[0, 0::3] = 1
+    d8[0, 1::3] = 0
     flw = pyflwdir.from_array(d8, ftype="d8")
     plan = partition.partition_plan(flw, level="basin")
-    assert np.array_equal(np.sort(plan.loads), [5, 5, 5, 5])
+    assert np.array_equal(np.sort(plan.loads), [10, 10, 10, 10])
     for part in range(4):
         columns = np.flatnonzero(plan.parts[0] == part)
-        assert columns.max() - columns.min() == 8
+        assert columns.max() - columns.min() == 13
+
+
+@pytest.mark.unit
+def test_a_basin_of_a_single_cell_takes_no_part():
+    pytest.importorskip("pymetis")
+    # as the FlowTopo C code: the pit at (0, 4), which nothing flows into, keeps -1 and adds to no load;
+    # the parallel accumulation leaves it at its own value
+    d8 = np.full((3, 9), 247, dtype=np.uint8)
+    d8[:, 0:3] = 1
+    d8[:, 3] = 0
+    d8[0, 4] = 0
+    d8[:, 5:8] = 1
+    d8[:, 8] = 0
+    flw = pyflwdir.from_array(d8, ftype="d8")
+    for level in ("basin", "subbasin"):
+        plan = partition.partition_plan(flw, level=level)
+        check_plan(flw, plan)
+        assert plan.parts[0, 4] == -1
+        assert plan.loads.sum() == flw.ncells - 1
+
+
+@pytest.mark.unit
+def test_the_basins_given_number_the_nodes_and_are_checked(monkeypatch):
+    pytest.importorskip("pymetis")
+    flw = column_basins()
+    own = flw.basins().ravel()
+    n_basins = int(own.max())
+    seen = []
+    build_graph = partition.graph_from_node_raster
+
+    def recording(nodes, n_nodes):
+        seen.append(np.array(nodes).ravel())
+        return build_graph(nodes, n_nodes)
+
+    monkeypatch.setattr(partition, "graph_from_node_raster", recording)
+    # the same basins, numbered the other way round and far apart: the nodes follow the labels' order, and the plan
+    # gives the labels back as they were given
+    relabelled = np.where(own > 0, (100 - own.astype(np.int64)) * 2**40, 0).reshape(flw.shape)
+    plan = partition.partition_plan(flw, level="basin", basins=relabelled)
+    check_plan(flw, plan)
+    on = own > 0
+    assert np.array_equal(seen[0][on], n_basins - own[on])
+    assert np.array_equal(plan.basin_ids, relabelled)
+    seen.clear()
+    partition.partition_plan(flw, level="basin")
+    assert np.array_equal(seen[0][on], own[on] - 1)
+    for wrong in (relabelled.ravel()[:-1], np.zeros_like(own), np.where(own > 0, 1, 0), relabelled.astype(np.float64)):
+        with pytest.raises(ValueError):
+            partition.partition_plan(flw, level="basin", basins=wrong)
+
+
+@pytest.mark.unit
+def test_unsigned_labels_above_two_to_the_63_keep_their_order(monkeypatch):
+    pytest.importorskip("pymetis")
+    seen = []
+    build_graph = partition.graph_from_node_raster
+
+    def recording(nodes, n_nodes):
+        seen.append(np.array(nodes).ravel())
+        return build_graph(nodes, n_nodes)
+
+    monkeypatch.setattr(partition, "graph_from_node_raster", recording)
+    d8 = np.array([[1, 0, 247, 1, 0]], dtype=np.uint8)     # two basins of two cells
+    flw = pyflwdir.from_array(d8, ftype="d8")
+    labels = np.array([[1, 1, 0, 2**63 + 1, 2**63 + 1]], dtype=np.uint64)
+    plan = partition.partition_plan(flw, level="basin", n_parts=2, basins=labels)
+    check_plan(flw, plan)
+    assert list(seen[0][[0, 1, 3, 4]]) == [0, 0, 1, 1]
+    assert plan.basin_ids.dtype == np.uint64 and np.array_equal(plan.basin_ids, labels)
+
+
+@pytest.mark.unit
+def test_a_metis_library_is_called_in_place_of_pymetis(monkeypatch):
+    """The partition calls the library _metis_library gives, with the FlowTopo
+    C code's arguments, and not pymetis (a stand-in library: no METIS needed)."""
+    import ctypes
+
+    calls = []
+
+    class StandIn:
+        def METIS_SetDefaultOptions(self, options):
+            ctypes.memset(options, 0xFF, partition._METIS_NOPTIONS * 4)
+
+        def METIS_PartGraphKway(self, nvtxs, ncon, xadj, adjncy, vwgt, vsize, adjwgt, nparts, tpwgts, ubvec,
+                                options, objval, part):
+            calls.append((nvtxs._obj.value, nparts._obj.value))
+            values = np.ctypeslib.as_array(ctypes.cast(options, ctypes.POINTER(ctypes.c_int32)),
+                                           (partition._METIS_NOPTIONS,))
+            calls.append(tuple(int(values[k]) for k in (partition._METIS_OPTION_SEED,
+                                                        partition._METIS_OPTION_UFACTOR,
+                                                        partition._METIS_OPTION_CONTIG)))
+            return partition._METIS_OK
+
+    def no_pymetis():
+        raise AssertionError("pymetis was called")
+
+    monkeypatch.setattr(partition, "_metis_library", lambda: StandIn())
+    monkeypatch.setattr(partition, "_require_pymetis", no_pymetis)
+    graph = line_graph([1, 1, 1, 1, 1, 1])
+    parts, cut = partition._metis(graph, 3, np.full(3, 1 / 3), 42, 5, contig=True)
+    assert calls == [(6, 3), (42, 5, 1)]
+    assert parts.dtype == np.int32 and parts.size == 6 and cut == 0
+    calls.clear()
+    parts_one, cut_one = partition._metis(graph, 1, np.ones(1), 42, 5, contig=True)
+    assert calls == [] and np.all(parts_one == 0) and cut_one == 0
+
+
+@pytest.mark.unit
+def test_the_metis_library_named_is_called():
+    """With PYFLWDIR_METIS_LIBRARY naming a METIS 5.2.1 built with 32-bit
+    integers and reals, the parts come from it; skipped where none is named."""
+    import os
+
+    path = os.environ.get(partition.METIS_LIBRARY_VARIABLE, "")
+    if not path or not os.path.exists(path):
+        pytest.skip("no METIS library named in " + partition.METIS_LIBRARY_VARIABLE)
+    graph = line_graph([1, 1, 1, 1, 1, 1, 1, 1])
+    parts, cut = partition._metis(graph, 4, np.full(4, 0.25), 42, 5, contig=False)
+    assert parts.size == 8 and set(parts.tolist()) <= {0, 1, 2, 3} and cut >= 0
+    parts_one, cut_one = partition._metis(graph, 1, np.ones(1), 42, 5, contig=False)
+    assert np.all(parts_one == 0) and cut_one == 0
 
 
 @pytest.mark.unit
@@ -853,10 +988,11 @@ def test_a_basin_without_tributaries_stays_whole_and_apart():
 @pytest.mark.unit
 def test_a_basin_that_touches_only_the_mainstem_is_joined_across_it():
     pytest.importorskip("pymetis")
-    # (2,5) is a one-cell basin whose only neighbour, (1,5), is a mainstem cell
-    # of the right basin; the tributary (0,8) is the one that cell weighs with
-    code = {".": 247, "S": 4, "E": 1, "o": 0}
-    rows = ["........S", ".S.S.EEES", "EEEo.o.Eo"]
+    # (2,5) and (3,5) are a basin whose only neighbour, (1,5), is a mainstem cell
+    # of the right basin; the tributary (0,8) is the one that cell weighs with.
+    # (A basin of a single cell takes no part, so this one has a second cell below.)
+    code = {".": 247, "S": 4, "E": 1, "N": 64, "o": 0}
+    rows = ["........S", ".S.S.EEES", "EEEo.o.Eo", ".....N..."]
     d8 = np.array([[code[c] for c in row] for row in rows], dtype=np.uint8)
     flw = pyflwdir.from_array(d8, ftype="d8")
     for refine in (True, False):

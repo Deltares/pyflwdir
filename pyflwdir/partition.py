@@ -42,16 +42,25 @@ target load or no move helps.  An island moves whole, to a part near it.  A
 part is never cut in two; the odd piece left apart from its part joins the part
 around it.
 
+A basin of a single cell (a pit that nothing flows into, mostly on a coast)
+takes no part, as in the FlowTopo C code: its cell keeps ``-1`` and adds to no
+load.  The flow accumulation of :mod:`pyflwdir.parallel` leaves such a cell at
+its own value, which is its accumulation.
+
 The graph functions take arrays, not a raster, so that a graph built from tiles
-(FlowTopo's 90 m region tiles, for one) is partitioned by the same code.
+(FlowTopo's 90 m region tiles, for one) is partitioned by the same code.  METIS
+is pymetis's unless ``PYFLWDIR_METIS_LIBRARY`` names a METIS shared library
+(:data:`METIS_LIBRARY_VARIABLE`).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import ctypes
+from dataclasses import dataclass, replace
 from heapq import heappop, heappush
 from itertools import permutations
 import logging
+import os
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
@@ -107,6 +116,22 @@ last partition is returned; its loads are counted on the raster afterwards."""
 FRAGMENT_SHARE = 0.01
 """A piece of a part cut off from its main piece and lighter than this share of
 an equal part joins the neighbouring part it touches the most."""
+
+METIS_LIBRARY_VARIABLE = "PYFLWDIR_METIS_LIBRARY"
+"""The environment variable that names a METIS shared library to call (through
+ctypes) instead of the METIS that pymetis carries.  pymetis 2025.2.2 carries
+METIS 5.1.0, which divides the same graph with the same seed and options
+otherwise than METIS 5.2.1, the version the FlowTopo C code links; with a
+build of 5.2.1 the parts are the C code's.  The library must be built with
+32-bit integers and 32-bit reals: the integer width is checked when it is
+loaded, the real width cannot be."""
+
+_METIS_NOPTIONS = 40
+_METIS_OPTION_SEED = 9
+_METIS_OPTION_CONTIG = 13
+_METIS_OPTION_UFACTOR = 18
+_METIS_OK = 1
+_metis_libraries: dict = {}
 
 logger = logging.getLogger(__name__)
 
@@ -192,6 +217,59 @@ def _require_pymetis():
             "Install it with `pip install pyflwdir[partition]`."
         ) from error
     return pymetis
+
+
+def _metis_library():
+    """The METIS shared library ``METIS_LIBRARY_VARIABLE`` names, loaded once, or None."""
+    path = os.environ.get(METIS_LIBRARY_VARIABLE, "")
+    if not path:
+        return None
+    if path not in _metis_libraries:
+        library = ctypes.CDLL(path)
+        # METIS_SetDefaultOptions writes METIS_NOPTIONS values of -1: read as 64-bit integers, a build with 32-bit
+        # integers leaves the second half of the buffer at 0
+        probe = np.zeros(_METIS_NOPTIONS, dtype=np.int64)
+        library.METIS_SetDefaultOptions(probe.ctypes.data_as(ctypes.c_void_p))
+        if probe[-1] != 0:
+            raise RuntimeError(
+                f"{path} is a METIS built with 64-bit integers; {METIS_LIBRARY_VARIABLE} needs one built with "
+                "32-bit integers and reals"
+            )
+        library.METIS_PartGraphKway.restype = ctypes.c_int
+        _metis_libraries[path] = library
+    return _metis_libraries[path]
+
+
+def _metis_through_library(library, xadj, adjncy, vweights, eweights, n_parts, targets, seed, ufactor, contig):
+    """One METIS_PartGraphKway of the library, with the arguments and options the FlowTopo C code gives it."""
+    n = int(xadj.size - 1)
+    if n_parts == 1:
+        return np.zeros(n, dtype=np.int32), 0          # as the C code: one part needs no METIS
+    arrays = [np.ascontiguousarray(a, dtype=np.int32) for a in (xadj, adjncy, vweights, eweights)]
+    for original, narrowed in zip((xadj, adjncy, vweights, eweights), arrays):
+        if not np.array_equal(np.asarray(original, dtype=np.int64), narrowed):
+            raise ValueError("the graph does not fit the 32-bit integers of the METIS library")
+    xadj32, adjncy32, vweights32, eweights32 = arrays
+    options = np.zeros(_METIS_NOPTIONS, dtype=np.int32)
+    library.METIS_SetDefaultOptions(options.ctypes.data_as(ctypes.c_void_p))
+    options[_METIS_OPTION_SEED] = seed
+    options[_METIS_OPTION_UFACTOR] = ufactor
+    options[_METIS_OPTION_CONTIG] = 1 if contig else 0
+    target_weights = np.ascontiguousarray(targets, dtype=np.float32)
+    part = np.zeros(max(n, 1), dtype=np.int32)
+    nvtxs, ncon, nparts, objval = ctypes.c_int32(n), ctypes.c_int32(1), ctypes.c_int32(n_parts), ctypes.c_int32(0)
+
+    def pointer(array):
+        return array.ctypes.data_as(ctypes.c_void_p)
+
+    status = library.METIS_PartGraphKway(
+        ctypes.byref(nvtxs), ctypes.byref(ncon), pointer(xadj32), pointer(adjncy32), pointer(vweights32), None,
+        pointer(eweights32), ctypes.byref(nparts), pointer(target_weights), None, pointer(options),
+        ctypes.byref(objval), pointer(part),
+    )
+    if status != _METIS_OK:
+        raise RuntimeError(f"METIS_PartGraphKway of {os.environ.get(METIS_LIBRARY_VARIABLE)} returned {status}")
+    return part[:n], int(objval.value)
 
 
 def _raster_shape(flw: "Flwdir") -> tuple[int, int]:
@@ -309,8 +387,14 @@ def _metis(
     ufactor: int,
     contig: bool = True,
 ) -> np.ndarray:
-    pymetis = _require_pymetis()
     xadj, adjncy, eweights = _csr(graph.size, graph.edges, graph.edge_weights)
+    library = _metis_library()
+    if library is not None:
+        return _metis_through_library(
+            library, xadj, adjncy, _scaled(graph.weights), _scaled(eweights), n_parts, targets, seed, ufactor,
+            contig,
+        )
+    pymetis = _require_pymetis()
     options = pymetis.Options(seed=seed, ufactor=ufactor, contig=int(contig))
     result = pymetis.part_graph(
         n_parts,
@@ -1717,18 +1801,47 @@ def _trace_mainstem(
     return np.asarray(stem[::-1], dtype=flw.idxs_ds.dtype)
 
 
+def _given_basins(flw: "Flwdir", basins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """The caller's basin labels, checked (one positive label for each basin and one basin for each label), 0 off
+    the basins; and the same labels as 1 .. n in their order, which is all that counts for the partition, so that no
+    array is as long as the largest label."""
+    own = flw.basins().ravel()
+    in_a_basin = flw.mask.ravel() & (own > 0)
+    given = np.asarray(basins).reshape(-1)
+    if given.size != own.size:
+        raise ValueError(f"basins holds {given.size} values; the raster has {own.size} cells")
+    if not np.issubdtype(given.dtype, np.integer):
+        raise ValueError("basins must hold whole numbers")
+    if np.any(given[in_a_basin] <= 0):
+        raise ValueError("basins must be positive on every cell of a basin")
+    # ranked in the caller's own type: an unsigned label above 2**63 must not wrap
+    given_on = given[in_a_basin]
+    ranks = np.zeros(own.size, dtype=np.int64)
+    ranks[in_a_basin] = np.searchsorted(np.unique(given_on), given_on) + 1
+    pairs = np.unique(np.stack([own[in_a_basin].astype(np.int64), ranks[in_a_basin]]), axis=1)
+    if pairs.shape[1] != np.unique(own[in_a_basin]).size or pairs.shape[1] != np.unique(pairs[1]).size:
+        raise ValueError("basins must give one label for each basin and one basin for each label")
+    return np.where(in_a_basin, given, np.zeros((), dtype=given.dtype)), ranks
+
+
 def _basin_partition(
     flw: "Flwdir",
     n_parts: int,
     seed: int,
     refine: bool,
     imbalance_target: float,
+    basins: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Method 1 on a raster: parts and loads of the cells, basin ids, labels, node parts."""
+    """Method 1 on a raster: parts and loads of the cells, basin ids, labels, node parts.
+
+    A basin of a single cell takes no part (as the FlowTopo C code): its cell
+    keeps -1 and is in no load."""
     shape = _raster_shape(flw)
     mask = flw.mask.ravel()
-    basin_ids = flw.basins().ravel()
+    basin_ids = flw.basins().ravel() if basins is None else basins     # basins: _given_basins' ranks
     valid = mask & (basin_ids > 0)
+    cells_of_basin = np.bincount(basin_ids[valid].astype(np.int64))
+    valid[valid] = cells_of_basin[basin_ids[valid].astype(np.int64)] > 1
     labels = np.unique(basin_ids[valid]).astype(np.int64)
     parts = np.full(flw.size, -1, dtype=np.int32)
     if labels.size == 0:
@@ -1784,9 +1897,10 @@ def _open_basins(
     )
     tributary_roots = np.unique(roots[roots >= 0])
 
-    # nodes: the other basins, then one per tributary; mainstem cells belong to none
+    # nodes: the other basins, then one per tributary; mainstem cells belong to none, and
+    # neither does a basin of a single cell, which is not among the labels
     others = np.flatnonzero(~np.isin(np.arange(labels.size), opened))
-    basin_lookup = np.full(int(labels[-1]) + 1, -1, dtype=np.int64)
+    basin_lookup = np.full(max(int(labels[-1]), int(basin_ids.max())) + 1, -1, dtype=np.int64)
     basin_lookup[labels[others]] = np.arange(others.size)
     nodes = np.full(flw.size, -1, dtype=np.int64)
     in_basin = (basin_ids > 0) & flw.mask.ravel() & ~in_opened
@@ -2071,12 +2185,24 @@ def partition_plan(
     min_subtree_size: int = 100_000,
     imbalance_target: float = 1.005,
     upa: np.ndarray | None = None,
+    basins: np.ndarray | None = None,
 ) -> PartitionPlan:
     """Build the full FlowTopo partition and merge plan.
 
     ``upa`` (optional, one value a cell) is the upstream area that decides
     between two tributaries with as many cells when a mainstem is traced, as in
     the FlowTopo C code; without it the one with the smaller cell index is taken.
+    A basin of a single cell takes no part: its cell keeps -1 in ``parts`` and
+    adds to no load, as in the FlowTopo C code.
+
+    ``basins`` (optional, one integer a cell) labels the basins: positive on
+    every cell of a basin, one label for each basin and one basin for each
+    label (FlowDivide's ``bsn``, for one).  The basins are the nodes of the
+    graph in the order of their labels, and METIS divides a graph according to
+    the order of its nodes: with FlowDivide's labels, METIS 5.2.1
+    (:data:`METIS_LIBRARY_VARIABLE`), the same ``upa`` and the default options
+    the parts are the FlowTopo C code's.  By default the labels of
+    :meth:`Flwdir.basins`.  ``PartitionPlan.basin_ids`` holds the labels given.
     """
     if level not in ("basin", "subbasin"):
         raise ValueError("level must be 'basin' or 'subbasin'")
@@ -2111,24 +2237,31 @@ def partition_plan(
             "off the network; make them pits (as FlwdirRaster.from_array does)"
         )
 
+    given = ranks = None
+    if basins is not None:
+        given, ranks = _given_basins(flw, basins)
     parts, load, basin_ids, labels, node_parts = _basin_partition(
-        flw, n_parts, seed, refine, imbalance_target
+        flw, n_parts, seed, refine, imbalance_target, ranks
     )
     if level == "basin":
-        return _empty_plan(flw, parts, load, basin_ids, level)
-    return _subbasin_partition(
-        flw,
-        parts,
-        load,
-        basin_ids,
-        labels,
-        node_parts,
-        min_subtree_size,
-        imbalance_target,
-        seed,
-        refine,
-        upa,
-    )
+        plan = _empty_plan(flw, parts, load, basin_ids, level)
+    else:
+        plan = _subbasin_partition(
+            flw,
+            parts,
+            load,
+            basin_ids,
+            labels,
+            node_parts,
+            min_subtree_size,
+            imbalance_target,
+            seed,
+            refine,
+            upa,
+        )
+    if given is not None:
+        plan = replace(plan, basin_ids=given.reshape(flw.shape))     # the caller's labels, as given
+    return plan
 
 
 def partition(

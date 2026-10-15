@@ -81,6 +81,16 @@ unreleased
 * the partitions refuse a raster with a cell that drains into a cell off the
   network (built directly from downstream indices; ``from_array`` makes such a
   cell a pit), whose basin was left out of every part
+* a basin of a single cell takes no part in either partition, as in the
+  FlowTopo C code: its cell keeps ``-1`` and adds to no load (the hybrid
+  accumulation leaves it at its own value, which is its accumulation).
+  ``partition_plan(..., basins=)`` numbers the basins by the caller's labels
+  (FlowDivide's ``bsn``, for one), since METIS divides a graph according to the
+  order of its nodes, and the environment variable ``PYFLWDIR_METIS_LIBRARY``
+  names a METIS shared library to call through ``ctypes`` instead of the
+  METIS 5.1.0 that pymetis carries. With FlowDivide's labels, METIS 5.2.1
+  built with 32-bit integers and reals, the same ``upa`` and the default
+  options, the parts are the FlowTopo C code's
 
 0.5.12 (01-07-2026)
 *******************

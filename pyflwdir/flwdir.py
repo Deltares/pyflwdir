@@ -409,8 +409,10 @@ class Flwdir:
         Returns
         -------
         parts : ndarray of int32
-            Partition per cell. ``-1`` marks cells outside the network and
-            ``pyflwdir.MAINSTEM`` marks the logical fifth subregion.
+            Partition per cell. ``-1`` marks cells outside the network and the
+            cell of a basin of a single cell, which takes no part (as in the
+            FlowTopo C code), and ``pyflwdir.MAINSTEM`` marks the logical fifth
+            subregion.
         load : ndarray of int64
             Cell count assigned to each parallel trunk. Mainstem cells are
             excluded because they run in the second stage.
