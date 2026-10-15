@@ -882,7 +882,9 @@ class FlwdirRaster(Flwdir):
         partition_level : {'basin', 'subbasin'}, optional
             FlowTopo coarse partition, by default ``"subbasin"``.
         start_method : str, optional
-            Multiprocessing start method, by default ``"spawn"``.
+            Multiprocessing start method, by default ``"spawn"``. With
+            ``n_processes > 1`` and ``"spawn"``, call it from an importable
+            script, below an ``if __name__ == "__main__":`` guard.
         partition_min_subtree_size : int, optional
             Method 2 tributary subtrees smaller than this are grouped for METIS,
             by default 100,000 cells.

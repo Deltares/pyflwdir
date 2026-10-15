@@ -92,7 +92,8 @@ unreleased
   (FlowDivide's ``bsn``, for one), since METIS divides a graph according to the
   order of its nodes, and the environment variable ``PYFLWDIR_METIS_LIBRARY``
   names a METIS shared library to call through ``ctypes`` instead of the
-  METIS 5.1.0 that pymetis carries. With FlowDivide's labels, METIS 5.2.1
+  METIS 5.1.0 that pymetis carries (a METIS 5.1 library is refused: 5.2 moved
+  the options this call sets). With FlowDivide's labels, METIS 5.2.1
   built with 32-bit integers and reals, the same ``upa`` and the default
   options, the parts are the FlowTopo C code's
 

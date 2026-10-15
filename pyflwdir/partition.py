@@ -15,8 +15,8 @@ process-level parts, at two levels:
   more than one headwater -- heavier than an equal share times the target is
   tried first, and kept open only when that improves the balance); another only when it is a
   whole basin in or beside a part over the target or the lightest part and
-  opening it lowers max/mean (or, max/mean as it is, the overload) by
-  ``OPEN_MIN_GAIN`` or more.  Those
+  opening it lowers max/mean (or, with the heaviest part no heavier, the
+  overload) by ``OPEN_MIN_GAIN`` or more.  Those
   tributaries and the other basins form one graph, divided at once into equal
   parts; each mainstem cell weighs with the tributary that enters it.
   From ``P_min`` down, ``P_min`` included -- the most upstream mainstem cell
@@ -124,9 +124,9 @@ METIS_LIBRARY_VARIABLE = "PYFLWDIR_METIS_LIBRARY"
 ctypes) instead of the METIS that pymetis carries.  pymetis 2025.2.2 carries
 METIS 5.1.0, which divides the same graph with the same seed and options
 otherwise than METIS 5.2.1, the version the FlowTopo C code links; with a
-build of 5.2.1 the parts are the C code's.  The library must be built with
-32-bit integers and 32-bit reals: the integer width is checked when it is
-loaded, the real width cannot be."""
+build of 5.2.1 the parts are the C code's.  The library must be METIS 5.2,
+built with 32-bit integers and 32-bit reals: the version and the integer
+width are checked when it is loaded, the real width cannot be."""
 
 _METIS_NOPTIONS = 40
 _METIS_OPTION_SEED = 9
@@ -228,6 +228,15 @@ def _metis_library():
         return None
     if path not in _metis_libraries:
         library = ctypes.CDLL(path)
+        # METIS 5.2 moved the options set here (seed, contiguity and imbalance
+        # are 9, 13 and 18; 8, 11 and 16 in 5.1), so a 5.1 library would take
+        # them as other options without an error.  5.2 is told apart by a
+        # routine that 5.1 does not have.
+        if not hasattr(library, "METIS_CacheFriendlyReordering"):
+            raise RuntimeError(
+                f"{path} is not METIS 5.2 (its options lie elsewhere); "
+                f"{METIS_LIBRARY_VARIABLE} needs METIS 5.2.1"
+            )
         # METIS_SetDefaultOptions writes METIS_NOPTIONS values of -1: read as 64-bit integers, a build with 32-bit
         # integers leaves the second half of the buffer at 0
         probe = np.zeros(_METIS_NOPTIONS, dtype=np.int64)
