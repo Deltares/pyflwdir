@@ -24,7 +24,9 @@ process-level parts, at two levels:
   fifth region, walked once after the four parts; above it, the mainstem stays
   with the part of its most upstream tributaries (its trunk).
 
-Contiguity comes first, balance second: every part is one piece of land.
+Contiguity comes first, balance second: on its land every part is one piece
+(the two banks of an opened mainstem touch across it), and the islands are
+added to the parts of nearby land.
 Land is the largest components of the graph -- what touches on the ground, the
 two banks of an opened mainstem joined -- at most one per part: those of at
 least half an equal share, and the next largest when these are too few to be
@@ -1249,7 +1251,7 @@ def _partition_components(
     land_nodes: np.ndarray | None = None,
 ) -> np.ndarray:
     """Equal parts of a graph that may have several components, every part one
-    piece of land: contiguity first, balance second.
+    piece on its land, with the islands added: contiguity first, balance second.
 
     ``linked`` decides what touches (the ground with the banks of opened
     mainstems joined); ``ground`` holds only shared raster boundaries and is

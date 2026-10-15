@@ -384,9 +384,10 @@ class Flwdir:
 
         Basin-level partitioning (Method 1) keeps every basin whole: a basin
         larger than an equal share is a part of its own, and the other basins
-        are divided into equal parts, each connected on the ground, by
-        contiguous METIS followed by a balance refinement; islands join the
-        part of their nearest basin. Subbasin-level partitioning (Method 2)
+        are divided into equal parts, each one piece on its land, by
+        contiguous METIS followed by a balance refinement; an island starts
+        with the part of its nearest land and may move whole to a nearby part.
+        Subbasin-level partitioning (Method 2)
         opens the basins that keep the parts from balancing -- usually the
         dominant basin first -- along their mainstems into tributary subtrees, divides those and the
         other basins into four parallel trunks, and leaves each opened mainstem

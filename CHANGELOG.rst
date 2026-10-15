@@ -56,14 +56,18 @@ unreleased
   pull is available with all three layerings. The result is reproducible at
   every thread count and agrees with the serial accumulation to floating-point
   rounding (#85)
-* add the two FlowTopo process-level partitions as an optional feature.
-  ``Flwdir.partition(level="basin")`` builds a cell-count-weighted basin
-  adjacency graph, partitions its mainland with METIS, attaches disconnected
-  islands geographically and refines small boundary basins.
-  ``level="subbasin"`` further decomposes the dominant basin on the heaviest
-  rank into four parallel trunks and a logical fifth mainstem region. Hybrid
+* add the two FlowTopo process-level partitions as an optional feature, both
+  contiguity first and balance second. ``Flwdir.partition(level="basin")``
+  keeps every basin whole: the basins are the nodes of a graph weighted by
+  their cells and their shared boundaries, a basin heavier than an equal share
+  is a part of its own, the others are divided by contiguous METIS and a
+  balance refinement, and an island starts with the part of its nearest land
+  and may move whole to a nearby part.
+  ``level="subbasin"`` also opens the basins that keep the parts from
+  balancing along their mainstems into tributary subtrees, and leaves each
+  opened mainstem from ``P_min`` down as a logical fifth region. Hybrid
   accumulation runs CFDS threads inside the four processes, injects every cut
-  inflow at its mainstem inlet and then walks the fifth region once. Install
+  inflow at its mainstem inlet and then walks each fifth region once. Install
   ``pyflwdir[partition]`` to enable the optional ``pymetis`` backend (#85)
 * the subbasin level opens as few basins as the balance needs: each round
   tries the heaviest whole basins in or beside the parts over the target and
