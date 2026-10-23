@@ -12,10 +12,13 @@ from .core_nextxy import read_nextxy
 from .dem import fill_depressions, slope
 from .flwdir import Flwdir, from_dataframe
 from .pyflwdir import FlwdirRaster, from_array, from_dem
+from .partition import MAINSTEM, PartitionPlan
 
 __all__ = [
     "Flwdir",
     "FlwdirRaster",
+    "MAINSTEM",
+    "PartitionPlan",
     "from_array",
     "from_dataframe",
     "from_dem",

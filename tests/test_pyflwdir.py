@@ -107,6 +107,12 @@ def _flwdirraster_attrs_body(test_data, d8):
         if cache:
             assert "rank" in flw._cached
         assert flw.ncells == seq.size
+        # every cell but a pit comes after the cell it drains into
+        position = np.full(flw.size, -1, dtype=np.int64)
+        position[flw.idxs_seq] = np.arange(flw.ncells)
+        upstream = flw.idxs_seq[flw.idxs_ds[flw.idxs_seq] != flw.idxs_seq]
+        assert np.all(position[flw.idxs_ds[upstream]] < position[upstream])
+        flw.order_cells(method="walk")
         assert np.all(np.diff(rank.flat[flw.idxs_seq]) >= 0)
         flw.repair_loops()
         assert flw.isvalid
@@ -596,17 +602,15 @@ def test_dem(flw_real):
 
 @pytest.mark.unit
 def test_from_array_nextxy_self_pointing_cell_is_pit():
-    # a nextxy cell whose next cell is itself is a pit, and the walk ordering
-    # starts from it like from the coded pits
+    # a nextxy cell whose next cell is itself is a pit, and the orderings
+    # start from it like from the coded pits
     nextx = np.full((3, 3), 2, dtype=np.int32)
     nexty = np.full((3, 3), 2, dtype=np.int32)
     nextx[0, 0], nexty[0, 0] = -9, -9  # a coded pit next to it
     flw = pyflwdir.from_array(np.stack([nextx, nexty]), ftype="nextxy")
     assert np.sort(flw.idxs_pit).tolist() == [0, 4]
-    seq_default = flw.idxs_seq.copy()  # the lazy default, i.e. the walk
     flw.order_cells(method="walk")
     seq_walk = flw.idxs_seq.copy()
-    assert np.array_equal(seq_default, seq_walk)
     assert seq_walk.size == 9
     flw.order_cells(method="sort")
     assert np.array_equal(np.sort(seq_walk), np.sort(flw.idxs_seq))
@@ -630,3 +634,94 @@ def test_order_cells_methods(flwdir_real, flwdir_real_rank, method):
     upstream = np.flatnonzero((rank > 0) & (flw.idxs_ds != np.arange(rank.size)))
     assert np.all(position[flw.idxs_ds[upstream]] < position[upstream])
     assert flw.ncells == seq.size
+
+
+@pytest.mark.integration
+def test_accumulation_in_threads_matches_the_serial_one(flw_real):
+    flw = pyflwdir.from_array(
+        flw_real.to_array("d8"),
+        ftype="d8",
+        transform=flw_real.transform,
+        latlon=flw_real.latlon,
+        cache=False,
+    )
+    for method in ["asap", "cfds", "alap"]:
+        layers, n_layers = flw.layer_cells(method)
+        assert n_layers > 1
+        assert np.count_nonzero(layers >= 0) == flw.ncells
+    cfds, n_layers = flw.layer_cells("cfds")
+    for layer in range(n_layers):
+        members = np.flatnonzero(cfds.ravel() == layer)
+        members = members[flw.idxs_ds[members] != members]
+        receivers = flw.idxs_ds[members]
+        assert np.unique(receivers).size == receivers.size
+
+    data = np.random.default_rng(0).random(flw.shape)
+    serial = flw.accuflux(data)
+    pushed = flw.accuflux(data, parallel=True)
+    assert np.allclose(pushed, serial)
+    assert np.array_equal(pushed, flw.accuflux(data, parallel=True))
+    import numba
+
+    previous_threads = numba.get_num_threads()
+    try:
+        threaded = []
+        max_threads = numba.config.NUMBA_NUM_THREADS
+        thread_counts = sorted({1, min(2, max_threads), min(4, max_threads)})
+        for n_threads in thread_counts:
+            numba.set_num_threads(n_threads)
+            threaded.append(flw.accuflux(data, parallel=True))
+    finally:
+        numba.set_num_threads(previous_threads)
+    for result in threaded[1:]:
+        assert np.array_equal(result, threaded[0])
+    for layering in ["asap", "cfds", "alap"]:
+        pulled = flw.accuflux(data, parallel=True, layering=layering, manner="pull")
+        assert np.allclose(pulled, serial)
+
+    assert np.array_equal(
+        flw.upstream_area(unit="cell", parallel=True),
+        flw.upstream_area(unit="cell"),
+    )
+    assert np.allclose(
+        flw.upstream_area(unit="km2", parallel=True),
+        flw.upstream_area(unit="km2"),
+    )
+    downstream = flw.accuflux(data, direction="down")
+    assert downstream.shape == data.shape
+    with pytest.raises(ValueError, match="only supported"):
+        flw.accuflux(data, direction="down", parallel=True)
+    with pytest.raises(ValueError, match="Unknown flow direction: invalid"):
+        flw.accuflux(data, direction="invalid", parallel=True)
+    with pytest.raises(ValueError, match="requires layering='cfds'"):
+        flw.accuflux(data, parallel=True, layering="asap", manner="push")
+    with pytest.raises(ValueError, match="Invalid method"):
+        flw.layer_cells("invalid")
+
+
+@pytest.mark.integration
+def test_ordering_does_not_change_the_rank_ordered_methods(flw_real, flwdir_real):
+    # these four build a rank-ordered sequence themselves: a tributary writes a
+    # value the main stem cell beside it reads, or the elevation of one flow
+    # path is read by the next, so a depth-first sequence would change what
+    # they return
+    out = {}
+    for method in ["walk", "dfs"]:
+        flw = pyflwdir.from_array(
+            flw_real.to_array("d8"),
+            ftype="d8",
+            transform=flw_real.transform,
+            latlon=flw_real.latlon,
+            cache=False,
+        )
+        flw.order_cells(method=method)
+        uparea = flw.upstream_area("km2")
+        elevtn = uparea.astype(np.float32)  # any raster of floats will do here
+        out[method] = (
+            flw.subbasins_area(area_min=200, uparea=uparea)[0],
+            flw.subbasins_pfafstetter(depth=2, uparea=uparea)[0],
+            flw.dem_adjust(elevtn),
+            flw.dem_dig_d4(elevtn),
+        )
+    for walked, dfsed in zip(out["walk"], out["dfs"]):
+        assert np.array_equal(walked, dfsed)

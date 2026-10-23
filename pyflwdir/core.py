@@ -326,6 +326,168 @@ def idxs_seq_topo(idxs_ds: np.ndarray, mv: int = _mv) -> np.ndarray:
 
 
 @njit(cache=True)
+def layering_asap(idxs_ds: np.ndarray, mv: int = _mv) -> tuple[np.ndarray, int]:
+    """Return the as-soon-as-possible layer of every cell."""
+    n_up = upstream_count(idxs_ds, mv=mv)
+    layers = np.full(idxs_ds.size, -1, dtype=np.int32)
+    queue0 = np.empty(idxs_ds.size, dtype=idxs_ds.dtype)
+    queue1 = np.empty(idxs_ds.size, dtype=idxs_ds.dtype)
+    current = queue0
+    following = queue1
+    n_current = 0
+
+    for idx in range(idxs_ds.size):
+        if idxs_ds[idx] != mv and n_up[idx] == 0:
+            current[n_current] = idx
+            n_current += 1
+
+    layer = 0
+    while n_current > 0:
+        n_following = 0
+        for pos in range(n_current):
+            idx = current[pos]
+            layers[idx] = layer
+            idx_ds = idxs_ds[idx]
+            if idx_ds != mv and idx_ds != idx:
+                n_up[idx_ds] -= 1
+                if n_up[idx_ds] == 0:
+                    following[n_following] = idx_ds
+                    n_following += 1
+        swap = current
+        current = following
+        following = swap
+        n_current = n_following
+        layer += 1
+    return layers, layer
+
+
+@njit(cache=True)
+def layering_cfds(idxs_ds: np.ndarray, mv: int = _mv) -> tuple[np.ndarray, int]:
+    """Return conflict-free downstream layers.
+
+    This is the as-soon-as-possible layering with one additional rule: no two
+    cells in one layer may drain to the same receiver. A threaded push can
+    therefore update receivers without locks or atomics.
+    """
+    n_up = upstream_count(idxs_ds, mv=mv)
+    layers = np.full(idxs_ds.size, -1, dtype=np.int32)
+    done = np.zeros(idxs_ds.size, dtype=np.uint8)
+    claimed = np.zeros(idxs_ds.size, dtype=np.uint8)
+    queue0 = np.empty(idxs_ds.size, dtype=idxs_ds.dtype)
+    queue1 = np.empty(idxs_ds.size, dtype=idxs_ds.dtype)
+    occupied = np.empty(idxs_ds.size, dtype=idxs_ds.dtype)
+    current = queue0
+    following = queue1
+    n_current = 0
+    n_valid = 0
+
+    for idx in range(idxs_ds.size):
+        if idxs_ds[idx] != mv:
+            n_valid += 1
+            if n_up[idx] == 0:
+                current[n_current] = idx
+                n_current += 1
+
+    layer = 0
+    n_done = 0
+    while n_done < n_valid:
+        if n_current == 0:
+            break
+        n_following = 0
+        n_occupied = 0
+        for pos in range(n_current):
+            idx = current[pos]
+            if done[idx] != 0:
+                continue
+            idx_ds = idxs_ds[idx]
+            if idx_ds == mv or idx_ds == idx:
+                layers[idx] = layer
+                done[idx] = 1
+                n_done += 1
+                continue
+            if claimed[idx_ds] != 0:
+                following[n_following] = idx
+                n_following += 1
+                continue
+
+            layers[idx] = layer
+            done[idx] = 1
+            n_done += 1
+            claimed[idx_ds] = 1
+            occupied[n_occupied] = idx_ds
+            n_occupied += 1
+            n_up[idx_ds] -= 1
+            if n_up[idx_ds] == 0 and done[idx_ds] == 0:
+                following[n_following] = idx_ds
+                n_following += 1
+
+        for pos in range(n_occupied):
+            claimed[occupied[pos]] = 0
+        swap = current
+        current = following
+        following = swap
+        n_current = n_following
+        layer += 1
+    return layers, layer
+
+
+@njit(cache=True)
+def layering_alap(
+    idxs_ds: np.ndarray, idxs_seq: np.ndarray, mv: int = _mv
+) -> tuple[np.ndarray, int]:
+    """Return as-late-as-possible layers, balanced separately per basin."""
+    ranks, _ = rank(idxs_ds, mv=mv)
+    basin = np.full(idxs_ds.size, mv, dtype=idxs_ds.dtype)
+    max_rank = np.full(idxs_ds.size, -1, dtype=np.int32)
+
+    for idx in idxs_seq:
+        idx_ds = idxs_ds[idx]
+        if idx_ds == idx:
+            basin[idx] = idx
+        elif idx_ds != mv and basin[idx_ds] != mv:
+            basin[idx] = basin[idx_ds]
+        root = basin[idx]
+        if root != mv and ranks[idx] > max_rank[root]:
+            max_rank[root] = ranks[idx]
+
+    layers = np.full(idxs_ds.size, -1, dtype=np.int32)
+    n_layers = 0
+    for idx in idxs_seq:
+        root = basin[idx]
+        if root != mv and ranks[idx] >= 0:
+            layer = max_rank[root] - ranks[idx]
+            layers[idx] = layer
+            n_layers = max(n_layers, layer + 1)
+    return layers, n_layers
+
+
+@njit(cache=True)
+def layer_decomposition(
+    layers: np.ndarray, n_layers: int, idxs_ds: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Group cell indices by layer as one array plus layer offsets."""
+    sizes = np.zeros(n_layers, dtype=np.int64)
+    n_cells = 0
+    for layer in layers:
+        if layer >= 0:
+            sizes[layer] += 1
+            n_cells += 1
+
+    offsets = np.zeros(n_layers + 1, dtype=np.int64)
+    for layer in range(n_layers):
+        offsets[layer + 1] = offsets[layer] + sizes[layer]
+
+    cells = np.empty(n_cells, dtype=idxs_ds.dtype)
+    positions = offsets[:-1].copy()
+    for idx in range(layers.size):
+        layer = layers[idx]
+        if layer >= 0:
+            cells[positions[layer]] = idx
+            positions[layer] += 1
+    return cells, offsets
+
+
+@njit(cache=True)
 def fillnodata_upstream(
     idxs_ds: np.ndarray, seq: np.ndarray, data: np.ndarray, nodata: float
 ) -> np.ndarray:

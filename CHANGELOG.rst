@@ -30,6 +30,72 @@ unreleased
   factors for every cell, greatly reducing the runtime of
   ``Flwdir.stream_distance(unit="m")`` for geographic rasters
 * fix remaining ``uint64`` typing issues (#126)
+* add a "Cell orderings" notebook to the user guide, which builds the four
+  ``order_cells`` methods on the Rhine example, maps what each sequence looks
+  like and shows what changes with the method, and cite FlowTopo, where the
+  "dfs" and "topo" implementations come from, in the ``order_cells`` docstring
+* make ``method="dfs"`` the default of ``order_cells`` and ``idxs_seq`` for
+  ``Flwdir`` and ``FlwdirRaster``. The cells draining to any one cell are then
+  an unbroken stretch of the sequence, so a subbasin can be taken out of it by
+  slicing, and a cell sits close to the cell it drains into. As with any change
+  of ordering, the labels of ``subbasins_streamorder``, the order of the
+  features of ``streams`` and the last bits of floating point accumulations can
+  differ from earlier versions
+* build a rank-ordered sequence inside ``dem_adjust``, ``dem_dig_d4``,
+  ``subbasins_area`` and ``subbasins_pfafstetter`` instead of using
+  ``idxs_seq``. Each of them reads a value another cell of the same rank has
+  written, or picks between tributaries of equal area in the order the cells
+  come in, so their result follows the ordering. They now return what they
+  returned before, whatever ordering is set on the object
+* accumulate upstream in threads with ``accuflux(parallel=True)`` and
+  ``upstream_area(parallel=True)``, one dependency-free layer at a time.
+  ``Flwdir.layer_cells`` builds the as-soon-as-possible (``"asap"``),
+  as-late-as-possible (``"alap"``) and conflict-free downstream (``"cfds"``)
+  layerings from FlowTopo. The default ``"cfds"`` push lets threads write
+  without locks or atomics because no two cells in a layer share a receiver;
+  pull is available with all three layerings. The result is reproducible at
+  every thread count and agrees with the serial accumulation to floating-point
+  rounding (#85)
+* add the two FlowTopo process-level partitions as an optional feature, both
+  contiguity first and balance second. ``Flwdir.partition(level="basin")``
+  keeps every basin whole: the basins are the nodes of a graph weighted by
+  their cells and their shared boundaries, a basin heavier than an equal share
+  is a part of its own, the others are divided by contiguous METIS and a
+  balance refinement, and an island starts with the part of its nearest land
+  and may move whole to a nearby part.
+  ``level="subbasin"`` also opens the basins that keep the parts from
+  balancing along their mainstems into tributary subtrees, and leaves each
+  opened mainstem from ``P_min`` down as a logical fifth region. Hybrid
+  accumulation runs CFDS threads inside the four processes, injects every cut
+  inflow at its mainstem inlet and then walks each fifth region once. Install
+  ``pyflwdir[partition]`` to enable the optional ``pymetis`` backend (#85)
+* the subbasin level opens as few basins as the balance needs: each round
+  tries the heaviest whole basins in or beside the parts over the target and
+  the lightest part (at most ``OPEN_TRIALS``, the heaviest first, stopping at
+  the first within the target), and keeps the best only when it lowers
+  max/mean by ``OPEN_MIN_GAIN`` or, the heaviest part no heavier, the
+  overload by as much
+* the partitions break ties as the FlowTopo C code does: of two tributaries
+  with as many cells the mainstem takes the one with the larger upstream area
+  when ``upa`` is given (``partition_plan(..., upa=)``; finite and positive on
+  every cell of the network), then the one with the
+  smaller cell index, and equally distant neighbours are taken in the order of
+  their indices (a k-d tree alone leaves that order to its traversal); METIS'
+  ``ufactor`` is rounded half up
+* the partitions refuse a raster with a cell that drains into a cell off the
+  network (built directly from downstream indices; ``from_array`` makes such a
+  cell a pit), whose basin was left out of every part
+* a basin of a single cell takes no part in either partition, as in the
+  FlowTopo C code: its cell keeps ``-1`` and adds to no load (the hybrid
+  accumulation leaves it at its own value, which is its accumulation).
+  ``partition_plan(..., basins=)`` numbers the basins by the caller's labels
+  (FlowDivide's ``bsn``, for one), since METIS divides a graph according to the
+  order of its nodes, and the environment variable ``PYFLWDIR_METIS_LIBRARY``
+  names a METIS shared library to call through ``ctypes`` instead of the
+  METIS 5.1.0 that pymetis carries (a METIS 5.1 library is refused: 5.2 moved
+  the options this call sets). With FlowDivide's labels, METIS 5.2.1
+  built with 32-bit integers and reals, the same ``upa`` and the default
+  options, the parts are the FlowTopo C code's
 
 0.5.12 (01-07-2026)
 *******************
