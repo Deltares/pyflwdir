@@ -130,7 +130,8 @@ def accuflux(
     min_subtree_size: int,
     imbalance_target: float,
 ) -> np.ndarray:
-    """Accumulate four trunks in parallel, then walk the fifth subregion."""
+    """Accumulate the parts in parallel processes, then walk the fifth regions:
+    the main stems of the basins opened at subbasin level."""
     if n_processes < 2:
         raise ValueError("n_processes must be at least 2 for hybrid accumulation")
     if partition_level == "subbasin" and n_processes != partition.N_TRUNKS:

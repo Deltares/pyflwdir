@@ -40,9 +40,9 @@ grouped with a larger neighbour; of the results whose heaviest part is within
 otherwise the most balanced, and boundary nodes then move, one tributary or
 basin at a time, from heavier to lighter
 neighbouring parts until every part is within ``imbalance_target`` of its
-target load or no move helps.  An island moves whole, to a part near it.  A
-part is never cut in two; the odd piece left apart from its part joins the part
-around it.
+target load, no move helps, or the move limit is reached.  An island moves
+whole, to a part near it.  A part is never cut in two; the odd piece left apart
+from its part joins the part around it.
 
 A basin of a single cell (a pit that nothing flows into, mostly on a coast)
 takes no part, as in the FlowTopo C code: its cell keeps ``-1`` and adds to no
@@ -251,15 +251,22 @@ def _metis_library():
     return _metis_libraries[path]
 
 
-def _metis_through_library(library, xadj, adjncy, vweights, eweights, n_parts, targets, seed, ufactor, contig):
+def _metis_through_library(
+    library, xadj, adjncy, vweights, eweights, n_parts, targets, seed, ufactor, contig
+):
     """One METIS_PartGraphKway of the library, with the arguments and options the FlowTopo C code gives it."""
     n = int(xadj.size - 1)
     if n_parts == 1:
-        return np.zeros(n, dtype=np.int32), 0          # as the C code: one part needs no METIS
-    arrays = [np.ascontiguousarray(a, dtype=np.int32) for a in (xadj, adjncy, vweights, eweights)]
+        return np.zeros(n, dtype=np.int32), 0  # as the C code: one part needs no METIS
+    arrays = [
+        np.ascontiguousarray(a, dtype=np.int32)
+        for a in (xadj, adjncy, vweights, eweights)
+    ]
     for original, narrowed in zip((xadj, adjncy, vweights, eweights), arrays):
         if not np.array_equal(np.asarray(original, dtype=np.int64), narrowed):
-            raise ValueError("the graph does not fit the 32-bit integers of the METIS library")
+            raise ValueError(
+                "the graph does not fit the 32-bit integers of the METIS library"
+            )
     xadj32, adjncy32, vweights32, eweights32 = arrays
     options = np.zeros(_METIS_NOPTIONS, dtype=np.int32)
     library.METIS_SetDefaultOptions(options.ctypes.data_as(ctypes.c_void_p))
@@ -268,18 +275,35 @@ def _metis_through_library(library, xadj, adjncy, vweights, eweights, n_parts, t
     options[_METIS_OPTION_CONTIG] = 1 if contig else 0
     target_weights = np.ascontiguousarray(targets, dtype=np.float32)
     part = np.zeros(max(n, 1), dtype=np.int32)
-    nvtxs, ncon, nparts, objval = ctypes.c_int32(n), ctypes.c_int32(1), ctypes.c_int32(n_parts), ctypes.c_int32(0)
+    nvtxs, ncon, nparts, objval = (
+        ctypes.c_int32(n),
+        ctypes.c_int32(1),
+        ctypes.c_int32(n_parts),
+        ctypes.c_int32(0),
+    )
 
     def pointer(array):
         return array.ctypes.data_as(ctypes.c_void_p)
 
     status = library.METIS_PartGraphKway(
-        ctypes.byref(nvtxs), ctypes.byref(ncon), pointer(xadj32), pointer(adjncy32), pointer(vweights32), None,
-        pointer(eweights32), ctypes.byref(nparts), pointer(target_weights), None, pointer(options),
-        ctypes.byref(objval), pointer(part),
+        ctypes.byref(nvtxs),
+        ctypes.byref(ncon),
+        pointer(xadj32),
+        pointer(adjncy32),
+        pointer(vweights32),
+        None,
+        pointer(eweights32),
+        ctypes.byref(nparts),
+        pointer(target_weights),
+        None,
+        pointer(options),
+        ctypes.byref(objval),
+        pointer(part),
     )
     if status != _METIS_OK:
-        raise RuntimeError(f"METIS_PartGraphKway of {os.environ.get(METIS_LIBRARY_VARIABLE)} returned {status}")
+        raise RuntimeError(
+            f"METIS_PartGraphKway of {os.environ.get(METIS_LIBRARY_VARIABLE)} returned {status}"
+        )
     return part[:n], int(objval.value)
 
 
@@ -349,7 +373,9 @@ def graph_from_node_raster(nodes: np.ndarray, n_nodes: int) -> PartitionGraph:
     return PartitionGraph(weights, centroid_row, centroid_col, edges, edge_weights)
 
 
-def _contract(graph: PartitionGraph, group: np.ndarray, n_groups: int) -> PartitionGraph:
+def _contract(
+    graph: PartitionGraph, group: np.ndarray, n_groups: int
+) -> PartitionGraph:
     """The graph whose nodes are the groups of ``graph``'s nodes."""
     weights = np.bincount(group, weights=graph.weights, minlength=n_groups).astype(
         np.int64
@@ -402,7 +428,15 @@ def _metis(
     library = _metis_library()
     if library is not None:
         return _metis_through_library(
-            library, xadj, adjncy, _scaled(graph.weights), _scaled(eweights), n_parts, targets, seed, ufactor,
+            library,
+            xadj,
+            adjncy,
+            _scaled(graph.weights),
+            _scaled(eweights),
+            n_parts,
+            targets,
+            seed,
+            ufactor,
             contig,
         )
     pymetis = _require_pymetis()
@@ -531,8 +565,19 @@ def _detach(xadj, adjncy, weights, parts, node, part, mark, queue, stamp, limit,
 
 @njit(cache=True)
 def _try_move(
-    link_xadj, link_adjncy, weights, parts, load, target_load, node, other,
-    mark, queue, stamp, limit, out,
+    link_xadj,
+    link_adjncy,
+    weights,
+    parts,
+    load,
+    target_load,
+    node,
+    other,
+    mark,
+    queue,
+    stamp,
+    limit,
+    out,
 ):
     """Move ``node``, with the peninsulas it holds (``_detach``), to part
     ``other`` when that lowers the objective; returns the number of nodes moved
@@ -540,8 +585,17 @@ def _try_move(
     source = parts[node]
     stamp += 1
     taken, stamp = _detach(
-        link_xadj, link_adjncy, weights, parts, node, source, mark, queue, stamp,
-        limit, out,
+        link_xadj,
+        link_adjncy,
+        weights,
+        parts,
+        node,
+        source,
+        mark,
+        queue,
+        stamp,
+        limit,
+        out,
     )
     if taken < 0:
         return 0, stamp
@@ -664,7 +718,10 @@ def _refine_balance(
                 head += 1
                 if parts[node] != source or other == source:
                     continue
-                if load[other] / target_load[other] >= load[source] / target_load[source]:
+                if (
+                    load[other] / target_load[other]
+                    >= load[source] / target_load[source]
+                ):
                     break
                 touches = False
                 for j in range(xadj[node], xadj[node + 1]):
@@ -674,8 +731,19 @@ def _refine_balance(
                 if not touches:
                     continue
                 taken, stamp = _try_move(
-                    link_xadj, link_adjncy, weights, parts, load, target_load, node,
-                    other, mark, queue, stamp, search_limit, out,
+                    link_xadj,
+                    link_adjncy,
+                    weights,
+                    parts,
+                    load,
+                    target_load,
+                    node,
+                    other,
+                    mark,
+                    queue,
+                    stamp,
+                    search_limit,
+                    out,
                 )
                 if taken == 0:
                     continue
@@ -752,7 +820,9 @@ def _pieces_apart(graph: PartitionGraph, parts: np.ndarray) -> int:
     return int(np.unique(piece).size - np.unique(parts).size)
 
 
-def _fill_empty_parts(graph: PartitionGraph, parts: np.ndarray, n_parts: int) -> np.ndarray:
+def _fill_empty_parts(
+    graph: PartitionGraph, parts: np.ndarray, n_parts: int
+) -> np.ndarray:
     """An empty part (METIS leaves one with very unequal weights) takes a node of
     the heaviest part that has two or more: the lightest leaf of a spanning tree
     of that part, so that a part in one piece stays in one piece.  The tree
@@ -803,10 +873,11 @@ def _island_units(
     island; else the unit of every node, the number of units and the pairs
     (island unit, unit of a node of another component near it): per node of the
     island the ``ARCHIPELAGO_NEIGHBOURS`` nearest of its ``ISLAND_PROBES``
-    nearest nodes.  An island that met fewer than that many (dense, or far from
-    everything) takes those nearest to its nodes among the nodes of the other
-    components, but such islands, and the ``ARCHIPELAGO_NEIGHBOURS`` such islands
-    nearest to it.
+    nearest nodes.  An island that met fewer than that many distinct nodes of
+    other components (dense, or far from everything) also takes, per node, the
+    ``ARCHIPELAGO_NEIGHBOURS`` nearest nodes that are not on such islands, and is
+    linked to the ``ARCHIPELAGO_NEIGHBOURS`` such islands nearest to it by
+    centroid.
     """
     n = linked.size
     component = _components(linked)
@@ -828,7 +899,9 @@ def _island_units(
     whole = small & (low == high) & ~fixed
     candidate = np.flatnonzero(whole & ~has_land[np.clip(low, 0, n_parts - 1)])
     if candidate.size:
-        order = candidate[np.lexsort((candidate, -component_weight[candidate], low[candidate]))]
+        order = candidate[
+            np.lexsort((candidate, -component_weight[candidate], low[candidate]))
+        ]
         _, heads = np.unique(low[order], return_index=True)
         whole[order[heads]] = False
     if not whole.any():
@@ -848,7 +921,9 @@ def _island_units(
     other = component[near] != component[nodes][:, None]
     keep = (other & (np.cumsum(other, axis=1) <= ARCHIPELAGO_NEIGHBOURS)).ravel()
     found = [np.column_stack((np.repeat(nodes, k)[keep], near.ravel()[keep]))]
-    met = np.unique(np.column_stack((component[found[0][:, 0]], found[0][:, 1])), axis=0)
+    met = np.unique(
+        np.column_stack((component[found[0][:, 0]], found[0][:, 1])), axis=0
+    )
     count = np.bincount(met[:, 0], minlength=component_weight.size)
     short = whole & (count < ARCHIPELAGO_NEIGHBOURS)
     links = np.empty((0, 2), dtype=np.int64)
@@ -862,12 +937,15 @@ def _island_units(
             found.append(np.column_stack((np.repeat(asking, k), rest[near.ravel()])))
         dense = np.flatnonzero(short)
         if dense.size > 1:
-            centroids = np.column_stack(
-                [
-                    np.bincount(component, weights=linked.weights * axis)[dense]
-                    for axis in (linked.rows, linked.cols)
-                ]
-            ) / component_weight[dense][:, None]
+            centroids = (
+                np.column_stack(
+                    [
+                        np.bincount(component, weights=linked.weights * axis)[dense]
+                        for axis in (linked.rows, linked.cols)
+                    ]
+                )
+                / component_weight[dense][:, None]
+            )
             k = min(ARCHIPELAGO_NEIGHBOURS + 1, dense.size)
             _, near = _nearest(centroids, centroids, k)
             near = near[:, 1:]
@@ -875,7 +953,9 @@ def _island_units(
                 (island_unit[np.repeat(dense, k - 1)], island_unit[dense[near.ravel()]])
             )
     pairs = np.unique(np.concatenate(found), axis=0)
-    reach = np.concatenate((np.column_stack((unit[pairs[:, 0]], unit[pairs[:, 1]])), links))
+    reach = np.concatenate(
+        (np.column_stack((unit[pairs[:, 0]], unit[pairs[:, 1]])), links)
+    )
     return unit, loose.size + islands.size, reach
 
 
@@ -1029,10 +1109,9 @@ def _absorb_fragments(graph: PartitionGraph, parts: np.ndarray, limit: float) ->
     first, second = graph.edges[:, 0], graph.edges[:, 1]
     n_parts = int(parts.max()) + 1
     moved_nodes = 0
-    # as many rounds as it takes: a fragment that touches only fragments waits for the next round.  (Until
-    # eight rounds at most: fragments more than eight deep were left apart, and the call returned as if
-    # they had joined.)  A round that moves a node joins at least one fragment to a piece that stays, so
-    # the pieces grow fewer and the rounds end; a round that moves nothing is the last.
+    # as many rounds as it takes: a fragment that touches only fragments waits for the next round.  A
+    # round that moves a node joins at least one fragment to a piece that stays, so the pieces grow
+    # fewer and the rounds end; a round that moves nothing is the last.
     while True:
         same = parts[first] == parts[second]
         piece = _components(graph, same)
@@ -1090,7 +1169,9 @@ def _expand(index: np.ndarray, merged_parts: np.ndarray) -> np.ndarray:
     return parts
 
 
-def _merge_into(graph: PartitionGraph, nodes: np.ndarray, live: np.ndarray) -> PartitionGraph:
+def _merge_into(
+    graph: PartitionGraph, nodes: np.ndarray, live: np.ndarray
+) -> PartitionGraph:
     """``graph`` with every node merged into node ``nodes`` (-1: left out) of a
     graph whose nodes are ``live``, which keep their centroids."""
     keep = nodes >= 0
@@ -1102,7 +1183,9 @@ def _merge_into(graph: PartitionGraph, nodes: np.ndarray, live: np.ndarray) -> P
     edges, edge_weights = merge_edges(
         [pairs[inside]], live.size, [graph.edge_weights[inside]]
     )
-    return PartitionGraph(weights, graph.rows[live], graph.cols[live], edges, edge_weights)
+    return PartitionGraph(
+        weights, graph.rows[live], graph.cols[live], edges, edge_weights
+    )
 
 
 def _follow_neighbours(graph: PartitionGraph, parts: np.ndarray, fill: int = 0) -> None:
@@ -1210,10 +1293,14 @@ def _carve(
     local = group[nodes]
     piece = _components(sub, local[sub.edges[:, 0]] == local[sub.edges[:, 1]])
     # numbered by group first: a group in one piece keeps its place for METIS
-    keys, local_group = np.unique(np.column_stack((local, piece)), axis=0, return_inverse=True)
+    keys, local_group = np.unique(
+        np.column_stack((local, piece)), axis=0, return_inverse=True
+    )
     local_group = local_group.ravel()
     coarse = _contract(sub, local_group, keys.shape[0])
-    return _metis_parts(coarse, targets.size, targets, seed, imbalance_target)[local_group]
+    return _metis_parts(coarse, targets.size, targets, seed, imbalance_target)[
+        local_group
+    ]
 
 
 def _choose_land(
@@ -1222,15 +1309,17 @@ def _choose_land(
     """The components that get parts of their own (land), the largest first.
 
     Those of at least half an equal share, at most ``n_parts``; with too few
-    nodes on them for every part (``capacity``), the next largest join.  None
-    when no component is that large (an archipelago).
+    nodes on them for every part (``capacity``), the next largest join.  An
+    empty array when no component is that large (an archipelago).
     """
     share = component_weight.sum() / n_parts
     order = np.argsort(-component_weight, kind="stable")
     n_land = min(int(np.count_nonzero(component_weight >= 0.5 * share)), n_parts)
     if n_land == 0:
         return order[:0]
-    while n_land < min(order.size, n_parts) and capacity[order[:n_land]].sum() < n_parts:
+    while (
+        n_land < min(order.size, n_parts) and capacity[order[:n_land]].sum() < n_parts
+    ):
         n_land += 1
     return order[:n_land]
 
@@ -1301,7 +1390,9 @@ def _partition_components(
         return _balance(linked, ground, parts, n_parts, imbalance_target, refine)
     ties, mass_of = _masses(linked, component, land)
     mass = mass_of[component]
-    mass_weight = np.bincount(mass, weights=linked.weights, minlength=component_weight.size)
+    mass_weight = np.bincount(
+        mass, weights=linked.weights, minlength=component_weight.size
+    )
     pairs = np.unique(np.column_stack((mass, group)), axis=0)
     mass_capacity = np.bincount(pairs[:, 0], minlength=component_weight.size)
     counts = _apportion(
@@ -1328,7 +1419,9 @@ def _partition_components(
             )
         else:
             targets = np.full(k, 1.0 / k)
-            parts[nodes] = first + _carve(tied, nodes, group, targets, seed, imbalance_target)
+            parts[nodes] = first + _carve(
+                tied, nodes, group, targets, seed, imbalance_target
+            )
         first += k
     return _balance(linked, ground, parts, n_parts, imbalance_target, refine, pinned)
 
@@ -1346,7 +1439,9 @@ def _balance(
     if refine and n_parts > 1:
         targets = np.full(n_parts, 1.0 / n_parts)
         _refine(ground, parts, n_parts, targets, imbalance_target, linked, pinned)
-        _absorb_fragments(linked, parts, FRAGMENT_SHARE * linked.weights.sum() / n_parts)
+        _absorb_fragments(
+            linked, parts, FRAGMENT_SHARE * linked.weights.sum() / n_parts
+        )
     return parts
 
 
@@ -1533,7 +1628,9 @@ def _coarsen_tributaries(
     return group, count + unreached.size
 
 
-def _align_labels(parts: np.ndarray, weights: np.ndarray, hint: np.ndarray, n_parts: int):
+def _align_labels(
+    parts: np.ndarray, weights: np.ndarray, hint: np.ndarray, n_parts: int
+):
     """Relabel the parts to overlap ``hint`` (another assignment) the most.  More
     than 8 parts are left as they are; a node whose hint is not a part does not
     count."""
@@ -1546,9 +1643,13 @@ def _align_labels(parts: np.ndarray, weights: np.ndarray, hint: np.ndarray, n_pa
     np.add.at(overlap, (parts[held], hint[held]), np.asarray(weights)[held])
     best = max(
         permutations(range(n_parts)),
-        key=lambda mapping: sum(overlap[part, mapping[part]] for part in range(n_parts)),
+        key=lambda mapping: sum(
+            overlap[part, mapping[part]] for part in range(n_parts)
+        ),
     )
-    relabelled = np.array(parts, dtype=np.int32)       # a node without a part keeps what it has
+    relabelled = np.array(
+        parts, dtype=np.int32
+    )  # a node without a part keeps what it has
     relabelled[has_part] = np.asarray(best, dtype=np.int32)[parts[has_part]]
     return relabelled
 
@@ -1682,7 +1783,9 @@ def assign_subbasins(
         hint = np.asarray(hint)
     # the two banks of an opened mainstem touch: tributaries that enter one after the other
     tributaries = np.flatnonzero(is_tributary)
-    ordered = tributaries[np.lexsort((tributaries, position[tributaries], stem[tributaries]))]
+    ordered = tributaries[
+        np.lexsort((tributaries, position[tributaries], stem[tributaries]))
+    ]
     same_stem = stem[ordered[:-1]] == stem[ordered[1:]]
     stem_edges = np.column_stack((ordered[:-1], ordered[1:]))[same_stem]
     if stem_contacts is None:
@@ -1728,8 +1831,12 @@ def assign_subbasins(
     if stem_lengths is not None:
         stem_lengths = np.asarray(stem_lengths, dtype=np.int64)
         weights = node_weights(stem_lengths)
-    ground = PartitionGraph(weights, graph.rows, graph.cols, graph.edges, graph.edge_weights)
-    banks = PartitionGraph(weights, linked.rows, linked.cols, linked.edges, linked.edge_weights)
+    ground = PartitionGraph(
+        weights, graph.rows, graph.cols, graph.edges, graph.edge_weights
+    )
+    banks = PartitionGraph(
+        weights, linked.rows, linked.cols, linked.edges, linked.edge_weights
+    )
     group, _ = _coarsen_tributaries(
         banks, is_tributary, min_subtree_size, METIS_GROUPS_PER_PART * n_parts
     )
@@ -1820,7 +1927,9 @@ def _given_basins(flw: "Flwdir", basins: np.ndarray) -> tuple[np.ndarray, np.nda
     in_a_basin = flw.mask.ravel() & (own > 0)
     given = np.asarray(basins).reshape(-1)
     if given.size != own.size:
-        raise ValueError(f"basins holds {given.size} values; the raster has {own.size} cells")
+        raise ValueError(
+            f"basins holds {given.size} values; the raster has {own.size} cells"
+        )
     if not np.issubdtype(given.dtype, np.integer):
         raise ValueError("basins must hold whole numbers")
     if np.any(given[in_a_basin] <= 0):
@@ -1829,9 +1938,16 @@ def _given_basins(flw: "Flwdir", basins: np.ndarray) -> tuple[np.ndarray, np.nda
     given_on = given[in_a_basin]
     ranks = np.zeros(own.size, dtype=np.int64)
     ranks[in_a_basin] = np.searchsorted(np.unique(given_on), given_on) + 1
-    pairs = np.unique(np.stack([own[in_a_basin].astype(np.int64), ranks[in_a_basin]]), axis=1)
-    if pairs.shape[1] != np.unique(own[in_a_basin]).size or pairs.shape[1] != np.unique(pairs[1]).size:
-        raise ValueError("basins must give one label for each basin and one basin for each label")
+    pairs = np.unique(
+        np.stack([own[in_a_basin].astype(np.int64), ranks[in_a_basin]]), axis=1
+    )
+    if (
+        pairs.shape[1] != np.unique(own[in_a_basin]).size
+        or pairs.shape[1] != np.unique(pairs[1]).size
+    ):
+        raise ValueError(
+            "basins must give one label for each basin and one basin for each label"
+        )
     return np.where(in_a_basin, given, np.zeros((), dtype=given.dtype)), ranks
 
 
@@ -1849,7 +1965,9 @@ def _basin_partition(
     keeps -1 and is in no load."""
     shape = _raster_shape(flw)
     mask = flw.mask.ravel()
-    basin_ids = flw.basins().ravel() if basins is None else basins     # basins: _given_basins' ranks
+    basin_ids = (
+        flw.basins().ravel() if basins is None else basins
+    )  # basins: _given_basins' ranks
     valid = mask & (basin_ids > 0)
     cells_of_basin = np.bincount(basin_ids[valid].astype(np.int64))
     valid[valid] = cells_of_basin[basin_ids[valid].astype(np.int64)] > 1
@@ -1911,7 +2029,9 @@ def _open_basins(
     # nodes: the other basins, then one per tributary; mainstem cells belong to none, and
     # neither does a basin of a single cell, which is not among the labels
     others = np.flatnonzero(~np.isin(np.arange(labels.size), opened))
-    basin_lookup = np.full(max(int(labels[-1]), int(basin_ids.max())) + 1, -1, dtype=np.int64)
+    basin_lookup = np.full(
+        max(int(labels[-1]), int(basin_ids.max())) + 1, -1, dtype=np.int64
+    )
     basin_lookup[labels[others]] = np.arange(others.size)
     nodes = np.full(flw.size, -1, dtype=np.int64)
     in_basin = (basin_ids > 0) & flw.mask.ravel() & ~in_opened
@@ -1941,7 +2061,9 @@ def _open_basins(
         N_TRUNKS,
         stem=stem,
         stem_lengths=np.array([mainstem.size for mainstem in mainstems]),
-        stem_contacts=_mainstem_contacts(nodes.reshape(shape), mainstems, stem, position),
+        stem_contacts=_mainstem_contacts(
+            nodes.reshape(shape), mainstems, stem, position
+        ),
         hint=hint,
         min_subtree_size=min_subtree_size,
         seed=seed,
@@ -2017,7 +2139,12 @@ def _overload(loads: np.ndarray) -> float:
 
 
 def _heaviest_bordering(
-    parts: np.ndarray, label: np.ndarray, part: int, n_parts: int, eligible: np.ndarray, weights: np.ndarray
+    parts: np.ndarray,
+    label: np.ndarray,
+    part: int,
+    n_parts: int,
+    eligible: np.ndarray,
+    weights: np.ndarray,
 ) -> int:
     """The heaviest ``eligible`` basin bordering ``part`` from another of the
     ``n_parts`` parts: across a pair of side neighbours of the 2-D ``parts``,
@@ -2096,7 +2223,8 @@ def _subbasin_partition(
         flw.idxs_ds, seq_d2u, np.ones(flw.size, dtype=np.int64), -1
     )
     sources = np.bincount(
-        np.searchsorted(labels, basin_ids[valid & (upstream == 1)]), minlength=labels.size
+        np.searchsorted(labels, basin_ids[valid & (upstream == 1)]),
+        minlength=labels.size,
     )
     by_weight = np.argsort(-weights, kind="stable")
     opened: list[int] = []
@@ -2106,14 +2234,22 @@ def _subbasin_partition(
         eligible[opened] = False
         loads = best.loads
         share = float(loads.sum()) / loads.size
-        over = [int(k) for k in np.argsort(-loads, kind="stable") if loads[k] > share * imbalance_target]
+        over = [
+            int(k)
+            for k in np.argsort(-loads, kind="stable")
+            if loads[k] > share * imbalance_target
+        ]
         ends = over + [k for k in [int(np.argmin(loads))] if k not in over]
 
         def heaviest_in(part):
             pool = by_weight[eligible[by_weight] & (part_of_basin[by_weight] == part)]
             return int(pool[0]) if pool.size else -1
 
-        forced = [b for b in (heaviest_in(k) for k in over) if b >= 0 and weights[b] > share * imbalance_target]
+        forced = [
+            b
+            for b in (heaviest_in(k) for k in over)
+            if b >= 0 and weights[b] > share * imbalance_target
+        ]
         if forced:
             found = [max(forced, key=lambda b: (weights[b], -b))]
         else:
@@ -2122,7 +2258,9 @@ def _subbasin_partition(
             for k in ends:
                 found += [
                     heaviest_in(k),
-                    _heaviest_bordering(parts_2d, label_2d, k, N_TRUNKS, eligible, weights),
+                    _heaviest_bordering(
+                        parts_2d, label_2d, k, N_TRUNKS, eligible, weights
+                    ),
                 ]
         candidates: list[int] = []
         for basin in found:
@@ -2150,8 +2288,12 @@ def _subbasin_partition(
             )
             ratio = float(plan.loads.max() / max(plan.loads.mean(), 1))
             key = (ratio, _overload(plan.loads))
-            if round_best is None or ratio < round_best[2] - 1e-12 or (
-                ratio <= round_best[2] + 1e-12 and key[1] < round_best[3][1] - 1e-12
+            if (
+                round_best is None
+                or ratio < round_best[2] - 1e-12
+                or (
+                    ratio <= round_best[2] + 1e-12 and key[1] < round_best[3][1] - 1e-12
+                )
             ):
                 round_best = (int(candidate), plan, ratio, key)
             if round_best[2] <= imbalance_target:
@@ -2229,23 +2371,27 @@ def partition_plan(
         # compared as the C code compares them, in float32
         upa = np.ascontiguousarray(upa, dtype=np.float32).reshape(-1)
         if upa.size != flw.size:
-            raise ValueError(f"upa holds {upa.size} values; the raster has {flw.size} cells")
+            raise ValueError(
+                f"upa holds {upa.size} values; the raster has {flw.size} cells"
+            )
         # finite and positive on every cell of the network, as the FlowTopo C code
         # asks: a NaN is neither the largest of the tied tributaries nor equal to it
         network_upa = upa[flw.idxs_ds != flw._mv]
-        if network_upa.size and not np.all(np.isfinite(network_upa) & (network_upa > 0)):
+        if network_upa.size and not np.all(
+            np.isfinite(network_upa) & (network_upa > 0)
+        ):
             raise ValueError(
                 "upa holds a value that is not a finite, positive area on a cell of the network"
             )
     # a cell that drains into a cell off the network belongs to no basin and would
-    # be left out of every part: refused (FlwdirRaster.from_array makes such a cell a pit)
+    # be left out of every part: refused (pyflwdir.from_array makes such a cell a pit)
     valid = flw.idxs_ds != flw._mv
     into_valid = np.zeros(flw.size, dtype=np.bool_)
     into_valid[valid] = valid[flw.idxs_ds[valid].astype(np.int64)]
     if np.any(valid & ~into_valid):
         raise ValueError(
             f"{int(np.count_nonzero(valid & ~into_valid))} cells drain into a cell "
-            "off the network; make them pits (as FlwdirRaster.from_array does)"
+            "off the network; make them pits (as pyflwdir.from_array does)"
         )
 
     given = ranks = None
@@ -2271,7 +2417,9 @@ def partition_plan(
             upa,
         )
     if given is not None:
-        plan = replace(plan, basin_ids=given.reshape(flw.shape))     # the caller's labels, as given
+        plan = replace(
+            plan, basin_ids=given.reshape(flw.shape)
+        )  # the caller's labels, as given
     return plan
 
 

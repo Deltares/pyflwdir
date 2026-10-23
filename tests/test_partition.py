@@ -27,7 +27,9 @@ def rivers(nrow, widths):
     for width in widths:
         center = first + width // 2
         idxs_ds[:, first:center] = cells[:, first:center] + 1
-        idxs_ds[:, center + 1 : first + width] = cells[:, center + 1 : first + width] - 1
+        idxs_ds[:, center + 1 : first + width] = (
+            cells[:, center + 1 : first + width] - 1
+        )
         idxs_ds[:-1, center] = cells[:-1, center] + ncol
         first += width
     return pyflwdir.FlwdirRaster(idxs_ds.ravel(), shape=(nrow, ncol), ftype="d8")
@@ -108,9 +110,7 @@ def test_graph_counts_cells_and_shared_sides():
     assert np.all(graph.weights == flw.shape[0])
     assert np.allclose(graph.rows, (flw.shape[0] - 1) / 2)
     assert np.allclose(graph.cols, np.arange(flw.shape[1]))
-    assert np.array_equal(
-        graph.edges, np.column_stack((np.arange(7), np.arange(1, 8)))
-    )
+    assert np.array_equal(graph.edges, np.column_stack((np.arange(7), np.arange(1, 8))))
     assert np.all(graph.edge_weights == flw.shape[0])
 
 
@@ -128,17 +128,28 @@ def test_merge_edges_sums_and_drops_loops():
 @pytest.mark.unit
 def test_parts_go_where_the_heaviest_part_is_lightest():
     # 2.9 and 1.1 shares: 3 + 1 parts (1.1 the heaviest), not 2 + 2 (1.45)
-    assert np.array_equal(partition._apportion(np.array([2.9, 1.1]), np.array([9, 9]), 4), [3, 1])
-    assert np.array_equal(partition._apportion(np.array([2.0, 1.0, 1.0]), np.array([9, 9, 9]), 4), [2, 1, 1])
+    assert np.array_equal(
+        partition._apportion(np.array([2.9, 1.1]), np.array([9, 9]), 4), [3, 1]
+    )
+    assert np.array_equal(
+        partition._apportion(np.array([2.0, 1.0, 1.0]), np.array([9, 9, 9]), 4),
+        [2, 1, 1],
+    )
     # no more parts than a mass has nodes to place
-    assert np.array_equal(partition._apportion(np.array([3.5, 0.5]), np.array([2, 9]), 4), [2, 2])
+    assert np.array_equal(
+        partition._apportion(np.array([3.5, 0.5]), np.array([2, 9]), 4), [2, 2]
+    )
+
+
 @pytest.mark.unit
 def test_islands_move_whole_to_balance_and_land_stays_one_piece():
     pytest.importorskip("pymetis")
     # land A (12 nodes) and land B (8 nodes) far apart, four one-node islands
     # between them; two parts of 12: two islands nearer A go to B's part
     weights = np.ones(24, dtype=np.int64)
-    edges = np.array([[i, i + 1] for i in range(11)] + [[i, i + 1] for i in range(12, 19)])
+    edges = np.array(
+        [[i, i + 1] for i in range(11)] + [[i, i + 1] for i in range(12, 19)]
+    )
     cols = np.r_[np.arange(12.0), 100 + np.arange(8.0), 40, 50, 60, 70]
     graph = partition.PartitionGraph(
         weights, np.zeros(24), cols, edges, np.ones(edges.shape[0], dtype=np.int64)
@@ -147,6 +158,8 @@ def test_islands_move_whole_to_balance_and_land_stays_one_piece():
     assert np.array_equal(np.bincount(parts, minlength=2), [12, 12])
     assert np.unique(parts[:12]).size == 1 and np.unique(parts[12:20]).size == 1
     assert parts[0] != parts[12]
+
+
 def peninsula_graph():
     """part 1 = {p}; part 0 = {c, a, b, x, y, z} with c holding the peninsula
     a-b and touching the body x-y-z and p."""
@@ -268,7 +281,9 @@ def test_parts_never_span_land_that_does_not_touch():
     pytest.importorskip("pymetis")
     # land A: nodes 0..7, land B: nodes 8..11 (apart), an island 12 by B
     weights = np.array([10] * 12 + [1], dtype=np.int64)
-    edges = np.array([[i, i + 1] for i in range(7)] + [[i, i + 1] for i in range(8, 11)])
+    edges = np.array(
+        [[i, i + 1] for i in range(7)] + [[i, i + 1] for i in range(8, 11)]
+    )
     rows = np.zeros(13)
     cols = np.array(list(range(8)) + [100, 101, 102, 103, 104.5], dtype=np.float64)
     graph = partition.PartitionGraph(
@@ -522,7 +537,9 @@ def _in_or_beside(cells: np.ndarray, region: np.ndarray) -> bool:
 
 
 @pytest.mark.unit
-def test_method_2_tries_basins_in_or_beside_the_overloaded_and_lightest_parts(monkeypatch):
+def test_method_2_tries_basins_in_or_beside_the_overloaded_and_lightest_parts(
+    monkeypatch,
+):
     pytest.importorskip("pymetis")
     flw = rivers(21, [11] * 5)
     basin = partition.partition_plan(flw, level="basin")
@@ -544,8 +561,12 @@ def test_method_2_tries_basins_in_or_beside_the_overloaded_and_lightest_parts(mo
         kept = basin if len(opened) == 1 else plans[opened[:-1]]
         loads = kept.loads.astype(float)
         share = loads.sum() / loads.size
-        ends = [k for k in range(loads.size) if loads[k] > share * 1.005] + [int(np.argmin(loads))]
-        assert _in_or_beside(basin.basin_ids == labels[opened[-1]], np.isin(kept.parts, ends))
+        ends = [k for k in range(loads.size) if loads[k] > share * 1.005] + [
+            int(np.argmin(loads))
+        ]
+        assert _in_or_beside(
+            basin.basin_ids == labels[opened[-1]], np.isin(kept.parts, ends)
+        )
     for size in {len(opened) for opened, _ in tried}:
         # at most OPEN_TRIALS a round, the heaviest of those in or beside
         assert sum(len(opened) == size for opened, _ in tried) <= partition.OPEN_TRIALS
@@ -624,7 +645,9 @@ def test_the_basins_given_number_the_nodes_and_are_checked(monkeypatch):
     monkeypatch.setattr(partition, "graph_from_node_raster", recording)
     # the same basins, numbered the other way round and far apart: the nodes follow the labels' order, and the plan
     # gives the labels back as they were given
-    relabelled = np.where(own > 0, (100 - own.astype(np.int64)) * 2**40, 0).reshape(flw.shape)
+    relabelled = np.where(own > 0, (100 - own.astype(np.int64)) * 2**40, 0).reshape(
+        flw.shape
+    )
     plan = partition.partition_plan(flw, level="basin", basins=relabelled)
     check_plan(flw, plan)
     on = own > 0
@@ -633,7 +656,12 @@ def test_the_basins_given_number_the_nodes_and_are_checked(monkeypatch):
     seen.clear()
     partition.partition_plan(flw, level="basin")
     assert np.array_equal(seen[0][on], own[on] - 1)
-    for wrong in (relabelled.ravel()[:-1], np.zeros_like(own), np.where(own > 0, 1, 0), relabelled.astype(np.float64)):
+    for wrong in (
+        relabelled.ravel()[:-1],
+        np.zeros_like(own),
+        np.where(own > 0, 1, 0),
+        relabelled.astype(np.float64),
+    ):
         with pytest.raises(ValueError):
             partition.partition_plan(flw, level="basin", basins=wrong)
 
@@ -649,7 +677,7 @@ def test_unsigned_labels_above_two_to_the_63_keep_their_order(monkeypatch):
         return build_graph(nodes, n_nodes)
 
     monkeypatch.setattr(partition, "graph_from_node_raster", recording)
-    d8 = np.array([[1, 0, 247, 1, 0]], dtype=np.uint8)     # two basins of two cells
+    d8 = np.array([[1, 0, 247, 1, 0]], dtype=np.uint8)  # two basins of two cells
     flw = pyflwdir.from_array(d8, ftype="d8")
     labels = np.array([[1, 1, 0, 2**63 + 1, 2**63 + 1]], dtype=np.uint64)
     plan = partition.partition_plan(flw, level="basin", n_parts=2, basins=labels)
@@ -670,14 +698,37 @@ def test_a_metis_library_is_called_in_place_of_pymetis(monkeypatch):
         def METIS_SetDefaultOptions(self, options):
             ctypes.memset(options, 0xFF, partition._METIS_NOPTIONS * 4)
 
-        def METIS_PartGraphKway(self, nvtxs, ncon, xadj, adjncy, vwgt, vsize, adjwgt, nparts, tpwgts, ubvec,
-                                options, objval, part):
+        def METIS_PartGraphKway(
+            self,
+            nvtxs,
+            ncon,
+            xadj,
+            adjncy,
+            vwgt,
+            vsize,
+            adjwgt,
+            nparts,
+            tpwgts,
+            ubvec,
+            options,
+            objval,
+            part,
+        ):
             calls.append((nvtxs._obj.value, nparts._obj.value))
-            values = np.ctypeslib.as_array(ctypes.cast(options, ctypes.POINTER(ctypes.c_int32)),
-                                           (partition._METIS_NOPTIONS,))
-            calls.append(tuple(int(values[k]) for k in (partition._METIS_OPTION_SEED,
-                                                        partition._METIS_OPTION_UFACTOR,
-                                                        partition._METIS_OPTION_CONTIG)))
+            values = np.ctypeslib.as_array(
+                ctypes.cast(options, ctypes.POINTER(ctypes.c_int32)),
+                (partition._METIS_NOPTIONS,),
+            )
+            calls.append(
+                tuple(
+                    int(values[k])
+                    for k in (
+                        partition._METIS_OPTION_SEED,
+                        partition._METIS_OPTION_UFACTOR,
+                        partition._METIS_OPTION_CONTIG,
+                    )
+                )
+            )
             return partition._METIS_OK
 
     def no_pymetis():
@@ -718,7 +769,9 @@ def test_metis_never_leaves_a_part_empty():
     assert sorted(parts) == [0, 1]
     graph = line_graph([1, 1, 5, 1, 2])
     parts = partition._fill_empty_parts(graph, np.zeros(5, dtype=np.int32), 2)
-    assert np.array_equal(parts, [0, 0, 0, 0, 1]) or np.array_equal(parts, [1, 0, 0, 0, 0])
+    assert np.array_equal(parts, [0, 0, 0, 0, 1]) or np.array_equal(
+        parts, [1, 0, 0, 0, 0]
+    )
 
 
 @pytest.mark.unit
@@ -727,8 +780,12 @@ def test_an_empty_part_takes_the_leaf_of_the_tree_grown_by_rising_index():
     # rising index, is 0-2, 2-1, 2-3, 1-4; its leaves are 3 and 4, and the empty part takes 3, as in the
     # FlowTopo C code.  (Left to SciPy's own order the tree was 0-2, 2-3, 2-1, 3-4 and the node 1.)
     graph = partition.PartitionGraph(
-        np.ones(5, dtype=np.int64), np.zeros(5), np.arange(5, dtype=np.float64),
-        np.array([(0, 2), (1, 2), (1, 4), (2, 3), (3, 4)], dtype=np.int32), np.ones(5, dtype=np.int64))
+        np.ones(5, dtype=np.int64),
+        np.zeros(5),
+        np.arange(5, dtype=np.float64),
+        np.array([(0, 2), (1, 2), (1, 4), (2, 3), (3, 4)], dtype=np.int32),
+        np.ones(5, dtype=np.int64),
+    )
     parts = partition._fill_empty_parts(graph, np.zeros(5, dtype=np.int32), 2)
     assert np.array_equal(parts, [0, 0, 0, 1, 0])
 
@@ -738,10 +795,14 @@ def test_a_hint_that_is_no_part_does_not_count():
     # the second node has no hint (-1): it was read as the last part and turned the labels round
     parts = np.array([0, 0, 1], dtype=np.int32)
     weights = np.array([1, 5, 2], dtype=np.int64)
-    assert np.array_equal(partition._align_labels(parts, weights, np.array([0, -1, 1]), 2), [0, 0, 1])
+    assert np.array_equal(
+        partition._align_labels(parts, weights, np.array([0, -1, 1]), 2), [0, 0, 1]
+    )
     # and a node without a part keeps what it has while the others are relabelled
     parts = np.array([0, -1, 1], dtype=np.int32)
-    assert np.array_equal(partition._align_labels(parts, weights, np.array([1, 1, 0]), 2), [1, -1, 0])
+    assert np.array_equal(
+        partition._align_labels(parts, weights, np.array([1, 1, 0]), 2), [1, -1, 0]
+    )
 
 
 @pytest.mark.unit
@@ -751,7 +812,9 @@ def test_nodes_without_cells_follow_a_neighbour():
     rows = np.zeros(21)
     cols = np.r_[np.arange(20) * 2.0, np.nan]
     edges = np.array([[19, 20]])
-    graph = partition.PartitionGraph(weights, rows, cols, edges, np.ones(1, dtype=np.int64))
+    graph = partition.PartitionGraph(
+        weights, rows, cols, edges, np.ones(1, dtype=np.int64)
+    )
     parts = partition.assign_basins(graph, 4)
     assert np.array_equal(np.bincount(parts[:20], minlength=4), [5, 5, 5, 5])
     assert parts[20] == parts[19]
@@ -819,7 +882,9 @@ def test_a_node_without_cells_still_joins_its_neighbours():
     rows = np.zeros(7)
     cols = np.array([np.nan, 0, 10, 20, 30, 10.1, 20.1])
     edges = np.column_stack((np.zeros(6, dtype=np.int64), np.arange(1, 7)))
-    graph = partition.PartitionGraph(weights, rows, cols, edges, np.ones(6, dtype=np.int64))
+    graph = partition.PartitionGraph(
+        weights, rows, cols, edges, np.ones(6, dtype=np.int64)
+    )
     parts = partition.assign_basins(graph, 4)
     assert np.unique(parts).size == 4
     assert connected_parts(parts, edges)
@@ -831,7 +896,10 @@ def test_refinement_keeps_parts_joined_across_the_mainstem():
     weights = np.array([22, 14, 11, 3, 24, 9, 17, 12], dtype=np.int64)
     ground = np.array([[0, 3], [0, 6], [1, 4], [2, 6], [3, 7], [4, 5], [4, 6]])
     graph = partition.PartitionGraph(
-        weights, np.zeros(8), np.arange(8, dtype=np.float64), ground,
+        weights,
+        np.zeros(8),
+        np.arange(8, dtype=np.float64),
+        ground,
         np.ones(ground.shape[0], dtype=np.int64),
     )
     is_tributary = np.arange(8) > 0
@@ -850,7 +918,11 @@ def test_basins_cut_off_by_a_dominant_basin_without_a_part_join_it():
     weights = np.array([10, 1, 1, 1, 1], dtype=np.int64)
     edges = np.column_stack((np.zeros(4, dtype=np.int64), np.arange(1, 5)))
     graph = partition.PartitionGraph(
-        weights, np.zeros(5), np.array([0.0, -1, 1, 2, 3]), edges, np.ones(4, dtype=np.int64)
+        weights,
+        np.zeros(5),
+        np.array([0.0, -1, 1, 2, 3]),
+        edges,
+        np.ones(4, dtype=np.int64),
     )
     parts = partition.assign_basins(graph, 4)
     assert np.unique(parts).size == 4
@@ -864,7 +936,10 @@ def test_an_archipelago_a_dominant_basin_encloses_joins_it_but_three():
     weights = np.array([490] + [1] * 10, dtype=np.int64)
     edges = np.column_stack((np.zeros(10, dtype=np.int64), np.arange(1, 11)))
     graph = partition.PartitionGraph(
-        weights, np.zeros(11), np.arange(11, dtype=np.float64), edges,
+        weights,
+        np.zeros(11),
+        np.arange(11, dtype=np.float64),
+        edges,
         np.ones(10, dtype=np.int64),
     )
     parts = partition.assign_basins(graph, 4)
@@ -892,7 +967,9 @@ def test_enclaves_that_keep_parts_never_share_one():
 def test_a_cell_less_tributary_keeps_its_banks_joined():
     pytest.importorskip("pymetis")
     weights = np.array([24, 2, 0, 1] + [2] * 31, dtype=np.int64)
-    ground = np.array([[0, 2], [1, 2], [2, 3], [1, 4]] + [[k, k + 1] for k in range(4, 34)])
+    ground = np.array(
+        [[0, 2], [1, 2], [2, 3], [1, 4]] + [[k, k + 1] for k in range(4, 34)]
+    )
     cols = np.arange(35, dtype=np.float64)
     cols[2] = np.nan
     graph = partition.PartitionGraph(
@@ -924,13 +1001,20 @@ def test_a_merged_tributary_keeps_its_mainstem_cells():
     position = np.r_[-1, 0, np.arange(80, 113)]
     lengths = np.array([113])
     parts = partition.assign_subbasins(
-        graph, is_tributary, position, 4, stem_lengths=lengths, min_subtree_size=1,
+        graph,
+        is_tributary,
+        position,
+        4,
+        stem_lengths=lengths,
+        min_subtree_size=1,
         imbalance_target=1.09,
     )
     stem = np.where(is_tributary, 0, -1)
     p_min = partition._p_mins(parts, stem, position, lengths)
     loads = np.bincount(
-        parts, weights=weights + partition._mainstem_weights(stem, position, p_min), minlength=4
+        parts,
+        weights=weights + partition._mainstem_weights(stem, position, p_min),
+        minlength=4,
     )
     # it follows basin 0 into the trunk, its 80 cells with it (they were lost: 1.75)
     assert parts[1] == parts[0] and p_min[0] >= 80
@@ -944,7 +1028,11 @@ def test_land_chosen_for_its_nodes_never_moves_across_water():
     weights = np.array([1000, 30, 25, 24, 20, 20, 20], dtype=np.int64)
     cols = np.array([0, 100, 110, 120, 101, 102, 103], dtype=np.float64)
     graph = partition.PartitionGraph(
-        weights, np.zeros(7), cols, np.empty((0, 2), dtype=np.int64), np.empty(0, dtype=np.int64)
+        weights,
+        np.zeros(7),
+        cols,
+        np.empty((0, 2), dtype=np.int64),
+        np.empty(0, dtype=np.int64),
     )
     parts = partition._partition_components(graph, graph, 4, 42, 1.005, True)
     assert np.unique(parts[:4]).size == 4
@@ -1008,9 +1096,14 @@ def test_a_basin_that_touches_only_the_mainstem_is_joined_across_it():
 def test_a_metis_part_left_in_two_pieces_is_joined_up():
     pytest.importorskip("pymetis")
     weights = np.array([5, 2, 1, 1, 8, 7, 4, 1, 12, 7], dtype=np.int64)
-    edges = np.array([[0, 1], [1, 4], [2, 6], [3, 4], [4, 6], [4, 9], [5, 8], [5, 9], [7, 9]])
+    edges = np.array(
+        [[0, 1], [1, 4], [2, 6], [3, 4], [4, 6], [4, 9], [5, 8], [5, 9], [7, 9]]
+    )
     graph = partition.PartitionGraph(
-        weights, np.zeros(10), np.arange(10, dtype=np.float64), edges,
+        weights,
+        np.zeros(10),
+        np.arange(10, dtype=np.float64),
+        edges,
         np.array([1, 1, 3, 2, 2, 2, 9, 1, 1], dtype=np.int64),
     )
     for refine in (True, False):
@@ -1026,17 +1119,25 @@ def test_a_node_heavier_than_its_share_of_a_land_mass_is_a_part_of_its_own():
     # and three parts: the heavy node alone, its enclave with it, each side one
     weights = np.r_[np.ones(10), 100, np.ones(10), np.ones(9)].astype(np.int64)
     edges = np.array(
-        [[i, i + 1] for i in range(9)] + [[9, 10], [10, 11]]
-        + [[i, i + 1] for i in range(11, 20)] + [[10, 21]] + [[i, i + 1] for i in range(21, 29)]
+        [[i, i + 1] for i in range(9)]
+        + [[9, 10], [10, 11]]
+        + [[i, i + 1] for i in range(11, 20)]
+        + [[10, 21]]
+        + [[i, i + 1] for i in range(21, 29)]
     )
     graph = partition.PartitionGraph(
-        weights, np.zeros(30), np.arange(30, dtype=np.float64), edges,
+        weights,
+        np.zeros(30),
+        np.arange(30, dtype=np.float64),
+        edges,
         np.ones(edges.shape[0], dtype=np.int64),
     )
     parts = partition._partition_components(graph, graph, 3, 42, 1.005, True)
     assert connected_parts(parts, edges)
     assert np.unique(parts[:10]).size == 1 and np.unique(parts[11:21]).size == 1
-    assert len({parts[0], parts[10], parts[11]}) == 3 and np.all(parts[21:] == parts[10])
+    assert len({parts[0], parts[10], parts[11]}) == 3 and np.all(
+        parts[21:] == parts[10]
+    )
 
 
 @pytest.mark.unit
@@ -1046,7 +1147,10 @@ def test_land_masses_get_parts_before_a_dominant_basin():
     weights = np.array([200, 100, 200, 100, 90], dtype=np.int64)
     edges = np.array([[0, 1], [2, 3]])
     graph = partition.PartitionGraph(
-        weights, np.zeros(5), np.array([0.0, 1, 100, 101, 2]), edges,
+        weights,
+        np.zeros(5),
+        np.array([0.0, 1, 100, 101, 2]),
+        edges,
         np.ones(2, dtype=np.int64),
     )
     for refine in (True, False):
@@ -1061,7 +1165,10 @@ def test_a_long_chain_of_cell_less_nodes_follows_its_one_live_node():
     weights = np.r_[1, np.zeros(n - 1)].astype(np.int64)
     edges = np.column_stack((np.arange(n - 1), np.arange(1, n)))
     graph = partition.PartitionGraph(
-        weights, np.zeros(n), np.arange(n, dtype=np.float64), edges,
+        weights,
+        np.zeros(n),
+        np.arange(n, dtype=np.float64),
+        edges,
         np.ones(n - 1, dtype=np.int64),
     )
     owner = np.r_[0, np.full(n - 1, -1)]
@@ -1078,7 +1185,11 @@ def test_a_group_a_dominant_node_cuts_is_carved_in_pieces():
     weights[0], weights[1], weights[18] = 1000, 1, 1
     ground = np.array([[0, 18]])
     graph = partition.PartitionGraph(
-        weights, np.zeros(34), np.arange(34, dtype=np.float64), ground, np.ones(1, dtype=np.int64)
+        weights,
+        np.zeros(34),
+        np.arange(34, dtype=np.float64),
+        ground,
+        np.ones(1, dtype=np.int64),
     )
     banks = np.column_stack((np.arange(33), np.arange(1, 34)))
     for refine in (True, False):
@@ -1122,7 +1233,17 @@ def test_the_mainstem_takes_the_smaller_index_of_two_equal_tributaries():
 
 def test_equally_distant_neighbours_come_in_the_order_of_their_indices():
     points = np.array(
-        [(3, 4), (3, -4), (-3, 4), (-3, -4), (4, 3), (4, -3), (-4, 3), (-4, -3), (0, 0)],
+        [
+            (3, 4),
+            (3, -4),
+            (-3, 4),
+            (-3, -4),
+            (4, 3),
+            (4, -3),
+            (-4, 3),
+            (-4, -3),
+            (0, 0),
+        ],
         dtype=float,
     )
     squared, near = partition._nearest(points, points[8:9], 5)
