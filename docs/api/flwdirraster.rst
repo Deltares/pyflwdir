@@ -62,7 +62,7 @@ Raster & geospatial attributes and methods
 
 The FlwdirRaster object contains :py:attr:`FlwdirRaster.shape`, :py:attr:`FlwdirRaster.transform`
 and :py:attr:`FlwdirRaster.latlon` attributes describing its geospatial location. The first
-attribute is required at initializiation, while the others can be set later.
+attribute is required at initialization, while the others can be set later.
 
 .. autosummary::
    :toctree: ../_generated

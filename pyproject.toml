@@ -155,3 +155,11 @@ version = { cmd = [
     "-c",
     "from pyflwdir import __version__ as v; print('dev' if 'dev' in v else 'v'+v)",
 ] }
+
+
+[tool.codespell]
+skip = "*.lock"
+ignore-words-list = [
+    "arithmetics",
+    "dout",
+]

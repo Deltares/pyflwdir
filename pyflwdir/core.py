@@ -523,7 +523,7 @@ def _upstream_d8_idx(
     idx0: int, idxs_ds: np.ndarray, shape: tuple[int, int]
 ) -> np.ndarray:
     """Returns a numpy array with linear indices of upstream neighbors.
-    NOTE: This method only works for D8 type of flow direciton data. If upstream
+    NOTE: This method only works for D8 type of flow direction data. If upstream
     neighbours our outside the dirict 8 neighbors the returned array  will be
     incomplete."""
     idxs_lst = []
