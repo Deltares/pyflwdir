@@ -1,13 +1,14 @@
 [build-system]
-requires = ["flit_core >=3.4,<4"]
+requires = ["flit_core >=3.11,<5"]
 build-backend = "flit_core.buildapi"
 
 [project]
 name = "pyflwdir"
 authors = [{ name = "Dirk Eilander", email = "dirk.eilander@deltares.nl" }]
 readme = "README.rst"
-license = { file = "LICENSE" }
-classifiers = ["License :: OSI Approved :: MIT License"]
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = ["Topic :: Scientific/Engineering :: Hydrology"]
 dynamic = ["version", "description"]
 dependencies = ["affine", "numba>=0.54,<1.0", "numpy", "scipy"]
 requires-python = ">=3.11"
