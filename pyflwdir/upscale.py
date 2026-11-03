@@ -675,7 +675,7 @@ def ihu_relocate_outlets(
             # trace ends at first outlet pixels -> already fixed
             continue  # @0A
         elif not stop:
-            # no succussful trace end -> skip cell
+            # no successful trace end -> skip cell
             continue  # @0A
 
         # STEP 2: find tributary cells: i.e. cells directly upstream of trace
@@ -1451,7 +1451,7 @@ def upscale_error(
         if subidx == mv:
             continue
         outlets[subidx] = True
-    # allocate output. intialize 'True' map
+    # allocate output. initialize 'True' map
     n = idxs_ds.size
     connect_map = np.full(n, 1, np.uint8)
     # loop over outlet cell indices

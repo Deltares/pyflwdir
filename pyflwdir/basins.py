@@ -140,7 +140,7 @@ def subbasins_streamorder(
         consider only True cells
     min_sto : int, optional
         minimum stream order of subbasins, by default the stream order is set to
-        two under the global maxmium stream order.
+        two under the global maximum stream order.
 
     Returns
     -------

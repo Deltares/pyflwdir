@@ -52,7 +52,7 @@ unreleased
 ********************
 * Fixed numpy 2.0 compatibility issues
 * Fixed bug in strahler stream order method when more than two streams meet.
-* Fixed support for interger type DEMs in `from_dem` and `dem.fill_depressions` methods
+* Fixed support for integer type DEMs in `from_dem` and `dem.fill_depressions` methods
 * Add support for py 3.12
 * Add support for pixi
 * Add support for large rasters in the flwdir object (Contributed by @robgpita)
@@ -191,7 +191,7 @@ Deprecated
 *****
 Improved
 --------
-* vectorizing of local flow directions and streams in seperate methods
+* vectorizing of local flow directions and streams in separate methods
 * fixed subbasins method
 * documentation using nbsphinx
 
@@ -260,7 +260,7 @@ Improved
 
 New
 ---
-* hand - height above neares drain based on Nobre et al. (2016)
+* hand - height above nearest drain based on Nobre et al. (2016)
 * floodplains - flood plain delineation based on Nardi et al. (2019)
 * snap/path - methods to follow a streamline in up-  or downstream direction
 
@@ -269,7 +269,7 @@ New
 
 New
 ---
-* suport for multiple flow direction types
+* support for multiple flow direction types
 
 Improved
 --------
@@ -283,7 +283,7 @@ Improved
 New
 -----
 
-* setup_network - Setup all upstream - downstream connections based on the flow direcion map.
+* setup_network - Setup all upstream - downstream connections based on the flow direction map.
 * get_pits - Return the indices of the pits/outlets in the flow direction map.
 * upstream_area - Returns the upstream area [km] based on the flow direction map.
 * stream_order - Returns the Strahler Order map
