@@ -1,4 +1,4 @@
-"""A simple script to generate enviroment.yml files from pyproject.toml."""
+"""A simple script to generate environment.yml files from pyproject.toml."""
 
 import argparse
 import re
@@ -11,7 +11,7 @@ else:
     from tomli import load
 
 
-# our quick and dirty implementation of recursive depedencies
+# our quick and dirty implementation of recursive dependencies
 def _parse_profile(profile_str: str, opt_deps: dict, project_name: str) -> List[str]:
     if profile_str is None or profile_str == "":
         return []
@@ -25,7 +25,7 @@ def _parse_profile(profile_str: str, opt_deps: dict, project_name: str) -> List[
             continue
         m = pat.match(dep)
         if m:
-            # if we match the patern, all list elts have to be dependenciy groups
+            # if we match the pattern, all list elts have to be dependenciy groups
             dep_groups = [d.strip() for d in m.groups(0)[0].split(",")]
             unknown_dep_groups = set(dep_groups) - set(opt_deps.keys())
             if len(unknown_dep_groups) > 0:

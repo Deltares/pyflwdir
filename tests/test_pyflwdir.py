@@ -349,7 +349,7 @@ def test_streams(flw_real, flwdir_real_rank):
     fstrord = np.array([f["properties"]["strord"] for f in feats])
     findex = np.array([f["properties"]["idx"] for f in feats])
     assert np.all(fstrord == strord.flat[findex])
-    # check agains Flwdir
+    # check against Flwdir
     # FIXME this fails, but only locally ??!#
     findex_ds = np.array([f["properties"]["idx_ds"] for f in feats])
     flw1 = pyflwdir.Flwdir(pyflwdir.flwdir.get_loc_idx(findex, findex_ds))
@@ -553,7 +553,7 @@ def test_ucat(flw, request):
     rivlen1 = flw_real.subgrid_rivlen(idxs_out=None)
     assert rivlen1.shape == flw_real.shape
     with pytest.raises(ValueError, match="Unknown method"):
-        flw_real.ucat_outlets(5, method="unkown")
+        flw_real.ucat_outlets(5, method="unknown")
     with pytest.raises(ValueError, match="Unknown unit"):
         flw_real.ucat_area(idxs_out, unit="km")
     with pytest.raises(ValueError, match="size does not match"):

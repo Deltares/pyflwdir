@@ -37,7 +37,7 @@ def accuflux(
     1D array of data.dtype
         accumulated upstream data
     """
-    # intialize output with correct dtype
+    # initialize output with correct dtype
     accu = data.copy()
     for idx0 in seq[::-1]:  # up- to downstream
         idx_ds = idxs_ds[idx0]
@@ -195,7 +195,7 @@ def accuflux_ds(
     1D array of data.dtype
         accumulated upstream data
     """
-    # intialize output with correct dtype
+    # initialize output with correct dtype
     accu = data.copy()
     for idx0 in seq:  # down- to upstream
         idx_ds = idxs_ds[idx0]
@@ -246,7 +246,7 @@ def upstream_area(
     1D array of <dtype>
         accumulated upstream area
     """
-    # intialize uparea with correct dtype
+    # initialize uparea with correct dtype
     uparea: np.ndarray = np.full(idxs_ds.size, nodata, dtype=dtype)
     # local area
     xres, yres, north = transform[0], transform[4], transform[5]

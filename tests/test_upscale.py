@@ -37,7 +37,7 @@ def test_upscale(cellsize, name, nflwerr, idxs, flwdir_real_large, request):
     flwdir = flwdir_real_large
     idxs_ds, idxs_pit = request.getfixturevalue(idxs)
     mv = idxs_ds.dtype.type(core._mv)
-    # caculate upstream area and basin
+    # calculate upstream area and basin
     rank, n = core.rank(idxs_ds, mv=mv)
     seq = np.argsort(rank)[-n:]
     upa = streams.upstream_area(idxs_ds, seq, flwdir.shape[1], dtype=np.int32)
