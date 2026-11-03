@@ -30,6 +30,8 @@ unreleased
   factors for every cell, greatly reducing the runtime of
   ``Flwdir.stream_distance(unit="m")`` for geographic rasters
 * fix remaining ``uint64`` typing issues (#126)
+* fix ``upstream_sum`` writing the missing value flag to the upstream cell instead
+  of the downstream cell, where it is now kept (#131)
 
 0.5.12 (01-07-2026)
 *******************
