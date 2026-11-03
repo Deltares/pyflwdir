@@ -427,6 +427,8 @@ can differ in the last bits from earlier versions (#115)</p></li>
 factors for every cell, greatly reducing the runtime of
 <code class="docutils literal notranslate"><span class="pre">Flwdir.stream_distance(unit=&quot;m&quot;)</span></code> for geographic rasters</p></li>
 <li><p>fix remaining <code class="docutils literal notranslate"><span class="pre">uint64</span></code> typing issues (#126)</p></li>
+<li><p>fix <code class="docutils literal notranslate"><span class="pre">upstream_sum</span></code> writing the missing value flag to the upstream cell instead
+of the downstream cell, where it is now kept (#131)</p></li>
 </ul>
 </section>
 <section id="id2">
