@@ -10,7 +10,7 @@ _mv = core._mv
 __all__ = []
 
 
-# NOTE np.average (with) weights is not yet supoorted by numpy
+# NOTE np.average (with) weights is not yet supported by numpy
 # all functions are faster than numpy.
 @njit(cache=True)
 def _average(data: np.ndarray, weights: np.ndarray, nodata: float) -> float:
@@ -96,7 +96,7 @@ def moving_average(
     1D array
         averaged data
     """
-    # loop over values and avarage
+    # loop over values and average
     data_out = np.full(data.size, nodata, dtype=data.dtype)
     for idx0 in range(data.size):
         if data[idx0] == nodata:
@@ -139,7 +139,7 @@ def moving_median(
     1D array
         median data
     """
-    # loop over values and avarage
+    # loop over values and average
     data_out = np.full(data.size, nodata, dtype=data.dtype)
     nan = np.isnan(nodata)
     for idx0 in range(data.size):

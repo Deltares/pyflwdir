@@ -40,7 +40,7 @@ def from_array(
     """convert 2D LDD data to 1D next downstream indices"""
     nrow, ncol = flwdir.shape
     flwdir_flat = flwdir.ravel()
-    # get downsteam indices
+    # get downstream indices
     pits_lst: list = []
     idxs_ds: np.ndarray = np.full(flwdir.size, core._mv, dtype=dtype)
     n = 0

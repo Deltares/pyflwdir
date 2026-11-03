@@ -641,7 +641,7 @@ class Flwdir:
 
         Returns
         -------
-        nd array of float
+        array of float
             upstream area
         """
         uparea = streams.accuflux(
@@ -879,7 +879,7 @@ class Flwdir:
         rivdph = ((manning * qbankfull) / (np.sqrt(rivslp) * rivwth)) ** (3 / 5)
         rivdph = np.maximum(min_rivdph, rivdph)
         rivdph[self.idxs_ds == self._mv] = -9999.0
-        # update river depth based on contraint gradually varying flow solver
+        # update river depth based on constraint gradually varying flow solver
         if method == "gvf":
             if zs is None or rivdst is None:
                 raise ValueError('"zs" and "rivdst" are required for the gvf method.')
