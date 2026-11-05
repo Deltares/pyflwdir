@@ -13,7 +13,6 @@ from . import (
     core,
     dem,
     parallel as parallel_utils,
-    partition as partitioning,
     rivers,
     streams,
 )
@@ -331,6 +330,13 @@ class Flwdir:
         n_layers : int
             Number of layers.
 
+        Notes
+        -----
+        Threaded upstream accumulation (``parallel=True`` in :py:meth:`accuflux`
+        and :py:meth:`FlwdirRaster.upstream_area`) is the only computation that uses
+        layers, and it builds its own. Calling this method only returns them: it does
+        not make any other method run in parallel.
+
         References
         ----------
         The three layerings and their implementations come from FlowTopo:
@@ -373,52 +379,6 @@ class Flwdir:
         if self.cache:
             self._cached[key] = (cells, offsets)
         return cells, offsets
-
-    def partition(
-        self,
-        level: Literal["basin", "subbasin"] = "subbasin",
-        n_parts: int = 4,
-        **kwargs,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Split a raster into FlowTopo process-level subregions.
-
-        Basin-level partitioning (Method 1) keeps every basin whole: a basin
-        larger than an equal share is a part of its own, and the other basins
-        are divided into equal parts, each one piece on its land, by
-        contiguous METIS followed by a balance refinement; an island starts
-        with the part of its nearest land and may move whole to a nearby part.
-        Subbasin-level partitioning (Method 2)
-        opens the basins that keep the parts from balancing -- usually the
-        dominant basin first -- along their mainstems into tributary subtrees, divides those and the
-        other basins into four parallel trunks, and leaves each opened mainstem
-        from its ``P_min`` down, ``P_min`` included, as a logical fifth region.
-
-        This method requires a :class:`FlwdirRaster`. METIS is an optional
-        dependency; install it with ``pip install pyflwdir[partition]``.
-
-        Parameters
-        ----------
-        level : {'basin', 'subbasin'}, optional
-            FlowTopo partition level, by default ``"subbasin"``.
-        n_parts : int, optional
-            Number of basin-level partitions, by default 4. The current
-            FlowTopo subbasin algorithm requires exactly four.
-        **kwargs
-            Additional options passed to
-            :func:`pyflwdir.partition.partition_plan`.
-
-        Returns
-        -------
-        parts : ndarray of int32
-            Partition per cell. ``-1`` marks cells outside the network and the
-            cell of a basin of a single cell, which takes no part (as in the
-            FlowTopo C code), and ``pyflwdir.MAINSTEM`` marks the logical fifth
-            subregion.
-        load : ndarray of int64
-            Cell count assigned to each parallel trunk. Mainstem cells are
-            excluded because they run in the second stage.
-        """
-        return partitioning.partition(self, level=level, n_parts=n_parts, **kwargs)
 
     def main_upstream(self, uparea: np.ndarray | None = None) -> np.ndarray:
         """Return the main upstream node for each node.
@@ -466,7 +426,7 @@ class Flwdir:
         self._nnodes = None
         for key in list(self._cached):
             if key in ("rank", "strord", "idxs_us_main", "distnc") or key.startswith(
-                ("layering_", "decomposition_", "hybrid_metis_")
+                ("layering_", "decomposition_", "process_work_")
             ):
                 self._cached.pop(key, None)
 
@@ -795,10 +755,10 @@ class Flwdir:
         nodata: float = -9999,
         direction: Literal["up", "down"] = "up",
         parallel: bool = False,
-        layering: Literal["asap", "cfds", "alap"] = "cfds",
-        manner: Literal["push", "pull"] = "push",
         n_processes: int = 1,
         threads_per_process: int | None = None,
+        layering: Literal["asap", "cfds", "alap"] = "cfds",
+        manner: Literal["push", "pull"] = "push",
         partition_level: Literal["basin", "subbasin"] = "subbasin",
         start_method: str = "spawn",
         partition_min_subtree_size: int = 100_000,
@@ -818,34 +778,43 @@ class Flwdir:
         parallel : bool, optional
             Accumulate one layer at a time in threads, by default False.
             Available for upstream accumulation only.
-        layering : {'asap', 'cfds', 'alap'}, optional
-            Layering used by the threaded path, by default ``"cfds"``.
-        manner : {'push', 'pull'}, optional
-            Threaded propagation manner, by default ``"push"``. Push needs the
-            conflict-free ``"cfds"`` layering. Pull is safe with all three
-            layerings but builds and reads the upstream-cell index.
         n_processes : int, optional
-            Number of process-level FlowTopo regions, by default 1. Values
-            above one use METIS basin partitioning. Subbasin execution requires
-            exactly four process trunks and a logical fifth mainstem stage.
+            Number of processes, by default 1. Above one, the raster is divided into
+            this many parts, each accumulated in its own process with threads, and
+            any mainstem sections are accumulated after the processes finish. This
+            also needs ``parallel=True``, a `FlwdirRaster`, METIS
+            (``pip install pyflwdir[partition]``) and the default `layering` and
+            `manner`.
         threads_per_process : int, optional
-            Numba threads used inside each process. By default the available
-            threads are divided over `n_processes`.
+            Numba threads inside each process, used only when `n_processes` is above
+            one. By default the available threads are divided over `n_processes`.
+            With one process, the threads are the current Numba thread count.
+        layering : {'asap', 'cfds', 'alap'}, optional
+            Layering used with ``parallel=True``, by default ``"cfds"``.
+        manner : {'push', 'pull'}, optional
+            Propagation manner used with ``parallel=True``, by default ``"push"``.
+            Push needs the conflict-free ``"cfds"`` layering. Pull is safe with all
+            three layerings but builds and reads the upstream-cell index.
         partition_level : {'basin', 'subbasin'}, optional
-            FlowTopo process-level partition, by default ``"subbasin"``.
+            How the raster is divided when `n_processes` is above one, by default
+            ``"subbasin"``: ``"basin"`` keeps every basin whole and ``"subbasin"``
+            also opens the basins that keep the parts from balancing. See
+            :py:meth:`FlwdirRaster.partition`.
         start_method : str, optional
-            Multiprocessing start method, by default ``"spawn"``. With
-            ``n_processes > 1`` and ``"spawn"``, call it from an importable
+            Multiprocessing start method, used only when `n_processes` is above one,
+            by default ``"spawn"``. With ``"spawn"``, call it from an importable
             script, below an ``if __name__ == "__main__":`` guard.
         partition_min_subtree_size : int, optional
-            Method 2 groups tributary subtrees smaller than this with a larger
-            neighbour before METIS divides them, by default 100,000 cells as in
-            the continental FlowTopo C workflow; the balance refinement still
-            moves single subtrees.
+            With `n_processes` above one and at subbasin level, tributary subtrees
+            smaller than this are grouped with a larger neighbour before METIS
+            divides them, by default 100,000 cells as in the continental FlowTopo C
+            workflow; the balance refinement still moves single subtrees. Regardless
+            of this value, at least ``8 * n_processes`` groups are kept, or every
+            subtree if there are fewer.
         partition_imbalance_target : float, optional
-            Largest trunk load divided by the mean load that the partition aims
-            for, by default 1.005. Method 2 opens further basins only while it
-            is not reached.
+            With `n_processes` above one, the largest part load divided by the mean
+            load that the partition aims for, by default 1.005. At subbasin level,
+            further basins open only while it is not reached.
 
         Returns
         -------
@@ -877,8 +846,7 @@ class Flwdir:
             if n_processes > 1:
                 if layering != "cfds" or manner != "push":
                     raise ValueError(
-                        "hybrid process parallelism requires "
-                        "layering='cfds' and manner='push'"
+                        "n_processes > 1 requires layering='cfds' and manner='push'"
                     )
                 accu = parallel_utils.accuflux(
                     self,

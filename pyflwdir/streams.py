@@ -126,7 +126,12 @@ def accuflux_partitioned_push(
     accu: np.ndarray,
     nodata: float,
 ) -> None:
-    """Accumulate one trunk with CFDS threads, stopping at its boundary."""
+    """Stage 1 of accumulating in processes: one part, in place, in CFDS threads.
+
+    A push into another part or into a mainstem section (labelled ``n_parts``) is
+    skipped.  This leaves the total of each tributary at its ``cut_outlets`` cell and
+    the total of the upper mainstem at its ``predecessor`` cell, for stage 2.
+    """
     for layer in range(offsets.size - 1):
         for pos in prange(offsets[layer], offsets[layer + 1]):
             idx0 = cells[pos]
@@ -150,7 +155,14 @@ def accuflux_subbasin_mainstem(
     accu: np.ndarray,
     nodata: float,
 ) -> None:
-    """Inject cut inflows and walk the logical fifth subregion."""
+    """Stage 2 of accumulating in processes: one mainstem section, after the parts.
+
+    From ``P_min`` down to the pit, each cell adds to its local value the total of the
+    cell above it (``predecessor`` for the first cell) and the totals of the tributaries
+    that enter it (``cut_outlets``).  A nodata cell stays nodata and passes nothing on:
+    the next cell starts from zero, and the tributaries entering the nodata cell are
+    skipped.
+    """
     zero = np.zeros(1, dtype=data.dtype)[0]
     previous = zero
     if predecessor >= 0 and accu[predecessor] != nodata:

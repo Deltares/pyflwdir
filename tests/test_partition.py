@@ -6,6 +6,14 @@ import pyflwdir
 from pyflwdir import partition, streams
 
 
+def test_partition_plan_is_reached_through_the_partition_module():
+    assert pyflwdir.partition is partition
+    assert "partition" in pyflwdir.__all__
+    assert callable(pyflwdir.partition.partition_plan)
+    assert not hasattr(pyflwdir, "PartitionPlan")
+    assert not hasattr(pyflwdir, "MAINSTEM")
+
+
 def column_basins(nrow=8, ncol=8):
     """A raster whose columns are adjacent, independent drainage basins."""
     idxs_ds = np.arange(nrow * ncol, dtype=np.int32).reshape(nrow, ncol)
@@ -54,11 +62,11 @@ def line_graph(weights):
 
 
 def accumulate_by_plan(flw, plan, data):
-    """The four parts with CFDS threads' kernel, then every fifth region."""
+    """The parts with CFDS threads' kernel, then every opened mainstem."""
     parts = plan.parts.ravel()
     cells, offsets = flw._layer_decomposition("cfds")
     accu = data.copy()
-    for part_id in range(partition.N_TRUNKS):
+    for part_id in range(plan.loads.size):
         selected = parts[cells] == part_id
         part_cells = np.ascontiguousarray(cells[selected])
         layer_sizes = np.array(
@@ -88,13 +96,13 @@ def accumulate_by_plan(flw, plan, data):
     return accu
 
 
-def ground_pieces(flw, parts, part):
-    """Pieces of one part on the ground, the two banks of a fifth region joined."""
+def ground_pieces(flw, parts, part, n_parts=partition.DEFAULT_N_PARTS):
+    """Pieces of one part on the ground, the two banks of an opened mainstem joined."""
     from scipy import ndimage
 
     grid = parts.reshape(flw.shape)
     labels, count = ndimage.label(
-        (grid == part) | (grid == pyflwdir.MAINSTEM), structure=np.ones((3, 3))
+        (grid == part) | (grid == n_parts), structure=np.ones((3, 3))
     )
     return len(set(labels[grid == part].tolist()))
 
@@ -347,49 +355,56 @@ def check_plan(flw, plan):
     parts = plan.parts.ravel()
     mask = flw.mask.ravel()
     single = single_cell_basins(flw)
-    fifth = sum(stem.mainstem.size for stem in plan.stems)
-    assert plan.loads.sum() + fifth == flw.ncells - np.count_nonzero(single)
+    n_parts = plan.loads.size
+    in_sections = sum(stem.mainstem.size for stem in plan.stems)
+    assert plan.loads.sum() + in_sections == flw.ncells - np.count_nonzero(single)
     assert np.all(parts[mask & ~single] >= 0)
     assert np.all(parts[single] == -1)
     for stem in plan.stems:
-        assert stem.cut_outlets.size == stem.cut_inlets.size == stem.cut_ranks.size
+        assert stem.cut_outlets.size == stem.cut_inlets.size == stem.cut_parts.size
         assert stem.mainstem.size > 0
         assert np.all(np.isin(stem.cut_inlets, stem.mainstem))
         positions = {int(cell): index for index, cell in enumerate(stem.mainstem)}
         assert np.all(np.diff([positions[int(c)] for c in stem.cut_inlets]) >= 0)
         if stem.predecessor >= 0:
             assert flw.idxs_ds[stem.predecessor] == stem.mainstem[0]
-            assert parts[stem.predecessor] == stem.trunk
-    # flow leaves a part only into a fifth region
-    cells = np.flatnonzero((parts >= 0) & (parts < partition.N_TRUNKS))
+            assert parts[stem.predecessor] == stem.predecessor_part
+    # flow leaves a part only into an opened mainstem
+    cells = np.flatnonzero((parts >= 0) & (parts < n_parts))
     downstream = flw.idxs_ds[cells]
     crossing = parts[downstream] != parts[cells]
-    assert np.all(parts[downstream[crossing]] == pyflwdir.MAINSTEM)
+    assert np.all(parts[downstream[crossing]] == n_parts)
 
 
 @pytest.mark.unit
-def test_subbasin_plan_has_four_trunks_and_one_accounted_mainstem():
+@pytest.mark.parametrize("n_parts", [2, 3, 4, 6, 8, 9, 16])
+def test_subbasin_plan_fills_every_part_and_accounts_for_one_mainstem(n_parts):
     pytest.importorskip("pymetis")
     flw = tributaries_to_mainstem()
-    plan = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
+    kwargs = {"level": "subbasin", "n_parts": n_parts, "min_subtree_size": 1}
+    plan = partition.partition_plan(flw, **kwargs)
     parts = plan.parts.ravel()
-    assert set(np.unique(parts[flw.mask.ravel()])) == {0, 1, 2, 3, pyflwdir.MAINSTEM}
+    assert set(np.unique(parts[flw.mask.ravel()])) == set(range(n_parts + 1))
+    assert plan.loads.size == n_parts
     assert len(plan.stems) == 1
     check_plan(flw, plan)
-    repeated = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
+    repeated = partition.partition_plan(flw, **kwargs)
     assert np.array_equal(repeated.parts, plan.parts)
     assert np.array_equal(repeated.cut_outlets, plan.cut_outlets)
     assert np.array_equal(repeated.mainstem, plan.mainstem)
 
 
 @pytest.mark.unit
-def test_subbasin_parts_are_balanced_and_connected():
+@pytest.mark.parametrize("n_parts", [2, 3, 4, 6, 8, 9, 16])
+def test_subbasin_parts_are_balanced_and_connected(n_parts):
     pytest.importorskip("pymetis")
     flw = tributaries_to_mainstem(nrow=61, ncol=61)
-    plan = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
-    assert plan.loads.max() / plan.loads.mean() <= 1.04
-    for part in range(4):
-        assert ground_pieces(flw, plan.parts.ravel(), part) == 1
+    plan = partition.partition_plan(
+        flw, level="subbasin", n_parts=n_parts, min_subtree_size=1
+    )
+    assert plan.loads.max() / plan.loads.mean() <= 1.05
+    for part in range(n_parts):
+        assert ground_pieces(flw, plan.parts.ravel(), part, n_parts) == 1
 
 
 @pytest.mark.unit
@@ -406,11 +421,16 @@ def test_two_large_basins_are_both_opened_to_balance():
 
 
 @pytest.mark.unit
-def test_four_trunks_and_mainstem_walk_match_serial_accumulation():
+@pytest.mark.parametrize("n_parts", [1, 2, 3, 4, 6, 8, 9, 16, 32])
+def test_parts_and_mainstem_walk_match_serial_accumulation(n_parts):
     pytest.importorskip("pymetis")
-    flw = tributaries_to_mainstem()
+    flw = rivers(41, [41, 27])
     data = np.arange(1, flw.size + 1, dtype=np.int64)
-    plan = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
+    plan = partition.partition_plan(
+        flw, level="subbasin", n_parts=n_parts, min_subtree_size=1
+    )
+    assert plan.loads.size == n_parts
+    check_plan(flw, plan)
     assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
 
 
@@ -485,7 +505,7 @@ def test_metis_process_and_thread_accumulation_matches_serial():
     flw = column_basins(nrow=64, ncol=8)
     data = np.arange(1, flw.size + 1, dtype=np.int64)
     start_method = "fork" if "fork" in get_all_start_methods() else "spawn"
-    hybrid = flw.accuflux(
+    accumulated = flw.accuflux(
         data,
         parallel=True,
         n_processes=4,
@@ -493,28 +513,81 @@ def test_metis_process_and_thread_accumulation_matches_serial():
         partition_level="basin",
         start_method=start_method,
     )
-    assert np.array_equal(hybrid, flw.accuflux(data))
+    assert np.array_equal(accumulated, flw.accuflux(data))
+
+
+def record_plans(monkeypatch):
+    """The settings and the plan of every ``partition_plan`` the accumulation asks."""
+    calls = []
+    partition_plan = partition.partition_plan
+
+    def record(flw, **settings):
+        plan = partition_plan(flw, **settings)
+        calls.append((settings, plan))
+        return plan
+
+    monkeypatch.setattr(partition, "partition_plan", record)
+    return calls
 
 
 @pytest.mark.integration
-def test_subbasin_process_path_uses_requested_threshold_and_matches_serial():
+@pytest.mark.parametrize("n_processes", [2, 3, 4, 9])
+def test_subbasin_process_path_uses_the_requested_settings_and_matches_serial(
+    n_processes, monkeypatch
+):
     pytest.importorskip("pymetis")
     flw = rivers(31, [31, 21])
     data = np.arange(1, flw.size + 1, dtype=np.int64)
     start_method = "fork" if "fork" in get_all_start_methods() else "spawn"
-    hybrid = flw.accuflux(
+    calls = record_plans(monkeypatch)
+    accumulated = flw.accuflux(
         data,
         parallel=True,
-        n_processes=4,
+        n_processes=n_processes,
         threads_per_process=1,
         partition_level="subbasin",
         partition_min_subtree_size=1,
+        partition_imbalance_target=1.01,
         start_method=start_method,
     )
-    assert np.array_equal(hybrid, flw.accuflux(data))
-    plan, _ = pyflwdir.parallel._plan(flw, 4, "subbasin", 1, 1.005)
+    assert np.array_equal(accumulated, flw.accuflux(data))
+    [(settings, plan)] = calls
+    assert settings == {
+        "level": "subbasin",
+        "n_parts": n_processes,
+        "min_subtree_size": 1,
+        "imbalance_target": 1.01,
+    }
     assert plan.mainstem.size > 0
-    assert set(np.unique(plan.parts)) == {0, 1, 2, 3, pyflwdir.MAINSTEM}
+    assert set(np.unique(plan.parts)) == set(range(n_processes + 1))
+
+
+@pytest.mark.integration
+def test_raster_upstream_area_runs_in_processes_with_the_requested_settings(
+    monkeypatch,
+):
+    pytest.importorskip("pymetis")
+    flw = rivers(31, [31, 21])
+    start_method = "fork" if "fork" in get_all_start_methods() else "spawn"
+    calls = record_plans(monkeypatch)
+    uparea = flw.upstream_area(
+        "cell",
+        parallel=True,
+        n_processes=3,
+        threads_per_process=1,
+        partition_level="basin",
+        partition_min_subtree_size=1,
+        partition_imbalance_target=1.01,
+        start_method=start_method,
+    )
+    assert np.array_equal(uparea, flw.upstream_area("cell"))
+    [(settings, _)] = calls
+    assert settings == {
+        "level": "basin",
+        "n_parts": 3,
+        "min_subtree_size": 1,
+        "imbalance_target": 1.01,
+    }
 
 
 @pytest.mark.unit
@@ -541,7 +614,7 @@ def side_tributaries(length=100, first=50, count=4):
 
 
 @pytest.mark.unit
-def test_trunk_keeps_its_mainstem_and_the_fifth_region_stays():
+def test_part_keeps_the_upper_mainstem_and_the_section_below_stays_apart():
     pytest.importorskip("pymetis")
     flw = side_tributaries()
     plan = partition.partition_plan(flw, level="subbasin", min_subtree_size=1)
@@ -673,135 +746,11 @@ def test_a_basin_of_a_single_cell_takes_no_part():
 
 
 @pytest.mark.unit
-def test_the_basins_given_number_the_nodes_and_are_checked(monkeypatch):
+def test_metis_gives_one_part_to_every_node_when_one_is_asked():
     pytest.importorskip("pymetis")
-    flw = column_basins()
-    own = flw.basins().ravel()
-    n_basins = int(own.max())
-    seen = []
-    build_graph = partition.graph_from_node_raster
-
-    def recording(nodes, n_nodes):
-        seen.append(np.array(nodes).ravel())
-        return build_graph(nodes, n_nodes)
-
-    monkeypatch.setattr(partition, "graph_from_node_raster", recording)
-    # the same basins, numbered the other way round and far apart: the nodes follow the labels' order, and the plan
-    # gives the labels back as they were given
-    relabelled = np.where(own > 0, (100 - own.astype(np.int64)) * 2**40, 0).reshape(
-        flw.shape
-    )
-    plan = partition.partition_plan(flw, level="basin", basins=relabelled)
-    check_plan(flw, plan)
-    on = own > 0
-    assert np.array_equal(seen[0][on], n_basins - own[on])
-    assert np.array_equal(plan.basin_ids, relabelled)
-    seen.clear()
-    partition.partition_plan(flw, level="basin")
-    assert np.array_equal(seen[0][on], own[on] - 1)
-    for wrong in (
-        relabelled.ravel()[:-1],
-        np.zeros_like(own),
-        np.where(own > 0, 1, 0),
-        relabelled.astype(np.float64),
-    ):
-        with pytest.raises(ValueError):
-            partition.partition_plan(flw, level="basin", basins=wrong)
-
-
-@pytest.mark.unit
-def test_unsigned_labels_above_two_to_the_63_keep_their_order(monkeypatch):
-    pytest.importorskip("pymetis")
-    seen = []
-    build_graph = partition.graph_from_node_raster
-
-    def recording(nodes, n_nodes):
-        seen.append(np.array(nodes).ravel())
-        return build_graph(nodes, n_nodes)
-
-    monkeypatch.setattr(partition, "graph_from_node_raster", recording)
-    d8 = np.array([[1, 0, 247, 1, 0]], dtype=np.uint8)  # two basins of two cells
-    flw = pyflwdir.from_array(d8, ftype="d8")
-    labels = np.array([[1, 1, 0, 2**63 + 1, 2**63 + 1]], dtype=np.uint64)
-    plan = partition.partition_plan(flw, level="basin", n_parts=2, basins=labels)
-    check_plan(flw, plan)
-    assert list(seen[0][[0, 1, 3, 4]]) == [0, 0, 1, 1]
-    assert plan.basin_ids.dtype == np.uint64 and np.array_equal(plan.basin_ids, labels)
-
-
-@pytest.mark.unit
-def test_a_metis_library_is_called_in_place_of_pymetis(monkeypatch):
-    """The partition calls the library _metis_library gives, with the FlowTopo
-    C code's arguments, and not pymetis (a stand-in library: no METIS needed)."""
-    import ctypes
-
-    calls = []
-
-    class StandIn:
-        def METIS_SetDefaultOptions(self, options):
-            ctypes.memset(options, 0xFF, partition._METIS_NOPTIONS * 4)
-
-        def METIS_PartGraphKway(
-            self,
-            nvtxs,
-            ncon,
-            xadj,
-            adjncy,
-            vwgt,
-            vsize,
-            adjwgt,
-            nparts,
-            tpwgts,
-            ubvec,
-            options,
-            objval,
-            part,
-        ):
-            calls.append((nvtxs._obj.value, nparts._obj.value))
-            values = np.ctypeslib.as_array(
-                ctypes.cast(options, ctypes.POINTER(ctypes.c_int32)),
-                (partition._METIS_NOPTIONS,),
-            )
-            calls.append(
-                tuple(
-                    int(values[k])
-                    for k in (
-                        partition._METIS_OPTION_SEED,
-                        partition._METIS_OPTION_UFACTOR,
-                        partition._METIS_OPTION_CONTIG,
-                    )
-                )
-            )
-            return partition._METIS_OK
-
-    def no_pymetis():
-        raise AssertionError("pymetis was called")
-
-    monkeypatch.setattr(partition, "_metis_library", lambda: StandIn())
-    monkeypatch.setattr(partition, "_require_pymetis", no_pymetis)
     graph = line_graph([1, 1, 1, 1, 1, 1])
-    parts, cut = partition._metis(graph, 3, np.full(3, 1 / 3), 42, 5, contig=True)
-    assert calls == [(6, 3), (42, 5, 1)]
-    assert parts.dtype == np.int32 and parts.size == 6 and cut == 0
-    calls.clear()
-    parts_one, cut_one = partition._metis(graph, 1, np.ones(1), 42, 5, contig=True)
-    assert calls == [] and np.all(parts_one == 0) and cut_one == 0
-
-
-@pytest.mark.unit
-def test_the_metis_library_named_is_called():
-    """With PYFLWDIR_METIS_LIBRARY naming a METIS 5.2.1 built with 32-bit
-    integers and reals, the parts come from it; skipped where none is named."""
-    import os
-
-    path = os.environ.get(partition.METIS_LIBRARY_VARIABLE, "")
-    if not path or not os.path.exists(path):
-        pytest.skip("no METIS library named in " + partition.METIS_LIBRARY_VARIABLE)
-    graph = line_graph([1, 1, 1, 1, 1, 1, 1, 1])
-    parts, cut = partition._metis(graph, 4, np.full(4, 0.25), 42, 5, contig=False)
-    assert parts.size == 8 and set(parts.tolist()) <= {0, 1, 2, 3} and cut >= 0
-    parts_one, cut_one = partition._metis(graph, 1, np.ones(1), 42, 5, contig=False)
-    assert np.all(parts_one == 0) and cut_one == 0
+    parts, cut = partition._metis(graph, 1, np.ones(1), 42, 5, contig=True)
+    assert parts.dtype == np.int32 and np.all(parts == 0) and cut == 0
 
 
 @pytest.mark.unit
@@ -864,7 +813,7 @@ def test_nodes_without_cells_follow_a_neighbour():
 
 
 @pytest.mark.unit
-def test_two_tributaries_entering_one_cell_keep_a_fifth_region():
+def test_two_tributaries_entering_one_cell_keep_the_mainstem_apart():
     pytest.importorskip("pymetis")
     d8 = np.full((100, 3), 247, dtype=np.uint8)
     d8[:-1, 1] = 4
@@ -1059,7 +1008,7 @@ def test_a_merged_tributary_keeps_its_mainstem_cells():
         weights=weights + partition._mainstem_weights(stem, position, p_min),
         minlength=4,
     )
-    # it follows basin 0 into the trunk, its 80 cells with it (they were lost: 1.75)
+    # it follows basin 0 into its part, its 80 cells with it (they were lost: 1.75)
     assert parts[1] == parts[0] and p_min[0] >= 80
     assert loads.max() / loads.mean() < 1.15
 
@@ -1112,7 +1061,7 @@ def test_a_basin_without_tributaries_stays_whole_and_apart():
     plan = partition.partition_plan(flw, level="subbasin")
     check_plan(flw, plan)
     column = np.unique(plan.parts[:, 0])
-    assert column.size == 1 and column[0] < partition.N_TRUNKS
+    assert column.size == 1 and column[0] < partition.DEFAULT_N_PARTS
     assert not np.any(plan.parts[:, 2:] == column[0])
 
 
@@ -1243,17 +1192,99 @@ def test_a_group_a_dominant_node_cuts_is_carved_in_pieces():
 
 
 @pytest.mark.unit
-def test_subbasin_partition_requires_the_flowtopo_four_trunks():
-    flw = column_basins()
-    with pytest.raises(ValueError, match="requires n_parts=4"):
-        partition.partition_plan(flw, level="subbasin", n_parts=3)
+def test_four_parts_are_the_default():
+    pytest.importorskip("pymetis")
+    flw = tributaries_to_mainstem()
+    for level in ("basin", "subbasin"):
+        assert partition.partition_plan(flw, level=level).loads.size == 4
+        assert flw.partition(level=level)[1].size == 4
 
 
 @pytest.mark.unit
-def test_metis_partition_requires_a_raster():
+@pytest.mark.parametrize("n_parts", [5, 64, 1000])
+def test_more_parts_than_can_be_filled_leave_some_empty(n_parts):
+    pytest.importorskip("pymetis")
+    flw = rivers(5, [3, 3])
+    data = np.arange(1, flw.size + 1, dtype=np.int64)
+    for level in ("basin", "subbasin"):
+        plan = partition.partition_plan(
+            flw, level=level, n_parts=n_parts, min_subtree_size=1
+        )
+        assert plan.loads.size == n_parts
+        check_plan(flw, plan)
+        assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
+
+
+@pytest.mark.unit
+def test_more_parts_open_more_basins_when_the_balance_needs_it():
+    pytest.importorskip("pymetis")
+    flw = rivers(61, [61] * 8)
+    plan = partition.partition_plan(flw, level="subbasin", n_parts=16)
+    assert len(plan.stems) == 8 > partition.MAX_OPENED_BASINS
+    assert plan.loads.max() / plan.loads.mean() <= 1.05
+    check_plan(flw, plan)
+
+
+@pytest.mark.unit
+def test_part_labels_above_an_int8_hold_in_the_cut_parts():
+    pytest.importorskip("pymetis")
+    # 300 rows drain into one mainstem from both sides: 600 tributaries of one mainstem
+    flw = rivers(301, [3])
+    plan = partition.partition_plan(
+        flw, level="subbasin", n_parts=130, min_subtree_size=1
+    )
+    check_plan(flw, plan)
+    cut_parts = plan.cut_parts
+    assert cut_parts.min() >= 0 and cut_parts.max() > np.iinfo(np.int8).max
+    rows, cols = np.unravel_index(plan.cut_outlets, flw.shape)
+    assert np.array_equal(cut_parts, plan.parts[rows, cols])
+    data = np.arange(1, flw.size + 1, dtype=np.int64)
+    assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
+
+
+def one_large_tributary(nrow=30, ncol=31):
+    """A mainstem column, with one row entering it at every cell from the east and
+    all of the west entering its last cell as one tributary."""
+    mid = ncol // 2
+    d8 = np.full((nrow, ncol), 247, dtype=np.uint8)
+    d8[:, : mid - 1] = 1  # east
+    d8[:-1, mid - 1] = 4  # south, to the last row
+    d8[-1, mid - 1] = 1  # into the last cell of the mainstem
+    d8[:-1, mid] = 4
+    d8[-1, mid] = 0
+    d8[:, mid + 1 :] = 16  # west, into the mainstem
+    return pyflwdir.from_array(d8, ftype="d8"), nrow * mid
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("n_parts", [4, 8, 16, 32])
+def test_the_largest_subtree_limits_the_balance(n_parts):
+    pytest.importorskip("pymetis")
+    flw, subtree = one_large_tributary()
+    plan = partition.partition_plan(
+        flw, level="subbasin", n_parts=n_parts, min_subtree_size=1
+    )
+    check_plan(flw, plan)
+    assert len(plan.stems) == 1
+    # a tributary subtree is never cut, however many parts there are
+    assert plan.loads.max() == subtree
+    data = np.arange(1, flw.size + 1, dtype=np.int64)
+    assert np.array_equal(accumulate_by_plan(flw, plan, data), flw.accuflux(data))
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("level", ["basin", "subbasin"])
+def test_metis_partition_requires_a_raster(level):
     flw = pyflwdir.Flwdir(np.array([0, 0], dtype=np.int32))
     with pytest.raises(TypeError, match="FlwdirRaster"):
-        partition.partition_plan(flw, level="basin")
+        partition.partition_plan(flw, level=level)
+
+
+@pytest.mark.unit
+def test_the_process_path_requires_a_raster():
+    flw = pyflwdir.Flwdir(np.array([0, 0], dtype=np.int32))
+    with pytest.raises(TypeError, match="FlwdirRaster"):
+        flw.accuflux(np.ones(2), parallel=True, n_processes=2)
 
 
 @pytest.mark.unit

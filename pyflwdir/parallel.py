@@ -1,4 +1,18 @@
-"""FlowTopo process- and thread-parallel flow accumulation."""
+"""Upstream accumulation in processes, with threads inside each process.
+
+The raster is divided into parts (:mod:`pyflwdir.partition`), and the accumulation
+then runs in two stages:
+
+1. Each part is accumulated in its own process, one layer at a time in threads, and
+   stops at the boundary of the part.
+2. When every process has finished, the parent process accumulates the mainstem
+   sections, each from ``P_min`` down to the pit, with what the parts left at their
+   boundaries.
+
+Upstream accumulation is all that runs in parallel (``accuflux`` with
+``direction="up"`` and the raster ``upstream_area``): no other method uses the
+layers or the parts.
+"""
 
 from __future__ import annotations
 
@@ -7,7 +21,7 @@ from concurrent.futures.process import BrokenProcessPool
 from multiprocessing import get_all_start_methods, get_context, shared_memory
 from pathlib import Path
 import sys
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
 from numba import config, get_num_threads, set_num_threads
@@ -63,6 +77,7 @@ def _accuflux_worker(
     nodata: float,
     n_threads: int,
 ) -> int:
+    """Stage 1 in one process: accumulate one part in the shared arrays."""
     memories: list[shared_memory.SharedMemory] = []
     try:
         idxs_memory, idxs_ds = _open_shared(idxs_ds_spec)
@@ -85,15 +100,19 @@ def _accuflux_worker(
             memory.close()
 
 
-def _plan(
+def _divide_work(
     flw: "Flwdir",
     n_processes: int,
-    partition_level: str,
+    partition_level: Literal["basin", "subbasin"],
     min_subtree_size: int,
     imbalance_target: float,
 ) -> tuple[partition.PartitionPlan, list[tuple[int, np.ndarray, np.ndarray]]]:
+    """The partition and, for each part with cells, its cells by CFDS layer.
+
+    Cached on ``flw``, by default, so that a repeated run does not build them again.
+    """
     key = (
-        f"hybrid_metis_{partition_level}_{n_processes}_"
+        f"process_work_{partition_level}_{n_processes}_"
         f"{min_subtree_size}_{imbalance_target}"
     )
     if key in flw._cached:
@@ -125,17 +144,15 @@ def accuflux(
     nodata: float,
     n_processes: int,
     threads_per_process: int | None,
-    partition_level: str,
+    partition_level: Literal["basin", "subbasin"],
     start_method: str,
     min_subtree_size: int,
     imbalance_target: float,
 ) -> np.ndarray:
-    """Accumulate the parts in parallel processes, then walk the fifth regions:
-    the main stems of the basins opened at subbasin level."""
+    """Check the arguments, divide the raster, accumulate the parts in processes,
+    and then the mainstem sections."""
     if n_processes < 2:
-        raise ValueError("n_processes must be at least 2 for hybrid accumulation")
-    if partition_level == "subbasin" and n_processes != partition.N_TRUNKS:
-        raise ValueError("FlowTopo subbasin accumulation requires n_processes=4")
+        raise ValueError("n_processes must be at least 2 to run in processes")
     if threads_per_process is None:
         threads_per_process = max(1, get_num_threads() // n_processes)
     if threads_per_process < 1:
@@ -155,7 +172,7 @@ def accuflux(
                 "or choose another supported start method."
             )
 
-    plan, work = _plan(
+    plan, work = _divide_work(
         flw,
         n_processes,
         partition_level,
@@ -173,6 +190,7 @@ def accuflux(
         accu_memory, accu_spec = _create_shared(data)
         accu = np.ndarray(data.shape, dtype=data.dtype, buffer=accu_memory.buf)
 
+        # stage 1: each part in its own process
         try:
             context = get_context(start_method)
             with ProcessPoolExecutor(
@@ -197,7 +215,7 @@ def accuflux(
                     future.result()
         except BrokenProcessPool as error:
             message = (
-                "A hybrid accumulation worker terminated abruptly. Check "
+                "An accumulation process terminated abruptly. Check "
                 "available shared memory and process memory, and inspect the "
                 "chained worker error."
             )
@@ -208,7 +226,8 @@ def accuflux(
                 )
             raise RuntimeError(message) from error
 
-        # one fifth region per opened basin; they lie in different basins, so any order
+        # stage 2: one mainstem section per opened basin; they lie in different basins,
+        # so any order
         for stem in plan.stems:
             streams.accuflux_subbasin_mainstem(
                 stem.mainstem,

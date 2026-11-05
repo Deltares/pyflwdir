@@ -1,69 +1,51 @@
-"""Spatial FlowTopo partitions for process-level parallelism.
+"""Divide a flow-direction raster into parts, for upstream accumulation in processes.
 
-FlowTopo (https://doi.org/10.5281/zenodo.22227621) divides a region into four
-process-level parts, at two levels:
+There are two entry points.  :py:meth:`pyflwdir.FlwdirRaster.partition` returns the
+part of each cell and the cell count of each part.  :func:`partition_plan` also returns
+how the opened mainstems connect to the parts, for inspection.
 
-* ``"basin"`` (Method 1): every basin stays whole.  The basins are the nodes of
-  a graph whose edges are their shared raster boundaries, weighted by the length
-  of the boundary.  A basin larger than an equal share is a part of its own,
-  with the small basins it cuts off from the others; the other basins share the
-  remaining parts.
-* ``"subbasin"`` (Method 2): when Method 1's parts are not within
-  ``imbalance_target`` of an equal share, basins are opened along their
-  mainstems into the tributary subtrees that drain into the mainstem -- as few
-  as the balance needs: usually the dominant basin first (an eligible basin --
-  more than one headwater -- heavier than an equal share times the target is
-  tried first, and kept open only when that improves the balance); another only when it is a
-  whole basin in or beside a part over the target or the lightest part and
-  opening it lowers max/mean (or, with the heaviest part no heavier, the
-  overload) by ``OPEN_MIN_GAIN`` or more.  Those
-  tributaries and the other basins form one graph, divided at once into equal
-  parts; each mainstem cell weighs with the tributary that enters it.
-  From ``P_min`` down, ``P_min`` included -- the most upstream mainstem cell
-  where a tributary of another part enters -- each opened mainstem is a logical
-  fifth region, walked once after the four parts; above it, the mainstem stays
-  with the part of its most upstream tributaries (its trunk).
+A partition only says which part each cell belongs to.  Upstream accumulation
+(:mod:`pyflwdir.parallel`) is the only computation that uses one, and it builds its
+own: building a partition or a plan does not make any other method run in parallel.
 
-Contiguity comes first, balance second: on its land every part is one piece
-(the two banks of an opened mainstem touch across it), and the islands are
-added to the parts of nearby land.
-Land is the largest components of the graph -- what touches on the ground, the
-two banks of an opened mainstem joined -- at most one per part: those of at
-least half an equal share, and the next largest when these are too few to be
-cut into every part.  Every other component (an island) goes with its nearest
-land, a land mass.  The masses get the parts so that the heaviest is as light
-as can be, and no part spans two masses; when no component is land (an
-archipelago), METIS divides the components.  A mass is cut by contiguous
-weighted METIS, run from several seeds on a graph whose small tributaries are
-grouped with a larger neighbour; of the results whose heaviest part is within
-``METIS_SLACK`` of its share the one with the shortest boundary is kept,
-otherwise the most balanced, and boundary nodes then move, one tributary or
-basin at a time, from heavier to lighter
-neighbouring parts until every part is within ``imbalance_target`` of its
-target load, no move helps, or the move limit is reached.  An island moves
-whole, to a part near it.  A part is never cut in two; the odd piece left apart
-from its part joins the part around it.
+Following FlowTopo (https://doi.org/10.5281/zenodo.22227621), a raster is divided into
+``n_parts`` parts, four by default, at two levels:
 
-A basin of a single cell (a pit that nothing flows into, mostly on a coast)
-takes no part, as in the FlowTopo C code: its cell keeps ``-1`` and adds to no
-load.  The flow accumulation of :mod:`pyflwdir.parallel` leaves such a cell at
-its own value, which is its accumulation.
+* ``"basin"`` (FlowTopo Method 1) keeps every basin whole.
+* ``"subbasin"`` (FlowTopo Method 2) also opens the basins that keep the parts from
+  balancing, along their mainstems, into the tributary subtrees that enter them, and
+  divides those and the other basins into parts.  ``P_min`` is the most upstream
+  mainstem cell where a tributary of another part enters.  From ``P_min`` down to the
+  pit, the mainstem is a section labelled ``n_parts``, accumulated after the parts;
+  above ``P_min`` it stays with the part of its most upstream tributaries.
+
+A basin is opened only once and a tributary subtree is never cut, so the heaviest part
+is at least as heavy as the largest subtree, however many parts are asked.
+
+A basin of a single cell (a pit that nothing flows into, mostly on a coast) takes no
+part, as in the FlowTopo C code: its cell keeps ``-1`` and adds to no load.  The flow
+accumulation of :mod:`pyflwdir.parallel` leaves such a cell at its own value, which is
+its accumulation.
+
+Contiguity comes first, balance second.  The rules are with the functions that apply
+them: which basins open in ``_subbasin_partition``; land and islands in
+``_partition_components``; the METIS run kept in ``_metis_parts``; the balance in
+``_refine_balance``.
 
 The graph functions take arrays, not a raster, so that a graph built from tiles
-(FlowTopo's 90 m region tiles, for one) is partitioned by the same code.  METIS
-is pymetis's unless ``PYFLWDIR_METIS_LIBRARY`` names a METIS shared library
-(:data:`METIS_LIBRARY_VARIABLE`).
+(FlowTopo's 90 m region tiles, for one) is partitioned by the same code.  METIS is the
+one pymetis carries (5.1.0 in pymetis 2025.2).  The FlowTopo C code links METIS 5.2.1,
+which divides the same graph otherwise, so the method is the C code's but the parts
+need not be, cell for cell.
 """
 
 from __future__ import annotations
 
-import ctypes
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from heapq import heappop, heappush
 from itertools import permutations
 import logging
-import os
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 from numba import njit
@@ -72,10 +54,242 @@ from . import core, streams
 
 if TYPE_CHECKING:
     from .flwdir import Flwdir
+    from .pyflwdir import FlwdirRaster
 
-N_TRUNKS = 4
-MAINSTEM = 4
-"""Logical fifth subregion, processed after the four parallel trunks."""
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_N_PARTS = 4
+"""Parts unless asked otherwise: the FlowTopo benchmark server has four processors, one
+part each.  The method does not need four, and pyflwdir does not bind a process to a
+processor."""
+
+
+@dataclass
+class MainstemSection:
+    """The cells of one opened mainstem that are accumulated after the parts.
+
+    They run from ``P_min``, the most upstream mainstem cell where a tributary of
+    another part enters, down to the pit.
+
+    Attributes
+    ----------
+    mainstem : ndarray of int
+        Linear indices of its cells, from ``P_min`` down to the pit.
+    predecessor : int
+        The mainstem cell just above ``P_min``, held by ``predecessor_part``; -1 when
+        ``P_min`` is the source.
+    cut_outlets : ndarray of int
+        The most downstream cell of each tributary that enters it, in mainstem
+        order.
+    cut_inlets : ndarray of int
+        The mainstem cell that each of ``cut_outlets`` drains into.
+    cut_parts : ndarray of int32
+        The part that holds each of ``cut_outlets``.
+    predecessor_part : int
+        The part that holds the mainstem above ``P_min``.
+    """
+
+    mainstem: np.ndarray
+    predecessor: int
+    cut_outlets: np.ndarray
+    cut_inlets: np.ndarray
+    cut_parts: np.ndarray
+    predecessor_part: int
+
+
+@dataclass
+class PartitionPlan:
+    """How the cells of a raster divide, from :func:`partition_plan`.
+
+    For inspection: the accumulation builds its own plan and does not take this one.
+
+    Attributes
+    ----------
+    parts : ndarray of int32
+        Label of each cell, shaped like the raster: from 0 to ``n_parts - 1`` in a
+        part, ``n_parts`` in a mainstem section, and -1 off the network and on a
+        basin of a single cell.
+    loads : ndarray of int64
+        Cell count of each part. The mainstem sections are excluded.
+    basin_ids : ndarray of int
+        Basin label of each cell, shaped like the raster: those of
+        :py:meth:`pyflwdir.FlwdirRaster.basins`, 0 off the network.
+    level : {'basin', 'subbasin'}
+        The partition level.
+    stems : tuple of MainstemSection
+        One section per opened basin; empty at basin level.
+    """
+
+    parts: np.ndarray
+    loads: np.ndarray
+    basin_ids: np.ndarray
+    level: str
+    stems: tuple[MainstemSection, ...] = ()
+
+    @property
+    def mainstem(self) -> np.ndarray:
+        """The cells of every mainstem section, for plotting and inspection."""
+        if not self.stems:
+            return np.empty(0, dtype=np.intp)
+        return np.concatenate([stem.mainstem for stem in self.stems])
+
+    @property
+    def cut_outlets(self) -> np.ndarray:
+        """The ``cut_outlets`` of all sections; the accumulation reads ``stems``."""
+        if not self.stems:
+            return np.empty(0, dtype=np.intp)
+        return np.concatenate([stem.cut_outlets for stem in self.stems])
+
+    @property
+    def cut_inlets(self) -> np.ndarray:
+        """The ``cut_inlets`` of all sections; the accumulation reads ``stems``."""
+        if not self.stems:
+            return np.empty(0, dtype=np.intp)
+        return np.concatenate([stem.cut_inlets for stem in self.stems])
+
+    @property
+    def cut_parts(self) -> np.ndarray:
+        """The ``cut_parts`` of all sections, one after the other."""
+        if not self.stems:
+            return np.empty(0, dtype=np.int32)
+        return np.concatenate([stem.cut_parts for stem in self.stems])
+
+
+def partition_plan(
+    flw: "Flwdir",
+    level: Literal["basin", "subbasin"] = "subbasin",
+    n_parts: int = DEFAULT_N_PARTS,
+    *,
+    seed: int = 42,
+    refine: bool = True,
+    min_subtree_size: int = 100_000,
+    imbalance_target: float = 1.005,
+    upa: np.ndarray | None = None,
+) -> PartitionPlan:
+    """Divide a raster into parts, and return how the opened mainstems connect to them.
+
+    Use this to inspect a partition; :py:meth:`pyflwdir.FlwdirRaster.partition` is
+    enough for the part of each cell and the cell count of each part.
+
+    Building a plan does not make any method run in parallel.  Upstream accumulation
+    with ``n_processes`` above one (:py:meth:`pyflwdir.FlwdirRaster.accuflux`,
+    :py:meth:`pyflwdir.FlwdirRaster.upstream_area`) is the only computation that
+    divides a raster in parts: it builds its own plan and does not take this one.
+
+    A tributary subtree is never cut, so the heaviest part is at least as heavy as
+    the largest subtree of an opened basin, however large ``n_parts``.
+
+    Parameters
+    ----------
+    flw : FlwdirRaster
+        The flow directions to divide.
+    level : {'basin', 'subbasin'}, optional
+        ``"basin"`` (FlowTopo Method 1) keeps every basin whole.  ``"subbasin"``
+        (FlowTopo Method 2), the default, also opens the basins that keep the parts
+        from balancing, along their mainstems.
+    n_parts : int, optional
+        Number of parts, by default 4.
+    seed : int, optional
+        Seed of the first METIS run, by default 42.
+    refine : bool, optional
+        Move boundary nodes between parts after METIS to balance them, by default
+        True.
+    min_subtree_size : int, optional
+        At subbasin level, tributary subtrees smaller than this are grouped with a
+        larger neighbour before METIS divides them, by default 100,000 cells as in
+        the continental FlowTopo C workflow; the balance refinement still moves
+        single subtrees.  Regardless of this value, at least ``8 * n_parts`` groups
+        are kept, or every subtree if there are fewer.
+    imbalance_target : float, optional
+        Largest part load divided by the mean load that the partition aims for, by
+        default 1.005.  At subbasin level, further basins open only while it is not
+        reached.
+    upa : ndarray, optional
+        Upstream area, one value a cell, finite and positive on the network.  It
+        decides between two tributaries with as many cells when a mainstem is
+        traced, as in the FlowTopo C code; without it the one with the smaller cell
+        index is taken.
+
+    Returns
+    -------
+    PartitionPlan
+        The cells of a part hold its label, from 0 to ``n_parts - 1``; the cells of
+        a mainstem section, accumulated after the parts, hold ``n_parts``.  A basin
+        of a single cell takes no part: its cell keeps -1 in ``parts`` and adds to
+        no load, as in the FlowTopo C code.
+    """
+    _raster_shape(flw)
+    if level not in ("basin", "subbasin"):
+        raise ValueError("level must be 'basin' or 'subbasin'")
+    if n_parts < 1:
+        raise ValueError("n_parts must be at least 1")
+    if min_subtree_size < 1:
+        raise ValueError("min_subtree_size must be at least 1")
+    if imbalance_target < 1:
+        raise ValueError("imbalance_target must be at least 1")
+    if upa is not None:
+        # compared as the C code compares them, in float32
+        upa = np.ascontiguousarray(upa, dtype=np.float32).reshape(-1)
+        if upa.size != flw.size:
+            raise ValueError(
+                f"upa holds {upa.size} values; the raster has {flw.size} cells"
+            )
+        # finite and positive on every cell of the network, as the FlowTopo C code
+        # asks: a NaN is neither the largest of the tied tributaries nor equal to it
+        network_upa = upa[flw.idxs_ds != flw._mv]
+        if network_upa.size and not np.all(
+            np.isfinite(network_upa) & (network_upa > 0)
+        ):
+            raise ValueError(
+                "upa holds a value that is not a finite, positive area on a cell of the network"
+            )
+    # a cell that drains into a cell off the network belongs to no basin and would
+    # be left out of every part: refused (pyflwdir.from_array makes such a cell a pit)
+    valid = flw.idxs_ds != flw._mv
+    into_valid = np.zeros(flw.size, dtype=np.bool_)
+    into_valid[valid] = valid[flw.idxs_ds[valid].astype(np.int64)]
+    if np.any(valid & ~into_valid):
+        raise ValueError(
+            f"{int(np.count_nonzero(valid & ~into_valid))} cells drain into a cell "
+            "off the network; make them pits (as pyflwdir.from_array does)"
+        )
+
+    parts, load, basin_ids, labels, node_parts = _basin_partition(
+        flw, n_parts, seed, refine, imbalance_target
+    )
+    if level == "basin":
+        return _empty_plan(flw, parts, load, basin_ids, level)
+    return _subbasin_partition(
+        flw,
+        parts,
+        load,
+        basin_ids,
+        labels,
+        node_parts,
+        n_parts,
+        min_subtree_size,
+        imbalance_target,
+        seed,
+        refine,
+        upa,
+    )
+
+
+def partition(
+    flw: "Flwdir",
+    level: Literal["basin", "subbasin"] = "subbasin",
+    n_parts: int = DEFAULT_N_PARTS,
+    **kwargs,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return the part of each cell and the cell count of each part.
+
+    The ``parts`` and ``loads`` of :func:`partition_plan`, which takes the same
+    arguments.
+    """
+    plan = partition_plan(flw, level=level, n_parts=n_parts, **kwargs)
+    return plan.parts, plan.loads
+
 
 METIS_SEEDS = 4
 """METIS runs from this many seeds; see ``_metis_parts`` for the one kept."""
@@ -85,10 +299,11 @@ METIS_SLACK = 1.03
 enough for the refinement; among those, the shortest boundary wins."""
 
 MAX_OPENED_BASINS = 4
-"""Method 2 opens at most this many basins along their mainstems."""
+"""Method 2 opens at most this many basins along their mainstems, or ``n_parts``
+when there are more parts than this."""
 
 OPEN_MIN_GAIN = 0.01
-"""Method 2 keeps an opened basin when it lowers the heaviest subregion by this
+"""Method 2 keeps an opened basin when it lowers the heaviest part by this
 much of the mean (max/mean) or more, or when the heaviest is no heavier and the
 load above the shares is lower (one of two equal bottlenecks opened)."""
 
@@ -111,83 +326,13 @@ tributary a group of its own where there are fewer tributaries than that); a
 part is not promised this many of its own."""
 
 P_MIN_ROUNDS = 4
-"""Method 2 balances again, with the trunk's mainstem above the new ``P_min``,
-at most this many times.  Where the cut positions have not settled by then the
+"""Method 2 balances again, with the mainstem above the new ``P_min`` counted in
+its part, at most this many times.  Where the cut positions have not settled by then the
 last partition is returned; its loads are counted on the raster afterwards."""
 
 FRAGMENT_SHARE = 0.01
 """A piece of a part cut off from its main piece and lighter than this share of
 an equal part joins the neighbouring part it touches the most."""
-
-METIS_LIBRARY_VARIABLE = "PYFLWDIR_METIS_LIBRARY"
-"""The environment variable that names a METIS shared library to call (through
-ctypes) instead of the METIS that pymetis carries.  pymetis 2025.2.2 carries
-METIS 5.1.0, which divides the same graph with the same seed and options
-otherwise than METIS 5.2.1, the version the FlowTopo C code links; with a
-build of 5.2.1 the parts are the C code's.  The library must be METIS 5.2,
-built with 32-bit integers and 32-bit reals: the version and the integer
-width are checked when it is loaded, the real width cannot be."""
-
-_METIS_NOPTIONS = 40
-_METIS_OPTION_SEED = 9
-_METIS_OPTION_CONTIG = 13
-_METIS_OPTION_UFACTOR = 18
-_METIS_OK = 1
-_metis_libraries: dict = {}
-
-logger = logging.getLogger(__name__)
-
-
-@dataclass
-class FifthRegion:
-    """One opened basin's mainstem from ``P_min`` down, ``P_min`` included, walked after the four parts.
-
-    ``cut_inlets`` are in mainstem order; ``predecessor`` is the mainstem cell
-    just above ``P_min`` (-1 when ``P_min`` is the source), held by ``trunk``.
-    """
-
-    mainstem: np.ndarray
-    predecessor: int
-    cut_outlets: np.ndarray
-    cut_inlets: np.ndarray
-    cut_ranks: np.ndarray
-    trunk: int
-
-
-@dataclass
-class PartitionPlan:
-    """Internal execution data for a basin or subbasin partition."""
-
-    parts: np.ndarray
-    loads: np.ndarray
-    basin_ids: np.ndarray
-    level: str
-    stems: tuple[FifthRegion, ...] = ()
-
-    @property
-    def mainstem(self) -> np.ndarray:
-        """The cells of every fifth region, one opened basin after the other."""
-        if not self.stems:
-            return np.empty(0, dtype=np.intp)
-        return np.concatenate([stem.mainstem for stem in self.stems])
-
-    @property
-    def cut_outlets(self) -> np.ndarray:
-        if not self.stems:
-            return np.empty(0, dtype=np.intp)
-        return np.concatenate([stem.cut_outlets for stem in self.stems])
-
-    @property
-    def cut_inlets(self) -> np.ndarray:
-        if not self.stems:
-            return np.empty(0, dtype=np.intp)
-        return np.concatenate([stem.cut_inlets for stem in self.stems])
-
-    @property
-    def cut_ranks(self) -> np.ndarray:
-        if not self.stems:
-            return np.empty(0, dtype=np.int8)
-        return np.concatenate([stem.cut_ranks for stem in self.stems])
 
 
 @dataclass
@@ -219,92 +364,6 @@ def _require_pymetis():
             "Install it with `pip install pyflwdir[partition]`."
         ) from error
     return pymetis
-
-
-def _metis_library():
-    """The METIS shared library ``METIS_LIBRARY_VARIABLE`` names, loaded once, or None."""
-    path = os.environ.get(METIS_LIBRARY_VARIABLE, "")
-    if not path:
-        return None
-    if path not in _metis_libraries:
-        library = ctypes.CDLL(path)
-        # METIS 5.2 moved the options set here (seed, contiguity and imbalance
-        # are 9, 13 and 18; 8, 11 and 16 in 5.1), so a 5.1 library would take
-        # them as other options without an error.  5.2 is told apart by a
-        # routine that 5.1 does not have.
-        if not hasattr(library, "METIS_CacheFriendlyReordering"):
-            raise RuntimeError(
-                f"{path} is not METIS 5.2 (its options lie elsewhere); "
-                f"{METIS_LIBRARY_VARIABLE} needs METIS 5.2.1"
-            )
-        # METIS_SetDefaultOptions writes METIS_NOPTIONS values of -1: read as 64-bit integers, a build with 32-bit
-        # integers leaves the second half of the buffer at 0
-        probe = np.zeros(_METIS_NOPTIONS, dtype=np.int64)
-        library.METIS_SetDefaultOptions(probe.ctypes.data_as(ctypes.c_void_p))
-        if probe[-1] != 0:
-            raise RuntimeError(
-                f"{path} is a METIS built with 64-bit integers; {METIS_LIBRARY_VARIABLE} needs one built with "
-                "32-bit integers and reals"
-            )
-        library.METIS_PartGraphKway.restype = ctypes.c_int
-        _metis_libraries[path] = library
-    return _metis_libraries[path]
-
-
-def _metis_through_library(
-    library, xadj, adjncy, vweights, eweights, n_parts, targets, seed, ufactor, contig
-):
-    """One METIS_PartGraphKway of the library, with the arguments and options the FlowTopo C code gives it."""
-    n = int(xadj.size - 1)
-    if n_parts == 1:
-        return np.zeros(n, dtype=np.int32), 0  # as the C code: one part needs no METIS
-    arrays = [
-        np.ascontiguousarray(a, dtype=np.int32)
-        for a in (xadj, adjncy, vweights, eweights)
-    ]
-    for original, narrowed in zip((xadj, adjncy, vweights, eweights), arrays):
-        if not np.array_equal(np.asarray(original, dtype=np.int64), narrowed):
-            raise ValueError(
-                "the graph does not fit the 32-bit integers of the METIS library"
-            )
-    xadj32, adjncy32, vweights32, eweights32 = arrays
-    options = np.zeros(_METIS_NOPTIONS, dtype=np.int32)
-    library.METIS_SetDefaultOptions(options.ctypes.data_as(ctypes.c_void_p))
-    options[_METIS_OPTION_SEED] = seed
-    options[_METIS_OPTION_UFACTOR] = ufactor
-    options[_METIS_OPTION_CONTIG] = 1 if contig else 0
-    target_weights = np.ascontiguousarray(targets, dtype=np.float32)
-    part = np.zeros(max(n, 1), dtype=np.int32)
-    nvtxs, ncon, nparts, objval = (
-        ctypes.c_int32(n),
-        ctypes.c_int32(1),
-        ctypes.c_int32(n_parts),
-        ctypes.c_int32(0),
-    )
-
-    def pointer(array):
-        return array.ctypes.data_as(ctypes.c_void_p)
-
-    status = library.METIS_PartGraphKway(
-        ctypes.byref(nvtxs),
-        ctypes.byref(ncon),
-        pointer(xadj32),
-        pointer(adjncy32),
-        pointer(vweights32),
-        None,
-        pointer(eweights32),
-        ctypes.byref(nparts),
-        pointer(target_weights),
-        None,
-        pointer(options),
-        ctypes.byref(objval),
-        pointer(part),
-    )
-    if status != _METIS_OK:
-        raise RuntimeError(
-            f"METIS_PartGraphKway of {os.environ.get(METIS_LIBRARY_VARIABLE)} returned {status}"
-        )
-    return part[:n], int(objval.value)
 
 
 def _raster_shape(flw: "Flwdir") -> tuple[int, int]:
@@ -380,11 +439,15 @@ def _contract(
     weights = np.bincount(group, weights=graph.weights, minlength=n_groups).astype(
         np.int64
     )
-    rows = np.bincount(group, weights=graph.rows * graph.weights, minlength=n_groups)
-    cols = np.bincount(group, weights=graph.cols * graph.weights, minlength=n_groups)
     with np.errstate(invalid="ignore", divide="ignore"):
-        rows = rows / weights
-        cols = cols / weights
+        rows = (
+            np.bincount(group, weights=graph.rows * graph.weights, minlength=n_groups)
+            / weights
+        )
+        cols = (
+            np.bincount(group, weights=graph.cols * graph.weights, minlength=n_groups)
+            / weights
+        )
     edges, edge_weights = merge_edges(
         [group[graph.edges]], n_groups, [graph.edge_weights]
     )
@@ -423,22 +486,8 @@ def _metis(
     seed: int,
     ufactor: int,
     contig: bool = True,
-) -> np.ndarray:
+) -> tuple[np.ndarray, int]:
     xadj, adjncy, eweights = _csr(graph.size, graph.edges, graph.edge_weights)
-    library = _metis_library()
-    if library is not None:
-        return _metis_through_library(
-            library,
-            xadj,
-            adjncy,
-            _scaled(graph.weights),
-            _scaled(eweights),
-            n_parts,
-            targets,
-            seed,
-            ufactor,
-            contig,
-        )
     pymetis = _require_pymetis()
     options = pymetis.Options(seed=seed, ufactor=ufactor, contig=int(contig))
     result = pymetis.part_graph(
@@ -807,7 +856,7 @@ def _metis_parts(
         )
         if best_score is None or score < best_score:
             best, best_score = parts, score
-    assert best is not None
+    assert best is not None and best_score is not None
     if best_score[0]:
         _absorb_fragments(graph, best, np.inf)
     return _fill_empty_parts(graph, best, n_parts)
@@ -1611,9 +1660,9 @@ def _coarsen_tributaries(
         return group, next_group + tributaries.size
     xadj, adjncy, _ = _csr(n, graph.edges, graph.edge_weights)
     queue: list[tuple[int, int, int]] = []
-    for offset, node in enumerate(eligible):
-        group[node] = next_group + offset
-        heappush(queue, (0, next_group + offset, int(node)))
+    for offset, start in enumerate(eligible):
+        group[start] = next_group + offset
+        heappush(queue, (0, next_group + offset, int(start)))
     while queue:
         hops, owner, node = heappop(queue)
         if group[node] != owner:
@@ -1657,13 +1706,14 @@ def _align_labels(
 def _split_stem(
     mine: np.ndarray, tributary_parts: np.ndarray, tributary_position: np.ndarray
 ) -> tuple[int, int]:
-    """Trunk and ``P_min`` of one opened mainstem; ``P_min`` is -1 when every
-    tributary is in the trunk.  ``mine`` holds its tributaries, source first."""
-    trunk = int(tributary_parts[mine[0]])
-    transferred = mine[tributary_parts[mine] != trunk]
+    """The part holding the mainstem above ``P_min``, and ``P_min``, of one opened
+    mainstem; ``P_min`` is -1 when every tributary is in that part.  ``mine`` holds
+    its tributaries, source first."""
+    predecessor_part = int(tributary_parts[mine[0]])
+    transferred = mine[tributary_parts[mine] != predecessor_part]
     if transferred.size == 0:
-        return trunk, -1
-    return trunk, int(tributary_position[transferred].min())
+        return predecessor_part, -1
+    return predecessor_part, int(tributary_position[transferred].min())
 
 
 def _stem_tributaries(stem: np.ndarray, position: np.ndarray, n_stems: int):
@@ -1684,8 +1734,8 @@ def _mainstem_weights(
 
     A mainstem cell weighs with the first tributary (lowest node) entering it, or
     else with the nearest one entering upstream (the most upstream tributary
-    for the cells above it).  Up to ``P_min`` every tributary is in the trunk, and
-    so the trunk holds those cells.
+    for the cells above it).  Up to ``P_min`` every tributary is in one part, and
+    so that part holds those cells.
     """
     extra = np.zeros(stem.size, dtype=np.int64)
     for k, mine in enumerate(_stem_tributaries(stem, position, len(upto))):
@@ -1771,7 +1821,7 @@ def assign_subbasins(
 
     With ``stem_lengths`` (cells of each mainstem), the mainstem cells weigh
     with the tributaries that enter them: all of them for METIS, then, while
-    the refinement moves ``P_min``, only those above it -- the trunk's -- so that
+    the refinement moves ``P_min``, only those above it, so that
     the balance is that of the parts as the plan builds them.
     """
     is_tributary = np.asarray(is_tributary, dtype=np.bool_)
@@ -1821,10 +1871,10 @@ def assign_subbasins(
             extra = np.bincount(index[keep], weights=extra[keep], minlength=live.size)
         return cells + extra.astype(np.int64)
 
-    def p_mins(node_parts: np.ndarray) -> np.ndarray:
+    def p_mins(node_parts: np.ndarray, lengths: np.ndarray) -> np.ndarray:
         if merged is not None:
             node_parts = _expand(index, node_parts)
-        return _p_mins(node_parts, all_stem, all_position, stem_lengths)
+        return _p_mins(node_parts, all_stem, all_position, lengths)
 
     cells = graph.weights
     weights = cells
@@ -1849,7 +1899,7 @@ def assign_subbasins(
         targets = np.full(n_parts, 1.0 / n_parts)
         p_min = None
         for _ in range(P_MIN_ROUNDS):
-            moved = p_mins(parts)
+            moved = p_mins(parts, stem_lengths)
             if p_min is not None and np.array_equal(moved, p_min):
                 break
             p_min = moved
@@ -1919,45 +1969,12 @@ def _trace_mainstem(
     return np.asarray(stem[::-1], dtype=flw.idxs_ds.dtype)
 
 
-def _given_basins(flw: "Flwdir", basins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """The caller's basin labels, checked (one positive label for each basin and one basin for each label), 0 off
-    the basins; and the same labels as 1 .. n in their order, which is all that counts for the partition, so that no
-    array is as long as the largest label."""
-    own = flw.basins().ravel()
-    in_a_basin = flw.mask.ravel() & (own > 0)
-    given = np.asarray(basins).reshape(-1)
-    if given.size != own.size:
-        raise ValueError(
-            f"basins holds {given.size} values; the raster has {own.size} cells"
-        )
-    if not np.issubdtype(given.dtype, np.integer):
-        raise ValueError("basins must hold whole numbers")
-    if np.any(given[in_a_basin] <= 0):
-        raise ValueError("basins must be positive on every cell of a basin")
-    # ranked in the caller's own type: an unsigned label above 2**63 must not wrap
-    given_on = given[in_a_basin]
-    ranks = np.zeros(own.size, dtype=np.int64)
-    ranks[in_a_basin] = np.searchsorted(np.unique(given_on), given_on) + 1
-    pairs = np.unique(
-        np.stack([own[in_a_basin].astype(np.int64), ranks[in_a_basin]]), axis=1
-    )
-    if (
-        pairs.shape[1] != np.unique(own[in_a_basin]).size
-        or pairs.shape[1] != np.unique(pairs[1]).size
-    ):
-        raise ValueError(
-            "basins must give one label for each basin and one basin for each label"
-        )
-    return np.where(in_a_basin, given, np.zeros((), dtype=given.dtype)), ranks
-
-
 def _basin_partition(
     flw: "Flwdir",
     n_parts: int,
     seed: int,
     refine: bool,
     imbalance_target: float,
-    basins: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Method 1 on a raster: parts and loads of the cells, basin ids, labels, node parts.
 
@@ -1965,9 +1982,7 @@ def _basin_partition(
     keeps -1 and is in no load."""
     shape = _raster_shape(flw)
     mask = flw.mask.ravel()
-    basin_ids = (
-        flw.basins().ravel() if basins is None else basins
-    )  # basins: _given_basins' ranks
+    basin_ids = cast("FlwdirRaster", flw).basins().ravel()
     valid = mask & (basin_ids > 0)
     cells_of_basin = np.bincount(basin_ids[valid].astype(np.int64))
     valid[valid] = cells_of_basin[basin_ids[valid].astype(np.int64)] > 1
@@ -1994,6 +2009,7 @@ def _open_basins(
     basin_ids: np.ndarray,
     labels: np.ndarray,
     basin_node_parts: np.ndarray,
+    n_parts: int,
     seq_d2u: np.ndarray,
     upstream: np.ndarray,
     min_subtree_size: int,
@@ -2058,7 +2074,7 @@ def _open_basins(
         graph,
         is_tributary,
         position,
-        N_TRUNKS,
+        n_parts,
         stem=stem,
         stem_lengths=np.array([mainstem.size for mainstem in mainstems]),
         stem_contacts=_mainstem_contacts(
@@ -2071,8 +2087,8 @@ def _open_basins(
         refine=refine,
     )
 
-    # per opened basin: the trunk holds its most upstream tributary; P_min is where
-    # the first other part enters, and the mainstem above it stays with the trunk
+    # per opened basin: one part holds its most upstream tributary; P_min is where
+    # the first other part enters, and the mainstem above it stays with that part
     # (tributary nodes are numbered in root order, which breaks ties in position)
     tributary_parts = node_parts[others.size :]
     tributary_position = position[others.size :]
@@ -2090,12 +2106,12 @@ def _open_basins(
             # a basin that is its mainstem alone: whole, in its Method 1 part
             refined[mainstem] = int(basin_node_parts[opened[k]])
             continue
-        trunk, p_min = _split_stem(mine, tributary_parts, tributary_position)
+        predecessor_part, p_min = _split_stem(mine, tributary_parts, tributary_position)
         if p_min < 0:
-            refined[mainstem] = trunk
+            refined[mainstem] = predecessor_part
             continue
-        refined[mainstem[:p_min]] = trunk
-        refined[mainstem[p_min:]] = MAINSTEM
+        refined[mainstem[:p_min]] = predecessor_part
+        refined[mainstem[p_min:]] = n_parts
         cut = mine[tributary_position[mine] >= p_min]
         cut_outlets = tributary_roots[cut].astype(flw.idxs_ds.dtype)
         predecessor = int(mainstem[p_min - 1]) if p_min > 0 else -1
@@ -2109,17 +2125,17 @@ def _open_basins(
                 f"{accounted} != {basin_size}."
             )
         stems.append(
-            FifthRegion(
+            MainstemSection(
                 mainstem=mainstem[p_min:],
                 predecessor=predecessor,
                 cut_outlets=cut_outlets,
                 cut_inlets=flw.idxs_ds[cut_outlets].astype(flw.idxs_ds.dtype),
-                cut_ranks=tributary_parts[cut].astype(np.int8),
-                trunk=trunk,
+                cut_parts=tributary_parts[cut].astype(np.int32),
+                predecessor_part=predecessor_part,
             )
         )
     final_load = np.bincount(
-        refined[(refined >= 0) & (refined < N_TRUNKS)], minlength=N_TRUNKS
+        refined[(refined >= 0) & (refined < n_parts)], minlength=n_parts
     ).astype(np.int64)
     return PartitionPlan(
         parts=refined.reshape(flw.shape),
@@ -2172,6 +2188,7 @@ def _subbasin_partition(
     basin_ids: np.ndarray,
     labels: np.ndarray,
     basin_node_parts: np.ndarray,
+    n_parts: int,
     min_subtree_size: int,
     imbalance_target: float,
     seed: int,
@@ -2197,7 +2214,7 @@ def _subbasin_partition(
     of two equally heavy parts counts, as the first of two that must both be
     opened.  The rounds stop at
     the target, at a round without such a gain, or at
-    ``MAX_OPENED_BASINS``.  So the first basin opened is usually the dominant one
+    ``MAX_OPENED_BASINS`` (``n_parts`` when larger).  So the first basin opened is usually the dominant one
     (an eligible one -- more than one headwater -- heavier than an equal share times
     the target is tried first, and kept only when it pays off), and a
     further one only a basin that holds the balance up, and only when that
@@ -2228,7 +2245,8 @@ def _subbasin_partition(
     )
     by_weight = np.argsort(-weights, kind="stable")
     opened: list[int] = []
-    while best_ratio > imbalance_target and len(opened) < MAX_OPENED_BASINS:
+    max_opened = max(MAX_OPENED_BASINS, n_parts)
+    while best_ratio > imbalance_target and len(opened) < max_opened:
         part_of_basin = best.parts.ravel()[first_cell]
         eligible = sources > 1
         eligible[opened] = False
@@ -2259,7 +2277,7 @@ def _subbasin_partition(
                 found += [
                     heaviest_in(k),
                     _heaviest_bordering(
-                        parts_2d, label_2d, k, N_TRUNKS, eligible, weights
+                        parts_2d, label_2d, k, n_parts, eligible, weights
                     ),
                 ]
         candidates: list[int] = []
@@ -2278,6 +2296,7 @@ def _subbasin_partition(
                 basin_ids,
                 labels,
                 basin_node_parts,
+                n_parts,
                 seq_d2u,
                 upstream,
                 min_subtree_size,
@@ -2298,6 +2317,7 @@ def _subbasin_partition(
                 round_best = (int(candidate), plan, ratio, key)
             if round_best[2] <= imbalance_target:
                 break  # within the target: the rest need not be tried
+        assert round_best is not None
         candidate, plan, ratio, key = round_best
         lower = ratio <= best_ratio - OPEN_MIN_GAIN
         # or the heaviest no heavier (in cells: the mainstem held back lowers the
@@ -2326,109 +2346,3 @@ def _empty_plan(
         basin_ids=basin_ids.reshape(flw.shape),
         level=level,
     )
-
-
-def partition_plan(
-    flw: "Flwdir",
-    level: Literal["basin", "subbasin"] = "subbasin",
-    n_parts: int = N_TRUNKS,
-    *,
-    seed: int = 42,
-    refine: bool = True,
-    min_subtree_size: int = 100_000,
-    imbalance_target: float = 1.005,
-    upa: np.ndarray | None = None,
-    basins: np.ndarray | None = None,
-) -> PartitionPlan:
-    """Build the full FlowTopo partition and merge plan.
-
-    ``upa`` (optional, one value a cell) is the upstream area that decides
-    between two tributaries with as many cells when a mainstem is traced, as in
-    the FlowTopo C code; without it the one with the smaller cell index is taken.
-    A basin of a single cell takes no part: its cell keeps -1 in ``parts`` and
-    adds to no load, as in the FlowTopo C code.
-
-    ``basins`` (optional, one integer a cell) labels the basins: positive on
-    every cell of a basin, one label for each basin and one basin for each
-    label (FlowDivide's ``bsn``, for one).  The basins are the nodes of the
-    graph in the order of their labels, and METIS divides a graph according to
-    the order of its nodes: with FlowDivide's labels, METIS 5.2.1
-    (:data:`METIS_LIBRARY_VARIABLE`), the same ``upa`` and the default options
-    the parts are the FlowTopo C code's.  By default the labels of
-    :meth:`Flwdir.basins`.  ``PartitionPlan.basin_ids`` holds the labels given.
-    """
-    if level not in ("basin", "subbasin"):
-        raise ValueError("level must be 'basin' or 'subbasin'")
-    if n_parts < 1:
-        raise ValueError("n_parts must be at least 1")
-    if level == "subbasin" and n_parts != N_TRUNKS:
-        raise ValueError("FlowTopo subbasin partitioning requires n_parts=4")
-    if min_subtree_size < 1:
-        raise ValueError("min_subtree_size must be at least 1")
-    if imbalance_target < 1:
-        raise ValueError("imbalance_target must be at least 1")
-    if upa is not None:
-        # compared as the C code compares them, in float32
-        upa = np.ascontiguousarray(upa, dtype=np.float32).reshape(-1)
-        if upa.size != flw.size:
-            raise ValueError(
-                f"upa holds {upa.size} values; the raster has {flw.size} cells"
-            )
-        # finite and positive on every cell of the network, as the FlowTopo C code
-        # asks: a NaN is neither the largest of the tied tributaries nor equal to it
-        network_upa = upa[flw.idxs_ds != flw._mv]
-        if network_upa.size and not np.all(
-            np.isfinite(network_upa) & (network_upa > 0)
-        ):
-            raise ValueError(
-                "upa holds a value that is not a finite, positive area on a cell of the network"
-            )
-    # a cell that drains into a cell off the network belongs to no basin and would
-    # be left out of every part: refused (pyflwdir.from_array makes such a cell a pit)
-    valid = flw.idxs_ds != flw._mv
-    into_valid = np.zeros(flw.size, dtype=np.bool_)
-    into_valid[valid] = valid[flw.idxs_ds[valid].astype(np.int64)]
-    if np.any(valid & ~into_valid):
-        raise ValueError(
-            f"{int(np.count_nonzero(valid & ~into_valid))} cells drain into a cell "
-            "off the network; make them pits (as pyflwdir.from_array does)"
-        )
-
-    given = ranks = None
-    if basins is not None:
-        given, ranks = _given_basins(flw, basins)
-    parts, load, basin_ids, labels, node_parts = _basin_partition(
-        flw, n_parts, seed, refine, imbalance_target, ranks
-    )
-    if level == "basin":
-        plan = _empty_plan(flw, parts, load, basin_ids, level)
-    else:
-        plan = _subbasin_partition(
-            flw,
-            parts,
-            load,
-            basin_ids,
-            labels,
-            node_parts,
-            min_subtree_size,
-            imbalance_target,
-            seed,
-            refine,
-            upa,
-        )
-    if given is not None:
-        plan = replace(
-            plan, basin_ids=given.reshape(flw.shape)
-        )  # the caller's labels, as given
-    return plan
-
-
-def partition(
-    flw: "Flwdir",
-    level: Literal["basin", "subbasin"] = "subbasin",
-    n_parts: int = N_TRUNKS,
-    **kwargs,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Assign raster cells to FlowTopo process-level subregions."""
-    plan = partition_plan(flw, level=level, n_parts=n_parts, **kwargs)
-    return plan.parts, plan.loads
