@@ -436,6 +436,49 @@ def test_mainstem_nodata_stops_flow_and_keeps_later_cuts():
     assert accu[2] == 20
 
 
+@pytest.mark.unit
+@pytest.mark.parametrize("first", [np.nan, np.inf])
+def test_mainstem_walk_does_not_take_its_zero_from_the_first_value(first):
+    # NaN * 0 and inf * 0 are NaN: the first value of the array, which need not be
+    # on this mainstem, must not reach it, at its start or after a missing value
+    data = np.array([first, 2.0, 3.0, -9999.0, 5.0, 7.0])
+    accu = data.copy()
+
+    streams.accuflux_subbasin_mainstem(
+        mainstem=np.array([1, 2, 3, 4, 5], dtype=np.int32),
+        predecessor=-1,
+        cut_outlets=np.array([], dtype=np.int32),
+        cut_inlets=np.array([], dtype=np.int32),
+        data=data,
+        accu=accu,
+        nodata=-9999.0,
+    )
+
+    assert np.array_equal(accu[1:], [2.0, 5.0, -9999.0, 5.0, 12.0])
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
+def test_mainstem_walk_keeps_the_data_type(dtype):
+    idxs_ds = np.array([1, 2, 2, 1, 2], dtype=np.int32)
+    seq = np.array([2, 1, 0, 4, 3], dtype=np.int32)
+    data = np.array([5, 3, 7, 11, 13], dtype=dtype)
+    accu = data.copy()
+
+    streams.accuflux_subbasin_mainstem(
+        mainstem=np.array([0, 1, 2], dtype=np.int32),
+        predecessor=-1,
+        cut_outlets=np.array([3, 4], dtype=np.int32),
+        cut_inlets=np.array([1, 2], dtype=np.int32),
+        data=data,
+        accu=accu,
+        nodata=-9999,
+    )
+
+    assert accu.dtype == dtype
+    assert np.array_equal(accu, streams.accuflux(idxs_ds, seq, data, -9999))
+
+
 @pytest.mark.integration
 def test_metis_process_and_thread_accumulation_matches_serial():
     pytest.importorskip("pymetis")

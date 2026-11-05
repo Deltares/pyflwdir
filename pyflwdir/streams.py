@@ -151,7 +151,8 @@ def accuflux_subbasin_mainstem(
     nodata: float,
 ) -> None:
     """Inject cut inflows and walk the logical fifth subregion."""
-    previous = data[0] * 0
+    zero = np.zeros(1, dtype=data.dtype)[0]
+    previous = zero
     if predecessor >= 0 and accu[predecessor] != nodata:
         previous = accu[predecessor]
     cut = 0
@@ -159,7 +160,7 @@ def accuflux_subbasin_mainstem(
         total = data[cell]
         if total == nodata:
             accu[cell] = nodata
-            previous = data[0] * 0
+            previous = zero
             while cut < cut_outlets.size and cut_inlets[cut] == cell:
                 cut += 1
             continue
