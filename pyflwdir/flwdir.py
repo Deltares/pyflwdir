@@ -255,26 +255,42 @@ class Flwdir:
             to upstream depth-first, over an index of the upstream cells of the
             whole network in compressed sparse row layout. It finishes one
             tributary before it starts the next, so the nodes draining to any one
-            node are an unbroken stretch of the sequence and a node sits close to
-            the node it drains into. "walk" traces them breadth-first over the
-            same index, which groups the nodes by their rank. "topo" releases a
-            node once all of its upstream nodes have been ordered, which needs a
-            count per node instead of the upstream index. "sort" sorts the nodes
-            on their rank, which can be slower for large arrays.
+            node are an unbroken stretch of the sequence, and a node with upstream
+            nodes is followed directly by one of them. "walk" traces them
+            breadth-first over the same index, which groups the nodes by their
+            rank. "topo" releases a node once all of its upstream nodes have been
+            ordered, which needs a count per node instead of the upstream index.
+            "sort" sorts the nodes on their rank, which can be slower for large
+            arrays.
 
         Notes
         -----
         Every method returns the same cells, those that drain to a pit, in a
         sequence in which each cell other than a pit comes after the cell it
-        drains into, which is what the flow network methods need: upstream
-        area, basins, stream order and the like give the same result for each.
-        The relative order of cells that do not drain into one another differs
-        though, so labels given in sequence order (subbasins_streamorder) and
-        the order of the features of streams change with the method, and
-        floating point accumulations can differ in the last bits. dem_adjust,
-        dem_dig_d4, subbasins_area and subbasins_pfafstetter need the cells
-        grouped by rank and build that sequence themselves, so they do not
-        follow this setting.
+        drains into, which is what the flow network methods need. On a
+        FlwdirRaster, basins and stream order are the same for each; floating
+        point sums can differ as described below. The relative order of cells
+        that do not drain into one another differs though, so the labels of
+        subbasins and subbasins_streamorder, the order of the features of
+        streams and the order of the cells of inflow_idxs and outflow_idxs
+        change with the method. The same cells are not guaranteed for an
+        idxs_ds passed in directly with a cell that drains into a nodata cell,
+        which from_array, from_dem and from_dataframe do not produce.
+
+        "dfs" and "walk" list the upstream cells of any one cell in the same
+        order, by index, although the sequences themselves differ; "sort" and
+        "topo" need not. These two can therefore also make inflow_idxs return
+        other cells and change the last bits of floating point sums, such as
+        those of accuflux and upstream_area. A plain Flwdir also picks the main
+        upstream cell by such a sum, so with these two a tie within rounding can
+        fall the other way there, in main_upstream and what uses it, such as the
+        classic stream order. The last bits of ucat_area and ucat_volume, which
+        add the cells of a unit catchment into one sum in sequence order, can
+        change with any method.
+
+        dem_adjust, dem_dig_d4, subbasins_area and subbasins_pfafstetter depend
+        on the order among cells of equal rank, so they build the sequence of
+        "walk" themselves instead of using this setting.
 
         The "Cell orderings" notebook of the user guide builds all four on the
         Rhine example and shows what each is good for.

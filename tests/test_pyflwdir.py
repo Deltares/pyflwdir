@@ -725,3 +725,61 @@ def test_ordering_does_not_change_the_rank_ordered_methods(flw_real, flwdir_real
         )
     for walked, dfsed in zip(out["walk"], out["dfs"]):
         assert np.array_equal(walked, dfsed)
+
+
+def _ordered_as(flw_real, method):
+    flw = pyflwdir.from_array(
+        flw_real.to_array("d8"),
+        ftype="d8",
+        transform=flw_real.transform,
+        latlon=flw_real.latlon,
+        cache=False,
+    )
+    flw.order_cells(method=method)
+    return flw
+
+
+def _same_division(labels0, labels1):
+    """Both give the same groups of cells, whichever label each group has."""
+    pairs = np.unique(np.stack([labels0.ravel(), labels1.ravel()]), axis=1)
+    return pairs.shape[1] == np.unique(labels0).size == np.unique(labels1).size
+
+
+@pytest.mark.integration
+def test_dfs_and_walk_return_the_same_inflow_cells(flw_real):
+    region = np.random.default_rng(0).random(flw_real.shape) < 0.5
+    expected = _ordered_as(flw_real, "walk").inflow_idxs(region)
+    assert expected.size > 0
+    result = _ordered_as(flw_real, "dfs").inflow_idxs(region)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("method", ["dfs", "topo", "sort"])
+def test_ordering_changes_only_the_labels_and_the_order_things_come_in(
+    flw_real, method
+):
+    walked, ordered = _ordered_as(flw_real, "walk"), _ordered_as(flw_real, method)
+    riv_mask = walked.upstream_area("cell") >= 20
+    strord = walked.stream_order()
+
+    for subbasins in (
+        lambda flw: flw.subbasins(riv_mask),
+        lambda flw: flw.subbasins_streamorder(strord=strord),
+    ):
+        labels0, idxs_out0 = subbasins(walked)
+        labels1, idxs_out1 = subbasins(ordered)
+        assert idxs_out0.size > 1
+        assert _same_division(labels0, labels1)
+        assert np.array_equal(np.sort(idxs_out0), np.sort(idxs_out1))
+
+    for kwargs in ({"mask": riv_mask}, {"mask": riv_mask, "max_len": 10}):
+        features0 = walked.streams(**kwargs)
+        features1 = ordered.streams(**kwargs)
+        assert len(features0) > 1
+        assert sorted(map(repr, features0)) == sorted(map(repr, features1))
+
+    region = np.random.default_rng(0).random(flw_real.shape) < 0.5
+    idxs0, idxs1 = walked.outflow_idxs(region), ordered.outflow_idxs(region)
+    assert idxs0.size > 1
+    assert np.array_equal(np.sort(idxs0), np.sort(idxs1))

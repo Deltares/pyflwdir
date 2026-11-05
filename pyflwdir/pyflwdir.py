@@ -639,6 +639,12 @@ class FlwdirRaster(Flwdir):
             Raster of unique subbasin IDs.
         idxs_out : 1D array of int
             Linear indices of subbasin outlet cells.
+
+        Notes
+        -----
+        The subbasins and their outlets are the same for every ordering set with
+        `order_cells` (see its Notes). Their IDs follow the sequence though, so which
+        subbasin gets which ID, and the order of `idxs_out`, change with the method.
         """
         subbas, idxs_out = basins.subbasins(
             idxs_ds=self.idxs_ds,
@@ -675,6 +681,12 @@ class FlwdirRaster(Flwdir):
             Raster of unique IDs for subbasins meeting `min_sto`.
         idxs_out : 1D array of int
             Linear indices of subbasin outlet cells.
+
+        Notes
+        -----
+        The subbasins and their outlets are the same for every ordering set with
+        `order_cells` (see its Notes). Their IDs follow the sequence though, so which
+        subbasin gets which ID, and the order of `idxs_out`, change with the method.
         """
         subbas, idxs_out = basins.subbasins_streamorder(
             idxs_ds=self.idxs_ds,
@@ -717,7 +729,7 @@ class FlwdirRaster(Flwdir):
             idxs_ds=self.idxs_ds,
             idxs_us_main=self.idxs_us_main,
             # which tributaries of equal area are picked follows the order the
-            # cells come in, so this needs the cells grouped by their distance
+            # cells come in, so this keeps the cells grouped by their distance
             # to the outlet, whatever the ordering of this object is
             seq=core.idxs_seq(self.idxs_ds, self.idxs_pit, self._mv),
             uparea=uparea,
@@ -996,6 +1008,14 @@ class FlwdirRaster(Flwdir):
         -------
         1D array of int
             Linear indices of the most upstream cells in `region`.
+
+        Notes
+        -----
+        The cells follow the sequence set with `order_cells`, so their order changes
+        with the method. Which cells are returned depends on which upstream cell of a
+        confluence comes first in the sequence. "dfs" and "walk" both put the upstream
+        cell with the lowest index first, so they return the same cells; "sort" and
+        "topo" can put another one first and return other cells.
         """
         return core.inflow_idxs(
             self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
@@ -1013,6 +1033,11 @@ class FlwdirRaster(Flwdir):
         -------
         1D array of int
             Linear indices of the most downstream cells in `region`.
+
+        Notes
+        -----
+        The cells are the same for every ordering set with `order_cells` (see its
+        Notes). They follow the sequence though, so their order changes with the method.
         """
         return core.outflow_idxs(
             self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
@@ -1132,6 +1157,12 @@ class FlwdirRaster(Flwdir):
         -------
         feats : list of dict
             LineString features, suitable for `geopandas.GeoDataFrame.from_features`.
+
+        Notes
+        -----
+        The features are the same for every ordering set with `order_cells` (see its
+        Notes). Without `idxs_out` they follow the sequence though, so the order of the
+        list changes with the method.
         """
         if mask is not None:
             mask = self._check_data(mask, "mask")
@@ -1697,9 +1728,9 @@ class FlwdirRaster(Flwdir):
         """
         elv_out = dem.dig_4connectivity(
             idxs_ds=self.idxs_ds,
-            # the elevation this writes is read by the cells upstream of it, so this
-            # needs the cells grouped by their distance to the outlet, whatever the
-            # ordering of this object is
+            # the elevation this writes beside a diagonal step is read by the cells
+            # handled after it, so this keeps the cells grouped by their distance to
+            # the outlet, whatever the ordering of this object is
             seq=core.idxs_seq(self.idxs_ds, self.idxs_pit, self._mv),
             elv_flat=self._check_data(elevtn, "elevtn"),
             mask=self._check_data(rivmsk, "rivmsk", optional=True),
