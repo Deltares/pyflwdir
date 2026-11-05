@@ -12,6 +12,7 @@ from . import (
     arithmetics,
     core,
     dem,
+    parallel as parallel_utils,
     rivers,
     streams,
 )
@@ -122,6 +123,8 @@ class Flwdir:
         self._pit = idxs_pit
         self.idxs_outlet = idxs_outlet
         self._seq = idxs_seq
+        # the method that built self._seq; unknown for a sequence passed in here
+        self._seq_method: str | None = None
         self._nnodes = nnodes
         # either -1 for signed integers or 4294967295 for uint32
         self._mv: Any = core._mv
@@ -176,7 +179,7 @@ class Flwdir:
     def idxs_seq(self) -> np.ndarray:
         """Linear indices of valid cells ordered from down- to upstream."""
         if self._seq is None:
-            self.order_cells(method="walk")
+            self.order_cells(method="dfs")
         return cast(np.ndarray, self._seq)
 
     @property
@@ -241,21 +244,22 @@ class Flwdir:
     ### SET/MODIFY PROPERTIES ###
 
     def order_cells(
-        self, method: Literal["sort", "walk", "dfs", "topo"] = "walk"
+        self, method: Literal["sort", "walk", "dfs", "topo"] = "dfs"
     ) -> None:
         """Order cells from down- to upstream.
 
         Parameters
         ----------
-        method: {'walk', 'dfs', 'topo', 'sort'}, optional
-            Method to order nodes. The default "walk" traces the nodes from down-
-            to upstream breadth-first, holding the upstream cells of the whole
-            network in memory in compressed sparse row layout. "dfs" traces them
-            depth-first with the same index, which keeps each subbasin together
-            in the sequence and may improve locality when the sequence is
-            consumed. "topo" releases a node once all of its upstream nodes have
-            been ordered, which needs a count per node instead of the upstream
-            index.
+        method: {'dfs', 'walk', 'topo', 'sort'}, optional
+            Method to order nodes. The default "dfs" traces the nodes from down-
+            to upstream depth-first, over an index of the upstream cells of the
+            whole network in compressed sparse row layout. It finishes one
+            tributary before it starts the next, so the nodes draining to any one
+            node are an unbroken stretch of the sequence, and a node with upstream
+            nodes is followed directly by one of them. "walk" traces them
+            breadth-first over the same index, which groups the nodes by their
+            rank. "topo" releases a node once all of its upstream nodes have been
+            ordered, which needs a count per node instead of the upstream index.
             "sort" sorts the nodes on their rank, which can be slower for large
             arrays.
 
@@ -263,14 +267,44 @@ class Flwdir:
         -----
         Every method returns the same cells, those that drain to a pit, in a
         sequence in which each cell other than a pit comes after the cell it
-        drains into, which is what the flow network methods need: upstream
-        area, basins, stream order and the like give the same result for each.
-        The relative order of cells that do not drain into one another differs
-        though, so labels given in sequence order (subbasins_streamorder) and
-        the order of the features of streams change with the method, floating
-        point accumulations can differ in the last bits, and dem_adjust and
-        dem_dig_d4, which adjust the elevation one flow path at a time in
-        sequence order, can give different adjustments.
+        drains into, which is what the flow network methods need. On a
+        FlwdirRaster, basins and stream order are the same for each; floating
+        point sums can differ as described below. The relative order of cells
+        that do not drain into one another differs though, so the labels of
+        subbasins and subbasins_streamorder, the order of the features of
+        streams and the order of the cells of inflow_idxs and outflow_idxs
+        change with the method. The same cells are not guaranteed for an
+        idxs_ds passed in directly with a cell that drains into a nodata cell,
+        which from_array, from_dem and from_dataframe do not produce.
+
+        "dfs" and "walk" list the upstream cells of any one cell in the same
+        order, by index, although the sequences themselves differ; "sort" and
+        "topo" need not. These two can therefore also make inflow_idxs return
+        other cells and change the last bits of floating point sums, such as
+        those of accuflux and upstream_area. A plain Flwdir also picks the main
+        upstream cell by such a sum, so with these two a tie within rounding can
+        fall the other way there, in main_upstream and what uses it, such as the
+        classic stream order. The last bits of ucat_area and ucat_volume, which
+        add the cells of a unit catchment into one sum in sequence order, can
+        change with any method.
+
+        dem_adjust, dem_dig_d4, subbasins_area and subbasins_pfafstetter depend
+        on the order among cells of equal rank, so they build the sequence of
+        "walk" themselves instead of using this setting.
+
+        The "Cell orderings" notebook of the user guide builds all four on the
+        Rhine example and shows what each is good for.
+
+        References
+        ----------
+        The "dfs" and "topo" orderings are standard graph traversals, see
+        core.idxs_seq_dfs and core.idxs_seq_topo; their implementations here,
+        and the comparison of what each ordering costs to build and to read,
+        come from FlowTopo:
+
+        Jiang, L., Wu, H., Chen, W., Huang, Z., Yamazaki, D., Yang, T. and Li,
+        L. (2026). FlowTopo (v1.0.0). Zenodo.
+        https://doi.org/10.5281/zenodo.22227621
         """
         if method == "sort":
             # slow for large arrays
@@ -286,7 +320,81 @@ class Flwdir:
             raise ValueError(
                 f'Invalid method {method}, select from ["walk", "dfs", "topo", "sort"]'
             )
+        self._seq_method = method
         self._nnodes = self._seq.size
+
+    def layer_cells(
+        self, method: Literal["asap", "cfds", "alap"] = "cfds"
+    ) -> tuple[np.ndarray, int]:
+        """Group cells into dependency-free layers.
+
+        Parameters
+        ----------
+        method : {'asap', 'cfds', 'alap'}, optional
+            Layering method, by default ``"cfds"``. ``"asap"`` places every
+            cell as soon as its upstream dependencies allow. ``"alap"`` delays
+            cells within each basin to balance later layers. ``"cfds"`` starts
+            from ``"asap"`` and also prevents two cells in one layer from
+            sharing a downstream receiver, so a threaded push is race-free.
+
+        Returns
+        -------
+        layers : ndarray of int32
+            Layer index per cell, shaped like the flow-direction object. ``-1``
+            marks cells outside the network or cells that cannot be scheduled
+            because of a loop.
+        n_layers : int
+            Number of layers.
+
+        Notes
+        -----
+        Threaded upstream accumulation (``parallel=True`` in :py:meth:`accuflux`
+        and :py:meth:`FlwdirRaster.upstream_area`) is the only computation that uses
+        layers, and it builds its own. Calling this method only returns them: it does
+        not make any other method run in parallel.
+
+        References
+        ----------
+        The three layerings and their implementations come from FlowTopo:
+
+        Jiang, L., Wu, H., Chen, W., Huang, Z., Yamazaki, D., Yang, T. and Li,
+        L. (2026). FlowTopo (v1.0.0). Zenodo.
+        https://doi.org/10.5281/zenodo.22227621
+        """
+        if method not in ("asap", "cfds", "alap"):
+            raise ValueError(
+                f'Invalid method {method}, select from ["asap", "cfds", "alap"]'
+            )
+        key = f"layering_{method}"
+        if key in self._cached:
+            layers, n_layers = self._cached[key]
+        elif method == "asap":
+            layers, n_layers = core.layering_asap(self.idxs_ds, self._mv)
+        elif method == "cfds":
+            layers, n_layers = core.layering_cfds(self.idxs_ds, self._mv)
+        else:
+            layers, n_layers = core.layering_alap(self.idxs_ds, self.idxs_seq, self._mv)
+        if method != "alap":
+            layers[self.rank.ravel() < 0] = -1
+            n_layers = int(layers.max()) + 1 if np.any(layers >= 0) else 0
+        if key not in self._cached and self.cache:
+            self._cached[key] = (layers, n_layers)
+        return layers.reshape(self.shape), n_layers
+
+    def _layer_decomposition(
+        self, method: Literal["asap", "cfds", "alap"]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Return cells grouped by layer and the offsets between layers."""
+        key = f"decomposition_{method}"
+        if key in self._cached:
+            return self._cached[key]
+        layers, n_layers = self.layer_cells(method)
+        cells, offsets = core.layer_decomposition(
+            layers.ravel(), n_layers, self.idxs_ds
+        )
+        if self.cache:
+            self._cached[key] = (cells, offsets)
+        return cells, offsets
 
     def main_upstream(self, uparea: np.ndarray | None = None) -> np.ndarray:
         """Return the main upstream node for each node.
@@ -330,9 +438,13 @@ class Flwdir:
         self._pit = np.unique(np.concatenate([self.idxs_pit, idxs1]))
         # Reset traversal state and all values derived from the flow topology.
         self._seq = None
+        self._seq_method = None
         self._nnodes = None
-        for key in ("rank", "strord", "idxs_us_main", "distnc"):
-            self._cached.pop(key, None)
+        for key in list(self._cached):
+            if key in ("rank", "strord", "idxs_us_main", "distnc") or key.startswith(
+                ("layering_", "decomposition_", "process_work_")
+            ):
+                self._cached.pop(key, None)
 
     def repair_loops(self) -> None:
         """Repair loops by setting a pit at every cell which does not drain to a pit."""
@@ -658,6 +770,15 @@ class Flwdir:
         data: np.ndarray,
         nodata: float = -9999,
         direction: Literal["up", "down"] = "up",
+        parallel: bool = False,
+        n_processes: int = 1,
+        threads_per_process: int | None = None,
+        layering: Literal["asap", "cfds", "alap"] = "cfds",
+        manner: Literal["push", "pull"] = "push",
+        partition_level: Literal["basin", "subbasin"] = "subbasin",
+        start_method: str = "spawn",
+        partition_min_subtree_size: int = 100_000,
+        partition_imbalance_target: float = 1.005,
     ) -> np.ndarray:
         """Return accumulated data values along the flow directions.
 
@@ -670,29 +791,123 @@ class Flwdir:
             Missing data value for cells outside domain
         direction : {'up', 'down'}, optional
             direction in which to accumulate data, by default upstream
+        parallel : bool, optional
+            Accumulate one layer at a time in threads, by default False.
+            Available for upstream accumulation only.
+        n_processes : int, optional
+            Number of processes, by default 1. Above one, the raster is divided into
+            this many parts, each accumulated in its own process with threads, and
+            any mainstem sections are accumulated after the processes finish. This
+            also needs ``parallel=True``, a `FlwdirRaster`, METIS
+            (``pip install pyflwdir[partition]``) and the default `layering` and
+            `manner`.
+        threads_per_process : int, optional
+            Numba threads inside each process, used only when `n_processes` is above
+            one. By default the available threads are divided over `n_processes`.
+            With one process, the threads are the current Numba thread count.
+        layering : {'asap', 'cfds', 'alap'}, optional
+            Layering used with ``parallel=True``, by default ``"cfds"``.
+        manner : {'push', 'pull'}, optional
+            Propagation manner used with ``parallel=True``, by default ``"push"``.
+            Push needs the conflict-free ``"cfds"`` layering. Pull is safe with all
+            three layerings but builds and reads the upstream-cell index.
+        partition_level : {'basin', 'subbasin'}, optional
+            How the raster is divided when `n_processes` is above one, by default
+            ``"subbasin"``: ``"basin"`` keeps every basin whole and ``"subbasin"``
+            also opens the basins that keep the parts from balancing. See
+            :py:meth:`FlwdirRaster.partition`.
+        start_method : str, optional
+            Multiprocessing start method, used only when `n_processes` is above one,
+            by default ``"spawn"``. With ``"spawn"``, call it from an importable
+            script, below an ``if __name__ == "__main__":`` guard.
+        partition_min_subtree_size : int, optional
+            With `n_processes` above one and at subbasin level, tributary subtrees
+            smaller than this are grouped with a larger neighbour before METIS
+            divides them, by default 100,000 cells as in the continental FlowTopo C
+            workflow; the balance refinement still moves single subtrees. Regardless
+            of this value, at least ``8 * n_processes`` groups are kept, or every
+            subtree if there are fewer.
+        partition_imbalance_target : float, optional
+            With `n_processes` above one, the largest part load divided by the mean
+            load that the partition aims for, by default 1.005. At subbasin level,
+            further basins open only while it is not reached.
 
         Returns
         -------
         array with `data.dtype`
             Accumulated values, with the same shape as `data`.
+
+        Raises
+        ------
+        ValueError
+            If `direction` is invalid, or if `parallel=True` is requested for
+            downstream accumulation.
         """
-        if direction == "up":
+        if direction not in ("up", "down"):
+            raise ValueError(
+                f'Unknown flow direction: {direction}, select from ["up", "down"].'
+            )
+        if n_processes < 1:
+            raise ValueError("n_processes must be at least 1")
+        if not parallel and n_processes != 1:
+            raise ValueError("n_processes > 1 requires parallel=True")
+        if parallel and direction == "down":
+            raise ValueError("parallel=True is only supported for direction='up'.")
+        if parallel:
+            if manner not in ("push", "pull"):
+                raise ValueError("manner must be 'push' or 'pull'")
+            if manner == "push" and layering != "cfds":
+                raise ValueError("manner='push' requires layering='cfds'")
+            checked = self._check_data(data, "data")
+            if n_processes > 1:
+                if layering != "cfds" or manner != "push":
+                    raise ValueError(
+                        "n_processes > 1 requires layering='cfds' and manner='push'"
+                    )
+                accu = parallel_utils.accuflux(
+                    self,
+                    checked,
+                    nodata,
+                    n_processes,
+                    threads_per_process,
+                    partition_level,
+                    start_method,
+                    partition_min_subtree_size,
+                    partition_imbalance_target,
+                )
+            elif manner == "push":
+                cells, offsets = self._layer_decomposition(layering)
+                accu = streams.accuflux_layered_push(
+                    idxs_ds=self.idxs_ds,
+                    cells=cells,
+                    offsets=offsets,
+                    data=checked,
+                    nodata=nodata,
+                )
+            else:
+                cells, offsets = self._layer_decomposition(layering)
+                indptr, idxs_us = core.upstream_csr(self.idxs_ds, self._mv)
+                accu = streams.accuflux_layered_pull(
+                    indptr=indptr,
+                    idxs_us=idxs_us,
+                    cells=cells,
+                    offsets=offsets,
+                    data=checked,
+                    nodata=nodata,
+                )
+        elif direction == "up":
             accu = streams.accuflux(
                 idxs_ds=self.idxs_ds,
                 seq=self.idxs_seq,
                 data=self._check_data(data, "data"),
                 nodata=nodata,
             )
-        elif direction == "down":
+        else:
             accu = streams.accuflux_ds(
                 idxs_ds=self.idxs_ds,
                 seq=self.idxs_seq,
                 data=self._check_data(data, "data"),
                 nodata=nodata,
-            )
-        else:
-            raise ValueError(
-                'Unknown flow direction: {direction}, select from ["up", "down"].'
             )
         return accu.reshape(data.shape)
 
@@ -752,7 +967,10 @@ class Flwdir:
         """
         elevtn_out = dem.adjust_elevation(
             idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
+            # Yamazaki's method starts from the longest stream paths, so this needs
+            # the cells grouped by their distance to the outlet, whatever the
+            # ordering of this object is
+            seq=core.idxs_seq(self.idxs_ds, self.idxs_pit, self._mv),
             elevtn=self._check_data(elevtn, "elevtn"),
             mv=self._mv,
         )

@@ -129,6 +129,24 @@ Up- and downstream arithmetics
    FlwdirRaster.smooth_rivlen
    FlwdirRaster.fillnodata
 
+Parallel accumulation
+^^^^^^^^^^^^^^^^^^^^^
+
+Upstream accumulation is the only computation that runs in parallel:
+:py:meth:`FlwdirRaster.accuflux` with ``direction="up"`` and
+:py:meth:`FlwdirRaster.upstream_area`. Pass ``parallel=True`` to run in threads, and
+``n_processes`` above one as well to run in processes, with threads inside each.
+
+The methods below only return how the cells divide into layers and parts. Calling
+them does not make any other method run in parallel, and the accumulation builds
+its own layers and parts. See also :doc:`partition`.
+
+.. autosummary::
+   :toctree: ../_generated
+
+   FlwdirRaster.layer_cells
+   FlwdirRaster.partition
+
 
 Upscale and subgrid methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

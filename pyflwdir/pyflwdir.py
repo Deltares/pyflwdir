@@ -18,6 +18,7 @@ from . import (
     core_ldd,
     core_nextxy,
     dem,
+    partition as partitioning,
     regions,
     streams,
     subgrid,
@@ -303,7 +304,7 @@ class FlwdirRaster(Flwdir):
     def idxs_seq(self) -> np.ndarray:
         """Linear indices of valid cells ordered from down- to upstream."""
         if self._seq is None:
-            self.order_cells(method="walk")
+            self.order_cells(method="dfs")
         return cast(np.ndarray, self._seq)
 
     ### SET/MODIFY PROPERTIES ###
@@ -638,6 +639,12 @@ class FlwdirRaster(Flwdir):
             Raster of unique subbasin IDs.
         idxs_out : 1D array of int
             Linear indices of subbasin outlet cells.
+
+        Notes
+        -----
+        The subbasins and their outlets are the same for every ordering set with
+        `order_cells` (see its Notes). Their IDs follow the sequence though, so which
+        subbasin gets which ID, and the order of `idxs_out`, change with the method.
         """
         subbas, idxs_out = basins.subbasins(
             idxs_ds=self.idxs_ds,
@@ -674,6 +681,12 @@ class FlwdirRaster(Flwdir):
             Raster of unique IDs for subbasins meeting `min_sto`.
         idxs_out : 1D array of int
             Linear indices of subbasin outlet cells.
+
+        Notes
+        -----
+        The subbasins and their outlets are the same for every ordering set with
+        `order_cells` (see its Notes). Their IDs follow the sequence though, so which
+        subbasin gets which ID, and the order of `idxs_out`, change with the method.
         """
         subbas, idxs_out = basins.subbasins_streamorder(
             idxs_ds=self.idxs_ds,
@@ -715,7 +728,10 @@ class FlwdirRaster(Flwdir):
             idxs_pit=self.idxs_pit,
             idxs_ds=self.idxs_ds,
             idxs_us_main=self.idxs_us_main,
-            seq=self.idxs_seq,
+            # which tributaries of equal area are picked follows the order the
+            # cells come in, so this keeps the cells grouped by their distance
+            # to the outlet, whatever the ordering of this object is
+            seq=core.idxs_seq(self.idxs_ds, self.idxs_pit, self._mv),
             uparea=uparea,
             mask=mask,
             depth=depth,
@@ -748,7 +764,11 @@ class FlwdirRaster(Flwdir):
         """
         subbas, idxs_out = basins.subbasins_area(
             idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
+            # a tributary writes the area left to the main stem cell beside it,
+            # which has to be read after that write, so this needs the cells
+            # grouped by their distance to the outlet, whatever the ordering of
+            # this object is
+            seq=core.idxs_seq(self.idxs_ds, self.idxs_pit, self._mv),
             idxs_us_main=self.idxs_us_main,
             uparea=self._check_data(uparea, "uparea", unit="km2"),
             area_min=area_min,
@@ -840,7 +860,17 @@ class FlwdirRaster(Flwdir):
     ### ACCUMULATE ####
 
     def upstream_area(
-        self, unit: Literal["m2", "ha", "km2", "cell"] = "cell"
+        self,
+        unit: Literal["m2", "ha", "km2", "cell"] = "cell",
+        parallel: bool = False,
+        n_processes: int = 1,
+        threads_per_process: int | None = None,
+        layering: Literal["asap", "cfds", "alap"] = "cfds",
+        manner: Literal["push", "pull"] = "push",
+        partition_level: Literal["basin", "subbasin"] = "subbasin",
+        start_method: str = "spawn",
+        partition_min_subtree_size: int = 100_000,
+        partition_imbalance_target: float = 1.005,
     ) -> np.ndarray:
         """Return the upstream-area raster for the flow directions.
 
@@ -851,6 +881,39 @@ class FlwdirRaster(Flwdir):
         unit : {'m2', 'ha', 'km2', 'cell'}
             Upstream-area units: square metres ('m2'), hectares ('ha'), square kilometres
             ('km2'), or cells ('cell'), by default 'cell'.
+        parallel : bool, optional
+            Accumulate one layer at a time in threads, by default False.
+        n_processes : int, optional
+            Number of processes, by default 1. Above one, the raster is divided into
+            this many parts, each accumulated in its own process with threads, and
+            any mainstem sections are accumulated after the processes finish. This
+            also needs ``parallel=True``, METIS
+            (``pip install pyflwdir[partition]``) and the default `layering` and
+            `manner`.
+        threads_per_process : int, optional
+            Threads inside each process, used only when `n_processes` is above one.
+            With one process, the threads are the current Numba thread count.
+        layering : {'asap', 'cfds', 'alap'}, optional
+            Layering used with ``parallel=True``, by default ``"cfds"``.
+        manner : {'push', 'pull'}, optional
+            Propagation manner used with ``parallel=True``, by default ``"push"``.
+            Push needs the conflict-free ``"cfds"`` layering; pull is safe with
+            all three.
+        partition_level : {'basin', 'subbasin'}, optional
+            How the raster is divided when `n_processes` is above one, by default
+            ``"subbasin"``; see :py:meth:`partition`.
+        start_method : str, optional
+            Multiprocessing start method, used only when `n_processes` is above one,
+            by default ``"spawn"``. With ``"spawn"``, call it from an importable
+            script, below an ``if __name__ == "__main__":`` guard.
+        partition_min_subtree_size : int, optional
+            With `n_processes` above one and at subbasin level, tributary subtrees
+            smaller than this are grouped for METIS, by default 100,000 cells.
+            Regardless of this value, at least ``8 * n_processes`` groups are kept,
+            or every subtree if there are fewer.
+        partition_imbalance_target : float, optional
+            With `n_processes` above one, the largest part load divided by the mean
+            load that the partition aims for, by default 1.005.
 
         Returns
         -------
@@ -865,14 +928,72 @@ class FlwdirRaster(Flwdir):
             area = np.ones(self.size, dtype=np.int32)
         else:
             area = self.area.ravel() / gis.AREA_FACTORS[unit]
-        uparea = streams.accuflux(
-            idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
-            data=area,
+        uparea = self.accuflux(
+            area,
             nodata=-9999,
-        )
+            parallel=parallel,
+            n_processes=n_processes,
+            threads_per_process=threads_per_process,
+            layering=layering,
+            manner=manner,
+            partition_level=partition_level,
+            start_method=start_method,
+            partition_min_subtree_size=partition_min_subtree_size,
+            partition_imbalance_target=partition_imbalance_target,
+        ).ravel()
         uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)
+
+    def partition(
+        self,
+        level: Literal["basin", "subbasin"] = "subbasin",
+        n_parts: int = partitioning.DEFAULT_N_PARTS,
+        **kwargs,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Divide the raster into parts, for upstream accumulation in processes.
+
+        This returns the part of each cell and the cell count of each part. It does
+        not make any method run in parallel. Upstream accumulation with ``n_processes``
+        above one (:py:meth:`accuflux`, :py:meth:`FlwdirRaster.upstream_area`) is the
+        only computation that divides a raster in parts, and it builds its own.
+
+        ``level="basin"`` (FlowTopo Method 1) keeps every basin whole and groups the
+        basins into ``n_parts`` contiguous, balanced parts, using METIS, a graph
+        partitioning library, and a refinement of the boundaries.
+        ``level="subbasin"`` (FlowTopo Method 2) opens the basins that keep the parts
+        from balancing, along their mainstems (going up from the pit through the
+        tributary with the most cells at each confluence), into tributary subtrees,
+        and divides those and the other basins into ``n_parts`` parts. ``P_min`` is the
+        most upstream mainstem cell where a tributary of another part enters: from
+        there down to the pit, the mainstem is a section accumulated after the parts.
+
+        METIS is an optional dependency; install it with
+        ``pip install pyflwdir[partition]``.
+
+        Parameters
+        ----------
+        level : {'basin', 'subbasin'}, optional
+            How to divide the raster, as above, by default ``"subbasin"``.
+        n_parts : int, optional
+            Number of parts, by default 4. A tributary subtree is never cut, so
+            the heaviest part is at least as heavy as the largest subtree of an
+            opened basin, and more parts do not balance a region beyond that.
+        **kwargs
+            Additional options passed to
+            :func:`pyflwdir.partition.partition_plan`, which also returns how the
+            opened mainstems connect to the parts.
+
+        Returns
+        -------
+        parts : ndarray of int32
+            Part of each cell, from 0 to ``n_parts - 1``. The value ``n_parts`` marks
+            the mainstem sections, accumulated after the parts, and ``-1`` marks cells
+            off the network and the cell of a basin of a single cell, which takes no
+            part (as in the FlowTopo C code).
+        loads : ndarray of int64
+            Cell count of each part, without the mainstem sections.
+        """
+        return partitioning.partition(self, level=level, n_parts=n_parts, **kwargs)
 
     ### STREAMS ####
     def inflow_idxs(self, region: np.ndarray) -> np.ndarray:
@@ -887,6 +1008,14 @@ class FlwdirRaster(Flwdir):
         -------
         1D array of int
             Linear indices of the most upstream cells in `region`.
+
+        Notes
+        -----
+        The cells follow the sequence set with `order_cells`, so their order changes
+        with the method. Which cells are returned depends on which upstream cell of a
+        confluence comes first in the sequence. "dfs" and "walk" both put the upstream
+        cell with the lowest index first, so they return the same cells; "sort" and
+        "topo" can put another one first and return other cells.
         """
         return core.inflow_idxs(
             self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
@@ -904,6 +1033,11 @@ class FlwdirRaster(Flwdir):
         -------
         1D array of int
             Linear indices of the most downstream cells in `region`.
+
+        Notes
+        -----
+        The cells are the same for every ordering set with `order_cells` (see its
+        Notes). They follow the sequence though, so their order changes with the method.
         """
         return core.outflow_idxs(
             self.idxs_ds, self.idxs_seq, self._check_data(region, "region")
@@ -1023,6 +1157,12 @@ class FlwdirRaster(Flwdir):
         -------
         feats : list of dict
             LineString features, suitable for `geopandas.GeoDataFrame.from_features`.
+
+        Notes
+        -----
+        The features are the same for every ordering set with `order_cells` (see its
+        Notes). Without `idxs_out` they follow the sequence though, so the order of the
+        list changes with the method.
         """
         if mask is not None:
             mask = self._check_data(mask, "mask")
@@ -1588,7 +1728,10 @@ class FlwdirRaster(Flwdir):
         """
         elv_out = dem.dig_4connectivity(
             idxs_ds=self.idxs_ds,
-            seq=self.idxs_seq,
+            # the elevation this writes beside a diagonal step is read by the cells
+            # handled after it, so this keeps the cells grouped by their distance to
+            # the outlet, whatever the ordering of this object is
+            seq=core.idxs_seq(self.idxs_ds, self.idxs_pit, self._mv),
             elv_flat=self._check_data(elevtn, "elevtn"),
             mask=self._check_data(rivmsk, "rivmsk", optional=True),
             shape=self.shape,

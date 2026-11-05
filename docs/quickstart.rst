@@ -56,5 +56,7 @@ Vectorize the stream network and save to a geojson file:
   Deliniation of (sub)basins <_examples/basins>
   Stream order <_examples/streams>
   Tracing flow directions <_examples/tracing>
+  Cell orderings <_examples/ordering>
+  Parallel accumulation <_examples/parallel>
   Elevation indices <_examples/elevation_indices>
   Flow direction upscaling <_examples/upscaling>
