@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from dataclasses import replace
-from multiprocessing import get_all_start_methods
 
 import pyflwdir
 from pyflwdir import partition, streams
@@ -500,7 +499,7 @@ def test_mainstem_walk_keeps_the_data_type(dtype):
     assert np.array_equal(accu, streams.accuflux(idxs_ds, seq, data, -9999))
 
 
-START_METHOD = "fork" if "fork" in get_all_start_methods() else "spawn"
+START_METHOD = "spawn"
 
 
 @pytest.mark.integration
