@@ -6,15 +6,16 @@ Partition methods
 A partition divides a raster into parts, for upstream accumulation in processes. It
 is an optional feature: install it with ``pip install pyflwdir[partition]``.
 
-Use :py:meth:`FlwdirRaster.partition` when you only need the part of each cell and
-the cell count of each part, and :func:`partition.partition_plan` when you also want
-to inspect the opened mainstem sections, which the accumulation finishes last.
+:py:meth:`FlwdirRaster.partition` divides the raster into one part a process and
+returns a :class:`partition.PartitionPlan`: the part of each cell, the cell count of
+each part, and the opened mainstem sections, which the accumulation finishes last.
+:func:`partition.partition_plan` is the function behind it.
 
-A partition only says which part each cell belongs to. Upstream accumulation is the
-only computation that uses one: :py:meth:`FlwdirRaster.accuflux` and
-:py:meth:`FlwdirRaster.upstream_area` with ``parallel=True`` and ``n_processes``
-above one, which build their own and do not take a plan. Building a plan does not
-make any other method run in parallel.
+Upstream accumulation is the only computation that uses a plan: pass it as
+``partition_plan`` to :py:meth:`FlwdirRaster.accuflux` or
+:py:meth:`FlwdirRaster.upstream_area`, with ``parallel=True``. The accumulation
+checks the plan against the flow directions first, and one plan serves any number of
+calls. Making a plan does not make any other method run in parallel.
 
 A tributary subtree is never cut, so the heaviest part is at least as heavy as the
 largest subtree of an opened basin, however many parts are asked.

@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from dataclasses import replace
 from multiprocessing import get_all_start_methods
 
 import pyflwdir
@@ -499,95 +500,311 @@ def test_mainstem_walk_keeps_the_data_type(dtype):
     assert np.array_equal(accu, streams.accuflux(idxs_ds, seq, data, -9999))
 
 
+START_METHOD = "fork" if "fork" in get_all_start_methods() else "spawn"
+
+
 @pytest.mark.integration
 def test_metis_process_and_thread_accumulation_matches_serial():
     pytest.importorskip("pymetis")
     flw = column_basins(nrow=64, ncol=8)
     data = np.arange(1, flw.size + 1, dtype=np.int64)
-    start_method = "fork" if "fork" in get_all_start_methods() else "spawn"
+    plan = flw.partition(n_processes=4, level="basin")
     accumulated = flw.accuflux(
         data,
         parallel=True,
-        n_processes=4,
+        partition_plan=plan,
         threads_per_process=1,
-        partition_level="basin",
-        start_method=start_method,
+        start_method=START_METHOD,
     )
     assert np.array_equal(accumulated, flw.accuflux(data))
-
-
-def record_plans(monkeypatch):
-    """The settings and the plan of every ``partition_plan`` the accumulation asks."""
-    calls = []
-    partition_plan = partition.partition_plan
-
-    def record(flw, **settings):
-        plan = partition_plan(flw, **settings)
-        calls.append((settings, plan))
-        return plan
-
-    monkeypatch.setattr(partition, "partition_plan", record)
-    return calls
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("n_processes", [2, 3, 4, 9])
-def test_subbasin_process_path_uses_the_requested_settings_and_matches_serial(
-    n_processes, monkeypatch
-):
+def test_a_subbasin_plan_with_its_settings_matches_serial(n_processes):
     pytest.importorskip("pymetis")
     flw = rivers(31, [31, 21])
     data = np.arange(1, flw.size + 1, dtype=np.int64)
-    start_method = "fork" if "fork" in get_all_start_methods() else "spawn"
-    calls = record_plans(monkeypatch)
+    plan = flw.partition(
+        n_processes=n_processes,
+        level="subbasin",
+        min_subtree_size=1,
+        imbalance_target=1.01,
+    )
+    same = partition.partition_plan(
+        flw,
+        level="subbasin",
+        n_parts=n_processes,
+        min_subtree_size=1,
+        imbalance_target=1.01,
+    )
+    assert np.array_equal(plan.parts, same.parts)
+    assert plan.loads.size == n_processes
+    assert plan.mainstem.size > 0
+    assert set(np.unique(plan.parts)) == set(range(n_processes + 1))
     accumulated = flw.accuflux(
         data,
         parallel=True,
-        n_processes=n_processes,
+        partition_plan=plan,
         threads_per_process=1,
-        partition_level="subbasin",
-        partition_min_subtree_size=1,
-        partition_imbalance_target=1.01,
-        start_method=start_method,
+        start_method=START_METHOD,
     )
     assert np.array_equal(accumulated, flw.accuflux(data))
-    [(settings, plan)] = calls
-    assert settings == {
-        "level": "subbasin",
-        "n_parts": n_processes,
-        "min_subtree_size": 1,
-        "imbalance_target": 1.01,
-    }
-    assert plan.mainstem.size > 0
-    assert set(np.unique(plan.parts)) == set(range(n_processes + 1))
 
 
 @pytest.mark.integration
-def test_raster_upstream_area_runs_in_processes_with_the_requested_settings(
-    monkeypatch,
-):
+def test_one_plan_serves_upstream_area_and_accuflux_again_and_again():
     pytest.importorskip("pymetis")
     flw = rivers(31, [31, 21])
-    start_method = "fork" if "fork" in get_all_start_methods() else "spawn"
-    calls = record_plans(monkeypatch)
-    uparea = flw.upstream_area(
-        "cell",
+    data = np.arange(1, flw.size + 1, dtype=np.int64)
+    plan = flw.partition(n_processes=3, level="subbasin", min_subtree_size=1)
+    parts = plan.parts.copy()
+    run = dict(
         parallel=True,
-        n_processes=3,
+        partition_plan=plan,
         threads_per_process=1,
-        partition_level="basin",
-        partition_min_subtree_size=1,
-        partition_imbalance_target=1.01,
-        start_method=start_method,
+        start_method=START_METHOD,
     )
-    assert np.array_equal(uparea, flw.upstream_area("cell"))
-    [(settings, _)] = calls
-    assert settings == {
-        "level": "basin",
-        "n_parts": 3,
-        "min_subtree_size": 1,
-        "imbalance_target": 1.01,
-    }
+    assert np.array_equal(flw.upstream_area("cell", **run), flw.upstream_area("cell"))
+    assert np.array_equal(flw.accuflux(data, **run), flw.accuflux(data))
+    km2 = flw.upstream_area("km2", **run)
+    assert np.array_equal(km2, flw.upstream_area("km2", **run))
+    assert np.allclose(km2, flw.upstream_area("km2"))
+    assert np.array_equal(plan.parts, parts)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("level", ["basin", "subbasin"])
+def test_a_plan_of_one_process_matches_serial(level):
+    flw = rivers(31, [31, 21])
+    data = np.arange(1, flw.size + 1, dtype=np.int64)
+    plan = flw.partition(n_processes=1, level=level)
+    assert plan.loads.size == 1
+    accumulated = flw.accuflux(
+        data, parallel=True, partition_plan=plan, start_method=START_METHOD
+    )
+    assert np.array_equal(accumulated, flw.accuflux(data))
+
+
+def handmade_plan():
+    """Three rows of three cells, draining sideways into the middle column, which
+    drains south to the pit, cell 7::
+
+        0 > 1 < 2
+            v
+        3 > 4 < 5
+            v
+        6 > 7 < 8
+
+    Part 0 holds 0, 1, 2, 3 and 6; part 1 holds 5 and 8; the mainstem section
+    holds 4 and 7.  Cell 1 hands its water to 4 as the predecessor, and 3, 5, 6 and
+    8 hand theirs to the section as cut outlets.
+    """
+    flw = rivers(3, [3])
+    parts = np.array([[0, 0, 0], [0, 2, 1], [0, 2, 1]], dtype=np.int32)
+    section = partition.MainstemSection(
+        mainstem=np.array([4, 7]),
+        predecessor=1,
+        cut_outlets=np.array([3, 5, 6, 8]),
+        cut_inlets=np.array([4, 4, 7, 7]),
+        cut_parts=np.array([0, 1, 0, 1], dtype=np.int32),
+        predecessor_part=0,
+    )
+    plan = partition.PartitionPlan(
+        parts=parts,
+        loads=np.array([5, 2], dtype=np.int64),
+        basin_ids=np.ones((3, 3), dtype=np.int32),
+        level="subbasin",
+        stems=(section,),
+    )
+    return flw, plan
+
+
+def accumulate(flw, plan, data=None):
+    if data is None:
+        data = np.arange(1, flw.size + 1, dtype=np.int64).reshape(flw.shape)
+    return flw.accuflux(
+        data,
+        parallel=True,
+        partition_plan=plan,
+        threads_per_process=1,
+        start_method=START_METHOD,
+    )
+
+
+@pytest.mark.integration
+def test_a_handmade_plan_that_fits_matches_serial():
+    flw, plan = handmade_plan()
+    data = np.arange(1, flw.size + 1, dtype=np.int64).reshape(flw.shape)
+    assert np.array_equal(accumulate(flw, plan, data), flw.accuflux(data))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("level", ["basin", "subbasin"])
+@pytest.mark.parametrize("n_processes", [1, 2])
+def test_a_plan_matches_serial_where_the_flow_directions_have_a_loop(
+    level, n_processes
+):
+    """Cells 4 and 5 drain into each other, a loop, and cell 6 drains into it, so
+    these three never reach a pit and take no part. Rows 0 and 2 drain east to the
+    pits 3 and 11, and cell 7 drains north into 3."""
+    if n_processes > 1:
+        pytest.importorskip("pymetis")
+    idxs_ds = np.array([1, 2, 3, 3, 5, 4, 5, 3, 9, 10, 11, 11], dtype=np.int32)
+    flw = pyflwdir.FlwdirRaster(idxs_ds, shape=(3, 4), ftype="d8")
+    plan = flw.partition(n_processes=n_processes, level=level)
+    assert np.all(plan.parts.flat[[4, 5, 6]] == -1)
+    data = np.arange(1, flw.size + 1, dtype=np.int64).reshape(flw.shape)
+    assert np.array_equal(accumulate(flw, plan, data), flw.accuflux(data))
+
+
+def replace_section(plan, **changes):
+    [section] = plan.stems
+    return replace(plan, stems=(replace(section, **changes),))
+
+
+def relabel(plan, cell, label):
+    parts = plan.parts.copy()
+    parts.flat[cell] = label
+    return replace(plan, parts=parts)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "change, message",
+    [
+        # parts
+        (lambda p: relabel(p, 0, 5), "labels outside -1 to 2"),
+        (lambda p: relabel(p, 0, -1), "cell 0 has no part"),
+        (lambda p: relabel(p, 2, 1), "only to a mainstem section"),
+        # the section
+        (lambda p: replace_section(p, mainstem=np.array([7, 4])), "not a chain"),
+        (
+            # cell 4 is labelled as a section but left out of it
+            lambda p: replace_section(
+                p,
+                mainstem=np.array([7]),
+                predecessor=-1,
+                cut_outlets=np.array([6, 8]),
+                cut_inlets=np.array([7, 7]),
+            ),
+            "exactly once",
+        ),
+        # the hand-overs
+        (lambda p: replace_section(p, predecessor=0), "does not drain into its first"),
+        (
+            lambda p: replace_section(
+                p,
+                cut_outlets=np.array([1, 3, 5, 6, 8]),
+                cut_inlets=np.array([4, 4, 4, 7, 7]),
+            ),
+            "cell 1 is listed twice",
+        ),
+        (
+            lambda p: replace_section(
+                p, cut_outlets=np.array([3, 5, 6]), cut_inlets=np.array([4, 4, 7])
+            ),
+            "cell 8 drains into a mainstem section but is not",
+        ),
+        (
+            lambda p: replace_section(
+                p,
+                cut_outlets=np.array([6, 8, 3, 5]),
+                cut_inlets=np.array([7, 7, 4, 4]),
+            ),
+            "do not follow it from upstream down",
+        ),
+        (
+            lambda p: replace_section(
+                p,
+                cut_outlets=np.array([3, 5, 6, 8]),
+                cut_inlets=np.array([7, 4, 4, 7]),
+            ),
+            "does not drain into its cut inlet",
+        ),
+        (
+            lambda p: replace_section(p, cut_inlets=np.array([4, 4, 7])),
+            "4 cut_outlets but 3 cut_inlets",
+        ),
+    ],
+)
+def test_a_plan_that_does_not_fit_is_refused(change, message):
+    flw, plan = handmade_plan()
+    with pytest.raises(ValueError, match="does not fit") as error:
+        accumulate(flw, change(plan))
+    assert message in str(error.value)
+
+
+@pytest.mark.unit
+def test_a_plan_that_does_not_fit_a_raster_of_the_same_shape_is_refused():
+    _, plan = handmade_plan()
+    with pytest.raises(ValueError, match="does not fit"):
+        accumulate(column_basins(nrow=3, ncol=3), plan)
+
+
+@pytest.mark.unit
+def test_a_plan_for_a_raster_of_another_shape_is_refused():
+    _, plan = handmade_plan()
+    with pytest.raises(ValueError, match=r"parts has shape \(3, 3\)"):
+        accumulate(column_basins(nrow=3, ncol=4), plan)
+
+
+@pytest.mark.unit
+def test_a_plan_with_a_part_off_the_network_is_refused():
+    # cell 0 drains into the pit 1; cell 2 is off the network
+    flw = pyflwdir.from_array(np.array([[1, 0, 247]], dtype=np.uint8), ftype="d8")
+    plan = flw.partition(n_processes=1, level="basin")
+    assert np.array_equal(plan.parts, [[0, 0, -1]])
+    with pytest.raises(
+        ValueError, match="cell 2 is off the river network but has a part"
+    ):
+        accumulate(flw, relabel(plan, 2, 0), np.ones((1, 3)))
+
+
+@pytest.mark.unit
+def test_partition_plan_must_be_a_plan():
+    flw, plan = handmade_plan()
+    with pytest.raises(TypeError, match="must be a PartitionPlan"):
+        accumulate(flw, (plan.parts, plan.loads))
+
+
+@pytest.mark.unit
+def test_a_plan_needs_parallel_and_the_default_layering_and_manner():
+    flw, plan = handmade_plan()
+    data = np.ones(flw.shape)
+    with pytest.raises(ValueError, match="partition_plan requires parallel=True"):
+        flw.accuflux(data, partition_plan=plan)
+    with pytest.raises(ValueError, match="partition_plan requires parallel=True"):
+        flw.upstream_area(partition_plan=plan)
+    with pytest.raises(ValueError, match="layering='cfds' and manner='push'"):
+        flw.accuflux(data, parallel=True, partition_plan=plan, manner="pull")
+
+
+@pytest.mark.unit
+def test_a_plan_made_before_add_pits_is_refused_when_it_no_longer_fits():
+    flw, plan = handmade_plan()
+    flw.add_pits(idxs=np.array([4]))  # cuts the mainstem section in two
+    with pytest.raises(ValueError, match="not a chain"):
+        accumulate(flw, plan)
+
+
+@pytest.mark.integration
+def test_a_plan_made_before_add_pits_that_still_fits_matches_serial():
+    flw, plan = handmade_plan()
+    flw.add_pits(idxs=np.array([0]))  # cell 0 no longer drains into 1, in part 0
+    data = np.arange(1, flw.size + 1, dtype=np.int64).reshape(flw.shape)
+    assert np.array_equal(accumulate(flw, plan, data), flw.accuflux(data))
+
+
+@pytest.mark.unit
+def test_a_metis_plan_made_before_add_pits_on_its_mainstem_is_refused():
+    pytest.importorskip("pymetis")
+    flw = rivers(31, [31, 21])
+    plan = flw.partition(n_processes=3, level="subbasin", min_subtree_size=1)
+    assert plan.stems[0].mainstem.size > 1
+    flw.add_pits(idxs=plan.stems[0].mainstem[:1])
+    with pytest.raises(ValueError, match="does not fit"):
+        accumulate(flw, plan)
 
 
 @pytest.mark.unit
@@ -1197,7 +1414,7 @@ def test_four_parts_are_the_default():
     flw = tributaries_to_mainstem()
     for level in ("basin", "subbasin"):
         assert partition.partition_plan(flw, level=level).loads.size == 4
-        assert flw.partition(level=level)[1].size == 4
+        assert flw.partition(level=level).loads.size == 4
 
 
 @pytest.mark.unit
@@ -1281,18 +1498,11 @@ def test_metis_partition_requires_a_raster(level):
 
 
 @pytest.mark.unit
-def test_the_process_path_requires_a_raster():
-    flw = pyflwdir.Flwdir(np.array([0, 0], dtype=np.int32))
-    with pytest.raises(TypeError, match="FlwdirRaster"):
-        flw.accuflux(np.ones(2), parallel=True, n_processes=2)
-
-
-@pytest.mark.unit
 def test_one_part_partition_is_trivial_without_metis():
     flw = column_basins()
-    parts, load = flw.partition(level="basin", n_parts=1)
-    assert np.all(parts == 0)
-    assert np.array_equal(load, np.array([flw.ncells]))
+    plan = flw.partition(level="basin", n_processes=1)
+    assert np.all(plan.parts == 0)
+    assert np.array_equal(plan.loads, np.array([flw.ncells]))
 
 
 def test_the_mainstem_takes_the_smaller_index_of_two_equal_tributaries():
@@ -1346,18 +1556,24 @@ def test_an_upa_that_is_not_finite_and_positive_on_the_network_is_refused():
         np.array([3, 3, 2, 3], dtype=np.int32), shape=(2, 2), ftype="d8"
     )
     upa = np.array([1.0, 1.0, 1.0, 3.0], dtype=np.float32)
-    partition.partition(flw, level="basin", n_parts=1, upa=upa)
+    partition.partition_plan(flw, level="basin", n_parts=1, upa=upa)
     for bad in (np.nan, np.inf, 0.0):
         broken = upa.copy()
         broken[1] = bad
         with pytest.raises(ValueError, match="finite, positive area"):
-            partition.partition(flw, level="basin", n_parts=1, upa=broken)
+            partition.partition_plan(flw, level="basin", n_parts=1, upa=broken)
 
 
 def test_a_cell_draining_off_the_network_is_refused():
     flw = pyflwdir.FlwdirRaster(np.array([1, -1, 2], dtype=np.int32), (1, 3), "d8")
     with pytest.raises(ValueError, match="drain into a cell off the network"):
-        partition.partition(flw, level="basin", n_parts=1)
+        partition.partition_plan(flw, level="basin", n_parts=1)
+
+
+def test_fewer_than_one_process_is_refused_by_its_own_name():
+    flw = pyflwdir.FlwdirRaster(np.array([1, 1], dtype=np.int32), (1, 2), "d8")
+    with pytest.raises(ValueError, match="n_processes must be at least 1"):
+        flw.partition(n_processes=0)
 
 
 def test_nearest_of_no_point_finds_none():

@@ -1,12 +1,15 @@
 """Divide a flow-direction raster into parts, for upstream accumulation in processes.
 
-There are two entry points.  :py:meth:`pyflwdir.FlwdirRaster.partition` returns the
-part of each cell and the cell count of each part.  :func:`partition_plan` also returns
-how the opened mainstems connect to the parts, for inspection.
+:py:meth:`pyflwdir.FlwdirRaster.partition` returns a :class:`PartitionPlan`: the part
+of each cell, the cell count of each part, and how the opened mainstems connect to the
+parts.  :func:`partition_plan` is the function behind it, with ``n_parts`` for
+``n_processes``.
 
-A partition only says which part each cell belongs to.  Upstream accumulation
-(:mod:`pyflwdir.parallel`) is the only computation that uses one, and it builds its
-own: building a partition or a plan does not make any other method run in parallel.
+Upstream accumulation in processes (:mod:`pyflwdir.parallel`) is the only computation
+that uses a plan: pass it as ``partition_plan`` to
+:py:meth:`pyflwdir.FlwdirRaster.upstream_area` or
+:py:meth:`pyflwdir.FlwdirRaster.accuflux`.  Making a plan does not make any other
+method run in parallel.
 
 Following FlowTopo (https://doi.org/10.5281/zenodo.22227621), a raster is divided into
 ``n_parts`` parts, four by default, at two levels:
@@ -100,16 +103,21 @@ class MainstemSection:
 
 @dataclass
 class PartitionPlan:
-    """How the cells of a raster divide, from :func:`partition_plan`.
+    """How the cells of a raster divide over processes, from
+    :py:meth:`pyflwdir.FlwdirRaster.partition`.
 
-    For inspection: the accumulation builds its own plan and does not take this one.
+    Pass it as ``partition_plan`` to :py:meth:`pyflwdir.FlwdirRaster.upstream_area`
+    or :py:meth:`pyflwdir.FlwdirRaster.accuflux`, with ``parallel=True``, to
+    accumulate each part in its own process.  The accumulation checks it against the
+    flow directions first and refuses a plan that does not fit them.
 
     Attributes
     ----------
     parts : ndarray of int32
-        Label of each cell, shaped like the raster: from 0 to ``n_parts - 1`` in a
-        part, ``n_parts`` in a mainstem section, and -1 off the network and on a
-        basin of a single cell.
+        Label of each cell, shaped like the raster: from 0 to ``n - 1`` in a part,
+        ``n`` in a mainstem section, and -1 off the network, on a basin of a
+        single cell, and in or draining into a loop of the flow directions, where
+        ``n`` is ``loads.size``, the number of parts and of processes.
     loads : ndarray of int64
         Cell count of each part. The mainstem sections are excluded.
     basin_ids : ndarray of int
@@ -169,13 +177,12 @@ def partition_plan(
 ) -> PartitionPlan:
     """Divide a raster into parts, and return how the opened mainstems connect to them.
 
-    Use this to inspect a partition; :py:meth:`pyflwdir.FlwdirRaster.partition` is
-    enough for the part of each cell and the cell count of each part.
-
-    Building a plan does not make any method run in parallel.  Upstream accumulation
-    with ``n_processes`` above one (:py:meth:`pyflwdir.FlwdirRaster.accuflux`,
-    :py:meth:`pyflwdir.FlwdirRaster.upstream_area`) is the only computation that
-    divides a raster in parts: it builds its own plan and does not take this one.
+    :py:meth:`pyflwdir.FlwdirRaster.partition` calls this, with ``n_processes`` as
+    ``n_parts``.  Pass the plan as ``partition_plan`` to
+    :py:meth:`pyflwdir.FlwdirRaster.upstream_area` or
+    :py:meth:`pyflwdir.FlwdirRaster.accuflux`, with ``parallel=True``, to
+    accumulate each part in its own process.  Making a plan does not make any method
+    run in parallel.
 
     A tributary subtree is never cut, so the heaviest part is at least as heavy as
     the largest subtree of an opened basin, however large ``n_parts``.
@@ -189,7 +196,8 @@ def partition_plan(
         (FlowTopo Method 2), the default, also opens the basins that keep the parts
         from balancing, along their mainstems.
     n_parts : int, optional
-        Number of parts, by default 4.
+        Number of parts, by default 4; the accumulation runs one process a part
+        with cells.
     seed : int, optional
         Seed of the first METIS run, by default 42.
     refine : bool, optional
@@ -274,21 +282,6 @@ def partition_plan(
         refine,
         upa,
     )
-
-
-def partition(
-    flw: "Flwdir",
-    level: Literal["basin", "subbasin"] = "subbasin",
-    n_parts: int = DEFAULT_N_PARTS,
-    **kwargs,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Return the part of each cell and the cell count of each part.
-
-    The ``parts`` and ``loads`` of :func:`partition_plan`, which takes the same
-    arguments.
-    """
-    plan = partition_plan(flw, level=level, n_parts=n_parts, **kwargs)
-    return plan.parts, plan.loads
 
 
 METIS_SEEDS = 4

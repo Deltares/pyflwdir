@@ -863,14 +863,11 @@ class FlwdirRaster(Flwdir):
         self,
         unit: Literal["m2", "ha", "km2", "cell"] = "cell",
         parallel: bool = False,
-        n_processes: int = 1,
+        partition_plan: partitioning.PartitionPlan | None = None,
         threads_per_process: int | None = None,
         layering: Literal["asap", "cfds", "alap"] = "cfds",
         manner: Literal["push", "pull"] = "push",
-        partition_level: Literal["basin", "subbasin"] = "subbasin",
         start_method: str = "spawn",
-        partition_min_subtree_size: int = 100_000,
-        partition_imbalance_target: float = 1.005,
     ) -> np.ndarray:
         """Return the upstream-area raster for the flow directions.
 
@@ -883,37 +880,28 @@ class FlwdirRaster(Flwdir):
             ('km2'), or cells ('cell'), by default 'cell'.
         parallel : bool, optional
             Accumulate one layer at a time in threads, by default False.
-        n_processes : int, optional
-            Number of processes, by default 1. Above one, the raster is divided into
-            this many parts, each accumulated in its own process with threads, and
-            any mainstem sections are accumulated after the processes finish. This
-            also needs ``parallel=True``, METIS
-            (``pip install pyflwdir[partition]``) and the default `layering` and
-            `manner`.
+        partition_plan : PartitionPlan, optional
+            How to divide the raster over processes, made with :py:meth:`partition`.
+            With a plan, each part is accumulated in its own process with threads,
+            one process a part, and any mainstem sections are accumulated after the
+            processes finish. Without one, the default, everything runs in this
+            process. A plan can be reused for any number of calls on the same flow
+            directions. It needs ``parallel=True`` and the default `layering` and
+            `manner`, and it is checked against the flow directions first.
         threads_per_process : int, optional
-            Threads inside each process, used only when `n_processes` is above one.
-            With one process, the threads are the current Numba thread count.
+            Threads inside each process, used only with a `partition_plan`. By
+            default the available threads are divided over the processes. Without a
+            plan, the threads are the current Numba thread count.
         layering : {'asap', 'cfds', 'alap'}, optional
             Layering used with ``parallel=True``, by default ``"cfds"``.
         manner : {'push', 'pull'}, optional
             Propagation manner used with ``parallel=True``, by default ``"push"``.
             Push needs the conflict-free ``"cfds"`` layering; pull is safe with
             all three.
-        partition_level : {'basin', 'subbasin'}, optional
-            How the raster is divided when `n_processes` is above one, by default
-            ``"subbasin"``; see :py:meth:`partition`.
         start_method : str, optional
-            Multiprocessing start method, used only when `n_processes` is above one,
-            by default ``"spawn"``. With ``"spawn"``, call it from an importable
+            Multiprocessing start method, used only with a `partition_plan`, by
+            default ``"spawn"``. With ``"spawn"``, call it from an importable
             script, below an ``if __name__ == "__main__":`` guard.
-        partition_min_subtree_size : int, optional
-            With `n_processes` above one and at subbasin level, tributary subtrees
-            smaller than this are grouped for METIS, by default 100,000 cells.
-            Regardless of this value, at least ``8 * n_processes`` groups are kept,
-            or every subtree if there are fewer.
-        partition_imbalance_target : float, optional
-            With `n_processes` above one, the largest part load divided by the mean
-            load that the partition aims for, by default 1.005.
 
         Returns
         -------
@@ -932,14 +920,11 @@ class FlwdirRaster(Flwdir):
             area,
             nodata=-9999,
             parallel=parallel,
-            n_processes=n_processes,
+            partition_plan=partition_plan,
             threads_per_process=threads_per_process,
             layering=layering,
             manner=manner,
-            partition_level=partition_level,
             start_method=start_method,
-            partition_min_subtree_size=partition_min_subtree_size,
-            partition_imbalance_target=partition_imbalance_target,
         ).ravel()
         uparea[~self.mask] = -9999
         return uparea.reshape(self.shape)
@@ -947,25 +932,39 @@ class FlwdirRaster(Flwdir):
     def partition(
         self,
         level: Literal["basin", "subbasin"] = "subbasin",
-        n_parts: int = partitioning.DEFAULT_N_PARTS,
-        **kwargs,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Divide the raster into parts, for upstream accumulation in processes.
+        n_processes: int = partitioning.DEFAULT_N_PARTS,
+        *,
+        seed: int = 42,
+        refine: bool = True,
+        min_subtree_size: int = 100_000,
+        imbalance_target: float = 1.005,
+        upa: np.ndarray | None = None,
+    ) -> partitioning.PartitionPlan:
+        """Divide the raster into parts, one for each process of an upstream
+        accumulation.
 
-        This returns the part of each cell and the cell count of each part. It does
-        not make any method run in parallel. Upstream accumulation with ``n_processes``
-        above one (:py:meth:`accuflux`, :py:meth:`FlwdirRaster.upstream_area`) is the
-        only computation that divides a raster in parts, and it builds its own.
+        Pass the returned plan to :py:meth:`upstream_area` or :py:meth:`accuflux`,
+        with ``parallel=True``, to accumulate each part in its own process. One plan
+        serves any number of accumulations on the same flow directions::
+
+            plan = flw.partition(n_processes=4, level="subbasin")
+            uparea = flw.upstream_area(parallel=True, partition_plan=plan)
+            accu = flw.accuflux(data, parallel=True, partition_plan=plan)
+
+        Make a new plan when the flow directions change, for example after
+        :py:meth:`add_pits`: the accumulation checks the plan and refuses one that no
+        longer fits.
 
         ``level="basin"`` (FlowTopo Method 1) keeps every basin whole and groups the
-        basins into ``n_parts`` contiguous, balanced parts, using METIS, a graph
+        basins into ``n_processes`` contiguous, balanced parts, using METIS, a graph
         partitioning library, and a refinement of the boundaries.
         ``level="subbasin"`` (FlowTopo Method 2) opens the basins that keep the parts
         from balancing, along their mainstems (going up from the pit through the
         tributary with the most cells at each confluence), into tributary subtrees,
-        and divides those and the other basins into ``n_parts`` parts. ``P_min`` is the
-        most upstream mainstem cell where a tributary of another part enters: from
-        there down to the pit, the mainstem is a section accumulated after the parts.
+        and divides those and the other basins into ``n_processes`` parts.
+        ``P_min`` is the most upstream mainstem cell where a tributary of another
+        part enters: from there down to the pit, the mainstem is a section
+        accumulated after the parts, in the parent process.
 
         METIS is an optional dependency; install it with
         ``pip install pyflwdir[partition]``.
@@ -974,26 +973,58 @@ class FlwdirRaster(Flwdir):
         ----------
         level : {'basin', 'subbasin'}, optional
             How to divide the raster, as above, by default ``"subbasin"``.
-        n_parts : int, optional
-            Number of parts, by default 4. A tributary subtree is never cut, so
-            the heaviest part is at least as heavy as the largest subtree of an
-            opened basin, and more parts do not balance a region beyond that.
-        **kwargs
-            Additional options passed to
-            :func:`pyflwdir.partition.partition_plan`, which also returns how the
-            opened mainstems connect to the parts.
+        n_processes : int, optional
+            Number of processes, one part each, by default 4. A part without cells,
+            as when there are fewer basins than processes at basin level, starts
+            no process. A tributary subtree is never cut, so the heaviest part is
+            at least as heavy as the largest subtree of an opened basin, and more
+            processes do not balance a region beyond that.
+        seed : int, optional
+            Seed of the first METIS run, by default 42.
+        refine : bool, optional
+            Move boundary nodes between parts after METIS to balance them, by
+            default True.
+        min_subtree_size : int, optional
+            At subbasin level, tributary subtrees smaller than this are grouped with
+            a larger neighbour before METIS divides them, by default 100,000 cells as
+            in the continental FlowTopo C workflow; the balance refinement still
+            moves single subtrees. Regardless of this value, at least
+            ``8 * n_processes`` groups are kept, or every subtree if there are
+            fewer.
+        imbalance_target : float, optional
+            Largest part load divided by the mean load that the partition aims for,
+            by default 1.005. At subbasin level, further basins open only while it
+            is not reached.
+        upa : ndarray, optional
+            Upstream area, one value a cell, finite and positive on the network. It
+            decides between two tributaries with as many cells when a mainstem is
+            traced, as in the FlowTopo C code; without it the one with the smaller
+            cell index is taken.
 
         Returns
         -------
-        parts : ndarray of int32
-            Part of each cell, from 0 to ``n_parts - 1``. The value ``n_parts`` marks
-            the mainstem sections, accumulated after the parts, and ``-1`` marks cells
-            off the network and the cell of a basin of a single cell, which takes no
-            part (as in the FlowTopo C code).
-        loads : ndarray of int64
-            Cell count of each part, without the mainstem sections.
+        PartitionPlan
+            ``plan.parts`` holds the part of each cell, shaped like the raster, from
+            0 to ``n_processes - 1``. The value ``n_processes`` marks the mainstem
+            sections, accumulated after the parts, and ``-1`` marks the cells that
+            take no part: off the network, the cell of a basin of a single cell (as
+            in the FlowTopo C code), and cells in, or draining into, a loop of the
+            flow directions, which never reach a pit. ``plan.loads`` holds the cell
+            count of each part, without the mainstem sections, and ``plan.stems``
+            how each mainstem section connects to the parts.
         """
-        return partitioning.partition(self, level=level, n_parts=n_parts, **kwargs)
+        if n_processes < 1:
+            raise ValueError("n_processes must be at least 1")
+        return partitioning.partition_plan(
+            self,
+            level=level,
+            n_parts=n_processes,
+            seed=seed,
+            refine=refine,
+            min_subtree_size=min_subtree_size,
+            imbalance_target=imbalance_target,
+            upa=upa,
+        )
 
     ### STREAMS ####
     def inflow_idxs(self, region: np.ndarray) -> np.ndarray:

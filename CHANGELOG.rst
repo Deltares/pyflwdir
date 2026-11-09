@@ -49,18 +49,20 @@ unreleased
   ``parallel=True`` runs in threads, one dependency-free layer at a time, using
   the as-soon-as-possible (``"asap"``), as-late-as-possible (``"alap"``) and
   conflict-free downstream (``"cfds"``) layerings from FlowTopo, which
-  ``Flwdir.layer_cells`` returns. On a ``FlwdirRaster``, ``n_processes`` above
-  one as well runs each part of a partition in its own process, with threads
-  inside, and then completes the mainstem sections. Floating-point results can
-  differ from the serial accumulation in the last bits (#85)
-* add the two FlowTopo process-level partitions as an optional feature, into
-  ``n_parts`` parts, four by default. ``FlwdirRaster.partition`` returns the
-  part of each cell and the cell count of each part;
-  ``pyflwdir.partition.partition_plan`` also returns how the opened mainstems
-  connect, for inspection. ``level="basin"`` keeps every basin whole, and
-  ``level="subbasin"`` also opens the basins that keep the parts from balancing
-  into tributary subtrees. A tributary subtree is never cut, so the largest of
-  them limits the balance, however many parts are asked. Install
+  ``Flwdir.layer_cells`` returns. On a ``FlwdirRaster``, a ``partition_plan``
+  from ``FlwdirRaster.partition`` as well runs each part in its own process,
+  with threads inside, and then completes the mainstem sections. The plan is
+  checked against the flow directions first, and one plan serves any number of
+  calls. Floating-point results can differ from the serial accumulation in the
+  last bits (#85)
+* add the two FlowTopo process-level partitions as an optional feature.
+  ``FlwdirRaster.partition(n_processes=4)`` divides the raster into one part a
+  process and returns a ``PartitionPlan``: the part of each cell, the cell count
+  of each part, and how the opened mainstems connect to the parts.
+  ``level="basin"`` keeps every basin whole, and ``level="subbasin"`` also opens
+  the basins that keep the parts from balancing into tributary subtrees. A
+  tributary subtree is never cut, so the largest of them limits the balance,
+  however many processes are asked. Install
   ``pyflwdir[partition]`` to enable the optional ``pymetis`` backend, which
   carries METIS 5.1.0; the FlowTopo C code links METIS 5.2.1, so the method is
   the C code's but the parts need not be, cell for cell (#85)

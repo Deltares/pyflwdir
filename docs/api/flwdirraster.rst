@@ -135,11 +135,15 @@ Parallel accumulation
 Upstream accumulation is the only computation that runs in parallel:
 :py:meth:`FlwdirRaster.accuflux` with ``direction="up"`` and
 :py:meth:`FlwdirRaster.upstream_area`. Pass ``parallel=True`` to run in threads, and
-``n_processes`` above one as well to run in processes, with threads inside each.
+a ``partition_plan`` from :py:meth:`FlwdirRaster.partition` as well to run in
+processes, one process a part, with threads inside each::
 
-The methods below only return how the cells divide into layers and parts. Calling
-them does not make any other method run in parallel, and the accumulation builds
-its own layers and parts. See also :doc:`partition`.
+    plan = flw.partition(n_processes=4, level="subbasin")
+    uparea = flw.upstream_area(parallel=True, partition_plan=plan)
+
+:py:meth:`FlwdirRaster.layer_cells` only returns the layers; the accumulation builds
+its own. Calling the two methods below does not by itself make anything run in
+parallel. See also :doc:`partition`.
 
 .. autosummary::
    :toctree: ../_generated
