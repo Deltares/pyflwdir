@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Parallel accumulation: layers and partitions &#8212; PyFlwDir  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/theme-deltares.css?v=aa503ec8" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/parallel';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Elevation indices" href="elevation_indices.html" />
+    <link rel="prev" title="Cell orderings" href="ordering.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.6.0" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/pyflwdir_icon.png" class="logo__image only-light" alt=""/>
+    <img src="../_static/pyflwdir_icon.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">PyFlwDir</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../quickstart.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Developments
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="../_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../quickstart.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Developments
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="../_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="flwdir.html">Flow direction data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="from_dem.html">Flow directions from elevation data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basins.html">Deliniation of (sub)basins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="streams.html">Stream order</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracing.html">Tracing flow directions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ordering.html">Cell orderings</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Parallel accumulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elevation_indices.html">Elevation indices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upscaling.html">Flow direction upscaling</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../quickstart.html" class="nav-link">Quickstart</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Parallel accumulation: layers and partitions</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<div>
+    For an interactive online version click here:
+    <a href="https://mybinder.org/v2/gh/Deltares/pyflwdir/main?urlpath=lab/tree/examples/parallel.ipynb" target="_blank" rel="noopener noreferrer"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg"></a>
+</div></div>
+<section id="Parallel-accumulation:-layers-and-partitions">
+<h1>Parallel accumulation: layers and partitions<a class="headerlink" href="#Parallel-accumulation:-layers-and-partitions" title="Link to this heading">#</a></h1>
+<p><strong>Upstream accumulation is the only computation in pyflwdir that runs in parallel:</strong> <code class="docutils literal notranslate"><span class="pre">accuflux</span></code> with <code class="docutils literal notranslate"><span class="pre">direction=&quot;up&quot;</span></code> and the raster’s <code class="docutils literal notranslate"><span class="pre">upstream_area</span></code>. No other method does.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>run in</p></th>
+<th class="head"><p>arguments</p></th>
+<th class="head"><p>available on</p></th>
+<th class="head"><p>needs</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>threads</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">parallel=True</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Flwdir.accuflux</span></code>, <code class="docutils literal notranslate"><span class="pre">FlwdirRaster.accuflux</span></code>, <code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_area</span></code></p></td>
+<td><p>nothing extra</p></td>
+</tr>
+<tr class="row-odd"><td><p>processes, with threads inside</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">parallel=True,</span> <span class="pre">partition_plan=plan</span></code>, with <code class="docutils literal notranslate"><span class="pre">plan</span> <span class="pre">=</span> <span class="pre">flw.partition(n_processes=4)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">FlwdirRaster.accuflux</span></code>, <code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_area</span></code></p></td>
+<td><p>METIS: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pyflwdir[partition]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Layers and partitions only divide the cells.</strong> <code class="docutils literal notranslate"><span class="pre">layer_cells</span></code> returns the layers and <code class="docutils literal notranslate"><span class="pre">partition</span></code> returns a <code class="docutils literal notranslate"><span class="pre">PartitionPlan</span></code>; neither makes anything run in parallel. The threaded accumulation builds the layers it needs itself. The process accumulation runs the plan it is given as <code class="docutils literal notranslate"><span class="pre">partition_plan</span></code>, one process a part, after checking that the plan fits the flow directions.</p>
+<p><strong>A partition has a limit.</strong> A tributary is never cut, so the heaviest part is at least as heavy as the largest tributary, however many parts are asked.</p>
+<section id="Which-to-use">
+<h2>Which to use<a class="headerlink" href="#Which-to-use" title="Link to this heading">#</a></h2>
+<p><strong>Start with threads.</strong> <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> needs nothing extra and uses the current Numba thread count (<code class="docutils literal notranslate"><span class="pre">numba.set_num_threads</span></code>).</p>
+<p><strong>Processes, with threads inside,</strong> are meant for large rasters. They also cost the time to make the plan, once, since one plan serves any number of calls, and, on every call, to check the plan, start the processes and share the raster. Make a new plan after the flow directions change, for example by <code class="docutils literal notranslate"><span class="pre">add_pits</span></code>; a plan that no longer fits is refused. How far they go is limited by the largest tributary. The Rhine example used below is too small to establish a general speedup for either.</p>
+<p>In a script, call them below a <code class="docutils literal notranslate"><span class="pre">__main__</span></code> guard, because the processes start with <code class="docutils literal notranslate"><span class="pre">spawn</span></code> by default and import the script. This block is not run when the notebook is built:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">rasterio</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyflwdir</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"rhine_d8.tif"</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
+        <span class="n">flw</span> <span class="o">=</span> <span class="n">pyflwdir</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span>
+            <span class="n">src</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">ftype</span><span class="o">=</span><span class="s2">"d8"</span><span class="p">,</span>
+            <span class="n">transform</span><span class="o">=</span><span class="n">src</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
+            <span class="n">latlon</span><span class="o">=</span><span class="n">src</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">is_geographic</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">plan</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">n_processes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"subbasin"</span><span class="p">)</span>  <span class="c1"># one part per process</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span>
+        <span class="s2">"km2"</span><span class="p">,</span>
+        <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">partition_plan</span><span class="o">=</span><span class="n">plan</span><span class="p">,</span>
+        <span class="n">threads_per_process</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="How-the-cells-are-divided">
+<h2>How the cells are divided<a class="headerlink" href="#How-the-cells-are-divided" title="Link to this heading">#</a></h2>
+<p>Each way of running answers one question about the hardware, following FlowTopo (Jiang et al., 2026):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>hardware question</p></th>
+<th class="head"><p>reusable structure</p></th>
+<th class="head"><p>execution scale</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Is the next cell still in cache?</p></td>
+<td><p>ordering</p></td>
+<td><p>one core</p></td>
+</tr>
+<tr class="row-odd"><td><p>Which cells are ready together?</p></td>
+<td><p>layering</p></td>
+<td><p>multiple cores</p></td>
+</tr>
+<tr class="row-even"><td><p>Which cells go where?</p></td>
+<td><p>partition</p></td>
+<td><p>multiple processes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><a class="reference internal" href="ordering.html"><span class="doc">Cell orderings</span></a> covers the first question; this notebook takes the other two, on the Rhine. Here we assume that flow directions are known; see the earlier examples for background.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># import pyflwdir, some dependencies and convenience methods</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">rasterio</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyflwdir</span>
+
+<span class="c1"># read and parse data</span>
+<span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"rhine_d8.tif"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
+    <span class="n">flwdir</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">crs</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">crs</span>
+    <span class="n">flw</span> <span class="o">=</span> <span class="n">pyflwdir</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span>
+        <span class="n">flwdir</span><span class="p">,</span>
+        <span class="n">ftype</span><span class="o">=</span><span class="s2">"d8"</span><span class="p">,</span>
+        <span class="n">transform</span><span class="o">=</span><span class="n">src</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
+        <span class="n">latlon</span><span class="o">=</span><span class="n">crs</span><span class="o">.</span><span class="n">is_geographic</span><span class="p">,</span>
+        <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="c1"># the next cell downstream of every cell</span>
+<span class="n">idxs_ds</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">idxs_ds</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">flw</span><span class="o">.</span><span class="n">ncells</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> cells draining to </span><span class="si">{</span><span class="n">flw</span><span class="o">.</span><span class="n">idxs_pit</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> pit(s)"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+349,847 cells draining to 1 pit(s)
+</pre></div></div>
+</div>
+</section>
+<section id="Many-threads:-which-cells-run-together?">
+<h2>Many threads: which cells run together?<a class="headerlink" href="#Many-threads:-which-cells-run-together?" title="Link to this heading">#</a></h2>
+<p>An <a class="reference internal" href="ordering.html"><span class="doc">ordering</span></a> visits one cell at a time. A layering answers a different question: <strong>which cells are ready at the same time?</strong> Layers count from the headwaters (layer 0) toward the outlet, the opposite direction from the stored serial sequences, because a cell can run only after all of its upstream dependencies have finished.</p>
+<p>The three names describe when a ready cell is scheduled:</p>
+<ul class="simple">
+<li><p><strong>ASAP</strong> (<em>as soon as possible</em>) uses the earliest valid layer;</p></li>
+<li><p><strong>ALAP</strong> (<em>as late as possible</em>) delays shorter tributaries to later valid layers;</p></li>
+<li><p><strong>CFDS</strong> (<em>conflict-free downstream</em>) starts from ASAP and separates cells that would write to the same downstream receiver.</p></li>
+</ul>
+<p>This is already a parallel form of topological sorting. The layering decides when a cell runs; the <code class="docutils literal notranslate"><span class="pre">manner</span></code> decides who writes the result. A <strong>pull</strong> kernel (the function that does the accumulation) writes only its current cell after reading completed upstream values, so all three layerings are safe. A <strong>push</strong> kernel adds into the downstream receiver, so it requires CFDS to prevent two threads from writing to the same cell. Performance then depends on layer width, on the wait at the end of
+each layer, where threads stop until the layer is complete (a barrier), and on memory bandwidth, not on the serial <code class="docutils literal notranslate"><span class="pre">topo</span></code> sequence.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'method'</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'layers'</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'largest'</span><span class="si">:</span><span class="s2">&gt;9</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'shared receivers'</span><span class="si">:</span><span class="s2">&gt;16</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"asap"</span><span class="p">,</span> <span class="s2">"cfds"</span><span class="p">,</span> <span class="s2">"alap"</span><span class="p">]:</span>
+    <span class="n">layers</span><span class="p">,</span> <span class="n">n_layers</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">layer_cells</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+    <span class="n">layers</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">layers</span><span class="p">[</span><span class="n">layers</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">],</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n_layers</span><span class="p">)</span>
+    <span class="n">conflicts</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_layers</span><span class="p">):</span>
+        <span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">layers</span> <span class="o">==</span> <span class="n">layer</span><span class="p">)</span>
+        <span class="n">receivers</span> <span class="o">=</span> <span class="n">idxs_ds</span><span class="p">[</span><span class="n">cells</span><span class="p">[</span><span class="n">idxs_ds</span><span class="p">[</span><span class="n">cells</span><span class="p">]</span> <span class="o">!=</span> <span class="n">cells</span><span class="p">]]</span>
+        <span class="n">conflicts</span> <span class="o">+=</span> <span class="n">receivers</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">receivers</span><span class="p">)</span><span class="o">.</span><span class="n">size</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">n_layers</span><span class="si">:</span><span class="s2">&gt;8,</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">sizes</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">&gt;9,</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">conflicts</span><span class="si">:</span><span class="s2">&gt;16,</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">serial</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span><span class="s2">"km2"</span><span class="p">)</span>
+<span class="n">threaded</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span><span class="s2">"km2"</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">valid</span> <span class="o">=</span> <span class="n">serial</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">9999</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"same to floating-point rounding:"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">threaded</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">serial</span><span class="p">[</span><span class="n">valid</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"largest difference in km2:"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">threaded</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">-</span> <span class="n">serial</span><span class="p">[</span><span class="n">valid</span><span class="p">])</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+  method    layers    largest  shared receivers
+    asap     1,675    140,092            35,022
+    cfds     1,676    112,812                 0
+    alap     1,675        568           140,091
+same to floating-point rounding: True
+largest difference in km2: 5.529727786779404e-10
+</pre></div></div>
+</div>
+<p>The table quantifies the trade-off. CFDS reduces shared downstream receivers to zero, here at the cost of one more layer and a narrower widest layer. ALAP makes layers much narrower but leaves many shared receivers, so, like ASAP, it can only run pull; it trades available parallel width for a flatter schedule. The last two lines verify that the threaded push result agrees with the serial result to floating-point rounding.</p>
+<p>The maps below show the same distinction. A colour is the headwater-to-outlet layer in which a cell runs; cells with the same colour can run together.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">layer_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"asap"</span><span class="p">,</span> <span class="s2">"cfds"</span><span class="p">,</span> <span class="s2">"alap"</span><span class="p">]</span>
+<span class="n">layer_arrays</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mf">3.8</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">method</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">layer_methods</span><span class="p">):</span>
+    <span class="n">layers</span><span class="p">,</span> <span class="n">n_layers</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">layer_cells</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+    <span class="n">layer_arrays</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">relative</span> <span class="o">=</span> <span class="n">layers</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">n_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_less</span><span class="p">(</span><span class="n">relative</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">"turbo"</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">n_layers</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> layers"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.82</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"progress from headwaters to outlet [%]"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/_examples_parallel_8_0.png" src="../_images/_examples_parallel_8_0.png" />
+</div>
+</div>
+<p>A map alone does not show how much parallel work each layer offers. Each point below is one layer. Wide layers offer useful parallel work; narrow layers still pay for the barrier at their end. In this Rhine example ASAP exposes the widest layers, CFDS gives up some of that width for safe push, and ALAP spreads the work over many narrow layers. Layering therefore makes threading correct; it does not by itself make it faster.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">layer_methods</span><span class="p">:</span>
+    <span class="n">layers</span> <span class="o">=</span> <span class="n">layer_arrays</span><span class="p">[</span><span class="n">method</span><span class="p">]</span>
+    <span class="n">n_layers</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">layers</span><span class="p">[</span><span class="n">layers</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">],</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n_layers</span><span class="p">)</span>
+    <span class="n">progress</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">n_layers</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s2">"progress through the dependency layers [%]"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s2">"cells available in one layer"</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Parallel work available between synchronization barriers"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">"log"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/_examples_parallel_10_0.png" src="../_images/_examples_parallel_10_0.png" />
+</div>
+</div>
+<section id="One-hydrological-method,-three-execution-paths">
+<h3>One hydrological method, three execution paths<a class="headerlink" href="#One-hydrological-method,-three-execution-paths" title="Link to this heading">#</a></h3>
+<p>The same accumulation can run in three ways, on an ordering or on a layering:</p>
+<ul class="simple">
+<li><p><strong>serial:</strong> read one outlet-to-headwater sequence, forwards or backwards as needed;</p></li>
+<li><p><strong>parallel pull:</strong> each cell gathers finished upstream values; ASAP, ALAP and CFDS are all safe;</p></li>
+<li><p><strong>parallel push:</strong> each cell adds to its downstream receiver; CFDS is required.</p></li>
+</ul>
+<p>A depth-first basin is simply an interval cut from the serial sequence. It uses the same serial kernel on fewer cells.</p>
+<p>CFDS push, the default, avoids the upstream index; pull with ASAP, ALAP or CFDS reads it. Which is faster depends on layer width, barrier cost and memory bandwidth.</p>
+<p>Upstream accumulation is the only method written for the parallel paths so far; every other method takes the serial one.</p>
+</section>
+</section>
+<section id="Several-processes:-which-cells-go-where?">
+<h2>Several processes: which cells go where?<a class="headerlink" href="#Several-processes:-which-cells-go-where?" title="Link to this heading">#</a></h2>
+<p>The layers above divide work between threads that share memory. Processes need a coarser division first: <code class="docutils literal notranslate"><span class="pre">flw.partition</span></code> divides the raster into <code class="docutils literal notranslate"><span class="pre">n_processes</span></code> <strong>parts</strong>, four by default, and each part runs in its own process. There are two levels:</p>
+<ol class="arabic simple">
+<li><p><strong>``level=”basin”``</strong> (FlowTopo Method 1) treats every intact basin as one weighted graph node. Raster neighbours create graph edges, weighted by the length of the shared boundary. A basin larger than an equal share is a part of its own; METIS, a graph partitioning library, divides the other basins into spatially coherent parts, which a refinement then balances.</p></li>
+<li><p><strong>``level=”subbasin”``</strong> (FlowTopo Method 2) handles basins too large to balance whole. It traces the mainstem of such a basin, going up from the outlet through the tributary with the most cells at each confluence. It opens the basin into the tributary subtrees that drain into the mainstem – and another basin only where that one keeps the parts from balancing – and divides those subtrees and the other basins into <code class="docutils literal notranslate"><span class="pre">n_processes</span></code> parts at once.</p></li>
+</ol>
+<p><span class="math notranslate nohighlight">\(P_{min}\)</span> is the most upstream mainstem cell where a tributary of another part enters. From <span class="math notranslate nohighlight">\(P_{min}\)</span> down to the outlet, <span class="math notranslate nohighlight">\(P_{min}\)</span> included, an opened mainstem belongs to no process: it is a <strong>mainstem section</strong>, labelled <code class="docutils literal notranslate"><span class="pre">n_processes</span></code>.</p>
+<p>The accumulation therefore runs in two stages:</p>
+<ol class="arabic simple">
+<li><p>Each process accumulates its part, one CFDS layer at a time in threads, and stops at the boundary of the part.</p></li>
+<li><p>After all processes finish, the parent process completes each mainstem section, from <span class="math notranslate nohighlight">\(P_{min}\)</span> down to the outlet. It uses the completed upstream mainstem value and the totals of the tributaries that enter.</p></li>
+</ol>
+<p>The FlowTopo C code behind the first published partitions assigned the tributaries one at a time, by capacity and geographic affinity; pyflwdir, and the FlowTopo C code since, divide them as one graph, as described below.</p>
+<section id="How-the-parts-are-chosen-at-subbasin-level">
+<h3>How the parts are chosen at subbasin level<a class="headerlink" href="#How-the-parts-are-chosen-at-subbasin-level" title="Link to this heading">#</a></h3>
+<p>Assigning tributaries one at a time can produce balanced but scattered parts. pyflwdir instead partitions one graph of the other basins and the opened basin’s <strong>tributary subtrees</strong> (a basin of a single cell is left out). Tributaries are neighbours when they share a raster boundary or enter consecutive positions on the mainstem, so the two banks touch across it. Subtrees below <code class="docutils literal notranslate"><span class="pre">min_subtree_size</span></code> are grouped with the nearest eligible tributary, so they inherit a surrounding territory instead of
+reappearing as isolated colour patches. METIS partitions the weighted groups, from several seeds, asking for connected parts (<code class="docutils literal notranslate"><span class="pre">contig=1</span></code>); any piece it still leaves apart joins a neighbouring part. A refinement then moves single tributaries or basins on the ground from heavier to lighter neighbouring parts, never cutting a part in two, until the largest load divided by the mean is at most <code class="docutils literal notranslate"><span class="pre">imbalance_target</span></code> (1.005 by default), a refinement sweep makes no move, or the move limit is reached:
+the target is not guaranteed.</p>
+<p>As in the FlowTopo C code, the part holding the most upstream tributary keeps the mainstem above <span class="math notranslate nohighlight">\(P_{min}\)</span>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">min_subtree_size</span></code> is 100,000 cells by default, as in the continental FlowTopo C workflow. Regardless of <code class="docutils literal notranslate"><span class="pre">min_subtree_size</span></code>, at least <code class="docutils literal notranslate"><span class="pre">8</span> <span class="pre">*</span> <span class="pre">n_processes</span></code> groups are kept, or every tributary if there are fewer, so the default also suits this smaller raster. It is set when the plan is made, as an argument of <code class="docutils literal notranslate"><span class="pre">partition</span></code>. The bar chart reports the largest part load divided by the mean, and the code prints whether it is within 1%.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">patheffects</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">ListedColormap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.lines</span><span class="w"> </span><span class="kn">import</span> <span class="n">Line2D</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.patches</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patch</span>
+
+<span class="n">n_processes</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># the default</span>
+<span class="n">basin_parts</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">n_processes</span><span class="o">=</span><span class="n">n_processes</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"basin"</span><span class="p">)</span><span class="o">.</span><span class="n">parts</span>
+<span class="n">subbasin_plan</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">n_processes</span><span class="o">=</span><span class="n">n_processes</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"subbasin"</span><span class="p">)</span>
+<span class="n">subbasin_parts</span> <span class="o">=</span> <span class="n">subbasin_plan</span><span class="o">.</span><span class="n">parts</span>
+<span class="n">subbasin_loads</span> <span class="o">=</span> <span class="n">subbasin_plan</span><span class="o">.</span><span class="n">loads</span>
+
+<span class="n">palette</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"#4C78A8"</span><span class="p">,</span>
+    <span class="s2">"#F58518"</span><span class="p">,</span>
+    <span class="s2">"#54A24B"</span><span class="p">,</span>
+    <span class="s2">"#E45756"</span><span class="p">,</span>
+    <span class="s2">"#72B7B2"</span><span class="p">,</span>
+    <span class="s2">"#EECA3B"</span><span class="p">,</span>
+    <span class="s2">"#B279A2"</span><span class="p">,</span>
+    <span class="s2">"#FF9DA6"</span><span class="p">,</span>
+    <span class="s2">"#9D755D"</span><span class="p">,</span>
+    <span class="s2">"#BAB0AC"</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">part_colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">palette</span><span class="p">[</span><span class="n">part</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">palette</span><span class="p">)]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_processes</span><span class="p">)]</span>
+<span class="n">mainstem_color</span> <span class="o">=</span> <span class="s2">"#8F3FBF"</span>
+<span class="n">partition_cmap</span> <span class="o">=</span> <span class="n">ListedColormap</span><span class="p">(</span><span class="n">part_colors</span> <span class="o">+</span> <span class="p">[</span><span class="n">mainstem_color</span><span class="p">])</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">3</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mf">4.3</span><span class="p">),</span>
+    <span class="n">gridspec_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">"width_ratios"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">]},</span>
+    <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_less</span><span class="p">(</span><span class="n">basin_parts</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">partition_cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">n_processes</span>
+<span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'level="basin": one intact basin'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_less</span><span class="p">(</span><span class="n">subbasin_parts</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">partition_cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">n_processes</span>
+<span class="p">)</span>
+<span class="n">mainstem_rows</span><span class="p">,</span> <span class="n">mainstem_cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">subbasin_plan</span><span class="o">.</span><span class="n">mainstem</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">mainstem_line</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">mainstem_cols</span><span class="p">,</span>
+    <span class="n">mainstem_rows</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">mainstem_color</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mf">2.4</span><span class="p">,</span>
+    <span class="n">solid_capstyle</span><span class="o">=</span><span class="s2">"round"</span><span class="p">,</span>
+    <span class="n">zorder</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">mainstem_line</span><span class="o">.</span><span class="n">set_path_effects</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="n">patheffects</span><span class="o">.</span><span class="n">Stroke</span><span class="p">(</span><span class="n">linewidth</span><span class="o">=</span><span class="mf">4.8</span><span class="p">,</span> <span class="n">foreground</span><span class="o">=</span><span class="s2">"white"</span><span class="p">),</span>
+        <span class="n">patheffects</span><span class="o">.</span><span class="n">Normal</span><span class="p">(),</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">mainstem_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">mainstem_rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">mainstem_color</span><span class="p">,</span>
+    <span class="n">edgecolor</span><span class="o">=</span><span class="s2">"white"</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span>
+    <span class="n">zorder</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"$P_</span><span class="si">{min}</span><span class="s2">$"</span><span class="p">,</span>
+    <span class="p">(</span><span class="n">mainstem_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">mainstem_rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+    <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">8</span><span class="p">),</span>
+    <span class="n">textcoords</span><span class="o">=</span><span class="s2">"offset points"</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">mainstem_color</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span>
+    <span class="n">fontweight</span><span class="o">=</span><span class="s2">"bold"</span><span class="p">,</span>
+    <span class="n">zorder</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">outlet_color</span> <span class="o">=</span> <span class="s2">"#C43D30"</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">mainstem_cols</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+    <span class="n">mainstem_rows</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+    <span class="n">marker</span><span class="o">=</span><span class="s2">"v"</span><span class="p">,</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">58</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">outlet_color</span><span class="p">,</span>
+    <span class="n">edgecolor</span><span class="o">=</span><span class="s2">"white"</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span>
+    <span class="n">zorder</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+    <span class="s2">"outlet"</span><span class="p">,</span>
+    <span class="p">(</span><span class="n">mainstem_cols</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">mainstem_rows</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
+    <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">10</span><span class="p">),</span>
+    <span class="n">textcoords</span><span class="o">=</span><span class="s2">"offset points"</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">outlet_color</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span>
+    <span class="n">fontweight</span><span class="o">=</span><span class="s2">"bold"</span><span class="p">,</span>
+    <span class="n">zorder</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">arrow_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.55</span> <span class="o">*</span> <span class="p">(</span><span class="n">mainstem_cols</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">arrow_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">mainstem_cols</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">arrow_start</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">mainstem_cols</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="mi">15</span><span class="p">))</span>
+<span class="n">direction</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+    <span class="s2">""</span><span class="p">,</span>
+    <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">mainstem_cols</span><span class="p">[</span><span class="n">arrow_end</span><span class="p">],</span> <span class="n">mainstem_rows</span><span class="p">[</span><span class="n">arrow_end</span><span class="p">]),</span>
+    <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="n">mainstem_cols</span><span class="p">[</span><span class="n">arrow_start</span><span class="p">],</span> <span class="n">mainstem_rows</span><span class="p">[</span><span class="n">arrow_start</span><span class="p">]),</span>
+    <span class="n">arrowprops</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">"arrowstyle"</span><span class="p">:</span> <span class="s2">"-|&gt;"</span><span class="p">,</span>
+        <span class="s2">"color"</span><span class="p">:</span> <span class="n">mainstem_color</span><span class="p">,</span>
+        <span class="s2">"linewidth"</span><span class="p">:</span> <span class="mf">2.2</span><span class="p">,</span>
+        <span class="s2">"mutation_scale"</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">zorder</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">direction</span><span class="o">.</span><span class="n">arrow_patch</span><span class="o">.</span><span class="n">set_path_effects</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="n">patheffects</span><span class="o">.</span><span class="n">Stroke</span><span class="p">(</span><span class="n">linewidth</span><span class="o">=</span><span class="mf">4.4</span><span class="p">,</span> <span class="n">foreground</span><span class="o">=</span><span class="s2">"white"</span><span class="p">),</span>
+        <span class="n">patheffects</span><span class="o">.</span><span class="n">Normal</span><span class="p">(),</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span>
+    <span class="s1">'level="subbasin": contiguous parts</span><span class="se">\n</span><span class="s1">+ mainstem section, completed last'</span>
+<span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+
+<span class="n">mainstem_cells</span> <span class="o">=</span> <span class="n">subbasin_plan</span><span class="o">.</span><span class="n">mainstem</span><span class="o">.</span><span class="n">size</span>
+<span class="n">imbalance</span> <span class="o">=</span> <span class="n">subbasin_loads</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="n">subbasin_loads</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"largest part / mean part &lt;= 1.01: </span><span class="si">{</span><span class="n">imbalance</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mf">1.01</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">imbalance</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">stem</span> <span class="ow">in</span> <span class="n">subbasin_plan</span><span class="o">.</span><span class="n">stems</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"the mainstem section starts after cell </span><span class="si">{</span><span class="n">stem</span><span class="o">.</span><span class="n">predecessor</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"and contains </span><span class="si">{</span><span class="n">stem</span><span class="o">.</span><span class="n">mainstem</span><span class="o">.</span><span class="n">size</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> cells"</span>
+    <span class="p">)</span>
+
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"part </span><span class="si">{</span><span class="n">part</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_processes</span><span class="p">)]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"mainstem section"</span><span class="p">]</span>
+<span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">subbasin_loads</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span> <span class="o">+</span> <span class="p">[</span><span class="n">mainstem_cells</span><span class="p">]</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">part_colors</span> <span class="o">+</span> <span class="p">[</span><span class="n">mainstem_color</span><span class="p">])</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"assigned cells"</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"largest / mean part load = </span><span class="si">{</span><span class="n">imbalance</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+
+<span class="n">legend</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Patch</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"part </span><span class="si">{</span><span class="n">part</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">part_colors</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="n">legend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+    <span class="n">Line2D</span><span class="p">(</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">mainstem_color</span><span class="p">,</span>
+        <span class="n">linewidth</span><span class="o">=</span><span class="mf">2.4</span><span class="p">,</span>
+        <span class="n">path_effects</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">patheffects</span><span class="o">.</span><span class="n">Stroke</span><span class="p">(</span><span class="n">linewidth</span><span class="o">=</span><span class="mf">4.8</span><span class="p">,</span> <span class="n">foreground</span><span class="o">=</span><span class="s2">"white"</span><span class="p">),</span>
+            <span class="n">patheffects</span><span class="o">.</span><span class="n">Normal</span><span class="p">(),</span>
+        <span class="p">],</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">"mainstem section, completed last"</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
+    <span class="n">handles</span><span class="o">=</span><span class="n">legend</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">"outside lower center"</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="n">n_processes</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+largest part / mean part &lt;= 1.01: True (1.002)
+the mainstem section starts after cell 362474 and contains 946 cells
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/_examples_parallel_14_1.png" src="../_images/_examples_parallel_14_1.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="References">
+<h2>References<a class="headerlink" href="#References" title="Link to this heading">#</a></h2>
+<p>The three layerings, the hardware view and the two partition methods come from FlowTopo:</p>
+<ul class="simple">
+<li><p>Jiang, L., Wu, H., Chen, W., Huang, Z., Yamazaki, D., Yang, T. and Li, L. (2026). FlowTopo (v1.0.0). Zenodo. <a class="reference external" href="https://doi.org/10.5281/zenodo.22227621">https://doi.org/10.5281/zenodo.22227621</a></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="ordering.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Cell orderings</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="elevation_indices.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Elevation indices</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Which-to-use">Which to use</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#How-the-cells-are-divided">How the cells are divided</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Many-threads:-which-cells-run-together?">Many threads: which cells run together?</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#One-hydrological-method,-three-execution-paths">One hydrological method, three execution paths</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Several-processes:-which-cells-go-where?">Several processes: which cells go where?</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#How-the-parts-are-chosen-at-subbasin-level">How the parts are chosen at subbasin level</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#References">References</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/_examples/parallel.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/_examples/parallel.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright Deltares.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

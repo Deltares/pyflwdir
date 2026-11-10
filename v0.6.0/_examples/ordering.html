@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Cell orderings &#8212; PyFlwDir  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/theme-deltares.css?v=aa503ec8" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/ordering';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Parallel accumulation: layers and partitions" href="parallel.html" />
+    <link rel="prev" title="Tracing flow directions" href="tracing.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.6.0" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/pyflwdir_icon.png" class="logo__image only-light" alt=""/>
+    <img src="../_static/pyflwdir_icon.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">PyFlwDir</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../quickstart.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Developments
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="../_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../quickstart.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Developments
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/Deltares/pyflwdir" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.deltares.nl/en/" title="Deltares" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="../_static/deltares-blue.svg" class="icon-link-image" alt="Deltares"/></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="flwdir.html">Flow direction data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="from_dem.html">Flow directions from elevation data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basins.html">Deliniation of (sub)basins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="streams.html">Stream order</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracing.html">Tracing flow directions</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Cell orderings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Parallel accumulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elevation_indices.html">Elevation indices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upscaling.html">Flow direction upscaling</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../quickstart.html" class="nav-link">Quickstart</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Cell orderings</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<div>
+    For an interactive online version click here:
+    <a href="https://mybinder.org/v2/gh/Deltares/pyflwdir/main?urlpath=lab/tree/examples/ordering.ipynb" target="_blank" rel="noopener noreferrer"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg"></a>
+</div></div>
+<section id="Cell-orderings">
+<h1>Cell orderings<a class="headerlink" href="#Cell-orderings" title="Link to this heading">#</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">idxs_seq</span></code> stores cells in <strong>outlet-to-headwater</strong> order: a cell appears after the cell it drains into. Methods that need headwater-to-outlet processing simply traverse the same sequence in reverse. <code class="docutils literal notranslate"><span class="pre">upstream_area</span></code>, <code class="docutils literal notranslate"><span class="pre">basins</span></code>, <code class="docutils literal notranslate"><span class="pre">stream_order</span></code> and similar methods all use this dependency order. <code class="docutils literal notranslate"><span class="pre">order_cells</span></code> builds it on first use, so most scripts never call <code class="docutils literal notranslate"><span class="pre">order_cells</span></code> directly.</p>
+<p>Four methods build the sequence. They return the same cells and every one of them preserves the same dependencies. Cell counts agree exactly; floating-point accumulations can differ in their last rounding bits because independent tributaries may be added in another order. The methods differ in construction cost and in what the resulting sequence is useful for.</p>
+<p>Here we assume that flow directions are known; see the earlier examples for background. Running in parallel is a separate subject, covered in <a class="reference internal" href="parallel.html"><span class="doc">Parallel accumulation</span></a>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># import pyflwdir, some dependencies and convenience methods</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">rasterio</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyflwdir</span>
+
+<span class="c1"># read and parse data</span>
+<span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"rhine_d8.tif"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
+    <span class="n">flwdir</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">crs</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">crs</span>
+    <span class="n">flw</span> <span class="o">=</span> <span class="n">pyflwdir</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span>
+        <span class="n">flwdir</span><span class="p">,</span>
+        <span class="n">ftype</span><span class="o">=</span><span class="s2">"d8"</span><span class="p">,</span>
+        <span class="n">transform</span><span class="o">=</span><span class="n">src</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
+        <span class="n">latlon</span><span class="o">=</span><span class="n">crs</span><span class="o">.</span><span class="n">is_geographic</span><span class="p">,</span>
+        <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="c1"># the array the orderings are built from: the next cell downstream of every cell</span>
+<span class="n">idxs_ds</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">idxs_ds</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">flw</span><span class="o">.</span><span class="n">ncells</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> cells draining to </span><span class="si">{</span><span class="n">flw</span><span class="o">.</span><span class="n">idxs_pit</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> pit(s)"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+349,847 cells draining to 1 pit(s)
+</pre></div></div>
+</div>
+<section id="The-four-methods">
+<h2>The four methods<a class="headerlink" href="#The-four-methods" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code> group the cells the same way, so there are three groupings here, not four.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">method</span></code></p></th>
+<th class="head"><p>the order</p></th>
+<th class="head"><p>how it is built</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;dfs&quot;</span></code> (default)</p></td>
+<td><p>depth first: one tributary is finished before the next one starts</p></td>
+<td><p>from the pits upstream, with a stack over two flat arrays that list each cell’s upstream neighbours (<code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">+</span> <span class="pre">1</span> <span class="pre">+</span> <span class="pre">e</span></code> stored values)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code></p></td>
+<td><p>breadth first: the outlets, then the cells one step above them, then two steps, and so on</p></td>
+<td><p>from the pits upstream over the same index</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code></p></td>
+<td><p>the same grouping as <code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code></p></td>
+<td><p>every cell is first given its number of steps to the outlet, then the cells are sorted on that number</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;topo&quot;</span></code></p></td>
+<td><p>from the headwaters down, releasing a cell once all of its upstream cells are in; the result is turned around at the end</p></td>
+<td><p>a count of upstream cells per cell, <code class="docutils literal notranslate"><span class="pre">n</span></code> values, and no index at all</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">n</span></code> counts every cell of the raster, the ones outside the network included, and <code class="docutils literal notranslate"><span class="pre">e</span></code> the links between cells that drain into one another.</p>
+<p>Two things vary down that table and it helps to keep them apart. One is the traversal, which decides the order that comes out. The other is how the upstream cells are held while the traversal runs, which decides what it costs and leaves the order untouched.</p>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code> were already in pyflwdir. The breadth-first traversal behind <code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> is unchanged; what <a class="reference external" href="https://github.com/Deltares/pyflwdir/pull/115">PR #115</a> changed is the index it reads, from a dense table with room for the largest number of upstream cells in every row to compressed sparse row layout. <code class="docutils literal notranslate"><span class="pre">&quot;dfs&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;topo&quot;</span></code> were added in <a class="reference external" href="https://github.com/Deltares/pyflwdir/pull/119">PR #119</a>. The layout and the two orderings come from FlowTopo, cited at the end.</p>
+<p>All four give every cell of the network exactly once, with every cell after the cell it drains into:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">methods</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"dfs"</span><span class="p">,</span> <span class="s2">"walk"</span><span class="p">,</span> <span class="s2">"sort"</span><span class="p">,</span> <span class="s2">"topo"</span><span class="p">]</span>
+
+<span class="n">seqs</span><span class="p">,</span> <span class="n">positions</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+    <span class="n">flw</span><span class="o">.</span><span class="n">order_cells</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+    <span class="n">seqs</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">idxs_seq</span>
+    <span class="c1"># where each cell sits in this sequence; -1 for the cells outside the network</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">idxs_ds</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">pos</span><span class="p">[</span><span class="n">seqs</span><span class="p">[</span><span class="n">method</span><span class="p">]]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">flw</span><span class="o">.</span><span class="n">ncells</span><span class="p">)</span>
+    <span class="n">positions</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">pos</span>
+
+<span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">seqs</span><span class="p">[</span><span class="s2">"dfs"</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'method'</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'cells'</span><span class="si">:</span><span class="s2">&gt;9</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'same cells'</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'downstream first'</span><span class="si">:</span><span class="s2">&gt;16</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">method</span><span class="p">,</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">seqs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">same</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">seq</span><span class="p">),</span> <span class="n">cells</span><span class="p">)</span>
+    <span class="n">upstream</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="n">idxs_ds</span><span class="p">[</span><span class="n">seq</span><span class="p">]</span> <span class="o">!=</span> <span class="n">seq</span><span class="p">]</span>  <span class="c1"># every cell but the pits</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">positions</span><span class="p">[</span><span class="n">method</span><span class="p">][</span><span class="n">idxs_ds</span><span class="p">[</span><span class="n">upstream</span><span class="p">]]</span> <span class="o">&lt;</span> <span class="n">positions</span><span class="p">[</span><span class="n">method</span><span class="p">][</span><span class="n">upstream</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">seq</span><span class="o">.</span><span class="n">size</span><span class="si">:</span><span class="s2">&gt;9,</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">same</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">first</span><span class="p">))</span><span class="si">:</span><span class="s2">&gt;16</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+  method      cells  same cells  downstream first
+     dfs    349,847        True              True
+    walk    349,847        True              True
+    sort    349,847        True              True
+    topo    349,847        True              True
+</pre></div></div>
+</div>
+<p>Colour below is where a cell sits in its own sequence, dark early and light late.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">method</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">methods</span><span class="p">):</span>
+    <span class="n">percent</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="n">method</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flw</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="n">flw</span><span class="o">.</span><span class="n">ncells</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_less</span><span class="p">(</span><span class="n">percent</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">"viridis"</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">'method="</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1">"'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"position in the sequence [%]"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/_examples_ordering_6_0.png" src="../_images/_examples_ordering_6_0.png" />
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;dfs&quot;</span></code> finishes one tributary before starting the next, so each tributary is a block of one colour. <code class="docutils literal notranslate"><span class="pre">&quot;topo&quot;</span></code> first works from the headwaters down and then reverses that result to match the outlet-to-headwater convention, so the headwaters end up late in the stored sequence. <code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code> produce the same grouping.</p>
+</section>
+<section id="%22walk%22-and-%22sort%22:-one-grouping-by-two-routes">
+<h2><code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code>: one grouping by two routes<a class="headerlink" href="#%22walk%22-and-%22sort%22:-one-grouping-by-two-routes" title="Link to this heading">#</a></h2>
+<p>Both lay down rings of cells equally far from the outlet; only the route differs. <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code> gives every cell its number of steps to the outlet first, by walking each flow path down until it meets a cell that already has one, and then sorts all cells on that number. <code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> never computes it: starting at the pits and taking the cells immediately upstream of the ones just added produces the rings in order, and the sequence is the only array it writes. That is why <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code> is the slower of
+the two on large arrays, and why it is kept only for compatibility.</p>
+<p>Within a ring neither order has a hydrological meaning. <code class="docutils literal notranslate"><span class="pre">numpy.argsort</span></code> does not keep equal values in place and the walk follows whichever cell it reached first, so the two disagree there for almost every cell:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rings</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">rank</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>  <span class="c1"># number of steps to the outlet, per cell</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"same rings:"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">rings</span><span class="p">[</span><span class="n">seqs</span><span class="p">[</span><span class="s2">"walk"</span><span class="p">]],</span> <span class="n">rings</span><span class="p">[</span><span class="n">seqs</span><span class="p">[</span><span class="s2">"sort"</span><span class="p">]]))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"cells in a different place inside them: "</span>
+    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">seqs</span><span class="p">[</span><span class="s1">'walk'</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">seqs</span><span class="p">[</span><span class="s1">'sort'</span><span class="p">])</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="n">flw</span><span class="o">.</span><span class="n">ncells</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+same rings: True
+cells in a different place inside them: 348,115 of 349,847
+</pre></div></div>
+</div>
+</section>
+<section id="Depth-first,-the-default:-a-watershed-is-a-slice">
+<h2>Depth first, the default: a watershed is a slice<a class="headerlink" href="#Depth-first,-the-default:-a-watershed-is-a-slice" title="Link to this heading">#</a></h2>
+<p>Under <code class="docutils literal notranslate"><span class="pre">&quot;dfs&quot;</span></code> the cells draining to any one cell are an unbroken stretch of the sequence, and the stretch starts at that cell. Its length is the number of cells draining to it, which <code class="docutils literal notranslate"><span class="pre">upstream_area(unit=&quot;cell&quot;)</span></code> gives. So the watershed of any cell is</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>seq[position : position + cells_upstream]
+</pre></div>
+</div>
+<p>with no traversal at all. The table below checks the six largest Rhine subbasins. <code class="docutils literal notranslate"><span class="pre">True</span></code> means that the slice contains exactly the cells draining to that outlet; <code class="docutils literal notranslate"><span class="pre">False</span></code> means that unrelated cells occur inside the same slice.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># the subbasin outlets, and the cells draining to each of them. min_sto is chosen for</span>
+<span class="c1"># this raster: it keeps the confluences of the sixth order streams and above</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">subbasins_streamorder</span><span class="p">(</span><span class="n">min_sto</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="n">uparea</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span><span class="s2">"km2"</span><span class="p">)</span>
+<span class="n">idxs_out</span> <span class="o">=</span> <span class="n">idxs_out</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">uparea</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">idxs_out</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]][:</span><span class="mi">6</span><span class="p">]</span>
+<span class="n">cells_up</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span><span class="n">unit</span><span class="o">=</span><span class="s2">"cell"</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>  <span class="c1"># cells draining to each cell</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'km2'</span><span class="si">:</span><span class="s2">&gt;9</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'cells'</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">m</span><span class="si">:</span><span class="s2">&gt;9</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">idxs_out</span><span class="p">:</span>
+    <span class="n">basin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">flw</span><span class="o">.</span><span class="n">basins</span><span class="p">(</span><span class="n">idxs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">uparea</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;9,.0f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">basin</span><span class="o">.</span><span class="n">size</span><span class="si">:</span><span class="s2">&gt;8,</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="n">method</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">cut</span> <span class="o">=</span> <span class="n">seqs</span><span class="p">[</span><span class="n">method</span><span class="p">][</span><span class="n">start</span> <span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">cells_up</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span>
+        <span class="n">row</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">cut</span><span class="p">),</span><span class="w"> </span><span class="n">basin</span><span class="p">))</span><span class="si">:</span><span class="s2">&gt;9</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+      km2     cells      dfs     walk     sort     topo
+  195,451   349,847     True     True     True     True
+   70,885   123,265     True    False    False    False
+   32,725    59,739     True    False    False    False
+   28,075    50,077     True    False    False    False
+   27,121    49,051     True    False    False    False
+   17,585    29,983     True    False    False    False
+</pre></div></div>
+</div>
+<p>This is the nested set labelling of a tree, where a subtree is an interval and asking whether one cell lies upstream of another is a comparison of two numbers rather than a walk (Tatarinov et al., 2002). Haag and Shokoufandeh (2019) use it for watershed delineation on stream networks, in the continuous form used here, where the position in the depth-first sequence is the only number that has to be stored: the end of the interval follows from the number of upstream cells, which a flow
+accumulation grid already carries.</p>
+<p>The slices that start at a pit are whole basins, and no cell of one drains into another:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">seq</span> <span class="o">=</span> <span class="n">seqs</span><span class="p">[</span><span class="s2">"dfs"</span><span class="p">]</span>
+<span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">[</span><span class="n">seq</span><span class="p">]</span> <span class="o">==</span> <span class="n">seq</span><span class="p">)</span>  <span class="c1"># a pit opens each basin</span>
+<span class="n">ends</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">starts</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">seq</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">starts</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> basin(s) in </span><span class="si">{</span><span class="n">seq</span><span class="o">.</span><span class="n">size</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> cells"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">):</span>
+    <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="n">a</span><span class="p">],</span> <span class="n">flw</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  seq[</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">], </span><span class="si">{</span><span class="n">b</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> cells, outlet at row </span><span class="si">{</span><span class="n">row</span><span class="si">}</span><span class="s2">, col </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1 basin(s) in 349,847 cells
+  seq[0:349847], 349,847 cells, outlet at row 21, col 57
+</pre></div></div>
+</div>
+<p>The Rhine is one basin, so there is one basin slice here. On a raster with many basins, the same operation produces independent slices that share no cell.</p>
+<p>The next number measures <strong>sequence locality</strong>: how often the next cell in the sequence drains into the current cell. A high percentage means consecutive memory accesses tend to stay on the same tributary.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">seqs</span><span class="p">[</span><span class="n">method</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">method</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">idxs_ds</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">s</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="si">:</span><span class="s2">&gt;5.1f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+       dfs   60.0%
+      walk    0.0%
+      sort    0.0%
+      topo    0.2%
+</pre></div></div>
+</div>
+</section>
+<section id="What-changes-with-the-method">
+<h2>What changes with the method<a class="headerlink" href="#What-changes-with-the-method" title="Link to this heading">#</a></h2>
+<p>The default used to be <code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code>. The upstream cells contributing to each cell do not change. <code class="docutils literal notranslate"><span class="pre">&quot;dfs&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> add the upstream cells of a confluence in the same order, by index, so their floating point sums are identical bit for bit. <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;topo&quot;</span></code> add them in another order, so their sums can differ; over the cell areas here the difference stays at the level of the rounding:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># a second object without the cache: the Strahler stream order is kept once it has been</span>
+<span class="c1"># computed, and the one of the first method would otherwise be handed back for all four</span>
+<span class="n">flw2</span> <span class="o">=</span> <span class="n">pyflwdir</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span>
+    <span class="n">flwdir</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s2">"d8"</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">src</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">latlon</span><span class="o">=</span><span class="n">crs</span><span class="o">.</span><span class="n">is_geographic</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+
+<span class="n">uparea</span><span class="p">,</span> <span class="n">strord</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+    <span class="n">flw2</span><span class="o">.</span><span class="n">order_cells</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+    <span class="n">uparea</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">flw2</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span><span class="s2">"km2"</span><span class="p">)</span>
+    <span class="n">strord</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">flw2</span><span class="o">.</span><span class="n">stream_order</span><span class="p">()</span>
+
+<span class="n">valid</span> <span class="o">=</span> <span class="n">uparea</span><span class="p">[</span><span class="s2">"dfs"</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">9999</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'method'</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'largest difference in km2'</span><span class="si">:</span><span class="s2">&gt;25</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'stream_order equal'</span><span class="si">:</span><span class="s2">&gt;18</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">uparea</span><span class="p">[</span><span class="n">method</span><span class="p">][</span><span class="n">valid</span><span class="p">]</span> <span class="o">-</span> <span class="n">uparea</span><span class="p">[</span><span class="s2">"dfs"</span><span class="p">][</span><span class="n">valid</span><span class="p">])</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">equal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">strord</span><span class="p">[</span><span class="n">method</span><span class="p">],</span> <span class="n">strord</span><span class="p">[</span><span class="s2">"dfs"</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">diff</span><span class="si">:</span><span class="s2">&gt;25.1e</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">equal</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;18</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+  method  largest difference in km2  stream_order equal
+     dfs                    0.0e+00                True
+    walk                    0.0e+00                True
+    sort                    4.7e-10                True
+    topo                    5.5e-10                True
+</pre></div></div>
+</div>
+<p>What does change is anything numbered or written out in sequence order. <code class="docutils literal notranslate"><span class="pre">subbasins</span></code> and <code class="docutils literal notranslate"><span class="pre">subbasins_streamorder</span></code> hand out ids as they go through the sequence: the same areas under every method, with different ids. The features of <code class="docutils literal notranslate"><span class="pre">streams</span></code> and the cells of <code class="docutils literal notranslate"><span class="pre">inflow_idxs</span></code> and <code class="docutils literal notranslate"><span class="pre">outflow_idxs</span></code> come out in a different order.</p>
+<p>Which cells <code class="docutils literal notranslate"><span class="pre">inflow_idxs</span></code> returns depends on which upstream cell of a confluence comes first in the sequence: <code class="docutils literal notranslate"><span class="pre">&quot;dfs&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> both put the one with the lowest index first and return the same cells, while <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;topo&quot;</span></code> can put another one first and return other cells. <code class="docutils literal notranslate"><span class="pre">ucat_area</span></code> and <code class="docutils literal notranslate"><span class="pre">ucat_volume</span></code> add the cells of a unit catchment into one sum in sequence order, so the last bits of that sum can change under every method.</p>
+<p>Four other functions do not use the sequence set with <code class="docutils literal notranslate"><span class="pre">order_cells</span></code>. Each builds its own, grouped by rank (steps to the outlet): <code class="docutils literal notranslate"><span class="pre">dem_adjust</span></code>, which adjusts the elevation one flow path at a time starting from the longest, <code class="docutils literal notranslate"><span class="pre">dem_dig_d4</span></code>, which lowers a cell beside a diagonal step, <code class="docutils literal notranslate"><span class="pre">subbasins_area</span></code>, where a tributary writes the area left to the main stem cell beside it, and <code class="docutils literal notranslate"><span class="pre">subbasins_pfafstetter</span></code>, which picks between tributaries of equal area in the order the cells come in.</p>
+<p>The table compares the other three orderings with <code class="docutils literal notranslate"><span class="pre">&quot;dfs&quot;</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">same_areas</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Do two id rasters divide the cells up in the same way?"""</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">b</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">a</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">a</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">b</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">pairs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># the (id here, id there) pairs</span>
+    <span class="k">return</span> <span class="n">pairs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">size</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""What the results under one ordering (a) share with those under another (b)."""</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"subbasins_streamorder, same areas"</span><span class="p">:</span> <span class="n">same_areas</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">"strord"</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="s2">"strord"</span><span class="p">]),</span>
+        <span class="s2">"subbasins_streamorder, same ids"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">"strord"</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="s2">"strord"</span><span class="p">]),</span>
+        <span class="s2">"subbasins, same areas"</span><span class="p">:</span> <span class="n">same_areas</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">"subbas"</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="s2">"subbas"</span><span class="p">]),</span>
+        <span class="s2">"subbasins, same ids"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">"subbas"</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="s2">"subbas"</span><span class="p">]),</span>
+        <span class="s2">"streams, same features"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">"streams"</span><span class="p">])</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="s2">"streams"</span><span class="p">]),</span>
+        <span class="s2">"streams, same order"</span><span class="p">:</span> <span class="n">a</span><span class="p">[</span><span class="s2">"streams"</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span><span class="p">[</span><span class="s2">"streams"</span><span class="p">],</span>
+        <span class="s2">"outflow_idxs, same cells"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">"outflow"</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="s2">"outflow"</span><span class="p">])</span>
+        <span class="p">),</span>
+        <span class="s2">"outflow_idxs, same order"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">"outflow"</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="s2">"outflow"</span><span class="p">]),</span>
+    <span class="p">}</span>
+
+
+<span class="n">stream_mask</span> <span class="o">=</span> <span class="n">uparea</span><span class="p">[</span><span class="s2">"dfs"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1000</span>  <span class="c1"># km2, a threshold chosen for this raster</span>
+<span class="n">region</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">flw2</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+<span class="n">region</span><span class="p">[</span><span class="mi">200</span><span class="p">:</span><span class="mi">450</span><span class="p">,</span> <span class="mi">300</span><span class="p">:</span><span class="mi">650</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># a window chosen for this raster</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+    <span class="n">flw2</span><span class="o">.</span><span class="n">order_cells</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+    <span class="n">results</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"strord"</span><span class="p">:</span> <span class="n">flw2</span><span class="o">.</span><span class="n">subbasins_streamorder</span><span class="p">(</span><span class="n">min_sto</span><span class="o">=</span><span class="mi">6</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s2">"subbas"</span><span class="p">:</span> <span class="n">flw2</span><span class="o">.</span><span class="n">subbasins</span><span class="p">(</span><span class="n">stream_mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s2">"streams"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="n">feature</span><span class="p">[</span><span class="s2">"properties"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">flw2</span><span class="o">.</span><span class="n">streams</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">stream_mask</span><span class="p">)</span>
+        <span class="p">],</span>
+        <span class="s2">"outflow"</span><span class="p">:</span> <span class="n">flw2</span><span class="o">.</span><span class="n">outflow_idxs</span><span class="p">(</span><span class="n">region</span><span class="p">),</span>
+    <span class="p">}</span>
+
+<span class="n">others</span> <span class="o">=</span> <span class="p">{</span><span class="n">method</span><span class="p">:</span> <span class="n">compare</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">method</span><span class="p">],</span> <span class="n">results</span><span class="p">[</span><span class="s2">"dfs"</span><span class="p">])</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">[</span><span class="mi">1</span><span class="p">:]}</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'compared with dfs'</span><span class="si">:</span><span class="s2">&lt;34</span><span class="si">}</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method</span><span class="si">:</span><span class="s2">&gt;7</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">others</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">others</span><span class="p">[</span><span class="s2">"walk"</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">line</span><span class="si">:</span><span class="s2">&lt;34</span><span class="si">}</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">others</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">line</span><span class="p">])</span><span class="si">:</span><span class="s2">&gt;7</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">others</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+compared with dfs                    walk   sort   topo
+subbasins_streamorder, same areas    True   True   True
+subbasins_streamorder, same ids     False  False  False
+subbasins, same areas                True   True   True
+subbasins, same ids                 False  False  False
+streams, same features               True   True   True
+streams, same order                 False  False  False
+outflow_idxs, same cells             True   True   True
+outflow_idxs, same order            False  False  False
+</pre></div></div>
+</div>
+</section>
+<section id="Which-to-use">
+<h2>Which to use<a class="headerlink" href="#Which-to-use" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;dfs&quot;</span></code>, the default, for the serial path and for work taken basin by basin or subbasin by subbasin: every basin is one interval, and on this Rhine raster most cells immediately follow their downstream cell. <code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> when cells must be grouped by distance to the outlet. <code class="docutils literal notranslate"><span class="pre">&quot;topo&quot;</span></code> when avoiding the upstream index matters. <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code> remains for compatibility.</p>
+<p>The ordering does not decide whether anything runs in parallel: see <a class="reference internal" href="parallel.html"><span class="doc">Parallel accumulation</span></a>.</p>
+</section>
+<section id="References">
+<h2>References<a class="headerlink" href="#References" title="Link to this heading">#</a></h2>
+<p>The breadth-first traversal behind <code class="docutils literal notranslate"><span class="pre">&quot;walk&quot;</span></code> is pyflwdir’s own; <code class="docutils literal notranslate"><span class="pre">&quot;dfs&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;topo&quot;</span></code> are standard graph traversals, cited in <code class="docutils literal notranslate"><span class="pre">core.idxs_seq_dfs</span></code> and <code class="docutils literal notranslate"><span class="pre">core.idxs_seq_topo</span></code>. The compressed sparse row index contributed in <a class="reference external" href="https://github.com/Deltares/pyflwdir/pull/115">PR #115</a>, the two implementations contributed in <a class="reference external" href="https://github.com/Deltares/pyflwdir/pull/119">PR #119</a>, and the comparison above come from FlowTopo:</p>
+<ul class="simple">
+<li><p>Jiang, L., Wu, H., Chen, W., Huang, Z., Yamazaki, D., Yang, T. and Li, L. (2026). FlowTopo (v1.0.0). Zenodo. <a class="reference external" href="https://doi.org/10.5281/zenodo.22227621">https://doi.org/10.5281/zenodo.22227621</a></p></li>
+<li><p>Braun, J. and Willett, S.D. (2013). A very efficient O(n), implicit and parallel, method to solve the stream power equation governing fluvial incision and landscape evolution. <em>Geomorphology</em> 180-181, 170-179.</p></li>
+<li><p>Kahn, A.B. (1962). Topological sorting of large networks. <em>Communications of the ACM</em> 5(11), 558-562.</p></li>
+<li><p>Tatarinov, I., Viglas, S.D., Beyer, K., Shanmugasundaram, J., Shekita, E. and Zhang, C. (2002). Storing and querying ordered XML using a relational database system. <em>Proceedings of the 2002 ACM SIGMOD International Conference on Management of Data</em>, 204-215. <a class="reference external" href="https://doi.org/10.1145/564691.564715">https://doi.org/10.1145/564691.564715</a></p></li>
+<li><p>Haag, S. and Shokoufandeh, A. (2019). Development of a data model to facilitate rapid watershed delineation. <em>Environmental Modelling &amp; Software</em> 122, 103973. <a class="reference external" href="https://doi.org/10.1016/j.envsoft.2017.06.009">https://doi.org/10.1016/j.envsoft.2017.06.009</a></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="tracing.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Tracing flow directions</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="parallel.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Parallel accumulation: layers and partitions</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-four-methods">The four methods</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#%22walk%22-and-%22sort%22:-one-grouping-by-two-routes"><code class="docutils literal notranslate"><span class="pre">"walk"</span></code> and <code class="docutils literal notranslate"><span class="pre">"sort"</span></code>: one grouping by two routes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Depth-first,-the-default:-a-watershed-is-a-slice">Depth first, the default: a watershed is a slice</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What-changes-with-the-method">What changes with the method</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Which-to-use">Which to use</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#References">References</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/Deltares/pyflwdir/edit/main/docs/_examples/ordering.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/_examples/ordering.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright Deltares.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
