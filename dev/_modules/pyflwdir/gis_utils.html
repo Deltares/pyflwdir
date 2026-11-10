@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -25,17 +26,17 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css?v=aa503ec8" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +47,6 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.5.13." />
   
@@ -96,7 +96,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -174,7 +174,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -215,7 +215,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -236,7 +236,7 @@
       
         
       
-      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <dialog id="pst-primary-sidebar-modal"></dialog>
       <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
         
 
@@ -351,7 +351,7 @@
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../index.html" class="nav-link" aria-label="Home">
-        <i class="fa-solid fa-house"></i>
+        <i class="fa-solid fa-home"></i>
       </a>
     </li>
     
@@ -375,7 +375,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for pyflwdir.gis_utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""Utilities for geospatial data and raster grids."""</span>
+<span></span><span class="sd">&quot;&quot;&quot;Utilities for geospatial data and raster grids.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">heapq</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
@@ -386,24 +386,24 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">njit</span>
 
 <span class="n">_R</span> <span class="o">=</span> <span class="mf">6371e3</span>  <span class="c1"># Radius of earth in m. Use 3956e3 for miles</span>
-<span class="n">AREA_FACTORS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"m2"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">"ha"</span><span class="p">:</span> <span class="mf">1e4</span><span class="p">,</span> <span class="s2">"km2"</span><span class="p">:</span> <span class="mf">1e6</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+<span class="n">AREA_FACTORS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;m2&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;ha&quot;</span><span class="p">:</span> <span class="mf">1e4</span><span class="p">,</span> <span class="s2">&quot;km2&quot;</span><span class="p">:</span> <span class="mf">1e6</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
 <span class="c1"># changed to N-&gt;S orientation in v0.5 TODO check if used in hydromt?</span>
 <span class="n">_IDENTITY</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
 <span class="n">IDENTITY</span> <span class="o">=</span> <span class="n">Affine</span><span class="p">(</span><span class="o">*</span><span class="n">_IDENTITY</span><span class="p">)</span>  <span class="c1"># Affine transformation for identity</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">"affine_to_coords"</span><span class="p">,</span>
-    <span class="s2">"array_bounds"</span><span class="p">,</span>
-    <span class="s2">"get_edge"</span><span class="p">,</span>
-    <span class="s2">"idxs_to_coords"</span><span class="p">,</span>
-    <span class="s2">"reggrid_area"</span><span class="p">,</span>
-    <span class="s2">"reggrid_dx"</span><span class="p">,</span>
-    <span class="s2">"reggrid_dy"</span><span class="p">,</span>
-    <span class="s2">"rowcol"</span><span class="p">,</span>
-    <span class="s2">"spread2d"</span><span class="p">,</span>
-    <span class="s2">"transform_from_bounds"</span><span class="p">,</span>
-    <span class="s2">"transform_from_origin"</span><span class="p">,</span>
-    <span class="s2">"xy"</span><span class="p">,</span>
+    <span class="s2">&quot;affine_to_coords&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;array_bounds&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;get_edge&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;idxs_to_coords&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reggrid_area&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reggrid_dx&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reggrid_dy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rowcol&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;spread2d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;transform_from_bounds&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;transform_from_origin&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;xy&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -418,7 +418,7 @@
     <span class="n">latlon</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">transform</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">_IDENTITY</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Fill no-data cells with the nearest observation and return source and distance maps.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fill no-data cells with the nearest observation and return source and distance maps.</span>
 
 <span class="sd">    Distances are accumulated through valid cells. The default friction is 1 per cell;</span>
 <span class="sd">    diagonal steps use the hypotenuse of the horizontal and vertical distances.</span>
@@ -447,7 +447,7 @@
 <span class="sd">        Linear index of the nearest observation, or -1 where no observation is reachable.</span>
 <span class="sd">    dst: 2D array of float32</span>
 <span class="sd">        Accumulated friction distance to the nearest observation.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="n">north</span> <span class="o">=</span> <span class="n">transform</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">abs</span><span class="p">(</span><span class="n">transform</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span> <span class="n">transform</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">latlon</span><span class="p">:</span>
@@ -506,7 +506,7 @@
 <div class="viewcode-block" id="get_edge">
 <a class="viewcode-back" href="../../_generated/pyflwdir.gis_utils.get_edge.html#pyflwdir.gis_utils.get_edge">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_edge</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">structure</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Get edge of valid cells.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get edge of valid cells.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -520,7 +520,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    edge: 2D array of bool</span>
 <span class="sd">        Boolean array edge cells.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">structure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">struct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
     <span class="k">elif</span> <span class="p">(</span>
@@ -528,7 +528,7 @@
         <span class="ow">or</span> <span class="n">structure</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="ow">or</span> <span class="n">structure</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="nb">bool</span>
     <span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"structure must be a 3x3 boolean array"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;structure must be a 3x3 boolean array&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">struct</span> <span class="o">=</span> <span class="n">structure</span>
     <span class="k">return</span> <span class="n">_get_edge</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">struct</span><span class="p">)</span></div>
@@ -559,7 +559,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">transform_from_origin</span><span class="p">(</span>
     <span class="n">west</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">north</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xsize</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ysize</span><span class="p">:</span> <span class="nb">float</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Affine</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return an affine transform from the upper-left corner and pixel sizes.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return an affine transform from the upper-left corner and pixel sizes.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -572,7 +572,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    Affine</span>
 <span class="sd">        Transform mapping pixel coordinates to map coordinates.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">Affine</span><span class="p">(</span><span class="n">xsize</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">ysize</span><span class="p">,</span> <span class="n">north</span><span class="p">)</span>
 
 
@@ -584,7 +584,7 @@
     <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Affine</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return an affine transform from raster bounds and dimensions.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return an affine transform from raster bounds and dimensions.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -597,7 +597,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    Affine</span>
 <span class="sd">        Transform mapping pixel coordinates to map coordinates.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">Affine</span><span class="p">(</span>
         <span class="p">(</span><span class="n">east</span> <span class="o">-</span> <span class="n">west</span><span class="p">)</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span>
         <span class="mf">0.0</span><span class="p">,</span>
@@ -611,7 +611,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">array_bounds</span><span class="p">(</span>
     <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="n">Affine</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Return the west, south, east, and north bounds of an array.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the west, south, east, and north bounds of an array.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -624,7 +624,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    tuple of float</span>
 <span class="sd">        Bounds in `(west, south, east, north)` order.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">w</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">xoff</span><span class="p">,</span> <span class="n">transform</span><span class="o">.</span><span class="n">yoff</span>
     <span class="n">e</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">a</span> <span class="o">*</span> <span class="n">width</span> <span class="o">+</span> <span class="n">transform</span><span class="o">.</span><span class="n">b</span> <span class="o">*</span> <span class="n">height</span> <span class="o">+</span> <span class="n">transform</span><span class="o">.</span><span class="n">c</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="n">width</span> <span class="o">+</span> <span class="n">transform</span><span class="o">.</span><span class="n">e</span> <span class="o">*</span> <span class="n">height</span> <span class="o">+</span> <span class="n">transform</span><span class="o">.</span><span class="n">f</span>
@@ -635,10 +635,10 @@
     <span class="n">transform</span><span class="p">:</span> <span class="n">Affine</span><span class="p">,</span>
     <span class="n">rows</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">cols</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">offset</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"center"</span><span class="p">,</span> <span class="s2">"ul"</span><span class="p">,</span> <span class="s2">"ur"</span><span class="p">,</span> <span class="s2">"ll"</span><span class="p">,</span> <span class="s2">"lr"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"center"</span><span class="p">,</span>
+    <span class="n">offset</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="s2">&quot;ul&quot;</span><span class="p">,</span> <span class="s2">&quot;ur&quot;</span><span class="p">,</span> <span class="s2">&quot;ll&quot;</span><span class="p">,</span> <span class="s2">&quot;lr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;center&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Return the x and y coordinates of pixels at `rows` and `cols`.</span>
-<span class="sd">    The pixel's center is returned by default, but a corner can be returned</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the x and y coordinates of pixels at `rows` and `cols`.</span>
+<span class="sd">    The pixel&#39;s center is returned by default, but a corner can be returned</span>
 <span class="sd">    by setting `offset` to one of `ul, ur, ll, lr`.</span>
 
 <span class="sd">    Parameters</span>
@@ -649,7 +649,7 @@
 <span class="sd">        Pixel rows.</span>
 <span class="sd">    cols : ndarray or int</span>
 <span class="sd">        Pixel columns.</span>
-<span class="sd">    offset : {'center', 'ul', 'ur', 'll', 'lr'}</span>
+<span class="sd">    offset : {&#39;center&#39;, &#39;ul&#39;, &#39;ur&#39;, &#39;ll&#39;, &#39;lr&#39;}</span>
 <span class="sd">        Determines if the returned coordinates are for the center of the</span>
 <span class="sd">        pixel or for a corner.</span>
 
@@ -659,21 +659,21 @@
 <span class="sd">        x coordinates in coordinate reference system</span>
 <span class="sd">    ys : ndarray of float</span>
 <span class="sd">        y coordinates in coordinate reference system</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rows</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">&quot;center&quot;</span><span class="p">:</span>
         <span class="n">coff</span><span class="p">,</span> <span class="n">roff</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">"ul"</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">&quot;ul&quot;</span><span class="p">:</span>
         <span class="n">coff</span><span class="p">,</span> <span class="n">roff</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">"ur"</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">&quot;ur&quot;</span><span class="p">:</span>
         <span class="n">coff</span><span class="p">,</span> <span class="n">roff</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">"ll"</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">&quot;ll&quot;</span><span class="p">:</span>
         <span class="n">coff</span><span class="p">,</span> <span class="n">roff</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">"lr"</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s2">&quot;lr&quot;</span><span class="p">:</span>
         <span class="n">coff</span><span class="p">,</span> <span class="n">roff</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Invalid offset"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid offset&quot;</span><span class="p">)</span>
 
     <span class="n">xs</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="n">cols</span> <span class="o">+</span> <span class="n">coff</span><span class="p">)</span> <span class="o">+</span> <span class="n">transform</span><span class="o">.</span><span class="n">b</span> <span class="o">*</span> <span class="p">(</span><span class="n">rows</span> <span class="o">+</span> <span class="n">roff</span><span class="p">)</span> <span class="o">+</span> <span class="n">transform</span><span class="o">.</span><span class="n">c</span>
     <span class="n">ys</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="p">(</span><span class="n">cols</span> <span class="o">+</span> <span class="n">coff</span><span class="p">)</span> <span class="o">+</span> <span class="n">transform</span><span class="o">.</span><span class="n">e</span> <span class="o">*</span> <span class="p">(</span><span class="n">rows</span> <span class="o">+</span> <span class="n">roff</span><span class="p">)</span> <span class="o">+</span> <span class="n">transform</span><span class="o">.</span><span class="n">f</span>
@@ -687,7 +687,7 @@
     <span class="n">op</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">,</span>
     <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the rows and cols of the pixels containing (x, y) given a</span>
 <span class="sd">    coordinate reference system.</span>
 <span class="sd">    Use an epsilon, magnitude determined by the precision parameter</span>
@@ -712,7 +712,7 @@
 <span class="sd">        array of row indices</span>
 <span class="sd">    cols : ndarray of ints</span>
 <span class="sd">        array of column indices</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">xs</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ys</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">precision</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">eps</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -729,9 +729,9 @@
     <span class="n">idxs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">transform</span><span class="p">:</span> <span class="n">Affine</span><span class="p">,</span>
     <span class="n">shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
-    <span class="n">offset</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"center"</span><span class="p">,</span> <span class="s2">"ul"</span><span class="p">,</span> <span class="s2">"ur"</span><span class="p">,</span> <span class="s2">"ll"</span><span class="p">,</span> <span class="s2">"lr"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"center"</span><span class="p">,</span>
+    <span class="n">offset</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="s2">&quot;ul&quot;</span><span class="p">,</span> <span class="s2">&quot;ur&quot;</span><span class="p">,</span> <span class="s2">&quot;ll&quot;</span><span class="p">,</span> <span class="s2">&quot;lr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;center&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Return map coordinates for linear raster indices.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return map coordinates for linear raster indices.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -741,7 +741,7 @@
 <span class="sd">        Transform mapping pixel coordinates to map coordinates.</span>
 <span class="sd">    shape : tuple of int</span>
 <span class="sd">        Raster dimensions as `(height, width)`.</span>
-<span class="sd">    offset : {'center', 'ul', 'ur', 'll', 'lr'}</span>
+<span class="sd">    offset : {&#39;center&#39;, &#39;ul&#39;, &#39;ur&#39;, &#39;ll&#39;, &#39;lr&#39;}</span>
 <span class="sd">        Determines if the returned coordinates are for the center of the</span>
 <span class="sd">        pixel or for a corner.</span>
 
@@ -756,11 +756,11 @@
 <span class="sd">    ------</span>
 <span class="sd">    IndexError</span>
 <span class="sd">        if any linear index outside domain.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">idxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">idxs</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">idxs</span> <span class="o">&gt;=</span> <span class="n">size</span><span class="p">)):</span>
-        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">"idxs coordinates outside domain"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;idxs coordinates outside domain&quot;</span><span class="p">)</span>
     <span class="n">ncol</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">rows</span> <span class="o">=</span> <span class="n">idxs</span> <span class="o">//</span> <span class="n">ncol</span>
     <span class="n">cols</span> <span class="o">=</span> <span class="n">idxs</span> <span class="o">%</span> <span class="n">ncol</span>
@@ -775,7 +775,7 @@
     <span class="n">op</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">,</span>
     <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return linear raster indices for map coordinates.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return linear raster indices for map coordinates.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -801,7 +801,7 @@
 <span class="sd">    ------</span>
 <span class="sd">    IndexError</span>
 <span class="sd">        if any coordinate outside domain.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">shape</span>
     <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">rowcol</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">op</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
@@ -810,7 +810,7 @@
             <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">cols</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cols</span> <span class="o">&lt;</span> <span class="n">ncol</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">"XY coordinates outside domain"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;XY coordinates outside domain&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">rows</span> <span class="o">*</span> <span class="n">ncol</span> <span class="o">+</span> <span class="n">cols</span>
 
 
@@ -818,7 +818,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">affine_to_coords</span><span class="p">(</span>
     <span class="n">affine</span><span class="p">:</span> <span class="n">Affine</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Return the x and y pixel-center coordinate arrays for an affine transform.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the x and y pixel-center coordinate arrays for an affine transform.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -835,7 +835,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    x, y coordinate arrays : tuple of ndarray of float</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">shape</span>
     <span class="n">x_coords</span> <span class="o">=</span> <span class="n">affine</span><span class="o">.</span><span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">width</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="n">affine</span><span class="o">.</span><span class="n">b</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="n">affine</span><span class="o">.</span><span class="n">c</span>
     <span class="n">y_coords</span> <span class="o">=</span> <span class="n">affine</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="n">affine</span><span class="o">.</span><span class="n">e</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="n">affine</span><span class="o">.</span><span class="n">f</span>
@@ -844,7 +844,7 @@
 
 <span class="c1">## DISTANCES // AREAS</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">reggrid_dx</span><span class="p">(</span><span class="n">lats</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">lons</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return cell widths [m] for a regular geographic grid.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return cell widths [m] for a regular geographic grid.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -855,14 +855,14 @@
 <span class="sd">    -------</span>
 <span class="sd">    2D array of float</span>
 <span class="sd">        Cell widths, with shape `(len(lats), len(lons))`.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">xres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">lons</span><span class="p">)))</span>
     <span class="n">dx</span> <span class="o">=</span> <span class="n">degree_metres_x</span><span class="p">(</span><span class="n">lats</span><span class="p">)</span> <span class="o">*</span> <span class="n">xres</span>
     <span class="k">return</span> <span class="n">dx</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">lats</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">lons</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">lats</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">reggrid_dy</span><span class="p">(</span><span class="n">lats</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">lons</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return cell heights [m] for a regular geographic grid.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return cell heights [m] for a regular geographic grid.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -873,7 +873,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    2D array of float</span>
 <span class="sd">        Cell heights, with shape `(len(lats), len(lons))`.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">yres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">lats</span><span class="p">)))</span>
     <span class="n">dy</span> <span class="o">=</span> <span class="n">degree_metres_y</span><span class="p">(</span><span class="n">lats</span><span class="p">)</span> <span class="o">*</span> <span class="n">yres</span>
     <span class="k">return</span> <span class="n">dy</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">lats</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">lons</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">lats</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
@@ -882,7 +882,7 @@
 <div class="viewcode-block" id="reggrid_area">
 <a class="viewcode-back" href="../../_generated/pyflwdir.gis_utils.reggrid_area.html#pyflwdir.gis_utils.reggrid_area">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">reggrid_area</span><span class="p">(</span><span class="n">lats</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">lons</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return cell areas [m2] for a regular geographic grid.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return cell areas [m2] for a regular geographic grid.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -893,7 +893,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    2D array of float</span>
 <span class="sd">        Cell areas, with shape `(len(lats), len(lons))`.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">xres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">lons</span><span class="p">)))</span>
     <span class="n">yres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">lats</span><span class="p">)))</span>
     <span class="n">area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">lats</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">lons</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
@@ -905,9 +905,9 @@
     <span class="n">transform</span><span class="p">:</span> <span class="n">Affine</span><span class="p">,</span>
     <span class="n">shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">latlon</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"m2"</span><span class="p">,</span>
+    <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;m2&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return a raster of cell areas.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a raster of cell areas.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -917,20 +917,20 @@
 <span class="sd">        Raster dimensions `(height, width)`.</span>
 <span class="sd">    latlon : bool, optional</span>
 <span class="sd">        Whether coordinates are geographic, by default False.</span>
-<span class="sd">    unit : {'m2', 'ha', 'km2', 'cell'}, optional</span>
-<span class="sd">        Area units, by default 'm2'.</span>
+<span class="sd">    unit : {&#39;m2&#39;, &#39;ha&#39;, &#39;km2&#39;, &#39;cell&#39;}, optional</span>
+<span class="sd">        Area units, by default &#39;m2&#39;.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    2D array</span>
 <span class="sd">        Cell areas in `unit`.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">unit</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">unit</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">AREA_FACTORS</span><span class="p">:</span>
-        <span class="n">fstr</span> <span class="o">=</span> <span class="s1">'", "'</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">AREA_FACTORS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Unknown unit: </span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s1">, select from "</span><span class="si">{</span><span class="n">fstr</span><span class="si">}</span><span class="s1">".'</span><span class="p">)</span>
+        <span class="n">fstr</span> <span class="o">=</span> <span class="s1">&#39;&quot;, &quot;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">AREA_FACTORS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown unit: </span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s1">, select from &quot;</span><span class="si">{</span><span class="n">fstr</span><span class="si">}</span><span class="s1">&quot;.&#39;</span><span class="p">)</span>
     <span class="n">area</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
-    <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s2">"cell"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s2">&quot;cell&quot;</span><span class="p">:</span>
         <span class="n">area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">latlon</span><span class="p">:</span>
         <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span> <span class="o">=</span> <span class="n">affine_to_coords</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
@@ -943,7 +943,7 @@
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cellarea</span><span class="p">(</span><span class="n">lat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xres</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">yres</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return the area [m2] of a cell at a given center latitude.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the area [m2] of a cell at a given center latitude.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -956,7 +956,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    float or array-like</span>
 <span class="sd">        Cell area in square metres.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">l1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">yres</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
     <span class="n">l2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">yres</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
     <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">xres</span><span class="p">))</span>
@@ -965,7 +965,7 @@
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">degree_metres_y</span><span class="p">(</span><span class="n">lat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return the north-south length of one degree [m] at a given latitude.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the north-south length of one degree [m] at a given latitude.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -976,7 +976,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    float or array-like</span>
 <span class="sd">        Length of one degree of latitude in metres.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">m1</span> <span class="o">=</span> <span class="mf">111132.92</span>  <span class="c1"># latitude calculation term 1</span>
     <span class="n">m2</span> <span class="o">=</span> <span class="o">-</span><span class="mf">559.82</span>  <span class="c1"># latitude calculation term 2</span>
     <span class="n">m3</span> <span class="o">=</span> <span class="mf">1.175</span>  <span class="c1"># latitude calculation term 3</span>
@@ -994,7 +994,7 @@
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">degree_metres_x</span><span class="p">(</span><span class="n">lat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return the east-west length of one degree [m] at a given latitude.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the east-west length of one degree [m] at a given latitude.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1005,7 +1005,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    float or array-like</span>
 <span class="sd">        Length of one degree of longitude in metres.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">p1</span> <span class="o">=</span> <span class="mf">111412.84</span>  <span class="c1"># longitude calculation term 1</span>
     <span class="n">p2</span> <span class="o">=</span> <span class="o">-</span><span class="mf">93.5</span>  <span class="c1"># longitude calculation term 2</span>
     <span class="n">p3</span> <span class="o">=</span> <span class="mf">0.118</span>  <span class="c1"># longitude calculation term 3</span>
@@ -1027,7 +1027,7 @@
     <span class="n">latlon</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">transform</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">_IDENTITY</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return the distance between two linear raster indices.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the distance between two linear raster indices.</span>
 
 <span class="sd">    The raster is assumed to have regular spacing defined by `transform`.</span>
 
@@ -1047,7 +1047,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    float</span>
 <span class="sd">        Distance in map units, or metres for geographic coordinates.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="n">north</span> <span class="o">=</span> <span class="n">transform</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">transform</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">transform</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
     <span class="c1"># compute delta row, col</span>
     <span class="n">r0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">idx0</span> <span class="o">//</span> <span class="n">ncol</span><span class="p">)</span>
@@ -1073,7 +1073,7 @@
     <span class="n">shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Return one LineString feature for each flow path.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return one LineString feature for each flow path.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1087,18 +1087,18 @@
 <span class="sd">    shape : tuple of int</span>
 <span class="sd">        The height, width  of the raster.</span>
 <span class="sd">    **kwargs : 2D array-like</span>
-<span class="sd">        Additional maps sampled at each flow path's most downstream cell and included</span>
+<span class="sd">        Additional maps sampled at each flow path&#39;s most downstream cell and included</span>
 <span class="sd">        as feature properties, for example `strord=flw.stream_order()`.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    feats : list of dict</span>
 <span class="sd">        Geofeatures, to be parsed by e.g. geopandas.GeoDataFrame.from_features</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">xs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">ys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"transform and shape should be provided if xs and ys are None"</span>
+                <span class="s2">&quot;transform and shape should be provided if xs and ys are None&quot;</span>
             <span class="p">)</span>
         <span class="n">_size</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1107,7 +1107,7 @@
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="n">value</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">_size</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">'Kwargs map "</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">" should be ndarrays of same size as coordinates'</span>
+                <span class="sa">f</span><span class="s1">&#39;Kwargs map &quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">&quot; should be ndarrays of same size as coordinates&#39;</span>
             <span class="p">)</span>
     <span class="n">feats</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">idxs</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flowpaths</span><span class="p">):</span>
@@ -1124,12 +1124,12 @@
             <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[(</span><span class="n">xs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ys</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">]</span>
         <span class="n">feats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"Feature"</span><span class="p">,</span>
-                <span class="s2">"geometry"</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"LineString"</span><span class="p">,</span>
-                    <span class="s2">"coordinates"</span><span class="p">:</span> <span class="n">coordinates</span><span class="p">,</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Feature&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;LineString&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <span class="n">coordinates</span><span class="p">,</span>
                 <span class="p">},</span>
-                <span class="s2">"properties"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"idx"</span><span class="p">:</span> <span class="n">idx0</span><span class="p">,</span> <span class="s2">"idx_ds"</span><span class="p">:</span> <span class="n">idxs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="s2">"pit"</span><span class="p">:</span> <span class="n">pit</span><span class="p">,</span> <span class="o">**</span><span class="n">props</span><span class="p">},</span>
+                <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;idx&quot;</span><span class="p">:</span> <span class="n">idx0</span><span class="p">,</span> <span class="s2">&quot;idx_ds&quot;</span><span class="p">:</span> <span class="n">idxs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;pit&quot;</span><span class="p">:</span> <span class="n">pit</span><span class="p">,</span> <span class="o">**</span><span class="n">props</span><span class="p">},</span>
             <span class="p">}</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">feats</span>
@@ -1162,8 +1162,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1183,7 +1183,8 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
   </p>
 </div>
       
@@ -1196,7 +1197,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

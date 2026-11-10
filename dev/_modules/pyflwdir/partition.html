@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -25,17 +26,17 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css?v=aa503ec8" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +47,6 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.5.13." />
   
@@ -96,7 +96,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -174,7 +174,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -215,7 +215,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -236,7 +236,7 @@
       
         
       
-      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <dialog id="pst-primary-sidebar-modal"></dialog>
       <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
         
 
@@ -351,7 +351,7 @@
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../index.html" class="nav-link" aria-label="Home">
-        <i class="fa-solid fa-house"></i>
+        <i class="fa-solid fa-home"></i>
       </a>
     </li>
     
@@ -375,7 +375,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for pyflwdir.partition</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""Divide a flow-direction raster into parts, for upstream accumulation in processes.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Divide a flow-direction raster into parts, for upstream accumulation in processes.</span>
 
 <span class="sd">:py:meth:`pyflwdir.FlwdirRaster.partition` returns a :class:`PartitionPlan`: the part</span>
 <span class="sd">of each cell, the cell count of each part, and how the opened mainstems connect to the</span>
@@ -391,8 +391,8 @@
 <span class="sd">Following FlowTopo (https://doi.org/10.5281/zenodo.22227621), a raster is divided into</span>
 <span class="sd">``n_parts`` parts, four by default, at two levels:</span>
 
-<span class="sd">* ``"basin"`` (FlowTopo Method 1) keeps every basin whole.</span>
-<span class="sd">* ``"subbasin"`` (FlowTopo Method 2) also opens the basins that keep the parts from</span>
+<span class="sd">* ``&quot;basin&quot;`` (FlowTopo Method 1) keeps every basin whole.</span>
+<span class="sd">* ``&quot;subbasin&quot;`` (FlowTopo Method 2) also opens the basins that keep the parts from</span>
 <span class="sd">  balancing, along their mainstems, into the tributary subtrees that enter them, and</span>
 <span class="sd">  divides those and the other basins into parts.  ``P_min`` is the most upstream</span>
 <span class="sd">  mainstem cell where a tributary of another part enters.  From ``P_min`` down to the</span>
@@ -413,11 +413,11 @@
 <span class="sd">``_refine_balance``.</span>
 
 <span class="sd">The graph functions take arrays, not a raster, so that a graph built from tiles</span>
-<span class="sd">(FlowTopo's 90 m region tiles, for one) is partitioned by the same code.  METIS is the</span>
+<span class="sd">(FlowTopo&#39;s 90 m region tiles, for one) is partitioned by the same code.  METIS is the</span>
 <span class="sd">one pymetis carries (5.1.0 in pymetis 2025.2).  The FlowTopo C code links METIS 5.2.1,</span>
-<span class="sd">which divides the same graph otherwise, so the method is the C code's but the parts</span>
+<span class="sd">which divides the same graph otherwise, so the method is the C code&#39;s but the parts</span>
 <span class="sd">need not be, cell for cell.</span>
-<span class="sd">"""</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -440,16 +440,16 @@
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">DEFAULT_N_PARTS</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="sd">"""Parts unless asked otherwise: the FlowTopo benchmark server has four processors, one</span>
+<span class="sd">&quot;&quot;&quot;Parts unless asked otherwise: the FlowTopo benchmark server has four processors, one</span>
 <span class="sd">part each.  The method does not need four, and pyflwdir does not bind a process to a</span>
-<span class="sd">processor."""</span>
+<span class="sd">processor.&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="MainstemSection">
 <a class="viewcode-back" href="../../_generated/pyflwdir.partition.MainstemSection.html#pyflwdir.partition.MainstemSection">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MainstemSection</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The cells of one opened mainstem that are accumulated after the parts.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The cells of one opened mainstem that are accumulated after the parts.</span>
 
 <span class="sd">    They run from ``P_min``, the most upstream mainstem cell where a tributary of</span>
 <span class="sd">    another part enters, down to the pit.</span>
@@ -470,7 +470,7 @@
 <span class="sd">        The part that holds each of ``cut_outlets``.</span>
 <span class="sd">    predecessor_part : int</span>
 <span class="sd">        The part that holds the mainstem above ``P_min``.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">mainstem</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
     <span class="n">predecessor</span><span class="p">:</span> <span class="nb">int</span>
@@ -485,7 +485,7 @@
 <a class="viewcode-back" href="../../_generated/pyflwdir.partition.PartitionPlan.html#pyflwdir.partition.PartitionPlan">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PartitionPlan</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""How the cells of a raster divide over processes, from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;How the cells of a raster divide over processes, from</span>
 <span class="sd">    :py:meth:`pyflwdir.FlwdirRaster.partition`.</span>
 
 <span class="sd">    Pass it as ``partition_plan`` to :py:meth:`pyflwdir.FlwdirRaster.upstream_area`</span>
@@ -505,11 +505,11 @@
 <span class="sd">    basin_ids : ndarray of int</span>
 <span class="sd">        Basin label of each cell, shaped like the raster: those of</span>
 <span class="sd">        :py:meth:`pyflwdir.FlwdirRaster.basins`, 0 off the network.</span>
-<span class="sd">    level : {'basin', 'subbasin'}</span>
+<span class="sd">    level : {&#39;basin&#39;, &#39;subbasin&#39;}</span>
 <span class="sd">        The partition level.</span>
 <span class="sd">    stems : tuple of MainstemSection</span>
 <span class="sd">        One section per opened basin; empty at basin level.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
     <span class="n">loads</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
@@ -519,28 +519,28 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">mainstem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""The cells of every mainstem section, for plotting and inspection."""</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The cells of every mainstem section, for plotting and inspection.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">stem</span><span class="o">.</span><span class="n">mainstem</span> <span class="k">for</span> <span class="n">stem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">])</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">cut_outlets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""The ``cut_outlets`` of all sections; the accumulation reads ``stems``."""</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The ``cut_outlets`` of all sections; the accumulation reads ``stems``.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">stem</span><span class="o">.</span><span class="n">cut_outlets</span> <span class="k">for</span> <span class="n">stem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">])</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">cut_inlets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""The ``cut_inlets`` of all sections; the accumulation reads ``stems``."""</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The ``cut_inlets`` of all sections; the accumulation reads ``stems``.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">stem</span><span class="o">.</span><span class="n">cut_inlets</span> <span class="k">for</span> <span class="n">stem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">])</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">cut_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""The ``cut_parts`` of all sections, one after the other."""</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The ``cut_parts`` of all sections, one after the other.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">stem</span><span class="o">.</span><span class="n">cut_parts</span> <span class="k">for</span> <span class="n">stem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">])</span></div>
@@ -550,8 +550,8 @@
 <div class="viewcode-block" id="partition_plan">
 <a class="viewcode-back" href="../../_generated/pyflwdir.partition.partition_plan.html#pyflwdir.partition.partition_plan">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">partition_plan</span><span class="p">(</span>
-    <span class="n">flw</span><span class="p">:</span> <span class="s2">"Flwdir"</span><span class="p">,</span>
-    <span class="n">level</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"basin"</span><span class="p">,</span> <span class="s2">"subbasin"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"subbasin"</span><span class="p">,</span>
+    <span class="n">flw</span><span class="p">:</span> <span class="s2">&quot;Flwdir&quot;</span><span class="p">,</span>
+    <span class="n">level</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;basin&quot;</span><span class="p">,</span> <span class="s2">&quot;subbasin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;subbasin&quot;</span><span class="p">,</span>
     <span class="n">n_parts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_N_PARTS</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span>
@@ -560,7 +560,7 @@
     <span class="n">imbalance_target</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.005</span><span class="p">,</span>
     <span class="n">upa</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartitionPlan</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Divide a raster into parts, and return how the opened mainstems connect to them.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Divide a raster into parts, and return how the opened mainstems connect to them.</span>
 
 <span class="sd">    :py:meth:`pyflwdir.FlwdirRaster.partition` calls this, with ``n_processes`` as</span>
 <span class="sd">    ``n_parts``.  Pass the plan as ``partition_plan`` to</span>
@@ -576,8 +576,8 @@
 <span class="sd">    ----------</span>
 <span class="sd">    flw : FlwdirRaster</span>
 <span class="sd">        The flow directions to divide.</span>
-<span class="sd">    level : {'basin', 'subbasin'}, optional</span>
-<span class="sd">        ``"basin"`` (FlowTopo Method 1) keeps every basin whole.  ``"subbasin"``</span>
+<span class="sd">    level : {&#39;basin&#39;, &#39;subbasin&#39;}, optional</span>
+<span class="sd">        ``&quot;basin&quot;`` (FlowTopo Method 1) keeps every basin whole.  ``&quot;subbasin&quot;``</span>
 <span class="sd">        (FlowTopo Method 2), the default, also opens the basins that keep the parts</span>
 <span class="sd">        from balancing, along their mainstems.</span>
 <span class="sd">    n_parts : int, optional</span>
@@ -611,22 +611,22 @@
 <span class="sd">        a mainstem section, accumulated after the parts, hold ``n_parts``.  A basin</span>
 <span class="sd">        of a single cell takes no part: its cell keeps -1 in ``parts`` and adds to</span>
 <span class="sd">        no load, as in the FlowTopo C code.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_raster_shape</span><span class="p">(</span><span class="n">flw</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"basin"</span><span class="p">,</span> <span class="s2">"subbasin"</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"level must be 'basin' or 'subbasin'"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;basin&quot;</span><span class="p">,</span> <span class="s2">&quot;subbasin&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;level must be &#39;basin&#39; or &#39;subbasin&#39;&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_parts</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"n_parts must be at least 1"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_parts must be at least 1&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">min_subtree_size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"min_subtree_size must be at least 1"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;min_subtree_size must be at least 1&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">imbalance_target</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"imbalance_target must be at least 1"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;imbalance_target must be at least 1&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">upa</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># compared as the C code compares them, in float32</span>
         <span class="n">upa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">upa</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">upa</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">flw</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"upa holds </span><span class="si">{</span><span class="n">upa</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> values; the raster has </span><span class="si">{</span><span class="n">flw</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> cells"</span>
+                <span class="sa">f</span><span class="s2">&quot;upa holds </span><span class="si">{</span><span class="n">upa</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> values; the raster has </span><span class="si">{</span><span class="n">flw</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> cells&quot;</span>
             <span class="p">)</span>
         <span class="c1"># finite and positive on every cell of the network, as the FlowTopo C code</span>
         <span class="c1"># asks: a NaN is neither the largest of the tied tributaries nor equal to it</span>
@@ -635,7 +635,7 @@
             <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">network_upa</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">network_upa</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"upa holds a value that is not a finite, positive area on a cell of the network"</span>
+                <span class="s2">&quot;upa holds a value that is not a finite, positive area on a cell of the network&quot;</span>
             <span class="p">)</span>
     <span class="c1"># a cell that drains into a cell off the network belongs to no basin and would</span>
     <span class="c1"># be left out of every part: refused (pyflwdir.from_array makes such a cell a pit)</span>
@@ -644,14 +644,14 @@
     <span class="n">into_valid</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">=</span> <span class="n">valid</span><span class="p">[</span><span class="n">flw</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)]</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">into_valid</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">valid</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="o">~</span><span class="n">into_valid</span><span class="p">))</span><span class="si">}</span><span class="s2"> cells drain into a cell "</span>
-            <span class="s2">"off the network; make them pits (as pyflwdir.from_array does)"</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">valid</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="o">~</span><span class="n">into_valid</span><span class="p">))</span><span class="si">}</span><span class="s2"> cells drain into a cell &quot;</span>
+            <span class="s2">&quot;off the network; make them pits (as pyflwdir.from_array does)&quot;</span>
         <span class="p">)</span>
 
     <span class="n">parts</span><span class="p">,</span> <span class="n">load</span><span class="p">,</span> <span class="n">basin_ids</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">node_parts</span> <span class="o">=</span> <span class="n">_basin_partition</span><span class="p">(</span>
         <span class="n">flw</span><span class="p">,</span> <span class="n">n_parts</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">refine</span><span class="p">,</span> <span class="n">imbalance_target</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="s2">"basin"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="s2">&quot;basin&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_empty_plan</span><span class="p">(</span><span class="n">flw</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">load</span><span class="p">,</span> <span class="n">basin_ids</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">_subbasin_partition</span><span class="p">(</span>
         <span class="n">flw</span><span class="p">,</span>
@@ -671,57 +671,57 @@
 
 
 <span class="n">METIS_SEEDS</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="sd">"""METIS runs from this many seeds; see ``_metis_parts`` for the one kept."""</span>
+<span class="sd">&quot;&quot;&quot;METIS runs from this many seeds; see ``_metis_parts`` for the one kept.&quot;&quot;&quot;</span>
 
 <span class="n">METIS_SLACK</span> <span class="o">=</span> <span class="mf">1.03</span>
-<span class="sd">"""A METIS result whose parts are within this of their targets is balanced</span>
-<span class="sd">enough for the refinement; among those, the shortest boundary wins."""</span>
+<span class="sd">&quot;&quot;&quot;A METIS result whose parts are within this of their targets is balanced</span>
+<span class="sd">enough for the refinement; among those, the shortest boundary wins.&quot;&quot;&quot;</span>
 
 <span class="n">MAX_OPENED_BASINS</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="sd">"""Method 2 opens at most this many basins along their mainstems, or ``n_parts``</span>
-<span class="sd">when there are more parts than this."""</span>
+<span class="sd">&quot;&quot;&quot;Method 2 opens at most this many basins along their mainstems, or ``n_parts``</span>
+<span class="sd">when there are more parts than this.&quot;&quot;&quot;</span>
 
 <span class="n">OPEN_MIN_GAIN</span> <span class="o">=</span> <span class="mf">0.01</span>
-<span class="sd">"""Method 2 keeps an opened basin when it lowers the heaviest part by this</span>
+<span class="sd">&quot;&quot;&quot;Method 2 keeps an opened basin when it lowers the heaviest part by this</span>
 <span class="sd">much of the mean (max/mean) or more, or when the heaviest is no heavier and the</span>
-<span class="sd">load above the shares is lower (one of two equal bottlenecks opened)."""</span>
+<span class="sd">load above the shares is lower (one of two equal bottlenecks opened).&quot;&quot;&quot;</span>
 
 <span class="n">OPEN_TRIALS</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="sd">"""Of the candidates of a round, Method 2 tries at most this many, the heaviest</span>
-<span class="sd">first, and stops at the first that brings the plan within the target."""</span>
+<span class="sd">&quot;&quot;&quot;Of the candidates of a round, Method 2 tries at most this many, the heaviest</span>
+<span class="sd">first, and stops at the first that brings the plan within the target.&quot;&quot;&quot;</span>
 
 <span class="n">ARCHIPELAGO_NEIGHBOURS</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="sd">"""Without land, each component is linked to this many nearest for METIS; in</span>
+<span class="sd">&quot;&quot;&quot;Without land, each component is linked to this many nearest for METIS; in</span>
 <span class="sd">the balance refinement, a node of an island may move to the part of this many</span>
-<span class="sd">nearest nodes of other components."""</span>
+<span class="sd">nearest nodes of other components.&quot;&quot;&quot;</span>
 
 <span class="n">ISLAND_PROBES</span> <span class="o">=</span> <span class="mi">16</span>
-<span class="sd">"""The nearest nodes an island node looks through for those of other components."""</span>
+<span class="sd">&quot;&quot;&quot;The nearest nodes an island node looks through for those of other components.&quot;&quot;&quot;</span>
 
 <span class="n">METIS_GROUPS_PER_PART</span> <span class="o">=</span> <span class="mi">8</span>
-<span class="sd">"""Method 2 groups small tributaries for METIS, but keeps at least this many</span>
+<span class="sd">&quot;&quot;&quot;Method 2 groups small tributaries for METIS, but keeps at least this many</span>
 <span class="sd">groups times the number of parts in all, whatever ``min_subtree_size`` (every</span>
 <span class="sd">tributary a group of its own where there are fewer tributaries than that); a</span>
-<span class="sd">part is not promised this many of its own."""</span>
+<span class="sd">part is not promised this many of its own.&quot;&quot;&quot;</span>
 
 <span class="n">P_MIN_ROUNDS</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="sd">"""Method 2 balances again, with the mainstem above the new ``P_min`` counted in</span>
+<span class="sd">&quot;&quot;&quot;Method 2 balances again, with the mainstem above the new ``P_min`` counted in</span>
 <span class="sd">its part, at most this many times.  Where the cut positions have not settled by then the</span>
-<span class="sd">last partition is returned; its loads are counted on the raster afterwards."""</span>
+<span class="sd">last partition is returned; its loads are counted on the raster afterwards.&quot;&quot;&quot;</span>
 
 <span class="n">FRAGMENT_SHARE</span> <span class="o">=</span> <span class="mf">0.01</span>
-<span class="sd">"""A piece of a part cut off from its main piece and lighter than this share of</span>
-<span class="sd">an equal part joins the neighbouring part it touches the most."""</span>
+<span class="sd">&quot;&quot;&quot;A piece of a part cut off from its main piece and lighter than this share of</span>
+<span class="sd">an equal part joins the neighbouring part it touches the most.&quot;&quot;&quot;</span>
 
 
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PartitionGraph</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Nodes (whole basins or tributary subtrees) and their shared boundaries.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Nodes (whole basins or tributary subtrees) and their shared boundaries.</span>
 
 <span class="sd">    ``edges`` holds every adjacent pair once, first node smaller; ``edge_weights``</span>
 <span class="sd">    is the length of the shared boundary in cell sides.  Centroids are in cell</span>
 <span class="sd">    rows and columns.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
     <span class="n">rows</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
@@ -739,16 +739,16 @@
         <span class="kn">import</span><span class="w"> </span><span class="nn">pymetis</span>
     <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-            <span class="s2">"METIS partitioning requires the optional 'partition' dependency. "</span>
-            <span class="s2">"Install it with `pip install pyflwdir[partition]`."</span>
+            <span class="s2">&quot;METIS partitioning requires the optional &#39;partition&#39; dependency. &quot;</span>
+            <span class="s2">&quot;Install it with `pip install pyflwdir[partition]`.&quot;</span>
         <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
     <span class="k">return</span> <span class="n">pymetis</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_raster_shape</span><span class="p">(</span><span class="n">flw</span><span class="p">:</span> <span class="s2">"Flwdir"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_raster_shape</span><span class="p">(</span><span class="n">flw</span><span class="p">:</span> <span class="s2">&quot;Flwdir&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"METIS partitioning requires a FlwdirRaster."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;METIS partitioning requires a FlwdirRaster.&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
 
@@ -762,10 +762,10 @@
     <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Unique ``(first, second)`` node pairs, first smaller, and their summed weights.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unique ``(first, second)`` node pairs, first smaller, and their summed weights.</span>
 
 <span class="sd">    Each array of ``pairs`` has two columns; a pair without a weight counts 1.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">pairs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">stacked</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pair</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">])</span>
@@ -784,11 +784,11 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">graph_from_node_raster</span><span class="p">(</span><span class="n">nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartitionGraph</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The graph of a 2-D raster of node ids (-1 for cells outside every node).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The graph of a 2-D raster of node ids (-1 for cells outside every node).</span>
 
 <span class="sd">    Two nodes are adjacent where a cell of one shares a side with a cell of the</span>
 <span class="sd">    other; the edge weight counts those sides.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">flat</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -796,7 +796,7 @@
     <span class="n">owner</span> <span class="o">=</span> <span class="n">flat</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divmod</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">divide</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
         <span class="n">centroid_row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">rows</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">)</span> <span class="o">/</span> <span class="n">weights</span>
         <span class="n">centroid_col</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">)</span> <span class="o">/</span> <span class="n">weights</span>
     <span class="n">pairs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -814,11 +814,11 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_contract</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">group</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_groups</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartitionGraph</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The graph whose nodes are the groups of ``graph``'s nodes."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The graph whose nodes are the groups of ``graph``&#39;s nodes.&quot;&quot;&quot;</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">graph</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n_groups</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">int64</span>
     <span class="p">)</span>
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">divide</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
         <span class="n">rows</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">graph</span><span class="o">.</span><span class="n">rows</span> <span class="o">*</span> <span class="n">graph</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n_groups</span><span class="p">)</span>
             <span class="o">/</span> <span class="n">weights</span>
@@ -834,7 +834,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_csr</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">edge_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Symmetric compressed sparse rows of an edge list."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Symmetric compressed sparse rows of an edge list.&quot;&quot;&quot;</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]))</span>
     <span class="n">target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
     <span class="n">weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">edge_weights</span><span class="p">,</span> <span class="n">edge_weights</span><span class="p">))</span>
@@ -850,7 +850,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_scaled</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Positive integer weights whose sum stays below METIS's 32-bit range."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Positive integer weights whose sum stays below METIS&#39;s 32-bit range.&quot;&quot;&quot;</span>
     <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">factor</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">/</span> <span class="n">limit</span><span class="p">)))</span>
     <span class="k">if</span> <span class="n">factor</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -883,7 +883,7 @@
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_detach</span><span class="p">(</span><span class="n">xadj</span><span class="p">,</span> <span class="n">adjncy</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">part</span><span class="p">,</span> <span class="n">mark</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">stamp</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""The nodes that leave ``part`` with ``node``: itself and the peninsulas it holds.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The nodes that leave ``part`` with ``node``: itself and the peninsulas it holds.</span>
 
 <span class="sd">    Without ``node``, its same-part neighbours fall into components.  The body of</span>
 <span class="sd">    the part -- the one component too large to explore within ``limit`` visited</span>
@@ -898,7 +898,7 @@
 <span class="sd">    of it; only a component left unexplored can be met that way.  The first</span>
 <span class="sd">    search stops as soon as it has reached every same-part neighbour: then</span>
 <span class="sd">    ``node`` holds nothing apart and leaves alone.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">base</span> <span class="o">=</span> <span class="n">stamp</span>
     <span class="n">mark</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">base</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
@@ -1007,9 +1007,9 @@
     <span class="n">limit</span><span class="p">,</span>
     <span class="n">out</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Move ``node``, with the peninsulas it holds (``_detach``), to part</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Move ``node``, with the peninsulas it holds (``_detach``), to part</span>
 <span class="sd">    ``other`` when that lowers the objective; returns the number of nodes moved</span>
-<span class="sd">    (in ``out``; 0 for none) and the last stamp used."""</span>
+<span class="sd">    (in ``out``; 0 for none) and the last stamp used.&quot;&quot;&quot;</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
     <span class="n">stamp</span> <span class="o">+=</span> <span class="mi">1</span>
     <span class="n">taken</span><span class="p">,</span> <span class="n">stamp</span> <span class="o">=</span> <span class="n">_detach</span><span class="p">(</span>
@@ -1060,7 +1060,7 @@
     <span class="n">max_moves</span><span class="p">,</span>
     <span class="n">search_limit</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Move boundary nodes to lighter neighbouring parts until balanced.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Move boundary nodes to lighter neighbouring parts until balanced.</span>
 
 <span class="sd">    The objective is the sum over the parts of (load / target - 1) squared.  A</span>
 <span class="sd">    sweep finds, for every node, the lighter neighbouring part (``xadj``,</span>
@@ -1068,15 +1068,15 @@
 <span class="sd">    that order, each checked again as it is made (the node still in its part</span>
 <span class="sd">    and next to the other, the other still lighter, the sum still lowered);</span>
 <span class="sd">    after each move, it follows the boundary on, first in first out, so that</span>
-<span class="sd">    the boundary moves as a front: the moved nodes' neighbours left in the</span>
+<span class="sd">    the boundary moves as a front: the moved nodes&#39; neighbours left in the</span>
 <span class="sd">    part try the same part next.  A node whose departure would cut</span>
 <span class="sd">    a peninsula off its part (``link_xadj``, ``link_adjncy``) takes the</span>
 <span class="sd">    peninsula with it (``_detach``), so that both parts stay connected; a move</span>
-<span class="sd">    that would cut the part's body in two is not made.  Load can so pass on</span>
+<span class="sd">    that would cut the part&#39;s body in two is not made.  Load can so pass on</span>
 <span class="sd">    through a middle part to a light one that does not touch the heavy one.  It</span>
 <span class="sd">    stops when the largest load-to-target ratio is at most ``goal``, a sweep</span>
 <span class="sd">    makes no move, or ``max_moves`` moves are made.  Returns the number of moves.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">size</span>
     <span class="n">n_parts</span> <span class="o">=</span> <span class="n">target_load</span><span class="o">.</span><span class="n">size</span>
     <span class="n">load</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_parts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -1128,7 +1128,7 @@
                 <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">break</span>
-        <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">candidate_gain</span><span class="p">[:</span><span class="n">count</span><span class="p">],</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"mergesort"</span><span class="p">)</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">candidate_gain</span><span class="p">[:</span><span class="n">count</span><span class="p">],</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;mergesort&quot;</span><span class="p">)</span>
         <span class="n">sweep</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">moved</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
@@ -1180,7 +1180,7 @@
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">load</span> <span class="o">/</span> <span class="n">target_load</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">goal</span><span class="p">:</span>
                     <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">break</span>
-                <span class="c1"># follow the boundary: the moved nodes' neighbours left in the part</span>
+                <span class="c1"># follow the boundary: the moved nodes&#39; neighbours left in the part</span>
                 <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">taken</span><span class="p">):</span>
                     <span class="n">moved_node</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
                     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">xadj</span><span class="p">[</span><span class="n">moved_node</span><span class="p">],</span> <span class="n">xadj</span><span class="p">[</span><span class="n">moved_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]):</span>
@@ -1202,7 +1202,7 @@
     <span class="n">imbalance_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">contig</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Contiguous METIS from several seeds.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Contiguous METIS from several seeds.</span>
 
 <span class="sd">    Of the results whose parts are within ``METIS_SLACK`` of their targets --</span>
 <span class="sd">    near enough for the refinement -- the one with the shortest boundary between</span>
@@ -1212,12 +1212,12 @@
 <span class="sd">    ``_partition_components``): results with every part one piece come first,</span>
 <span class="sd">    and the pieces METIS leaves apart (it may, with very unequal weights) join</span>
 <span class="sd">    the neighbouring part they share the longest boundary with.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">graph</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;=</span> <span class="n">n_parts</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
     <span class="n">target_load</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">*</span> <span class="n">total</span>
-    <span class="c1"># rounded half up, as the C code's lround: Python's round takes a half to the</span>
+    <span class="c1"># rounded half up, as the C code&#39;s lround: Python&#39;s round takes a half to the</span>
     <span class="c1"># even number (62.5 -&gt; 62)</span>
     <span class="n">ufactor</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">imbalance_target</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)))</span>
     <span class="n">best</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1242,7 +1242,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_pieces_apart</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The pieces of the parts beyond one per part, over ``graph``'s edges."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The pieces of the parts beyond one per part, over ``graph``&#39;s edges.&quot;&quot;&quot;</span>
     <span class="n">same</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="n">parts</span><span class="p">[</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]]</span>
     <span class="n">piece</span> <span class="o">=</span> <span class="n">_components</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">same</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">piece</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
@@ -1251,13 +1251,13 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_fill_empty_parts</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_parts</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""An empty part (METIS leaves one with very unequal weights) takes a node of</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An empty part (METIS leaves one with very unequal weights) takes a node of</span>
 <span class="sd">    the heaviest part that has two or more: the lightest leaf of a spanning tree</span>
 <span class="sd">    of that part, so that a part in one piece stays in one piece.  The tree</span>
-<span class="sd">    grows from the part's first node; where the part is in pieces, a node the</span>
+<span class="sd">    grows from the part&#39;s first node; where the part is in pieces, a node the</span>
 <span class="sd">    tree does not reach counts as a leaf, whatever its place in its own piece.</span>
 <span class="sd">    ``graph`` has more nodes than ``n_parts``.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">coo_matrix</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse.csgraph</span><span class="w"> </span><span class="kn">import</span> <span class="n">breadth_first_order</span>
 
@@ -1269,7 +1269,7 @@
         <span class="n">donor</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">counts</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="n">load</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)))</span>
         <span class="n">members</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">parts</span> <span class="o">==</span> <span class="n">donor</span><span class="p">)</span>
         <span class="n">sub</span> <span class="o">=</span> <span class="n">_subgraph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">members</span><span class="p">)</span>
-        <span class="c1"># every edge both ways and a node's neighbours by rising index, so that the tree</span>
+        <span class="c1"># every edge both ways and a node&#39;s neighbours by rising index, so that the tree</span>
         <span class="c1"># is the one the FlowTopo C code grows (left to SciPy, an edge stored (a, b) was</span>
         <span class="c1"># followed from a before any edge stored (c, a), and another leaf could come out)</span>
         <span class="n">both</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sub</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span> <span class="n">sub</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
@@ -1293,9 +1293,9 @@
     <span class="n">n_parts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">pinned</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">"""The units the refinement moves: every node, but an island all in one part</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The units the refinement moves: every node, but an island all in one part</span>
 <span class="sd">    is one unit.  An island is a component of ``linked`` lighter than half an</span>
-<span class="sd">    equal share that is not its part's land: the components of ``pinned`` nodes</span>
+<span class="sd">    equal share that is not its part&#39;s land: the components of ``pinned`` nodes</span>
 <span class="sd">    are land, and in a part without land, a heavier or a shared component, the</span>
 <span class="sd">    heaviest stays.  Returns None when there is no such</span>
 <span class="sd">    island; else the unit of every node, the number of units and the pairs</span>
@@ -1306,7 +1306,7 @@
 <span class="sd">    ``ARCHIPELAGO_NEIGHBOURS`` nearest nodes that are not on such islands, and is</span>
 <span class="sd">    linked to the ``ARCHIPELAGO_NEIGHBOURS`` such islands nearest to it by</span>
 <span class="sd">    centroid.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">linked</span><span class="o">.</span><span class="n">size</span>
     <span class="n">component</span> <span class="o">=</span> <span class="n">_components</span><span class="p">(</span><span class="n">linked</span><span class="p">)</span>
     <span class="n">component_weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">linked</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span>
@@ -1317,7 +1317,7 @@
     <span class="n">high</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">component_weight</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="o">.</span><span class="n">at</span><span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">parts</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="o">.</span><span class="n">at</span><span class="p">(</span><span class="n">high</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">parts</span><span class="p">)</span>
-    <span class="c1"># a part's land: a component it shares with another part or one too large to</span>
+    <span class="c1"># a part&#39;s land: a component it shares with another part or one too large to</span>
     <span class="c1"># be an island; without one, its heaviest component</span>
     <span class="n">fixed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">component_weight</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pinned</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1388,7 +1388,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_nearest</span><span class="p">(</span><span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">queries</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""``(squared distance, index)`` of the ``k`` points nearest each query, in the</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;``(squared distance, index)`` of the ``k`` points nearest each query, in the</span>
 <span class="sd">    order of (squared distance, index): of points equally far, the one with the</span>
 <span class="sd">    lower index comes first.</span>
 
@@ -1396,7 +1396,7 @@
 <span class="sd">    traversal (regular grids of nodes have many), and that order decides which</span>
 <span class="sd">    neighbours a node is linked to.  The squared distance is dx * dx + dy * dy on</span>
 <span class="sd">    the coordinates themselves.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">cKDTree</span>
 
     <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -1429,7 +1429,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_adjacency</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Compressed sparse rows of directed pairs, unique."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compressed sparse rows of directed pairs, unique.&quot;&quot;&quot;</span>
     <span class="n">keys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_nodes</span> <span class="o">+</span> <span class="n">target</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span>
     <span class="n">source</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">keys</span> <span class="o">//</span> <span class="n">n_nodes</span><span class="p">,</span> <span class="n">keys</span> <span class="o">%</span> <span class="n">n_nodes</span>
     <span class="n">xadj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
@@ -1446,7 +1446,7 @@
     <span class="n">linked</span><span class="p">:</span> <span class="n">PartitionGraph</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">pinned</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Balance ``parts`` in place by moving boundary nodes of ``graph``.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Balance ``parts`` in place by moving boundary nodes of ``graph``.</span>
 
 <span class="sd">    ``graph`` holds only shared raster boundaries: a node moves only to a part</span>
 <span class="sd">    it touches on the ground, or a part could creep along an opened mainstem</span>
@@ -1456,7 +1456,7 @@
 <span class="sd">    without a piece of land apart from its part.  Whether a part stays connected is judged on ``linked``</span>
 <span class="sd">    (``graph`` when None), where the two banks of an opened mainstem touch, as</span>
 <span class="sd">    they do for METIS.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">n_parts</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
     <span class="k">if</span> <span class="n">linked</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1497,7 +1497,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_subgraph</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartitionGraph</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The graph of ``nodes`` (sorted), renumbered 0 .. nodes.size - 1."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The graph of ``nodes`` (sorted), renumbered 0 .. nodes.size - 1.&quot;&quot;&quot;</span>
     <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">index</span><span class="p">[</span><span class="n">nodes</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
     <span class="n">keep</span> <span class="o">=</span> <span class="p">(</span><span class="n">index</span><span class="p">[</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">index</span><span class="p">[</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
@@ -1511,7 +1511,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_components</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">keep</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Connected component of every node, over the edges ``keep`` selects (all)."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Connected component of every node, over the edges ``keep`` selects (all).&quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">coo_matrix</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse.csgraph</span><span class="w"> </span><span class="kn">import</span> <span class="n">connected_components</span>
 
@@ -1524,14 +1524,14 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_absorb_fragments</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Pieces of a part apart from its heaviest piece and lighter than ``limit``</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pieces of a part apart from its heaviest piece and lighter than ``limit``</span>
 <span class="sd">    join the neighbouring part they share the longest boundary with (in place).</span>
 
 <span class="sd">    Tiny tributaries along an opened mainstem can end up so: in their part only</span>
 <span class="sd">    through the mainstem, after the parts around them moved.  A piece that is</span>
 <span class="sd">    a component of ``graph`` of its own (an island) stays.  Returns the number</span>
 <span class="sd">    of nodes moved.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">graph</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
     <span class="n">first</span><span class="p">,</span> <span class="n">second</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
@@ -1574,10 +1574,10 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_live_nodes</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""None when every node has cells and a centroid; else the nodes that do</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;None when every node has cells and a centroid; else the nodes that do</span>
 <span class="sd">    (live), and for every node the index of the live node it is merged into (-1</span>
 <span class="sd">    when its component has none).  A node without cells joins a live node it</span>
-<span class="sd">    reaches, so that every connection it makes stays."""</span>
+<span class="sd">    reaches, so that every connection it makes stays.&quot;&quot;&quot;</span>
     <span class="n">empty</span> <span class="o">=</span> <span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">weights</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">rows</span><span class="p">)</span> <span class="o">|</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">cols</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">empty</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">None</span>
@@ -1591,7 +1591,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_expand</span><span class="p">(</span><span class="n">index</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">merged_parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The parts of the merged graph back on every node; part 0 where none."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The parts of the merged graph back on every node; part 0 where none.&quot;&quot;&quot;</span>
     <span class="n">parts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="n">parts</span><span class="p">[</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_parts</span><span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]]</span>
     <span class="k">return</span> <span class="n">parts</span>
@@ -1600,8 +1600,8 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_merge_into</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">live</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartitionGraph</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""``graph`` with every node merged into node ``nodes`` (-1: left out) of a</span>
-<span class="sd">    graph whose nodes are ``live``, which keep their centroids."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;``graph`` with every node merged into node ``nodes`` (-1: left out) of a</span>
+<span class="sd">    graph whose nodes are ``live``, which keep their centroids.&quot;&quot;&quot;</span>
     <span class="n">keep</span> <span class="o">=</span> <span class="n">nodes</span> <span class="o">&gt;=</span> <span class="mi">0</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span>
         <span class="n">nodes</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">graph</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="n">minlength</span><span class="o">=</span><span class="n">live</span><span class="o">.</span><span class="n">size</span>
@@ -1617,9 +1617,9 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_follow_neighbours</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Nodes without a part (-1) take the part of a neighbour that has one (the</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Nodes without a part (-1) take the part of a neighbour that has one (the</span>
 <span class="sd">    lowest part when several), step by step outward from the nodes that have</span>
-<span class="sd">    one; those that reach none take ``fill``.  One breadth-first pass."""</span>
+<span class="sd">    one; those that reach none take ``fill``.  One breadth-first pass.&quot;&quot;&quot;</span>
     <span class="n">missing</span> <span class="o">=</span> <span class="n">parts</span> <span class="o">&lt;</span> <span class="mi">0</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">missing</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">return</span>
@@ -1653,9 +1653,9 @@
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">imbalance_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Parts of a graph none of whose components is half a part: the components,</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parts of a graph none of whose components is half a part: the components,</span>
 <span class="sd">    each linked to the ``ARCHIPELAGO_NEIGHBOURS`` nearest to it by centroid,</span>
-<span class="sd">    divided by METIS."""</span>
+<span class="sd">    divided by METIS.&quot;&quot;&quot;</span>
     <span class="n">n_components</span> <span class="o">=</span> <span class="n">component_weight</span><span class="o">.</span><span class="n">size</span>
     <span class="k">if</span> <span class="n">n_components</span> <span class="o">&lt;=</span> <span class="n">n_parts</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">component</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
@@ -1677,9 +1677,9 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_masses</span><span class="p">(</span><span class="n">linked</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">land</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Each island component tied to its nearest land node: the virtual edges,</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Each island component tied to its nearest land node: the virtual edges,</span>
 <span class="sd">    one per island (from its member nearest to land), and the land component</span>
-<span class="sd">    every component belongs to (its mass)."""</span>
+<span class="sd">    every component belongs to (its mass).&quot;&quot;&quot;</span>
     <span class="n">is_land</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">component</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
     <span class="n">is_land</span><span class="p">[</span><span class="n">land</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">on_land</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">is_land</span><span class="p">[</span><span class="n">component</span><span class="p">])</span>
@@ -1711,10 +1711,10 @@
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">imbalance_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Contiguous METIS of ``nodes`` (connected in ``graph``), grouped by</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Contiguous METIS of ``nodes`` (connected in ``graph``), grouped by</span>
 <span class="sd">    ``group``, into ``targets.size`` pieces of those shares.  A group is split</span>
 <span class="sd">    into its pieces connected among ``nodes`` (a dominant node taken out can cut</span>
-<span class="sd">    one), so that every coarse node is one piece."""</span>
+<span class="sd">    one), so that every coarse node is one piece.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">targets</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="n">sub</span> <span class="o">=</span> <span class="n">_subgraph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">nodes</span><span class="p">)</span>
@@ -1734,14 +1734,14 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_choose_land</span><span class="p">(</span>
     <span class="n">component_weight</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">capacity</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_parts</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The components that get parts of their own (land), the largest first.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The components that get parts of their own (land), the largest first.</span>
 
 <span class="sd">    Those of at least half an equal share, at most ``n_parts``; with too few</span>
 <span class="sd">    nodes on them for every part (``capacity``), the next largest join.  An</span>
 <span class="sd">    empty array when no component is that large (an archipelago).</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">share</span> <span class="o">=</span> <span class="n">component_weight</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">n_parts</span>
-    <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">component_weight</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"stable"</span><span class="p">)</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">component_weight</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;stable&quot;</span><span class="p">)</span>
     <span class="n">n_land</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">component_weight</span> <span class="o">&gt;=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">share</span><span class="p">)),</span> <span class="n">n_parts</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_land</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">order</span><span class="p">[:</span><span class="mi">0</span><span class="p">]</span>
@@ -1753,10 +1753,10 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_apportion</span><span class="p">(</span><span class="n">shares</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">capacity</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_parts</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Parts per land mass: one each, then one at a time to the mass whose parts</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parts per land mass: one each, then one at a time to the mass whose parts</span>
 <span class="sd">    are the heaviest, so that the heaviest part is as light as can be.  No mass</span>
 <span class="sd">    gets more parts than its ``capacity`` (the nodes METIS can place); when the</span>
-<span class="sd">    capacities run out, fewer than ``n_parts`` are given."""</span>
+<span class="sd">    capacities run out, fewer than ``n_parts`` are given.&quot;&quot;&quot;</span>
     <span class="n">count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shares</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span> <span class="n">capacity</span><span class="p">)</span>
     <span class="k">while</span> <span class="n">count</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">n_parts</span><span class="p">:</span>
         <span class="n">load</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">count</span> <span class="o">&lt;</span> <span class="n">capacity</span><span class="p">,</span> <span class="n">shares</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
@@ -1776,7 +1776,7 @@
     <span class="n">group</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">land_nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Equal parts of a graph that may have several components, every part one</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Equal parts of a graph that may have several components, every part one</span>
 <span class="sd">    piece on its land, with the islands added: contiguity first, balance second.</span>
 
 <span class="sd">    ``linked`` decides what touches (the ground with the banks of opened</span>
@@ -1793,7 +1793,7 @@
 <span class="sd">    whatever their weight, and never move.  When no component is land (an</span>
 <span class="sd">    archipelago), METIS divides the components, each linked to its nearest.</span>
 <span class="sd">    Nodes must have cells and a centroid.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">linked</span><span class="o">.</span><span class="n">size</span>
     <span class="n">parts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1863,7 +1863,7 @@
     <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">pinned</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The refinement and the fragments' absorption of ``_partition_components``."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The refinement and the fragments&#39; absorption of ``_partition_components``.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">refine</span> <span class="ow">and</span> <span class="n">n_parts</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">targets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_parts</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">n_parts</span><span class="p">)</span>
         <span class="n">_refine</span><span class="p">(</span><span class="n">ground</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">n_parts</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">imbalance_target</span><span class="p">,</span> <span class="n">linked</span><span class="p">,</span> <span class="n">pinned</span><span class="p">)</span>
@@ -1876,20 +1876,20 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_attach_enclaves</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">PartitionGraph</span><span class="p">,</span> <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">rest</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_rest_parts</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Components of the other basins that the assigned (dominant) basins cut off</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Components of the other basins that the assigned (dominant) basins cut off</span>
 <span class="sd">    from the land -- enclaves, strips along their edge -- and that get no part of</span>
 <span class="sd">    their own join the part they share the longest boundary with, so that every</span>
 <span class="sd">    part stays connected on the ground.  When none is land (an archipelago), the</span>
 <span class="sd">    ``n_rest_parts`` largest keep parts of their own.  Returns the nodes of the</span>
 <span class="sd">    components that keep parts (land, whatever their weight).</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">sub</span> <span class="o">=</span> <span class="n">_subgraph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">rest</span><span class="p">)</span>
     <span class="n">component</span> <span class="o">=</span> <span class="n">_components</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
     <span class="n">component_weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">sub</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">capacity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">component_weight</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
     <span class="n">land</span> <span class="o">=</span> <span class="n">_choose_land</span><span class="p">(</span><span class="n">component_weight</span><span class="p">,</span> <span class="n">capacity</span><span class="p">,</span> <span class="n">n_rest_parts</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">land</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">land</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">component_weight</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"stable"</span><span class="p">)[:</span><span class="n">n_rest_parts</span><span class="p">]</span>
+        <span class="n">land</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">component_weight</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;stable&quot;</span><span class="p">)[:</span><span class="n">n_rest_parts</span><span class="p">]</span>
     <span class="n">kept</span> <span class="o">=</span> <span class="n">rest</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">land</span><span class="p">)]</span>
     <span class="n">small</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">component_weight</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
     <span class="n">small</span><span class="p">[</span><span class="n">land</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1927,14 +1927,14 @@
     <span class="n">imbalance_target</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.005</span><span class="p">,</span>
     <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Method 1: the part of every basin node.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Method 1: the part of every basin node.</span>
 
 <span class="sd">    The land masses get their parts first (``_partition_components``); within</span>
 <span class="sd">    a mass, a basin heavier than an equal share of it is a part of its own,</span>
 <span class="sd">    together with the basins it cuts off from the others that get no part of</span>
 <span class="sd">    their own, and the other basins share the other parts (``_divide``).  A</span>
 <span class="sd">    node without cells or a centroid is merged into one it touches.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">size</span>
     <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
@@ -1968,16 +1968,16 @@
     <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">group</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""``n_parts`` parts of ``graph``: a node heavier than an equal share is a</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;``n_parts`` parts of ``graph``: a node heavier than an equal share is a</span>
 <span class="sd">    part of its own (the largest first, at most ``n_parts - 1``), with the</span>
 <span class="sd">    components it cuts off from the others that get no part of their own</span>
 <span class="sd">    (``_attach_enclaves``); the other nodes share the other parts</span>
-<span class="sd">    (``_partition_components``, ``group`` as there)."""</span>
+<span class="sd">    (``_partition_components``, ``group`` as there).&quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">size</span>
     <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="n">n_parts</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-    <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">graph</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"stable"</span><span class="p">)</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">graph</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;stable&quot;</span><span class="p">)</span>
     <span class="n">dominant</span> <span class="o">=</span> <span class="p">[</span>
         <span class="nb">int</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">order</span><span class="p">[:</span> <span class="n">n_parts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
@@ -2011,7 +2011,7 @@
     <span class="n">min_subtree_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">min_groups</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Group small tributaries with the nearest eligible tributary (graph hops).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Group small tributaries with the nearest eligible tributary (graph hops).</span>
 
 <span class="sd">    Returns the group of every node and the number of groups; a basin node is a</span>
 <span class="sd">    group of its own, an eligible tributary (at least ``min_subtree_size``, or</span>
@@ -2019,7 +2019,7 @@
 <span class="sd">    and a smaller tributary joins the eligible one it reaches first through</span>
 <span class="sd">    tributary-to-tributary edges (ties by the lower group).  When no tributary</span>
 <span class="sd">    is eligible, every tributary is a group of its own.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">size</span>
     <span class="n">tributary_weights</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">is_tributary</span><span class="p">]</span>
     <span class="n">threshold</span> <span class="o">=</span> <span class="n">min_subtree_size</span>
@@ -2059,9 +2059,9 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_align_labels</span><span class="p">(</span>
     <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">hint</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_parts</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Relabel the parts to overlap ``hint`` (another assignment) the most.  More</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Relabel the parts to overlap ``hint`` (another assignment) the most.  More</span>
 <span class="sd">    than 8 parts are left as they are; a node whose hint is not a part does not</span>
-<span class="sd">    count."""</span>
+<span class="sd">    count.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">n_parts</span> <span class="o">&gt;</span> <span class="mi">8</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">parts</span>
     <span class="n">overlap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_parts</span><span class="p">,</span> <span class="n">n_parts</span><span class="p">))</span>
@@ -2085,9 +2085,9 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_split_stem</span><span class="p">(</span>
     <span class="n">mine</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">tributary_parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">tributary_position</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""The part holding the mainstem above ``P_min``, and ``P_min``, of one opened</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The part holding the mainstem above ``P_min``, and ``P_min``, of one opened</span>
 <span class="sd">    mainstem; ``P_min`` is -1 when every tributary is in that part.  ``mine`` holds</span>
-<span class="sd">    its tributaries, source first."""</span>
+<span class="sd">    its tributaries, source first.&quot;&quot;&quot;</span>
     <span class="n">predecessor_part</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tributary_parts</span><span class="p">[</span><span class="n">mine</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
     <span class="n">transferred</span> <span class="o">=</span> <span class="n">mine</span><span class="p">[</span><span class="n">tributary_parts</span><span class="p">[</span><span class="n">mine</span><span class="p">]</span> <span class="o">!=</span> <span class="n">predecessor_part</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">transferred</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -2096,7 +2096,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_stem_tributaries</span><span class="p">(</span><span class="n">stem</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_stems</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""The tributaries of each opened mainstem, source first."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The tributaries of each opened mainstem, source first.&quot;&quot;&quot;</span>
     <span class="n">tributaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">stem</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
     <span class="n">ordered</span> <span class="o">=</span> <span class="n">tributaries</span><span class="p">[</span>
         <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">((</span><span class="n">tributaries</span><span class="p">,</span> <span class="n">position</span><span class="p">[</span><span class="n">tributaries</span><span class="p">],</span> <span class="n">stem</span><span class="p">[</span><span class="n">tributaries</span><span class="p">]))</span>
@@ -2108,21 +2108,21 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_mainstem_weights</span><span class="p">(</span>
     <span class="n">stem</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">upto</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The first ``upto`` cells of each opened mainstem, given to the tributaries</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The first ``upto`` cells of each opened mainstem, given to the tributaries</span>
 <span class="sd">    that enter them.</span>
 
 <span class="sd">    A mainstem cell weighs with the first tributary (lowest node) entering it, or</span>
 <span class="sd">    else with the nearest one entering upstream (the most upstream tributary</span>
 <span class="sd">    for the cells above it).  Up to ``P_min`` every tributary is in one part, and</span>
 <span class="sd">    so that part holds those cells.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">extra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">stem</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">mine</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_stem_tributaries</span><span class="p">(</span><span class="n">stem</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">upto</span><span class="p">))):</span>
         <span class="k">if</span> <span class="n">mine</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">continue</span>
         <span class="n">entered</span><span class="p">,</span> <span class="n">first</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="n">mine</span><span class="p">],</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">upto</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
-        <span class="n">receiver</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">entered</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">receiver</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">entered</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">at</span><span class="p">(</span><span class="n">extra</span><span class="p">,</span> <span class="n">mine</span><span class="p">[</span><span class="n">first</span><span class="p">[</span><span class="n">receiver</span><span class="p">]],</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">extra</span>
 
@@ -2133,10 +2133,10 @@
     <span class="n">stem</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">position</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Pairs (node, tributary): a node that touches a cell of an opened mainstem</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pairs (node, tributary): a node that touches a cell of an opened mainstem</span>
 <span class="sd">    and the tributary that cell weighs with (``_mainstem_weights``).  Across the</span>
 <span class="sd">    mainstem they touch, as its two banks do.  ``nodes`` is the 2-D raster of</span>
-<span class="sd">    node ids, -1 on the mainstems."""</span>
+<span class="sd">    node ids, -1 on the mainstems.&quot;&quot;&quot;</span>
     <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">flat</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">pairs</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)]</span>
@@ -2145,7 +2145,7 @@
             <span class="k">continue</span>
         <span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mainstems</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
         <span class="n">entered</span><span class="p">,</span> <span class="n">first</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="n">mine</span><span class="p">],</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">at</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">entered</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">cells</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">at</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">entered</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">cells</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="n">receiver</span> <span class="o">=</span> <span class="n">mine</span><span class="p">[</span><span class="n">first</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">at</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]]</span>
         <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divmod</span><span class="p">(</span><span class="n">cells</span><span class="p">,</span> <span class="n">ncol</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">dr</span><span class="p">,</span> <span class="n">dc</span> <span class="ow">in</span> <span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)):</span>
@@ -2160,7 +2160,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_p_mins</span><span class="p">(</span>
     <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">stem</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">stem_lengths</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""``P_min`` of each opened mainstem; its length when no other part enters it."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;``P_min`` of each opened mainstem; its length when no other part enters it.&quot;&quot;&quot;</span>
     <span class="n">p_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">stem_lengths</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">mine</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_stem_tributaries</span><span class="p">(</span><span class="n">stem</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">stem_lengths</span><span class="p">))):</span>
         <span class="k">if</span> <span class="n">mine</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
@@ -2185,24 +2185,24 @@
     <span class="n">imbalance_target</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.005</span><span class="p">,</span>
     <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Method 2: the part of every node, the opened basins' tributaries included.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Method 2: the part of every node, the opened basins&#39; tributaries included.</span>
 
 <span class="sd">    ``is_tributary`` marks the tributary subtrees that drain into an opened</span>
-<span class="sd">    basin's mainstem, ``stem`` says which mainstem (0 when there is one) and</span>
+<span class="sd">    basin&#39;s mainstem, ``stem`` says which mainstem (0 when there is one) and</span>
 <span class="sd">    ``position`` gives the mainstem cell each enters (0 at the source);</span>
 <span class="sd">    tributaries that enter one mainstem one after the other touch, across it, and</span>
 <span class="sd">    so do the pairs of ``stem_contacts`` (a node that touches a mainstem cell and</span>
 <span class="sd">    the tributary that cell weighs with, ``_mainstem_contacts``).</span>
 <span class="sd">    Small tributaries are grouped with the nearest eligible one for METIS; the</span>
 <span class="sd">    refinement may then move a tributary on its own.  ``hint`` (one part per</span>
-<span class="sd">    node, Method 1's) only fixes the part labels.  A node without cells or a</span>
+<span class="sd">    node, Method 1&#39;s) only fixes the part labels.  A node without cells or a</span>
 <span class="sd">    centroid is merged into one it touches.</span>
 
 <span class="sd">    With ``stem_lengths`` (cells of each mainstem), the mainstem cells weigh</span>
 <span class="sd">    with the tributaries that enter them: all of them for METIS, then, while</span>
 <span class="sd">    the refinement moves ``P_min``, only those above it, so that</span>
 <span class="sd">    the balance is that of the parts as the plan builds them.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">is_tributary</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">is_tributary</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
     <span class="n">position</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">stem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2319,15 +2319,15 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_trace_mainstem</span><span class="p">(</span>
-    <span class="n">flw</span><span class="p">:</span> <span class="s2">"Flwdir"</span><span class="p">,</span>
+    <span class="n">flw</span><span class="p">:</span> <span class="s2">&quot;Flwdir&quot;</span><span class="p">,</span>
     <span class="n">pit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">upstream</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">in_dominant</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">upa</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Cells from the head down to the pit, taking the larger tributary each time:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cells from the head down to the pit, taking the larger tributary each time:</span>
 <span class="sd">    of two with as many cells the one with the larger ``upa`` when it is given,</span>
-<span class="sd">    then the one with the smaller cell index, as the FlowTopo C code does."""</span>
+<span class="sd">    then the one with the smaller cell index, as the FlowTopo C code does.&quot;&quot;&quot;</span>
     <span class="n">indptr</span><span class="p">,</span> <span class="n">idxs_us</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">upstream_csr</span><span class="p">(</span><span class="n">flw</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="n">flw</span><span class="o">.</span><span class="n">_mv</span><span class="p">)</span>
     <span class="n">stem</span> <span class="o">=</span> <span class="p">[</span><span class="n">pit</span><span class="p">]</span>
     <span class="n">cell</span> <span class="o">=</span> <span class="n">pit</span>
@@ -2349,19 +2349,19 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_basin_partition</span><span class="p">(</span>
-    <span class="n">flw</span><span class="p">:</span> <span class="s2">"Flwdir"</span><span class="p">,</span>
+    <span class="n">flw</span><span class="p">:</span> <span class="s2">&quot;Flwdir&quot;</span><span class="p">,</span>
     <span class="n">n_parts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">imbalance_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Method 1 on a raster: parts and loads of the cells, basin ids, labels, node parts.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Method 1 on a raster: parts and loads of the cells, basin ids, labels, node parts.</span>
 
 <span class="sd">    A basin of a single cell takes no part (as the FlowTopo C code): its cell</span>
-<span class="sd">    keeps -1 and is in no load."""</span>
+<span class="sd">    keeps -1 and is in no load.&quot;&quot;&quot;</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">_raster_shape</span><span class="p">(</span><span class="n">flw</span><span class="p">)</span>
     <span class="n">mask</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
-    <span class="n">basin_ids</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">"FlwdirRaster"</span><span class="p">,</span> <span class="n">flw</span><span class="p">)</span><span class="o">.</span><span class="n">basins</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">basin_ids</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;FlwdirRaster&quot;</span><span class="p">,</span> <span class="n">flw</span><span class="p">)</span><span class="o">.</span><span class="n">basins</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">valid</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">basin_ids</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
     <span class="n">cells_of_basin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">basin_ids</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span>
     <span class="n">valid</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">=</span> <span class="n">cells_of_basin</span><span class="p">[</span><span class="n">basin_ids</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)]</span> <span class="o">&gt;</span> <span class="mi">1</span>
@@ -2383,7 +2383,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_open_basins</span><span class="p">(</span>
-    <span class="n">flw</span><span class="p">:</span> <span class="s2">"Flwdir"</span><span class="p">,</span>
+    <span class="n">flw</span><span class="p">:</span> <span class="s2">&quot;Flwdir&quot;</span><span class="p">,</span>
     <span class="n">opened</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">basin_ids</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -2397,7 +2397,7 @@
     <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">upa</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartitionPlan</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Method 2 with the basins of node numbers ``opened`` opened along their mainstems."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Method 2 with the basins of node numbers ``opened`` opened along their mainstems.&quot;&quot;&quot;</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">_raster_shape</span><span class="p">(</span><span class="n">flw</span><span class="p">)</span>
     <span class="n">opened_ids</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">opened</span><span class="p">]</span>
     <span class="n">in_opened</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">basin_ids</span><span class="p">,</span> <span class="n">opened_ids</span><span class="p">)</span>
@@ -2500,8 +2500,8 @@
             <span class="n">accounted</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">upstream</span><span class="p">[</span><span class="n">predecessor</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">accounted</span> <span class="o">!=</span> <span class="n">basin_size</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="s2">"Subbasin partition does not account for every opened-basin cell: "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">accounted</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">basin_size</span><span class="si">}</span><span class="s2">."</span>
+                <span class="s2">&quot;Subbasin partition does not account for every opened-basin cell: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">accounted</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">basin_size</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="n">stems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">MainstemSection</span><span class="p">(</span>
@@ -2520,15 +2520,15 @@
         <span class="n">parts</span><span class="o">=</span><span class="n">refined</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flw</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
         <span class="n">loads</span><span class="o">=</span><span class="n">final_load</span><span class="p">,</span>
         <span class="n">basin_ids</span><span class="o">=</span><span class="n">basin_ids</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flw</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
-        <span class="n">level</span><span class="o">=</span><span class="s2">"subbasin"</span><span class="p">,</span>
+        <span class="n">level</span><span class="o">=</span><span class="s2">&quot;subbasin&quot;</span><span class="p">,</span>
         <span class="n">stems</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">stems</span><span class="p">),</span>
     <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_overload</span><span class="p">(</span><span class="n">loads</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""How much the parts heavier than the mean exceed it, in means</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;How much the parts heavier than the mean exceed it, in means</span>
 <span class="sd">    (max/mean - 1 when one part is heavy).  It drops also when one of two</span>
-<span class="sd">    equally heavy parts gets lighter, which max/mean does not show."""</span>
+<span class="sd">    equally heavy parts gets lighter, which max/mean does not show.&quot;&quot;&quot;</span>
     <span class="n">mean</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">loads</span><span class="o">.</span><span class="n">mean</span><span class="p">()),</span> <span class="mf">1.0</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">loads</span> <span class="o">/</span> <span class="n">mean</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
 
@@ -2541,9 +2541,9 @@
     <span class="n">eligible</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The heaviest ``eligible`` basin bordering ``part`` from another of the</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The heaviest ``eligible`` basin bordering ``part`` from another of the</span>
 <span class="sd">    ``n_parts`` parts: across a pair of side neighbours of the 2-D ``parts``,</span>
-<span class="sd">    whose basin number is ``label`` (-1 outside a basin).  -1 when none."""</span>
+<span class="sd">    whose basin number is ``label`` (-1 outside a basin).  -1 when none.&quot;&quot;&quot;</span>
     <span class="n">far</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">la</span><span class="p">,</span> <span class="n">lb</span> <span class="ow">in</span> <span class="p">(</span>
         <span class="p">(</span><span class="n">parts</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">parts</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:],</span> <span class="n">label</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]),</span>
@@ -2561,7 +2561,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_subbasin_partition</span><span class="p">(</span>
-    <span class="n">flw</span><span class="p">:</span> <span class="s2">"Flwdir"</span><span class="p">,</span>
+    <span class="n">flw</span><span class="p">:</span> <span class="s2">&quot;Flwdir&quot;</span><span class="p">,</span>
     <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">basin_ids</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -2574,9 +2574,9 @@
     <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">upa</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartitionPlan</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Method 2 on a raster: open as few basins as the balance needs.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Method 2 on a raster: open as few basins as the balance needs.</span>
 
-<span class="sd">    Method 1's parts stand when they are within ``imbalance_target``.</span>
+<span class="sd">    Method 1&#39;s parts stand when they are within ``imbalance_target``.</span>
 <span class="sd">    Otherwise, round by round, the whole basins that can hold the balance up are</span>
 <span class="sd">    tried, each opened together with those kept so far: in every part over the</span>
 <span class="sd">    target, the heaviest, which it cannot shed, and the heaviest bordering it;</span>
@@ -2599,8 +2599,8 @@
 <span class="sd">    further one only a basin that holds the balance up, and only when that</span>
 <span class="sd">    clearly pays off.  A basin that is one chain of cells has no tributaries to</span>
 <span class="sd">    open into and stays whole.</span>
-<span class="sd">    """</span>
-    <span class="n">best</span> <span class="o">=</span> <span class="n">_empty_plan</span><span class="p">(</span><span class="n">flw</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">load</span><span class="p">,</span> <span class="n">basin_ids</span><span class="p">,</span> <span class="s2">"subbasin"</span><span class="p">)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="n">_empty_plan</span><span class="p">(</span><span class="n">flw</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">load</span><span class="p">,</span> <span class="n">basin_ids</span><span class="p">,</span> <span class="s2">&quot;subbasin&quot;</span><span class="p">)</span>
     <span class="n">best_ratio</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">load</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">load</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="mi">1</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">best_ratio</span> <span class="o">&lt;=</span> <span class="n">imbalance_target</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">best</span>
@@ -2622,7 +2622,7 @@
         <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">basin_ids</span><span class="p">[</span><span class="n">valid</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">upstream</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)]),</span>
         <span class="n">minlength</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">by_weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">weights</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"stable"</span><span class="p">)</span>
+    <span class="n">by_weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">weights</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;stable&quot;</span><span class="p">)</span>
     <span class="n">opened</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">max_opened</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">MAX_OPENED_BASINS</span><span class="p">,</span> <span class="n">n_parts</span><span class="p">)</span>
     <span class="k">while</span> <span class="n">best_ratio</span> <span class="o">&gt;</span> <span class="n">imbalance_target</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">opened</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_opened</span><span class="p">:</span>
@@ -2633,7 +2633,7 @@
         <span class="n">share</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">loads</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">/</span> <span class="n">loads</span><span class="o">.</span><span class="n">size</span>
         <span class="n">over</span> <span class="o">=</span> <span class="p">[</span>
             <span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">loads</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"stable"</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">loads</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;stable&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">loads</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">share</span> <span class="o">*</span> <span class="n">imbalance_target</span>
         <span class="p">]</span>
         <span class="n">ends</span> <span class="o">=</span> <span class="n">over</span> <span class="o">+</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">loads</span><span class="p">))]</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">over</span><span class="p">]</span>
@@ -2713,7 +2713,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_empty_plan</span><span class="p">(</span>
-    <span class="n">flw</span><span class="p">:</span> <span class="s2">"Flwdir"</span><span class="p">,</span>
+    <span class="n">flw</span><span class="p">:</span> <span class="s2">&quot;Flwdir&quot;</span><span class="p">,</span>
     <span class="n">parts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">basin_ids</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -2754,8 +2754,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -2775,7 +2775,8 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
   </p>
 </div>
       
@@ -2788,7 +2789,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

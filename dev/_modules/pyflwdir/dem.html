@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -25,17 +26,17 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/theme-deltares.css?v=aa503ec8" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +47,6 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.5.13." />
   
@@ -96,7 +96,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -174,7 +174,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -215,7 +215,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -236,7 +236,7 @@
       
         
       
-      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <dialog id="pst-primary-sidebar-modal"></dialog>
       <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
         
 
@@ -351,7 +351,7 @@
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../index.html" class="nav-link" aria-label="Home">
-        <i class="fa-solid fa-house"></i>
+        <i class="fa-solid fa-home"></i>
       </a>
     </li>
     
@@ -375,8 +375,8 @@
                 <article class="bd-article">
                   
   <h1>Source code for pyflwdir.dem</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""Methods to derive topographic and hydrographic parameters from elevation data, in some cases</span>
-<span class="sd">in combination with flow direction data."""</span>
+<span></span><span class="sd">&quot;&quot;&quot;Methods to derive topographic and hydrographic parameters from elevation data, in some cases</span>
+<span class="sd">in combination with flow direction data.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">heapq</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
@@ -390,7 +390,7 @@
 
 <span class="n">_mv</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">_mv</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"fill_depressions"</span><span class="p">,</span> <span class="s2">"slope"</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;fill_depressions&quot;</span><span class="p">,</span> <span class="s2">&quot;slope&quot;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="fill_depressions">
@@ -398,22 +398,22 @@
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fill_depressions</span><span class="p">(</span>
     <span class="n">elevtn</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">outlets</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"edge"</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"edge"</span><span class="p">,</span>
+    <span class="n">outlets</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;edge&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;edge&quot;</span><span class="p">,</span>
     <span class="n">idxs_pit</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">nodata</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span>
     <span class="n">max_depth</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">elv_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">connectivity</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Fill local depressions in elevation data and derived local</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fill local depressions in elevation data and derived local</span>
 <span class="sd">    D8 flow directions.</span>
 
-<span class="sd">    Outlets are assumed to occur at the edge of valid elevation cells `outlets='edge'`;</span>
-<span class="sd">    at the lowest valid edge cell to create one single outlet `outlets='min'`;</span>
+<span class="sd">    Outlets are assumed to occur at the edge of valid elevation cells `outlets=&#39;edge&#39;`;</span>
+<span class="sd">    at the lowest valid edge cell to create one single outlet `outlets=&#39;min&#39;`;</span>
 <span class="sd">    or at user provided outlet cells `idxs_pit`.</span>
 
 <span class="sd">    Depressions elsewhere are filled to their lowest pour-point elevation. If the pour</span>
-<span class="sd">    point depth is greater than or equal to `max_depth`, a pit is set at the depression's</span>
+<span class="sd">    point depth is greater than or equal to `max_depth`, a pit is set at the depression&#39;s</span>
 <span class="sd">    local minimum elevation.</span>
 
 <span class="sd">    Based on: Wang, L., &amp; Liu, H. (2006). https://doi.org/10.1080/13658810500433453</span>
@@ -422,9 +422,9 @@
 <span class="sd">    ----------</span>
 <span class="sd">    elevtn : 2D array</span>
 <span class="sd">        elevation raster</span>
-<span class="sd">    outlets : {'edge', 'min'}, optional</span>
-<span class="sd">        Initialize outlets at valid edge cells ('edge', default) or use only the</span>
-<span class="sd">        lowest-elevation valid edge cell ('min'). If `idxs_pit` is provided, `outlets`</span>
+<span class="sd">    outlets : {&#39;edge&#39;, &#39;min&#39;}, optional</span>
+<span class="sd">        Initialize outlets at valid edge cells (&#39;edge&#39;, default) or use only the</span>
+<span class="sd">        lowest-elevation valid edge cell (&#39;min&#39;). If `idxs_pit` is provided, `outlets`</span>
 <span class="sd">        controls whether all supplied outlets or only the lowest-elevation one are used.</span>
 <span class="sd">    idxs_pit : 1D array of int, optional</span>
 <span class="sd">        Linear indices of user-specified outlet cells. By default, outlets are selected</span>
@@ -436,7 +436,7 @@
 <span class="sd">        depth are set as pits. A negative value (default) represents an infinitely</span>
 <span class="sd">        large pour point depth causing all depressions to be filled.</span>
 <span class="sd">    elv_max : float, optional</span>
-<span class="sd">        Maximum elevation for outlets, only used with `outlets='edge'`. By default None.</span>
+<span class="sd">        Maximum elevation for outlets, only used with `outlets=&#39;edge&#39;`. By default None.</span>
 <span class="sd">    connectivity : {4, 8}, optional</span>
 <span class="sd">        Number of neighboring cells to consider.</span>
 
@@ -446,13 +446,13 @@
 <span class="sd">        Depression-filled elevation raster.</span>
 <span class="sd">    d8 : 2D array of uint8</span>
 <span class="sd">        D8 flow directions, with no-data cells encoded as 247.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">elevtn</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">delv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">elevtn</span><span class="p">)</span>
     <span class="n">done</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">elevtn</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">nodata</span><span class="p">)</span> <span class="k">else</span> <span class="n">elevtn</span> <span class="o">==</span> <span class="n">nodata</span>
     <span class="n">d8</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">done</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">247</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">connectivity</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">]:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'"connectivity" should either be 4 or 8'</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&quot;connectivity&quot; should either be 4 or 8&#39;</span><span class="p">)</span>
     <span class="c1"># pfff.. numba does not allow creation of numpy bool arrays using normal methods</span>
     <span class="n">struct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">bool</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">)])</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">connectivity</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
@@ -465,7 +465,7 @@
         <span class="k">if</span> <span class="n">elv_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">queued</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">queued</span><span class="p">,</span> <span class="n">elevtn</span> <span class="o">&lt;=</span> <span class="n">elv_max</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">queued</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No initial outlet cells found."</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No initial outlet cells found.&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>  <span class="c1"># with user defined outlet cells</span>
         <span class="n">queued</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">bool</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">elevtn</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">idxs_pit</span><span class="p">:</span>
@@ -483,7 +483,7 @@
             <span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">elevtn</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
         <span class="p">)</span>
     <span class="c1"># restrict queue to the global edge minimum (single outlet)</span>
-    <span class="k">if</span> <span class="n">outlets</span> <span class="o">==</span> <span class="s2">"min"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">outlets</span> <span class="o">==</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span>
         <span class="n">q</span> <span class="o">=</span> <span class="p">[</span><span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="n">q</span><span class="p">)]</span>
         <span class="n">queued</span><span class="p">[:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">queued</span><span class="p">[</span><span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -500,7 +500,7 @@
                 <span class="k">continue</span>
             <span class="n">z1</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span>
             <span class="n">dz</span> <span class="o">=</span> <span class="n">z0</span> <span class="o">-</span> <span class="n">z1</span>  <span class="c1"># local depression if dz &gt; 0</span>
-            <span class="k">if</span> <span class="n">max_depth</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># if positive max_depth: don't fill when dz &gt; max_depth</span>
+            <span class="k">if</span> <span class="n">max_depth</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># if positive max_depth: don&#39;t fill when dz &gt; max_depth</span>
                 <span class="k">if</span> <span class="n">dz</span> <span class="o">&gt;=</span> <span class="n">max_depth</span><span class="p">:</span>
                     <span class="n">heapq</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span>
                         <span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">z1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
@@ -530,7 +530,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">adjust_elevation</span><span class="p">(</span>
     <span class="n">idxs_ds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mv</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">_mv</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Given a flow direction map, remove pits in the elevation map.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a flow direction map, remove pits in the elevation map.</span>
 <span class="sd">    Algorithm based on Yamazaki et al. (2012)</span>
 
 <span class="sd">    Parameters</span>
@@ -553,7 +553,7 @@
 <span class="sd">    Oki, T.: Adjustment of a spaceborne DEM for use in floodplain hydrodynamic</span>
 <span class="sd">    modeling, J. Hydrol., 436-437, 81-91, doi:10.1016/j.jhydrol.2012.02.045,</span>
 <span class="sd">    2012.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">elevtn_out</span> <span class="o">=</span> <span class="n">elevtn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">idxs_ds</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">idx0</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># from up- to downstream starting from longest stream paths</span>
@@ -570,9 +570,9 @@
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_adjust_elevation</span><span class="p">(</span><span class="n">elevtn</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""fix elevation on single streamline based on minimum modification</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;fix elevation on single streamline based on minimum modification</span>
 <span class="sd">    elevtn ordered from upstream to downstream</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">elevtn</span><span class="o">.</span><span class="n">size</span>
     <span class="n">imax</span><span class="p">,</span> <span class="n">imin</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
     <span class="n">zmax</span><span class="p">,</span> <span class="n">zmin</span> <span class="o">=</span> <span class="n">elevtn</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">elevtn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># local max / min elevation</span>
@@ -635,7 +635,7 @@
     <span class="n">latlon</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">transform</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">gis_utils</span><span class="o">.</span><span class="n">_IDENTITY</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return the local slope magnitude.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the local slope magnitude.</span>
 
 <span class="sd">    The slope is calculated from the DEM in a 3-by-3-cell window using second-order</span>
 <span class="sd">    partial derivatives. It is the magnitude of the elevation gradient, in metres per</span>
@@ -657,7 +657,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    2D array of float</span>
 <span class="sd">        Slope magnitude [m/m].</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="n">north</span> <span class="o">=</span> <span class="n">transform</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">transform</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">transform</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
     <span class="n">slope</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">elevtn</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">elevtn</span><span class="o">.</span><span class="n">shape</span>
@@ -709,7 +709,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">height_above_nearest_drain</span><span class="p">(</span>
     <span class="n">idxs_ds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">drain</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">elevtn</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Returns the height above the nearest drain (HAND), i.e.: the relative vertical</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the height above the nearest drain (HAND), i.e.: the relative vertical</span>
 <span class="sd">    distance (drop) to the nearest downstream river based on drainage-normalized</span>
 <span class="sd">    topography and flowpaths.</span>
 
@@ -731,7 +731,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    1D array of float</span>
 <span class="sd">        height above nearest drain</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">hand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">drain</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">hand</span><span class="p">[</span><span class="n">seq</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="k">for</span> <span class="n">idx0</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">:</span>
@@ -750,14 +750,14 @@
     <span class="n">upa_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1000.0</span><span class="p">,</span>
     <span class="n">b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Identify floodplain cells using an upstream-area-scaled HAND threshold.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Identify floodplain cells using an upstream-area-scaled HAND threshold.</span>
 
 <span class="sd">    Cells with upstream area at least `upa_min` define the drainage network. For each</span>
 <span class="sd">    such cell, the HAND threshold is its upstream area raised to `b`; upstream cells</span>
 <span class="sd">    are included when their elevation above the downstream drainage cell does not</span>
 <span class="sd">    exceed that threshold.</span>
 
-<span class="sd">    Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth's</span>
+<span class="sd">    Nardi F et al (2019) GFPLAIN250m, a global high-resolution dataset of Earth&#39;s</span>
 <span class="sd">        floodplains Sci. Data 6 180309</span>
 
 <span class="sd">    Parameters</span>
@@ -780,7 +780,7 @@
 <span class="sd">    1D array of int8</span>
 <span class="sd">        Floodplain mask: 1 for floodplain cells, 0 for valid non-floodplain cells, and</span>
 <span class="sd">        -1 for no-data cells.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">drainh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">uparea</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="n">drainz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">uparea</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="n">fldpln</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">uparea</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
@@ -805,10 +805,10 @@
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_local_d4</span><span class="p">(</span><span class="n">idx0</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">idx_ds</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ncol</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return D4 neighbors for a diagonal D8 flow direction.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return D4 neighbors for a diagonal D8 flow direction.</span>
 
 <span class="sd">    For example, a northwest flow direction returns the north and west neighbors.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">idxs_d4</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">idx0</span> <span class="o">-</span> <span class="n">ncol</span><span class="p">,</span>
         <span class="n">idx0</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
@@ -839,8 +839,8 @@
     <span class="n">nodata</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mi">9999</span><span class="p">,</span>
     <span class="n">dz_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Make sure that for every diagonal D8 downstream flow direction</span>
-<span class="sd">    there is an adjacent D4 cell with same or lower elevation"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make sure that for every diagonal D8 downstream flow direction</span>
+<span class="sd">    there is an adjacent D4 cell with same or lower elevation&quot;&quot;&quot;</span>
     <span class="n">elv_out</span> <span class="o">=</span> <span class="n">elv_flat</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">shape</span>
     <span class="k">for</span> <span class="n">idx0</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># up- to downstream</span>
@@ -899,8 +899,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -920,7 +920,8 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
   </p>
 </div>
       
@@ -933,7 +934,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>
