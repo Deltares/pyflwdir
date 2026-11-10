@@ -99,7 +99,7 @@ no-build = ["pyproj", "rasterio"]
 
 [tool.pixi.environments]
 default = { features = [
-    "py314",
+    "py312",
     "examples",
     "partition",
     "doc",
