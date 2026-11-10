@@ -100,9 +100,10 @@ no-build = ["pyproj", "rasterio"]
 [tool.pixi.environments]
 default = { features = [
     "py314",
-    "dev",
     "examples",
-    "partition"
+    "partition",
+    "doc",
+    "test"
 ], solve-group = "default" }
 test-py311 = { features = ["py311", "test", "partition"], solve-group = "py311" }
 test-py312 = { features = ["py312", "test", "partition"], solve-group = "py312" }
