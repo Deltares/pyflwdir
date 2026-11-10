@@ -18,8 +18,6 @@ Home = "https://github.com/Deltares/pyflwdir"
 Documentation = "https://deltares.github.io/pyflwdir"
 
 [project.optional-dependencies]
-test = ["black[jupyter]", "mypy", "pre-commit", "pytest>=2.7.3", "pytest-cov"]
-doc = ["nbsphinx", "pydata-sphinx-theme", "sphinx", "sphinx_design"]
 partition = ["pymetis>=2025.2"]
 examples = [
     "cartopy>=0.20",
@@ -31,7 +29,13 @@ examples = [
     "pandoc",
 ]
 
-full = ["pyflwdir[test, doc, examples, partition]"]
+[dependency-groups]
+test = ["black[jupyter]", "mypy", "pre-commit", "pytest>=2.7.3", "pytest-cov"]
+doc = ["nbsphinx", "pydata-sphinx-theme", "sphinx", "sphinx_design"]
+dev = [
+    {include-group = "test"},
+    {include-group = "doc"},
+]
 
 [tool.black]
 line-length = 88
@@ -96,15 +100,15 @@ no-build = ["pyproj", "rasterio"]
 [tool.pixi.environments]
 default = { features = [
     "py312",
-    "full",
-    "test",
-    "doc",
     "examples",
+    "partition",
+    "doc",
+    "test"
 ], solve-group = "default" }
-test-py311 = { features = ["py311", "test"], solve-group = "py311" }
-test-py312 = { features = ["py312", "test"], solve-group = "py312" }
-test-py313 = { features = ["py313", "test"], solve-group = "py313" }
-test-py314 = { features = ["py314", "test"], solve-group = "py314" }
+test-py311 = { features = ["py311", "test", "partition"], solve-group = "py311" }
+test-py312 = { features = ["py312", "test", "partition"], solve-group = "py312" }
+test-py313 = { features = ["py313", "test", "partition"], solve-group = "py313" }
+test-py314 = { features = ["py314", "test", "partition"], solve-group = "py314" }
 
 [tool.pixi.tasks]
 install-pre-commit = "pre-commit install"
