@@ -4,7 +4,7 @@
 __version__ = "0.5.13.dev0"
 
 # submodules
-from . import gis_utils, regions
+from . import gis_utils, partition, regions
 
 # public functions
 from .core_conversion import d8_to_ldd, ldd_to_d8
@@ -21,6 +21,7 @@ __all__ = [
     "from_dem",
     "read_nextxy",
     "gis_utils",
+    "partition",
     "regions",
     "slope",
     "fill_depressions",

@@ -30,6 +30,46 @@ unreleased
   factors for every cell, greatly reducing the runtime of
   ``Flwdir.stream_distance(unit="m")`` for geographic rasters
 * fix remaining ``uint64`` typing issues (#126)
+* make ``method="dfs"`` the default of ``order_cells`` and ``idxs_seq`` for
+  ``Flwdir`` and ``FlwdirRaster``. The cells draining to any one cell are then
+  an unbroken stretch of the sequence, so a subbasin can be taken out of it by
+  slicing, and a cell with upstream cells is directly followed by one of them.
+  As with any change of ordering, the labels of ``subbasins`` and
+  ``subbasins_streamorder``, the order of the features of ``streams`` and the
+  order of the cells of ``inflow_idxs`` and ``outflow_idxs`` can differ from
+  earlier versions, as their documentation says, and so can the last bits of
+  ``ucat_area`` and ``ucat_volume``. ``accuflux`` and ``upstream_area`` stay the
+  same bit for bit
+* build a rank-ordered sequence inside ``dem_adjust``, ``dem_dig_d4``,
+  ``subbasins_area`` and ``subbasins_pfafstetter`` instead of using
+  ``idxs_seq``, because their results follow the ordering. With the default
+  ordering they return what they returned before
+* run upstream accumulation in parallel, the only computation that does
+  (``accuflux`` with ``direction="up"`` and ``FlwdirRaster.upstream_area``).
+  ``parallel=True`` runs in threads, one dependency-free layer at a time, using
+  the as-soon-as-possible (``"asap"``), as-late-as-possible (``"alap"``) and
+  conflict-free downstream (``"cfds"``) layerings from FlowTopo, which
+  ``Flwdir.layer_cells`` returns. On a ``FlwdirRaster``, a ``partition_plan``
+  from ``FlwdirRaster.partition`` as well runs each part in its own process,
+  with threads inside, and then completes the mainstem sections. The plan is
+  checked against the flow directions first, and one plan serves any number of
+  calls. Floating-point results can differ from the serial accumulation in the
+  last bits (#85)
+* add the two FlowTopo process-level partitions as an optional feature.
+  ``FlwdirRaster.partition(n_processes=4)`` divides the raster into one part a
+  process and returns a ``PartitionPlan``: the part of each cell, the cell count
+  of each part, and how the opened mainstems connect to the parts.
+  ``level="basin"`` keeps every basin whole, and ``level="subbasin"`` also opens
+  the basins that keep the parts from balancing into tributary subtrees. A
+  tributary subtree is never cut, so the largest of them limits the balance,
+  however many processes are asked. Install
+  ``pyflwdir[partition]`` to enable the optional ``pymetis`` backend, which
+  carries METIS 5.1.0; the FlowTopo C code links METIS 5.2.1, so the method is
+  the C code's but the parts need not be, cell for cell (#85)
+* add the "Cell orderings" and "Parallel accumulation" notebooks to the user
+  guide, list ``layer_cells``, ``partition`` and ``partition_plan`` in the API
+  reference, and cite FlowTopo, where the "dfs" and "topo" implementations come
+  from, in the ``order_cells`` docstring
 * fix ``upstream_sum`` writing the missing value flag to the upstream cell instead
   of the downstream cell, where it is now kept (#131)
 
