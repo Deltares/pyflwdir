@@ -1,7 +1,7 @@
 """Fast methods to work with hydro- and topography data in pure Python."""
 
 # version number without 'v' at start
-__version__ = "0.5.13.dev0"
+__version__ = "0.6.0"
 
 # submodules
 from . import gis_utils, partition, regions
