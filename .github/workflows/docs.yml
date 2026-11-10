@@ -39,7 +39,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@v0.11.3
         with:
-          pixi-version: v0.64.0
+          pixi-version: v0.84.0
           environments: default
           locked: false
           cache: true
@@ -64,7 +64,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@v0.11.3
         with:
-          pixi-version: v0.64.0
+          pixi-version: v0.84.0
           environments: default
           locked: false
           cache: true
