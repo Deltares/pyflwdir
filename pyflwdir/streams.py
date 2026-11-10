@@ -6,7 +6,7 @@ These methods require the basin indices to be ordered from down- to upstream.
 import math
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 
 # import local libraries
 from . import core, gis_utils
@@ -44,6 +44,146 @@ def accuflux(
         if idx0 != idx_ds and accu[idx_ds] != nodata and accu[idx0] != nodata:
             accu[idx_ds] += accu[idx0]
     return accu
+
+
+@njit(cache=True, parallel=True)
+def accuflux_layered_push(
+    idxs_ds: np.ndarray,
+    cells: np.ndarray,
+    offsets: np.ndarray,
+    data: np.ndarray,
+    nodata: float,
+) -> np.ndarray:
+    """Accumulate upstream values with a conflict-free downstream layering.
+
+    Parameters
+    ----------
+    idxs_ds : 1D-array of intp
+        index of next downstream cell
+    cells : 1D array of int
+        cell indices grouped from upstream to downstream by layer
+    offsets : 1D array of int
+        start of each layer in `cells`, including the final end offset
+    data : 1D array
+        local values to be accumulated
+    nodata : float, integer
+        nodata value
+
+    Returns
+    -------
+    1D array of data.dtype
+        accumulated upstream data
+
+    Notes
+    -----
+    No two cells in one conflict-free layer share a receiver. The additions
+    therefore have a fixed order and produce the same result at every thread
+    count without atomics. Floating-point results can differ from `accuflux`
+    in the last bits because its sequence adds tributaries in another order.
+    """
+    accu = data.copy()
+    for layer in range(offsets.size - 1):
+        for pos in prange(offsets[layer], offsets[layer + 1]):
+            idx0 = cells[pos]
+            idx_ds = idxs_ds[idx0]
+            if idx0 != idx_ds and accu[idx_ds] != nodata and accu[idx0] != nodata:
+                accu[idx_ds] += accu[idx0]
+    return accu
+
+
+@njit(cache=True, parallel=True)
+def accuflux_layered_pull(
+    indptr: np.ndarray,
+    idxs_us: np.ndarray,
+    cells: np.ndarray,
+    offsets: np.ndarray,
+    data: np.ndarray,
+    nodata: float,
+) -> np.ndarray:
+    """Accumulate upstream values by gathering donors one layer at a time."""
+    accu = data.copy()
+    for layer in range(offsets.size - 1):
+        for pos in prange(offsets[layer], offsets[layer + 1]):
+            idx0 = cells[pos]
+            total = accu[idx0]
+            if total == nodata:
+                continue
+            for idx in range(indptr[idx0], indptr[idx0 + 1]):
+                value = accu[idxs_us[idx]]
+                if value != nodata:
+                    total += value
+            accu[idx0] = total
+    return accu
+
+
+@njit(cache=True, parallel=True)
+def accuflux_partitioned_push(
+    idxs_ds: np.ndarray,
+    parts: np.ndarray,
+    part: int,
+    cells: np.ndarray,
+    offsets: np.ndarray,
+    accu: np.ndarray,
+    nodata: float,
+) -> None:
+    """Stage 1 of accumulating in processes: one part, in place, in CFDS threads.
+
+    A push into another part or into a mainstem section (labelled ``n_parts``) is
+    skipped.  This leaves the total of each tributary at its ``cut_outlets`` cell and
+    the total of the upper mainstem at its ``predecessor`` cell, for stage 2.
+    """
+    for layer in range(offsets.size - 1):
+        for pos in prange(offsets[layer], offsets[layer + 1]):
+            idx0 = cells[pos]
+            idx_ds = idxs_ds[idx0]
+            if (
+                idx0 != idx_ds
+                and parts[idx_ds] == part
+                and accu[idx_ds] != nodata
+                and accu[idx0] != nodata
+            ):
+                accu[idx_ds] += accu[idx0]
+
+
+@njit(cache=True)
+def accuflux_subbasin_mainstem(
+    mainstem: np.ndarray,
+    predecessor: int,
+    cut_outlets: np.ndarray,
+    cut_inlets: np.ndarray,
+    data: np.ndarray,
+    accu: np.ndarray,
+    nodata: float,
+) -> None:
+    """Stage 2 of accumulating in processes: one mainstem section, after the parts.
+
+    From ``P_min`` down to the pit, each cell adds to its local value the total of the
+    cell above it (``predecessor`` for the first cell) and the totals of the tributaries
+    that enter it (``cut_outlets``).  A nodata cell stays nodata and passes nothing on:
+    the next cell starts from zero, and the tributaries entering the nodata cell are
+    skipped.
+    """
+    zero = np.zeros(1, dtype=data.dtype)[0]
+    previous = zero
+    if predecessor >= 0 and accu[predecessor] != nodata:
+        previous = accu[predecessor]
+    cut = 0
+    for cell in mainstem:
+        total = data[cell]
+        if total == nodata:
+            accu[cell] = nodata
+            previous = zero
+            while cut < cut_outlets.size and cut_inlets[cut] == cell:
+                cut += 1
+            continue
+        total += previous
+        while cut < cut_outlets.size and cut_inlets[cut] == cell:
+            value = accu[cut_outlets[cut]]
+            if value != nodata:
+                total += value
+            cut += 1
+        accu[cell] = total
+        previous = total
 
 
 @njit(cache=True)

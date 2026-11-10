@@ -230,6 +230,92 @@ def test_idxs_seq_dfs_keeps_basins_together_integration(test_data, request):
     _idxs_seq_dfs_keeps_basins_together_body(request.getfixturevalue(test_data))
 
 
+def _layerings_body(test_data):
+    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
+    idxs_ds[rank == -1] = mv
+    dfs = core.idxs_seq_dfs(idxs_ds, idxs_pit, mv=mv)
+    outputs = {
+        "asap": core.layering_asap(idxs_ds, mv),
+        "cfds": core.layering_cfds(idxs_ds, mv),
+        "alap": core.layering_alap(idxs_ds, dfs, mv),
+    }
+    for layers, n_layers in outputs.values():
+        assert layers.dtype == np.int32
+        assert n_layers == layers[dfs].max() + 1
+        assert np.all(layers[dfs] >= 0)
+        upstream = dfs[idxs_ds[dfs] != dfs]
+        assert np.all(layers[upstream] < layers[idxs_ds[upstream]])
+        cells, offsets = core.layer_decomposition(layers, n_layers, idxs_ds)
+        assert offsets.size == n_layers + 1
+        assert offsets[0] == 0 and offsets[-1] == dfs.size
+        assert np.array_equal(np.sort(cells), np.sort(dfs))
+        for layer in range(n_layers):
+            members = cells[offsets[layer] : offsets[layer + 1]]
+            assert np.all(layers[members] == layer)
+
+    layers, n_layers = outputs["cfds"]
+    for layer in range(n_layers):
+        members = np.flatnonzero(layers == layer)
+        members = members[idxs_ds[members] != members]
+        receivers = idxs_ds[members]
+        assert np.unique(receivers).size == receivers.size
+    assert outputs["cfds"][1] >= outputs["asap"][1]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("test_data", ["test_data_uint32", "test_data_int64"])
+def test_layerings_unit(test_data, request):
+    _layerings_body(request.getfixturevalue(test_data))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", ["test_data_real"])
+def test_layerings_integration(test_data, request):
+    _layerings_body(request.getfixturevalue(test_data))
+
+
+def _accuflux_layered_body(test_data):
+    idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
+    idxs_ds[rank == -1] = mv
+    dfs = core.idxs_seq_dfs(idxs_ds, idxs_pit, mv=mv)
+    rng = np.random.default_rng(0)
+    data = rng.random(idxs_ds.size)
+    data[idxs_ds == mv] = -9999.0
+    serial = streams.accuflux(idxs_ds, dfs, data, -9999.0)
+
+    cfds, n_layers = core.layering_cfds(idxs_ds, mv)
+    cells, offsets = core.layer_decomposition(cfds, n_layers, idxs_ds)
+    pushed = streams.accuflux_layered_push(idxs_ds, cells, offsets, data, -9999.0)
+    assert np.allclose(pushed, serial)
+
+    indptr, idxs_us = core.upstream_csr(idxs_ds, mv)
+    for builder in (core.layering_asap, core.layering_cfds):
+        layers, n_layers = builder(idxs_ds, mv)
+        cells, offsets = core.layer_decomposition(layers, n_layers, idxs_ds)
+        pulled = streams.accuflux_layered_pull(
+            indptr, idxs_us, cells, offsets, data, -9999.0
+        )
+        assert np.allclose(pulled, serial)
+    layers, n_layers = core.layering_alap(idxs_ds, dfs, mv)
+    cells, offsets = core.layer_decomposition(layers, n_layers, idxs_ds)
+    pulled = streams.accuflux_layered_pull(
+        indptr, idxs_us, cells, offsets, data, -9999.0
+    )
+    assert np.allclose(pulled, serial)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("test_data", ["test_data_uint32", "test_data_int64"])
+def test_accuflux_layered_unit(test_data, request):
+    _accuflux_layered_body(request.getfixturevalue(test_data))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", ["test_data_real"])
+def test_accuflux_layered_integration(test_data, request):
+    _accuflux_layered_body(request.getfixturevalue(test_data))
+
+
 def _upstream_csr_body(test_data):
     idxs_ds, idxs_pit, seq, rank, mv = [p.copy() for p in test_data]
     idxs_ds[rank == -1] = mv
