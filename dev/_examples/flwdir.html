@@ -346,6 +346,8 @@
 <li class="toctree-l1"><a class="reference internal" href="basins.html">Deliniation of (sub)basins</a></li>
 <li class="toctree-l1"><a class="reference internal" href="streams.html">Stream order</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracing.html">Tracing flow directions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ordering.html">Cell orderings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Parallel accumulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="elevation_indices.html">Elevation indices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="upscaling.html">Flow direction upscaling</a></li>
 </ul>
@@ -418,7 +420,7 @@
 <h1>Flow direction data<a class="headerlink" href="#Flow-direction-data" title="Link to this heading">#</a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code> object is at the core of pyflwdir. It stores gridded flow-direction data in a common, actionable format, where each cell is represented by the linear index of its next downstream cell.</p>
 <p>We currently support two local flow-direction (D8) formats: ArcGIS <strong>D8</strong> and PCRaster <strong>LDD</strong> (see figure). We also support one global flow-direction format: CaMa-Flood <strong>NEXTXY</strong>. Local formats describe the downstream cell by its relative direction to a neighboring cell, while the global format describes it by row and column indices.</p>
-<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="cacd2a469f084c459056c42703f94388" class="no-scaled-link" src="https://raw.githubusercontent.com/Deltares/pyflwdir/main/docs/_static/ftypes.png" width="500" /></p>
+<!-- ![](../docs/_static/ftypes.png "Local flow direction types") --><p><img alt="64b7a879e70f4c64b6a003be8118ea23" class="no-scaled-link" src="https://raw.githubusercontent.com/Deltares/pyflwdir/main/docs/_static/ftypes.png" width="500" /></p>
 <p>We read the flow direction raster data, including meta-data, using <a class="reference external" href="https://rasterio.readthedocs.io/en/latest/">rasterio</a></p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -523,41 +525,41 @@
   <tbody>
     <tr>
       <th>0</th>
-      <td>LINESTRING (8.7125 46.65417, 8.72083 46.6625, ...</td>
-      <td>640691</td>
-      <td>635723</td>
+      <td>LINESTRING (4.47917 51.4125, 4.47083 51.42083,...</td>
+      <td>70896</td>
+      <td>49953</td>
       <td>False</td>
       <td>4</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>LINESTRING (8.8375 46.62917, 8.84583 46.6375, ...</td>
-      <td>643697</td>
-      <td>635723</td>
+      <td>LINESTRING (4.4125 51.47083, 4.40417 51.47917,...</td>
+      <td>63909</td>
+      <td>49953</td>
       <td>False</td>
       <td>4</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>LINESTRING (8.17917 46.57083, 8.1875 46.57083,...</td>
-      <td>650597</td>
-      <td>634651</td>
-      <td>False</td>
-      <td>4</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>LINESTRING (8.85417 46.69583, 8.8625 46.69583,...</td>
-      <td>635723</td>
-      <td>632737</td>
+      <td>LINESTRING (4.42917 51.5875, 4.42917 51.59583,...</td>
+      <td>49953</td>
+      <td>45965</td>
       <td>False</td>
       <td>5</td>
     </tr>
     <tr>
+      <th>3</th>
+      <td>LINESTRING (4.60417 51.60417, 4.6125 51.60417,...</td>
+      <td>47980</td>
+      <td>45988</td>
+      <td>False</td>
+      <td>4</td>
+    </tr>
+    <tr>
       <th>4</th>
-      <td>LINESTRING (8.87917 46.7625, 8.8875 46.7625, 8...</td>
-      <td>627750</td>
-      <td>632737</td>
+      <td>LINESTRING (4.65417 51.52083, 4.6625 51.52917,...</td>
+      <td>57956</td>
+      <td>44010</td>
       <td>False</td>
       <td>4</td>
     </tr>

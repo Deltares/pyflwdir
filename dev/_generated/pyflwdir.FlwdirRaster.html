@@ -391,6 +391,8 @@
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.moving_median.html">pyflwdir.FlwdirRaster.moving_median</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.smooth_rivlen.html">pyflwdir.FlwdirRaster.smooth_rivlen</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.fillnodata.html">pyflwdir.FlwdirRaster.fillnodata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.layer_cells.html">pyflwdir.FlwdirRaster.layer_cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.partition.html">pyflwdir.FlwdirRaster.partition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.upscale.html">pyflwdir.FlwdirRaster.upscale</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.upscale_error.html">pyflwdir.FlwdirRaster.upscale_error</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.subgrid_rivlen.html">pyflwdir.FlwdirRaster.subgrid_rivlen</a></li>
@@ -404,6 +406,12 @@
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.dem_dig_d4.html">pyflwdir.FlwdirRaster.dem_dig_d4</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.hand.html">pyflwdir.FlwdirRaster.hand</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyflwdir.FlwdirRaster.floodplains.html">pyflwdir.FlwdirRaster.floodplains</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/partition.html">Partition methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.partition.partition_plan.html">pyflwdir.partition.partition_plan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.partition.PartitionPlan.html">pyflwdir.partition.PartitionPlan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyflwdir.partition.MainstemSection.html">pyflwdir.partition.MainstemSection</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../api/elevation.html">Elevation raster methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -554,7 +562,7 @@ coordinates are assumed to use metres, by default False.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#pyflwdir.FlwdirRaster.__init__" title="pyflwdir.FlwdirRaster.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(idxs_ds, shape, ftype[, idxs_pit, ...])</p></td>
 <td><p>Initialize a flow-direction raster from downstream-cell indices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.accuflux.html#pyflwdir.FlwdirRaster.accuflux" title="pyflwdir.FlwdirRaster.accuflux"><code class="xref py py-obj docutils literal notranslate"><span class="pre">accuflux</span></code></a>(data[, nodata, direction])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.accuflux.html#pyflwdir.FlwdirRaster.accuflux" title="pyflwdir.FlwdirRaster.accuflux"><code class="xref py py-obj docutils literal notranslate"><span class="pre">accuflux</span></code></a>(data[, nodata, direction, ...])</p></td>
 <td><p>Return accumulated data values along the flow directions.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.add_pits.html#pyflwdir.FlwdirRaster.add_pits" title="pyflwdir.FlwdirRaster.add_pits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_pits</span></code></a>([idxs, xy, streams])</p></td>
@@ -605,23 +613,29 @@ coordinates are assumed to use metres, by default False.</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.interbasin_mask.html#pyflwdir.FlwdirRaster.interbasin_mask" title="pyflwdir.FlwdirRaster.interbasin_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interbasin_mask</span></code></a>(region[, stream])</p></td>
 <td><p>Return a mask for the most downstream contiguous area within a region.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.load.html#pyflwdir.FlwdirRaster.load" title="pyflwdir.FlwdirRaster.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a>(fn)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.layer_cells.html#pyflwdir.FlwdirRaster.layer_cells" title="pyflwdir.FlwdirRaster.layer_cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">layer_cells</span></code></a>([method])</p></td>
+<td><p>Group cells into dependency-free layers.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.load.html#pyflwdir.FlwdirRaster.load" title="pyflwdir.FlwdirRaster.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a>(fn)</p></td>
 <td><p>Load serialized FlwdirRaster object from file</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.main_upstream.html#pyflwdir.FlwdirRaster.main_upstream" title="pyflwdir.FlwdirRaster.main_upstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main_upstream</span></code></a>([uparea])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.main_upstream.html#pyflwdir.FlwdirRaster.main_upstream" title="pyflwdir.FlwdirRaster.main_upstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main_upstream</span></code></a>([uparea])</p></td>
 <td><p>Return the main upstream node for each node.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.moving_average.html#pyflwdir.FlwdirRaster.moving_average" title="pyflwdir.FlwdirRaster.moving_average"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moving_average</span></code></a>(data, n[, weights, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.moving_average.html#pyflwdir.FlwdirRaster.moving_average" title="pyflwdir.FlwdirRaster.moving_average"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moving_average</span></code></a>(data, n[, weights, ...])</p></td>
 <td><p>Take the moving weighted average over the flow direction network</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.moving_median.html#pyflwdir.FlwdirRaster.moving_median" title="pyflwdir.FlwdirRaster.moving_median"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moving_median</span></code></a>(data, n[, restrict_strord, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.moving_median.html#pyflwdir.FlwdirRaster.moving_median" title="pyflwdir.FlwdirRaster.moving_median"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moving_median</span></code></a>(data, n[, restrict_strord, ...])</p></td>
 <td><p>Take the moving median over the flow direction network</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.order_cells.html#pyflwdir.FlwdirRaster.order_cells" title="pyflwdir.FlwdirRaster.order_cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">order_cells</span></code></a>([method])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.order_cells.html#pyflwdir.FlwdirRaster.order_cells" title="pyflwdir.FlwdirRaster.order_cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">order_cells</span></code></a>([method])</p></td>
 <td><p>Order cells from down- to upstream.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.outflow_idxs.html#pyflwdir.FlwdirRaster.outflow_idxs" title="pyflwdir.FlwdirRaster.outflow_idxs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outflow_idxs</span></code></a>(region)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.outflow_idxs.html#pyflwdir.FlwdirRaster.outflow_idxs" title="pyflwdir.FlwdirRaster.outflow_idxs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outflow_idxs</span></code></a>(region)</p></td>
 <td><p>Return linear indices of the most downstream cells within a region.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.partition.html#pyflwdir.FlwdirRaster.partition" title="pyflwdir.FlwdirRaster.partition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">partition</span></code></a>([level, n_processes, seed, ...])</p></td>
+<td><p>Divide the raster into parts, one for each process of an upstream accumulation.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.path.html#pyflwdir.FlwdirRaster.path" title="pyflwdir.FlwdirRaster.path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">path</span></code></a>([idxs, xy, mask, max_length, unit, ...])</p></td>
 <td><p>Trace paths downstream or upstream from starting cells.</p></td>
@@ -692,7 +706,7 @@ coordinates are assumed to use metres, by default False.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.upscale_error.html#pyflwdir.FlwdirRaster.upscale_error" title="pyflwdir.FlwdirRaster.upscale_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">upscale_error</span></code></a>(other, idxs_out)</p></td>
 <td><p>Return an error map for the upscaled flow directions.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.upstream_area.html#pyflwdir.FlwdirRaster.upstream_area" title="pyflwdir.FlwdirRaster.upstream_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">upstream_area</span></code></a>([unit])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.upstream_area.html#pyflwdir.FlwdirRaster.upstream_area" title="pyflwdir.FlwdirRaster.upstream_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">upstream_area</span></code></a>([unit, parallel, ...])</p></td>
 <td><p>Return the upstream-area raster for the flow directions.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="pyflwdir.FlwdirRaster.upstream_sum.html#pyflwdir.FlwdirRaster.upstream_sum" title="pyflwdir.FlwdirRaster.upstream_sum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">upstream_sum</span></code></a>(data[, mv])</p></td>

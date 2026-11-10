@@ -427,6 +427,46 @@ can differ in the last bits from earlier versions (#115)</p></li>
 factors for every cell, greatly reducing the runtime of
 <code class="docutils literal notranslate"><span class="pre">Flwdir.stream_distance(unit=&quot;m&quot;)</span></code> for geographic rasters</p></li>
 <li><p>fix remaining <code class="docutils literal notranslate"><span class="pre">uint64</span></code> typing issues (#126)</p></li>
+<li><p>make <code class="docutils literal notranslate"><span class="pre">method=&quot;dfs&quot;</span></code> the default of <code class="docutils literal notranslate"><span class="pre">order_cells</span></code> and <code class="docutils literal notranslate"><span class="pre">idxs_seq</span></code> for
+<code class="docutils literal notranslate"><span class="pre">Flwdir</span></code> and <code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code>. The cells draining to any one cell are then
+an unbroken stretch of the sequence, so a subbasin can be taken out of it by
+slicing, and a cell with upstream cells is directly followed by one of them.
+As with any change of ordering, the labels of <code class="docutils literal notranslate"><span class="pre">subbasins</span></code> and
+<code class="docutils literal notranslate"><span class="pre">subbasins_streamorder</span></code>, the order of the features of <code class="docutils literal notranslate"><span class="pre">streams</span></code> and the
+order of the cells of <code class="docutils literal notranslate"><span class="pre">inflow_idxs</span></code> and <code class="docutils literal notranslate"><span class="pre">outflow_idxs</span></code> can differ from
+earlier versions, as their documentation says, and so can the last bits of
+<code class="docutils literal notranslate"><span class="pre">ucat_area</span></code> and <code class="docutils literal notranslate"><span class="pre">ucat_volume</span></code>. <code class="docutils literal notranslate"><span class="pre">accuflux</span></code> and <code class="docutils literal notranslate"><span class="pre">upstream_area</span></code> stay the
+same bit for bit</p></li>
+<li><p>build a rank-ordered sequence inside <code class="docutils literal notranslate"><span class="pre">dem_adjust</span></code>, <code class="docutils literal notranslate"><span class="pre">dem_dig_d4</span></code>,
+<code class="docutils literal notranslate"><span class="pre">subbasins_area</span></code> and <code class="docutils literal notranslate"><span class="pre">subbasins_pfafstetter</span></code> instead of using
+<code class="docutils literal notranslate"><span class="pre">idxs_seq</span></code>, because their results follow the ordering. With the default
+ordering they return what they returned before</p></li>
+<li><p>run upstream accumulation in parallel, the only computation that does
+(<code class="docutils literal notranslate"><span class="pre">accuflux</span></code> with <code class="docutils literal notranslate"><span class="pre">direction=&quot;up&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_area</span></code>).
+<code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> runs in threads, one dependency-free layer at a time, using
+the as-soon-as-possible (<code class="docutils literal notranslate"><span class="pre">&quot;asap&quot;</span></code>), as-late-as-possible (<code class="docutils literal notranslate"><span class="pre">&quot;alap&quot;</span></code>) and
+conflict-free downstream (<code class="docutils literal notranslate"><span class="pre">&quot;cfds&quot;</span></code>) layerings from FlowTopo, which
+<code class="docutils literal notranslate"><span class="pre">Flwdir.layer_cells</span></code> returns. On a <code class="docutils literal notranslate"><span class="pre">FlwdirRaster</span></code>, a <code class="docutils literal notranslate"><span class="pre">partition_plan</span></code>
+from <code class="docutils literal notranslate"><span class="pre">FlwdirRaster.partition</span></code> as well runs each part in its own process,
+with threads inside, and then completes the mainstem sections. The plan is
+checked against the flow directions first, and one plan serves any number of
+calls. Floating-point results can differ from the serial accumulation in the
+last bits (#85)</p></li>
+<li><p>add the two FlowTopo process-level partitions as an optional feature.
+<code class="docutils literal notranslate"><span class="pre">FlwdirRaster.partition(n_processes=4)</span></code> divides the raster into one part a
+process and returns a <code class="docutils literal notranslate"><span class="pre">PartitionPlan</span></code>: the part of each cell, the cell count
+of each part, and how the opened mainstems connect to the parts.
+<code class="docutils literal notranslate"><span class="pre">level=&quot;basin&quot;</span></code> keeps every basin whole, and <code class="docutils literal notranslate"><span class="pre">level=&quot;subbasin&quot;</span></code> also opens
+the basins that keep the parts from balancing into tributary subtrees. A
+tributary subtree is never cut, so the largest of them limits the balance,
+however many processes are asked. Install
+<code class="docutils literal notranslate"><span class="pre">pyflwdir[partition]</span></code> to enable the optional <code class="docutils literal notranslate"><span class="pre">pymetis</span></code> backend, which
+carries METIS 5.1.0; the FlowTopo C code links METIS 5.2.1, so the method is
+the C code’s but the parts need not be, cell for cell (#85)</p></li>
+<li><p>add the “Cell orderings” and “Parallel accumulation” notebooks to the user
+guide, list <code class="docutils literal notranslate"><span class="pre">layer_cells</span></code>, <code class="docutils literal notranslate"><span class="pre">partition</span></code> and <code class="docutils literal notranslate"><span class="pre">partition_plan</span></code> in the API
+reference, and cite FlowTopo, where the “dfs” and “topo” implementations come
+from, in the <code class="docutils literal notranslate"><span class="pre">order_cells</span></code> docstring</p></li>
 <li><p>fix <code class="docutils literal notranslate"><span class="pre">upstream_sum</span></code> writing the missing value flag to the upstream cell instead
 of the downstream cell, where it is now kept (#131)</p></li>
 </ul>

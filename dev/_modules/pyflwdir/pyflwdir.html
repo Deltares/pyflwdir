@@ -395,6 +395,7 @@
     <span class="n">core_ldd</span><span class="p">,</span>
     <span class="n">core_nextxy</span><span class="p">,</span>
     <span class="n">dem</span><span class="p">,</span>
+    <span class="n">partition</span> <span class="k">as</span> <span class="n">partitioning</span><span class="p">,</span>
     <span class="n">regions</span><span class="p">,</span>
     <span class="n">streams</span><span class="p">,</span>
     <span class="n">subgrid</span><span class="p">,</span>
@@ -691,7 +692,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">idxs_seq</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Linear indices of valid cells ordered from down- to upstream."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">order_cells</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"walk"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">order_cells</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"dfs"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seq</span><span class="p">)</span>
 
     <span class="c1">### SET/MODIFY PROPERTIES ###</span>
@@ -1055,6 +1056,12 @@
 <span class="sd">            Raster of unique subbasin IDs.</span>
 <span class="sd">        idxs_out : 1D array of int</span>
 <span class="sd">            Linear indices of subbasin outlet cells.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The subbasins and their outlets are the same for every ordering set with</span>
+<span class="sd">        `order_cells` (see its Notes). Their IDs follow the sequence though, so which</span>
+<span class="sd">        subbasin gets which ID, and the order of `idxs_out`, change with the method.</span>
 <span class="sd">        """</span>
         <span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">basins</span><span class="o">.</span><span class="n">subbasins</span><span class="p">(</span>
             <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
@@ -1094,6 +1101,12 @@
 <span class="sd">            Raster of unique IDs for subbasins meeting `min_sto`.</span>
 <span class="sd">        idxs_out : 1D array of int</span>
 <span class="sd">            Linear indices of subbasin outlet cells.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The subbasins and their outlets are the same for every ordering set with</span>
+<span class="sd">        `order_cells` (see its Notes). Their IDs follow the sequence though, so which</span>
+<span class="sd">        subbasin gets which ID, and the order of `idxs_out`, change with the method.</span>
 <span class="sd">        """</span>
         <span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">basins</span><span class="o">.</span><span class="n">subbasins_streamorder</span><span class="p">(</span>
             <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
@@ -1138,7 +1151,10 @@
             <span class="n">idxs_pit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_pit</span><span class="p">,</span>
             <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
             <span class="n">idxs_us_main</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_us_main</span><span class="p">,</span>
-            <span class="n">seq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span>
+            <span class="c1"># which tributaries of equal area are picked follows the order the</span>
+            <span class="c1"># cells come in, so this keeps the cells grouped by their distance</span>
+            <span class="c1"># to the outlet, whatever the ordering of this object is</span>
+            <span class="n">seq</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_pit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mv</span><span class="p">),</span>
             <span class="n">uparea</span><span class="o">=</span><span class="n">uparea</span><span class="p">,</span>
             <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span>
             <span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
@@ -1174,7 +1190,11 @@
 <span class="sd">        """</span>
         <span class="n">subbas</span><span class="p">,</span> <span class="n">idxs_out</span> <span class="o">=</span> <span class="n">basins</span><span class="o">.</span><span class="n">subbasins_area</span><span class="p">(</span>
             <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
-            <span class="n">seq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span>
+            <span class="c1"># a tributary writes the area left to the main stem cell beside it,</span>
+            <span class="c1"># which has to be read after that write, so this needs the cells</span>
+            <span class="c1"># grouped by their distance to the outlet, whatever the ordering of</span>
+            <span class="c1"># this object is</span>
+            <span class="n">seq</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_pit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mv</span><span class="p">),</span>
             <span class="n">idxs_us_main</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_us_main</span><span class="p">,</span>
             <span class="n">uparea</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">uparea</span><span class="p">,</span> <span class="s2">"uparea"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"km2"</span><span class="p">),</span>
             <span class="n">area_min</span><span class="o">=</span><span class="n">area_min</span><span class="p">,</span>
@@ -1278,7 +1298,14 @@
 <div class="viewcode-block" id="FlwdirRaster.upstream_area">
 <a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.upstream_area.html#pyflwdir.FlwdirRaster.upstream_area">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">upstream_area</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"m2"</span><span class="p">,</span> <span class="s2">"ha"</span><span class="p">,</span> <span class="s2">"km2"</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"cell"</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">unit</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"m2"</span><span class="p">,</span> <span class="s2">"ha"</span><span class="p">,</span> <span class="s2">"km2"</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"cell"</span><span class="p">,</span>
+        <span class="n">parallel</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">partition_plan</span><span class="p">:</span> <span class="n">partitioning</span><span class="o">.</span><span class="n">PartitionPlan</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">threads_per_process</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">layering</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"asap"</span><span class="p">,</span> <span class="s2">"cfds"</span><span class="p">,</span> <span class="s2">"alap"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"cfds"</span><span class="p">,</span>
+        <span class="n">manner</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"push"</span><span class="p">,</span> <span class="s2">"pull"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"push"</span><span class="p">,</span>
+        <span class="n">start_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"spawn"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Return the upstream-area raster for the flow directions.</span>
 
@@ -1289,6 +1316,30 @@
 <span class="sd">        unit : {'m2', 'ha', 'km2', 'cell'}</span>
 <span class="sd">            Upstream-area units: square metres ('m2'), hectares ('ha'), square kilometres</span>
 <span class="sd">            ('km2'), or cells ('cell'), by default 'cell'.</span>
+<span class="sd">        parallel : bool, optional</span>
+<span class="sd">            Accumulate one layer at a time in threads, by default False.</span>
+<span class="sd">        partition_plan : PartitionPlan, optional</span>
+<span class="sd">            How to divide the raster over processes, made with :py:meth:`partition`.</span>
+<span class="sd">            With a plan, each part is accumulated in its own process with threads,</span>
+<span class="sd">            one process a part, and any mainstem sections are accumulated after the</span>
+<span class="sd">            processes finish. Without one, the default, everything runs in this</span>
+<span class="sd">            process. A plan can be reused for any number of calls on the same flow</span>
+<span class="sd">            directions. It needs ``parallel=True`` and the default `layering` and</span>
+<span class="sd">            `manner`, and it is checked against the flow directions first.</span>
+<span class="sd">        threads_per_process : int, optional</span>
+<span class="sd">            Threads inside each process, used only with a `partition_plan`. By</span>
+<span class="sd">            default the available threads are divided over the processes. Without a</span>
+<span class="sd">            plan, the threads are the current Numba thread count.</span>
+<span class="sd">        layering : {'asap', 'cfds', 'alap'}, optional</span>
+<span class="sd">            Layering used with ``parallel=True``, by default ``"cfds"``.</span>
+<span class="sd">        manner : {'push', 'pull'}, optional</span>
+<span class="sd">            Propagation manner used with ``parallel=True``, by default ``"push"``.</span>
+<span class="sd">            Push needs the conflict-free ``"cfds"`` layering; pull is safe with</span>
+<span class="sd">            all three.</span>
+<span class="sd">        start_method : str, optional</span>
+<span class="sd">            Multiprocessing start method, used only with a `partition_plan`, by</span>
+<span class="sd">            default ``"spawn"``. With ``"spawn"``, call it from an importable</span>
+<span class="sd">            script, below an ``if __name__ == "__main__":`` guard.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1303,14 +1354,118 @@
             <span class="n">area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">area</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">/</span> <span class="n">gis</span><span class="o">.</span><span class="n">AREA_FACTORS</span><span class="p">[</span><span class="n">unit</span><span class="p">]</span>
-        <span class="n">uparea</span> <span class="o">=</span> <span class="n">streams</span><span class="o">.</span><span class="n">accuflux</span><span class="p">(</span>
-            <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
-            <span class="n">seq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span>
-            <span class="n">data</span><span class="o">=</span><span class="n">area</span><span class="p">,</span>
+        <span class="n">uparea</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuflux</span><span class="p">(</span>
+            <span class="n">area</span><span class="p">,</span>
             <span class="n">nodata</span><span class="o">=-</span><span class="mi">9999</span><span class="p">,</span>
-        <span class="p">)</span>
+            <span class="n">parallel</span><span class="o">=</span><span class="n">parallel</span><span class="p">,</span>
+            <span class="n">partition_plan</span><span class="o">=</span><span class="n">partition_plan</span><span class="p">,</span>
+            <span class="n">threads_per_process</span><span class="o">=</span><span class="n">threads_per_process</span><span class="p">,</span>
+            <span class="n">layering</span><span class="o">=</span><span class="n">layering</span><span class="p">,</span>
+            <span class="n">manner</span><span class="o">=</span><span class="n">manner</span><span class="p">,</span>
+            <span class="n">start_method</span><span class="o">=</span><span class="n">start_method</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
         <span class="n">uparea</span><span class="p">[</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">9999</span>
         <span class="k">return</span> <span class="n">uparea</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FlwdirRaster.partition">
+<a class="viewcode-back" href="../../_generated/pyflwdir.FlwdirRaster.partition.html#pyflwdir.FlwdirRaster.partition">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">partition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">level</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"basin"</span><span class="p">,</span> <span class="s2">"subbasin"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"subbasin"</span><span class="p">,</span>
+        <span class="n">n_processes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">partitioning</span><span class="o">.</span><span class="n">DEFAULT_N_PARTS</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span>
+        <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">min_subtree_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">,</span>
+        <span class="n">imbalance_target</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.005</span><span class="p">,</span>
+        <span class="n">upa</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">partitioning</span><span class="o">.</span><span class="n">PartitionPlan</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Divide the raster into parts, one for each process of an upstream</span>
+<span class="sd">        accumulation.</span>
+
+<span class="sd">        Pass the returned plan to :py:meth:`upstream_area` or :py:meth:`accuflux`,</span>
+<span class="sd">        with ``parallel=True``, to accumulate each part in its own process. One plan</span>
+<span class="sd">        serves any number of accumulations on the same flow directions::</span>
+
+<span class="sd">            plan = flw.partition(n_processes=4, level="subbasin")</span>
+<span class="sd">            uparea = flw.upstream_area(parallel=True, partition_plan=plan)</span>
+<span class="sd">            accu = flw.accuflux(data, parallel=True, partition_plan=plan)</span>
+
+<span class="sd">        Make a new plan when the flow directions change, for example after</span>
+<span class="sd">        :py:meth:`add_pits`: the accumulation checks the plan and refuses one that no</span>
+<span class="sd">        longer fits.</span>
+
+<span class="sd">        ``level="basin"`` (FlowTopo Method 1) keeps every basin whole and groups the</span>
+<span class="sd">        basins into ``n_processes`` contiguous, balanced parts, using METIS, a graph</span>
+<span class="sd">        partitioning library, and a refinement of the boundaries.</span>
+<span class="sd">        ``level="subbasin"`` (FlowTopo Method 2) opens the basins that keep the parts</span>
+<span class="sd">        from balancing, along their mainstems (going up from the pit through the</span>
+<span class="sd">        tributary with the most cells at each confluence), into tributary subtrees,</span>
+<span class="sd">        and divides those and the other basins into ``n_processes`` parts.</span>
+<span class="sd">        ``P_min`` is the most upstream mainstem cell where a tributary of another</span>
+<span class="sd">        part enters: from there down to the pit, the mainstem is a section</span>
+<span class="sd">        accumulated after the parts, in the parent process.</span>
+
+<span class="sd">        METIS is an optional dependency; install it with</span>
+<span class="sd">        ``pip install pyflwdir[partition]``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        level : {'basin', 'subbasin'}, optional</span>
+<span class="sd">            How to divide the raster, as above, by default ``"subbasin"``.</span>
+<span class="sd">        n_processes : int, optional</span>
+<span class="sd">            Number of processes, one part each, by default 4. A part without cells,</span>
+<span class="sd">            as when there are fewer basins than processes at basin level, starts</span>
+<span class="sd">            no process. A tributary subtree is never cut, so the heaviest part is</span>
+<span class="sd">            at least as heavy as the largest subtree of an opened basin, and more</span>
+<span class="sd">            processes do not balance a region beyond that.</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            Seed of the first METIS run, by default 42.</span>
+<span class="sd">        refine : bool, optional</span>
+<span class="sd">            Move boundary nodes between parts after METIS to balance them, by</span>
+<span class="sd">            default True.</span>
+<span class="sd">        min_subtree_size : int, optional</span>
+<span class="sd">            At subbasin level, tributary subtrees smaller than this are grouped with</span>
+<span class="sd">            a larger neighbour before METIS divides them, by default 100,000 cells as</span>
+<span class="sd">            in the continental FlowTopo C workflow; the balance refinement still</span>
+<span class="sd">            moves single subtrees. Regardless of this value, at least</span>
+<span class="sd">            ``8 * n_processes`` groups are kept, or every subtree if there are</span>
+<span class="sd">            fewer.</span>
+<span class="sd">        imbalance_target : float, optional</span>
+<span class="sd">            Largest part load divided by the mean load that the partition aims for,</span>
+<span class="sd">            by default 1.005. At subbasin level, further basins open only while it</span>
+<span class="sd">            is not reached.</span>
+<span class="sd">        upa : ndarray, optional</span>
+<span class="sd">            Upstream area, one value a cell, finite and positive on the network. It</span>
+<span class="sd">            decides between two tributaries with as many cells when a mainstem is</span>
+<span class="sd">            traced, as in the FlowTopo C code; without it the one with the smaller</span>
+<span class="sd">            cell index is taken.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        PartitionPlan</span>
+<span class="sd">            ``plan.parts`` holds the part of each cell, shaped like the raster, from</span>
+<span class="sd">            0 to ``n_processes - 1``. The value ``n_processes`` marks the mainstem</span>
+<span class="sd">            sections, accumulated after the parts, and ``-1`` marks the cells that</span>
+<span class="sd">            take no part: off the network, the cell of a basin of a single cell (as</span>
+<span class="sd">            in the FlowTopo C code), and cells in, or draining into, a loop of the</span>
+<span class="sd">            flow directions, which never reach a pit. ``plan.loads`` holds the cell</span>
+<span class="sd">            count of each part, without the mainstem sections, and ``plan.stems``</span>
+<span class="sd">            how each mainstem section connects to the parts.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">n_processes</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"n_processes must be at least 1"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">partitioning</span><span class="o">.</span><span class="n">partition_plan</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">,</span>
+            <span class="n">n_parts</span><span class="o">=</span><span class="n">n_processes</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+            <span class="n">refine</span><span class="o">=</span><span class="n">refine</span><span class="p">,</span>
+            <span class="n">min_subtree_size</span><span class="o">=</span><span class="n">min_subtree_size</span><span class="p">,</span>
+            <span class="n">imbalance_target</span><span class="o">=</span><span class="n">imbalance_target</span><span class="p">,</span>
+            <span class="n">upa</span><span class="o">=</span><span class="n">upa</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
     <span class="c1">### STREAMS ####</span>
@@ -1328,6 +1483,14 @@
 <span class="sd">        -------</span>
 <span class="sd">        1D array of int</span>
 <span class="sd">            Linear indices of the most upstream cells in `region`.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The cells follow the sequence set with `order_cells`, so their order changes</span>
+<span class="sd">        with the method. Which cells are returned depends on which upstream cell of a</span>
+<span class="sd">        confluence comes first in the sequence. "dfs" and "walk" both put the upstream</span>
+<span class="sd">        cell with the lowest index first, so they return the same cells; "sort" and</span>
+<span class="sd">        "topo" can put another one first and return other cells.</span>
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">inflow_idxs</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="s2">"region"</span><span class="p">)</span>
@@ -1348,6 +1511,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        1D array of int</span>
 <span class="sd">            Linear indices of the most downstream cells in `region`.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The cells are the same for every ordering set with `order_cells` (see its</span>
+<span class="sd">        Notes). They follow the sequence though, so their order changes with the method.</span>
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">outflow_idxs</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="s2">"region"</span><span class="p">)</span>
@@ -1476,6 +1644,12 @@
 <span class="sd">        -------</span>
 <span class="sd">        feats : list of dict</span>
 <span class="sd">            LineString features, suitable for `geopandas.GeoDataFrame.from_features`.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The features are the same for every ordering set with `order_cells` (see its</span>
+<span class="sd">        Notes). Without `idxs_out` they follow the sequence though, so the order of the</span>
+<span class="sd">        list changes with the method.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="s2">"mask"</span><span class="p">)</span>
@@ -2074,7 +2248,10 @@
 <span class="sd">        """</span>
         <span class="n">elv_out</span> <span class="o">=</span> <span class="n">dem</span><span class="o">.</span><span class="n">dig_4connectivity</span><span class="p">(</span>
             <span class="n">idxs_ds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span>
-            <span class="n">seq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">,</span>
+            <span class="c1"># the elevation this writes beside a diagonal step is read by the cells</span>
+            <span class="c1"># handled after it, so this keeps the cells grouped by their distance to</span>
+            <span class="c1"># the outlet, whatever the ordering of this object is</span>
+            <span class="n">seq</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">idxs_seq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idxs_ds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxs_pit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mv</span><span class="p">),</span>
             <span class="n">elv_flat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">elevtn</span><span class="p">,</span> <span class="s2">"elevtn"</span><span class="p">),</span>
             <span class="n">mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_data</span><span class="p">(</span><span class="n">rivmsk</span><span class="p">,</span> <span class="s2">"rivmsk"</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
             <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>

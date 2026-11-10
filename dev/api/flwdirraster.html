@@ -391,6 +391,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.moving_median.html">pyflwdir.FlwdirRaster.moving_median</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.smooth_rivlen.html">pyflwdir.FlwdirRaster.smooth_rivlen</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.fillnodata.html">pyflwdir.FlwdirRaster.fillnodata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.layer_cells.html">pyflwdir.FlwdirRaster.layer_cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.partition.html">pyflwdir.FlwdirRaster.partition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upscale.html">pyflwdir.FlwdirRaster.upscale</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upscale_error.html">pyflwdir.FlwdirRaster.upscale_error</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.subgrid_rivlen.html">pyflwdir.FlwdirRaster.subgrid_rivlen</a></li>
@@ -404,6 +406,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.dem_dig_d4.html">pyflwdir.FlwdirRaster.dem_dig_d4</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.hand.html">pyflwdir.FlwdirRaster.hand</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.floodplains.html">pyflwdir.FlwdirRaster.floodplains</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="partition.html">Partition methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.partition.partition_plan.html">pyflwdir.partition.partition_plan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.partition.PartitionPlan.html">pyflwdir.partition.PartitionPlan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../_generated/pyflwdir.partition.MainstemSection.html">pyflwdir.partition.MainstemSection</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="elevation.html">Elevation raster methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -699,10 +707,10 @@ attribute is required at initialization, while the others can be set later.</p>
 <h2>Up- and downstream arithmetics<a class="headerlink" href="#up-and-downstream-arithmetics" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.accuflux.html#pyflwdir.FlwdirRaster.accuflux" title="pyflwdir.FlwdirRaster.accuflux"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.accuflux</span></code></a>(data[, nodata, direction])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.accuflux.html#pyflwdir.FlwdirRaster.accuflux" title="pyflwdir.FlwdirRaster.accuflux"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.accuflux</span></code></a>(data[, nodata, ...])</p></td>
 <td><p>Return accumulated data values along the flow directions.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upstream_area.html#pyflwdir.FlwdirRaster.upstream_area" title="pyflwdir.FlwdirRaster.upstream_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_area</span></code></a>([unit])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upstream_area.html#pyflwdir.FlwdirRaster.upstream_area" title="pyflwdir.FlwdirRaster.upstream_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_area</span></code></a>([unit, parallel, ...])</p></td>
 <td><p>Return the upstream-area raster for the flow directions.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.moving_average.html#pyflwdir.FlwdirRaster.moving_average" title="pyflwdir.FlwdirRaster.moving_average"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.moving_average</span></code></a>(data, n[, ...])</p></td>
@@ -716,6 +724,32 @@ attribute is required at initialization, while the others can be set later.</p>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.fillnodata.html#pyflwdir.FlwdirRaster.fillnodata" title="pyflwdir.FlwdirRaster.fillnodata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.fillnodata</span></code></a>(data, nodata[, ...])</p></td>
 <td><p>Fill no-data nodes with values from valid upstream or downstream neighbors.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="parallel-accumulation">
+<h2>Parallel accumulation<a class="headerlink" href="#parallel-accumulation" title="Link to this heading">#</a></h2>
+<p>Upstream accumulation is the only computation that runs in parallel:
+<a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.accuflux.html#pyflwdir.FlwdirRaster.accuflux" title="pyflwdir.FlwdirRaster.accuflux"><code class="xref py py-meth docutils literal notranslate"><span class="pre">FlwdirRaster.accuflux()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">direction=&quot;up&quot;</span></code> and
+<a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.upstream_area.html#pyflwdir.FlwdirRaster.upstream_area" title="pyflwdir.FlwdirRaster.upstream_area"><code class="xref py py-meth docutils literal notranslate"><span class="pre">FlwdirRaster.upstream_area()</span></code></a>. Pass <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> to run in threads, and
+a <code class="docutils literal notranslate"><span class="pre">partition_plan</span></code> from <a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.partition.html#pyflwdir.FlwdirRaster.partition" title="pyflwdir.FlwdirRaster.partition"><code class="xref py py-meth docutils literal notranslate"><span class="pre">FlwdirRaster.partition()</span></code></a> as well to run in
+processes, one process a part, with threads inside each:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">plan</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">n_processes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"subbasin"</span><span class="p">)</span>
+<span class="n">uparea</span> <span class="o">=</span> <span class="n">flw</span><span class="o">.</span><span class="n">upstream_area</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">partition_plan</span><span class="o">=</span><span class="n">plan</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.layer_cells.html#pyflwdir.FlwdirRaster.layer_cells" title="pyflwdir.FlwdirRaster.layer_cells"><code class="xref py py-meth docutils literal notranslate"><span class="pre">FlwdirRaster.layer_cells()</span></code></a> only returns the layers; the accumulation builds
+its own. Calling the two methods below does not by itself make anything run in
+parallel. See also <a class="reference internal" href="partition.html"><span class="doc">Partition methods</span></a>.</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.layer_cells.html#pyflwdir.FlwdirRaster.layer_cells" title="pyflwdir.FlwdirRaster.layer_cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.layer_cells</span></code></a>([method])</p></td>
+<td><p>Group cells into dependency-free layers.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../_generated/pyflwdir.FlwdirRaster.partition.html#pyflwdir.FlwdirRaster.partition" title="pyflwdir.FlwdirRaster.partition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlwdirRaster.partition</span></code></a>([level, n_processes, ...])</p></td>
+<td><p>Divide the raster into parts, one for each process of an upstream accumulation.</p></td>
 </tr>
 </tbody>
 </table>
@@ -833,6 +867,7 @@ attribute is required at initialization, while the others can be set later.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sub-basins">(Sub)basins</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#up-and-downstream-values">Up- and downstream values</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#up-and-downstream-arithmetics">Up- and downstream arithmetics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parallel-accumulation">Parallel accumulation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upscale-and-subgrid-methods">Upscale and subgrid methods</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#elevation">Elevation</a></li>
 </ul>
